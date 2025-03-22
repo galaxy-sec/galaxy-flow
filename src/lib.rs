@@ -26,7 +26,6 @@ extern crate http_types;
 extern crate ini;
 extern crate url;
 
-extern crate trust_dns_resolver;
 //#[macro_use]
 //extern crate simple_log;
 

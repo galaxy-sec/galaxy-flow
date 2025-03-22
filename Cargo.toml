@@ -59,7 +59,6 @@ serde_derive = "1.0"
 serde_json = "1.0"
 shells = "0.2"
 toml = "0.8"
-trust-dns-resolver = "0.21.2"
 url = "2.5"
 clap = { version = "4.5", features = ["derive"] }
 env_logger = "0.10.0"
