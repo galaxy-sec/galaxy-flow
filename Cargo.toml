@@ -66,16 +66,12 @@ env_logger = "0.10.0"
 os_info = "3"
 winnow = "0.6"
 colored = "3.0.0"
-#orion_vault = { git = "ssh://git@e.coding.net/g-oisy8122/s-devkit/orion_vault.git" }
 anyhow = "1.0.82"
 sodiumoxide = "0.2.7"
 include_dir = "0.7"
 trees = "0.4.1"
 reqwest = { version = "0.12", features = ["blocking"] }
 orion-error = "0.0.4"
-#orion-error = "0.0.1"
-#simple-log = { version = "2.0.0", default-features = false, features = [ "target", ] }
-#simple-log = { version = "2.1", features = ["target"] }
 
 [features]
 res_depend_test = []
