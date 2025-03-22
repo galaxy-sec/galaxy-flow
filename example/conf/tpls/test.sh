@@ -1,0 +1,3 @@
+{{#each branchs}}
+{{name}}
+{{/each}}

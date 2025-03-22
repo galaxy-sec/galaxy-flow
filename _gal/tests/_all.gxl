@@ -1,0 +1,26 @@
+mod os {
+  //./_gal/mods mod args
+  activity copy {
+      src = "" ;
+      dst = "" ;
+      executer = "./_gal/mods/os/copy.sh  ${SRC} ${DST} " ;
+  }
+  activity path {
+      dst  = "" ;
+      executer = "./_gal/mods/os/path.sh  ${DST} " ;
+  }
+  activity ln {
+      src = "" ;
+      dst = "" ;
+      executer = "./_gal/mods/os/link.sh  ${SRC} ${DST} " ;
+  }
+}
+mod ssh {
+    activity scp {
+        src = "";
+        user = "";
+        host = "";
+        dst = "";
+        executer = "./_gal/mods/ssh/scp.sh  ${SRC} ${USER} ${HOST}  ${DST}" ;
+    }
+}

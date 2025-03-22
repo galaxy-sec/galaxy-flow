@@ -1,0 +1,127 @@
+extern mod head { path = "./_gal/"; }
+
+mod env  {
+   env _init : rust_env.init ;
+   env _common    {
+    sudo      = "false";
+    root      = ".";
+    run       = "./run";
+    target_name = "";
+    prj_key   = "galaxy_flowell" ;
+
+  }
+  env _branch_auto {
+      gx.read {
+        name = "BRANCH_ENV";
+        cmd  = ^"git branch --show-current |  sed -E "s/(feature|develop|ver-dev|release|master|issue)(\/.*)?/_branch_\1/g" "^ ;
+        log  = "debug";
+        }
+  }
+
+  env _apple {
+    target_name = "aarch64-apple-darwin" ;
+    target_flag = "--target=${ENV_TARGET_NAME}";
+  }
+
+  #[usage(desp="cicd env",color="red")]
+  env ci : _common  {
+    pub_action="publish.pub_ci";
+  }
+ #[usage(desp="developer local env",color="red")]
+  env local : _common {
+    pub_action="publish.pub_dev";
+  }
+  env _auto            : _common,_branch_auto;
+
+  #[usage(desp="use alpha res",color="green")]
+  env debug : _init, _common,rust_env.debug;
+
+  #[usage(desp="use alpha res",color="green")]
+  env alpha   : _init, _common,rust_env.release;
+
+  #[usage(desp="use beta res",color="green")]
+  env beta    :  _init,_common, rust_env.release;
+
+
+  #[usage(desp="default auto ")]
+  env default    : _init,local,_auto;
+}
+
+mod main   {
+
+    #[auto_load(entry)]
+    flow __into  {
+      //bld_bins = "target/${ENV_TARGET_NAME}/${ENV_BUILD_NAME}" ;
+      bld_bins = "target/${ENV_BUILD_NAME}" ;
+      prj_bins = "${ENV_ROOT}/bin" ;
+      usr_bins = "${HOME}/bin" ;
+
+    }
+    flow conf  {
+      gx.echo { value="PRJ_BINS: ${PRJ_BINS} "; }
+      gx.echo { value="USR_BIN : ${USR_BINS} "; }
+      gx.echo { value="RG_OS_SYS: ${RG_OS_SYS} "; }
+
+      gx.echo { value= "ENV_BUILD_FLAG :  ${ENV_BUILD_FLAG}  "; }
+      gx.echo { value= "ENV_TARGET_FLAG : ${ENV_TARGET_FLAG} "; }
+      os.path { dst =  "${ENV_RUN}";  }
+    }
+
+
+  #[usage(desp="use project cargo conf")]
+  flow cargo_env {
+    gx.cmd  { cmd = "cp -f build/cargo.conf $CARGO_HOME/config"; }
+  }
+  flow coverage : rust_flow.coverage ;
+
+  #[usage(desp="build system")]
+  flow build: ver.use ,conf , rust_flow.build : pub_local {
+      os.path { dst = "${USR_BINS}"; }
+      os.path { dst = "${PRJ_BINS}"; }
+  }
+  #[usage(desp="lint code")]
+  flow lint : rust_flow.lint {} ;
+  flow test : build : {
+    gx.cmd {cmd = "cargo test --all ${ENV_BUILD_FLAG}"; log = "1" ; out="true" ; }
+  }
+  flow sys_test : main.build : {
+    gx.cmd {cmd = "cargo test --test sys_tests  --all-features  ${ENV_BUILD_FLAG}"; log = "1" ; out="true" ; }
+  }
+
+  flow _package  {
+    os.path { dst = "${PRJ_BINS}"; }
+    gx.cmd  { cmd = "rm -f ${PRJ_BINS}/r*" ; }
+    os.copy {  src  = "${BLD_BINS}/gx" ; dst  = "${PRJ_BINS}/" ; }
+    os.copy {  src  = "${BLD_BINS}/gm" ; dst  = "${PRJ_BINS}/" ; }
+    gx.cmd { cmd = "tar -czf ${PUB_DST_FILE}  ${PRJ_BINS}"; }
+    }
+
+  flow _repo_args  {
+    pub_repo_generic  = "${ENV_REPO_GENERIC}" ;
+    pub_pkg_key       = "${ENV_PRJ_KEY}" ;
+  }
+  flow _bin_args : ver.use, _repo_args {
+    pub_dst_file      = "${ENV_PRJ_KEY}-${RG_OS_SYS}-${VERSION}.gz" ;
+  }
+  flow _ver_args : ver.use, _repo_args {
+    pub_dst_file      = "version.txt" ;
+  }
+  flow _setup_args : ver.use, _repo_args {
+    pub_dst_file      = "setup/${ENV_MATURITY_TAG}/setup.sh" ;
+  }
+
+  flow _pub_bin  : conf,_bin_args   : _package ;
+
+  flow pub_local   {
+    os.path { dst = "${USR_BINS}"; }
+    os.path { dst = "${PRJ_BINS}"; }
+    gx.cmd  { cmd = "rm -f ${PRJ_BINS}/r*" ; }
+    os.copy {  src  = "${BLD_BINS}/gx" ; dst  = "${PRJ_BINS}/" ; }
+    os.copy {  src  = "${BLD_BINS}/gm" ; dst  = "${PRJ_BINS}/" ; }
+    gx.cmd { cmd = "cp ${PRJ_BINS}/g* ${USR_BINS}/" ; }
+
+  }
+
+  #[usage(desp="make package and publish to af")]
+  flow pub_package: :  _pub_bin ;
+}

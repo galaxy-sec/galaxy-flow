@@ -1,0 +1,85 @@
+
+[package]
+authors = ["wukong<sec-wukong@outlook.com>"]
+edition = "2021"
+name = "galaxy_flow"
+version = "0.2.1"
+
+
+[[bin]]
+name = "gm"
+path = "src/app/gm/main.rs"
+
+[[bin]]
+name = "gx"
+path = "src/app/gx/main.rs"
+
+[workspace]
+members = [
+    ".",
+    "crates/orion_common",
+    "crates/orion_parse",
+    "crates/orion_infra",
+]
+
+[workspace.package]
+version = "1.0.0"
+edition = "2021"
+license = "Apache-2.0"
+
+[workspace.dependencies]
+winnow = "0.6"
+orion-error = "0.0.4"
+
+
+[dependencies]
+orion_common = { path = "crates/orion_common" }
+orion_parse = { path = "crates/orion_parse" }
+orion_infra = { path = "crates/orion_infra" }
+async-trait = "0.1"
+derive-getters = "0.5"
+derive_builder = "0.20"
+duct = "0.13"
+
+duct_sh = "0.13"
+err-derive = "0.3"
+thiserror = "2.0"
+futures = "0.3"
+handlebars = "6.3"
+http-types = "2.12"
+lazy_static = "1.4"
+log = "0.4"
+mockall = "0.13"
+once_cell = "1.19"
+pretty_env_logger = "0.5"
+regex = "1.10"
+rust-ini = "0.21"
+serde = "1.0"
+serde_derive = "1.0"
+serde_json = "1.0"
+shells = "0.2"
+toml = "0.8"
+trust-dns-resolver = "0.21.2"
+url = "2.5"
+clap = { version = "4.5", features = ["derive"] }
+env_logger = "0.10.0"
+os_info = "3"
+winnow = "0.6"
+colored = "3.0.0"
+#orion_vault = { git = "ssh://git@e.coding.net/g-oisy8122/s-devkit/orion_vault.git" }
+anyhow = "1.0.82"
+sodiumoxide = "0.2.7"
+include_dir = "0.7"
+trees = "0.4.1"
+reqwest = { version = "0.12", features = ["blocking"] }
+orion-error = "0.0.4"
+#orion-error = "0.0.1"
+#simple-log = { version = "2.0.0", default-features = false, features = [ "target", ] }
+#simple-log = { version = "2.1", features = ["target"] }
+
+[features]
+res_depend_test = []
+
+
+[dev-dependencies]
+rstest = "0.25"

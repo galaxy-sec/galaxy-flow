@@ -1,0 +1,19 @@
+extern mod head   { path = "./_gal/"; }
+
+mod  envs {
+  env default {
+    root = "./" ;
+  }
+}
+mod main :  {
+
+  #[auto_load(entry)]
+  flow __into {
+    main_key = "dv_example" ;
+  }
+  #[usage(desp="hello")]
+  flow echo { 
+    gx.echo { value = "hello boy" ;}
+  }
+
+}

@@ -1,0 +1,21 @@
+
+extern mod os { path ="./mods/"; }
+mod env {
+  env dev {
+    root = "./tests" ;
+  }
+}
+
+mod main {
+  flow ut ~ clean  {
+    os.path { dst = "${ENV_ROOT}/.os_data"; }
+    os.copy {
+      src = "${ENV_ROOT}/os_test.gxl";
+      dst = "${ENV_ROOT}/.os_data/os_test.gxl";
+    }
+    os.ln {
+      src = "${ENV_ROOT}/os_test.gxl";
+      dst = "${ENV_ROOT}/.os_data/os_test_ln.gxl";
+    }
+  }
+}

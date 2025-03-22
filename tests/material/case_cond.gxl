@@ -1,0 +1,73 @@
+mod env {
+    env _dev {
+      ROOT = "${HOME}/devspace";
+      api  = "sub.api2" ;
+    }
+    env _test {
+      ROOT = "/usr/local";
+    }
+    env  base {
+      cond_key = "3" ;
+      log_lev= "DEBUG";
+      gx.vars {
+        run = ".run";
+        }
+    }
+    env dev  : _dev,base  ;
+    env test : _test,base  ;
+}
+
+mod sub {
+  name = "rg_sys" ;
+  flow api1 {
+    gx.assert { value = "${SUB_NAME}";  expect = "rg_sys";}
+  }
+  flow api2 {
+    gx.assert { value = "${SUB_NAME}";  expect = "rg_sys";}
+  }
+  flow api3 {
+    gx.assert { value = "${SUB_NAME}";  expect = "rg_sys";}
+  }
+}
+mod main {
+  root = "${ENV_ROOT}/galaxy";
+  name = "galaxy";
+
+  flow api : ${ENV_API} : sub.api3 {
+    key = "1" ;
+    full_key = "${KEY}_1" ;
+    gx.echo { value = "${ENV_COND_KEY}"; };
+    gx.echo { value = "will entry cond"; };
+     if ${KEY} == "1" {
+            gx.echo { value = "this is if cond"; };
+            gx.assert { value = "${KEY}";  expect = "1";}
+            if ENV_LOG_LEV == "DEBUG" {
+                gx.echo { value = "LOG: ${ENV_LOG_LEV}"; };
+            }
+            if env_cond_key != "3" {
+                gx.assert { value = "${ENV_COND_KEY}";  expect = "0";}
+            }
+            else {
+                gx.echo { value = "this is env_cond_key  false cond"; };
+                gx.assert { value = "${ENV_COND_KEY}";  expect = "3";}
+            }
+    }
+    else {
+            gx.echo { value = "this is else cond"; };
+            gx.assert { value = "${KEY}";  expect = "2";}
+    }
+    if env_cond_key >= "3" {
+        gx.echo { value = "this is env_cond_key  true cond"; };
+    }
+    else {
+        gx.assert { value = "${ENV_COND_KEY}";  expect = "0";}
+    }
+    if user == "root" {
+        gx.echo { value = "welcome ${USER}"; };
+    }
+  }
+  flow start {
+    gx.echo { value = "${MAIN_ROOT}";}
+    gx.assert { value = "${MAIN_NAME}";  expect = "galaxy"; }
+  }
+}

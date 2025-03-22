@@ -1,0 +1,41 @@
+mod env {
+    env dev {
+      ROOT = "${HOME}/devspace";
+      gx.vars {
+        run = ".run";
+        }
+    }
+}
+
+mod main {
+  name = "galaxy";
+  #[auto_load(entry)]
+  flow mod_into {
+    gx.echo { value = "mod_into"; };
+  }
+  #[auto_load(entry)]
+  flow mod_into2 {
+    gx.echo { value = "mod_into2"; };
+  }
+  #[auto_load(exit)]
+  flow mod_exit{
+    gx.echo { value = "mod_exit"; };
+  }
+  #[auto_load(exit)]
+  flow mod_exit2{
+    gx.echo { value = "mod_exit2"; };
+  }
+  #[usage(desp="hello")]
+  flow api  {
+    key = "1" ;
+    gx.echo { value = "will entry cond"; };
+    if ${KEY} == "1" {
+            gx.echo { value = "this is if cond"; };
+            gx.assert { value = "${KEY}";  expect = "1";}
+    }
+    else {
+            gx.echo { value = "this is else cond"; };
+            gx.assert { value = "${KEY}";  expect = "2";}
+    }
+  }
+}

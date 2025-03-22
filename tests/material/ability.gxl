@@ -1,0 +1,28 @@
+
+mod env {
+    env default {
+      ROOT = ".";
+      gx.vars {
+        LIB_NAME ="rg-lib" ;
+      }
+    }
+
+}
+
+mod main {
+  flow test {
+    tpl = "${ENV_ROOT}/tests/material/x.tpl" ;
+    dst = "${ENV_ROOT}/tests/material" ;
+    gx.tpl {
+      tpl = "${TPL}" ; dst = "${DST}/rg-lib1.toml";
+      data = ^"{"name": "rg-lib1","tag": "0.1.0" }"^ ;
+    }
+    gx.tpl {
+      tpl = "${TPL}" ; dst = "${DST}/rg-lib2.toml";
+      data = ^"{"name": "rg-lib2","tag": "0.2.0" }"^ ;
+    }
+    gx.tpl {
+      tpl = "${DST}/main.tpl" ; dst = "${DST}/main.toml";
+    }
+  }
+}

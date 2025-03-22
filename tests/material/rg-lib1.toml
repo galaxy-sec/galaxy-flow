@@ -1,0 +1,4 @@
+nightly_rg-lib1 = { optional = true, package = "rg-lib", git = "ssh://git@galaxy-sec.org/free/galaxy/rg-lib.git" , branch = "nightly" }
+beta_rg-lib1    = { optional = true, package = "rg-lib", git = "ssh://git@galaxy-sec.org/free/galaxy/rg-lib.git" , branch = "beta" }
+master_rg-lib1  = { optional = true, package = "rg-lib", git = "ssh://git@galaxy-sec.org/free/galaxy/rg-lib.git" , master = "master" }
+release_rg-lib1 = { optional = true, package = "rg-lib", git = "ssh://git@galaxy-sec.org/free/galaxy/rg-lib.git" , tag    = "0.1.0" }

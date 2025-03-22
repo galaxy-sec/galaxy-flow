@@ -1,0 +1,80 @@
+mod envs  {
+  env _local_deploy  {
+    PHP_ERROR   = "E_ALL & ~E_NOTICE";
+    FPM_USER    = "SYSTEM";
+    PRJ_ROOT    = "." ;
+  }
+  env _safe_deploy {
+    PHP_ERROR   = "E_ALL & ~E_NOTICE";
+    FPM_USER    = "%{FPM_USER}";
+    PRJ_ROOT    = ".";
+  }
+  env _dev {
+    BASE_DOMAIN = "dev.galaxy-sec.org" ;
+  }
+  env _demo {
+    BASE_DOMAIN = "demo.galaxy-sec.org" ;
+  }
+  env base {
+    PYLON   = "/data/x/framework/pylon-ng/";
+    GALAXY  = "/data/x/tools/galaxy-ng/";
+    BASE_INCLUDE = "${ENV_PRJ_ROOT}/src/bizlogic:${ENV_PRJ_ROOT}/src/foundation";
+  }
+  env speed_max {
+    MAX_CHILDREN      = "20" ;
+    START_SERVERS     = "5";
+    MIN_SPARE_SERVERS = "5";
+    MAX_SPARE_SERVERS = "10";
+  }
+  env speed_min {
+    MAX_CHILDREN      = "5" ;
+    START_SERVERS     = "2" ;
+    MIN_SPARE_SERVERS = "1" ;
+    MAX_SPARE_SERVERS = "3";
+  }
+  env debug {
+    PHP_ERROR = "E_ALL & ~E_NOTICE" ;
+    DEBUG     = "ON" ;
+    LOG_MODE  = "DEBUG" ;
+  }
+  env release {
+    PHP_ERROR = "E_ERROR" ;
+    DEBUG     = "XOFF" ;
+    LOG_MODE  = "ONLINE" ;
+  }
+  env dev : _local_deploy, _dev,base,speed_min,debug ;
+  env demo : _safe_deploy,_demo,base,speed_min,debug ;
+}
+
+mod main {
+  root        = "${HOME}/devspace/%{PRJ_NAME}" ;
+  name        = "%{PRJ_NAME}" ;
+  flow base {
+    DOMAIN_A      = "i.api.${ENV_BASE_DOMAIN}";
+    gx.echo {
+      value = "${DOMAIN_A}";
+    }
+  }
+
+  flow api : base {
+    DOMAIN_A      = "a.api.${ENV_BASE_DOMAIN}";
+    DOMAIN_B      = "b.api.${ENV_BASE_DOMAIN}";
+    gx.echo {
+      value = "${DOMAIN_A}";
+    }
+    gx.echo {
+      value = "${DOMAIN_B}";
+    }
+  }
+  flow api2 : base {
+    //DOMAIN_A      = "a.api.${ENV_BASE_DOMAIN}";
+    DOMAIN_B      = "b.api.${ENV_BASE_DOMAIN}";
+    gx.echo {
+      value = "${DOMAIN_A}";
+    }
+    gx.echo {
+      value = "${DOMAIN_B}";
+    }
+  }
+
+}

@@ -1,0 +1,16 @@
+mod god  {
+  flow g_f1 {} 
+  flow g_f2 {}
+  env g_e1 {}
+}
+mod base : god  {
+  flow b_f1 {}
+  flow b_f2 {}
+  env b_e1 {}
+}
+mod main : base {
+  env e1 {}
+  flow f1 { }
+  flow f2 { }
+
+}

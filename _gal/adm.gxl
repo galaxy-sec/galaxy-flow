@@ -1,0 +1,32 @@
+extern mod head   { path = "./_gal/"; }
+
+mod  envs {
+  env default {
+    root = "./" ;
+  }
+}
+mod main :  {
+
+  #[auto_load(entry)]
+  flow __into {
+    main_key = "dv_example" ;
+  }
+  #[usage(desp="update version of patch ")]
+  flow ver_patch   : ver.patch,_ver_app      { }
+  #[usage(desp="update version of feature ")]
+  flow ver_feature : ver.feature, _ver_app  { }
+  #[usage(desp="add tag by version ")]
+  flow ver_tag     : git.tag_ver ;
+
+  #[usage(desp="update version to crates cargo.toml ")]
+  flow _ver_app: ver.use {
+    gx.echo { cmd = " up version: ${VERSION} to cargo.toml"; }
+    gx.cmd { cmd = "cargo semver set ${VERSION}"; }
+  }
+  #[usage(desp="setup run depends")]
+  flow setup_depends {
+    gx.cmd { cmd = "cargo install cargo-semver --vers 1.0.0-alpha.3"; }
+  }
+
+
+}

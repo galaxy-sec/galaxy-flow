@@ -1,0 +1,9 @@
+mod env : base {
+  env e1 {
+    X="1" ;
+  }
+}
+mod main : base {
+  flow f1 { }
+  flow f2 { }
+}
