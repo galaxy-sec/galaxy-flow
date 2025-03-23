@@ -3,6 +3,7 @@ name: Rust
 on:
   push:
     branches: [ "main" ]
+    tags: [ '*' ]
   pull_request:
     branches: [ "main" ]
 
@@ -11,17 +12,21 @@ env:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v4
     - name: Build
       run: cargo build --verbose
     - name: Run tests
       run: cargo test --verbose
-    - name: Attestations
+    - name: Code formatting check
+      run: cargo fmt -- --check
+    - name: Code linting
+      run: cargo clippy -- -D warnings
+    - name: Build Artifacts
+      if: startsWith(github.ref, 'refs/tags/')
       run: |
-        mkdir -p attestations
-        cp target/debug/gm attestations/
-        cp target/debug/gx attestations/
+        cargo build --release --target x86_64-unknown-linux-gnu
+        mkdir -p artifacts
+        cp target/x86_64-unknown-linux-gnu/release/gm artifacts/
+        cp target/x86_64-unknown-linux-gnu/release/gx artifacts/
