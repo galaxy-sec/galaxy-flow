@@ -29,7 +29,7 @@ license = "Apache-2.0"
 
 [workspace.dependencies]
 winnow = "0.6"
-orion-error = "0.0.4"
+orion-error = "0.0.5"
 
 
 [dependencies]
@@ -70,7 +70,7 @@ sodiumoxide = "0.2.7"
 include_dir = "0.7"
 trees = "0.4.1"
 reqwest = { version = "0.12", features = ["blocking"] }
-orion-error = "0.0.4"
+orion-error = "0.0.5"
 
 [features]
 res_depend_test = []
