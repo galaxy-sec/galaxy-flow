@@ -22,7 +22,7 @@ jobs:
     - name: Code formatting check
       run: cargo fmt -- --check
     - name: Code linting
-      run: cargo clippy -- -D warnings
+      run: cargo clippy -- -D warnings --allow clippy::result-large-err
     - name: Build Artifacts
       if: startsWith(github.ref, 'refs/tags/')
       run: |

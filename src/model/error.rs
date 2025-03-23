@@ -46,6 +46,7 @@ impl ErrorCode for ExecReason {
 impl DomainReason for ExecReason {}
 pub type ExecError = StructError<ExecReason>;
 pub type ExecResult<T> = Result<T, ExecError>;
+//pub type ExecResult = Result<ExecOut, Box<dyn std::error::Error>>;
 use std::fmt::{self};
 
 impl std::fmt::Display for ExecReason {

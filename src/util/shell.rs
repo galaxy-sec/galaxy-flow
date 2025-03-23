@@ -7,6 +7,7 @@ use crate::expect::ShellOption;
 use crate::{ExecReason, ExecResult};
 
 use colored::*;
+#[allow(clippy::result_large_err)]
 pub fn rg_sh(
     scope: LogicScope,
     target: &str,

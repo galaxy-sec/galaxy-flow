@@ -5,6 +5,7 @@ use std::path::Path;
 
 pub struct GxlRunner {}
 impl GxlRunner {
+    #[allow(clippy::result_large_err)]
     pub fn run(cmd: GxlCmd) -> RunResult<()> {
         let mut loader = GxLoader::new();
         if let Some(conf) = cmd.conf {

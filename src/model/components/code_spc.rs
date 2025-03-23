@@ -15,6 +15,7 @@ pub struct CodeSpace {
 }
 
 impl CodeSpace {
+    #[allow(clippy::result_large_err)]
     pub fn assemble_mix(&self) -> AResult<GxlSpace> {
         let mut target_spc = GxlSpace::default();
         for (_, m) in self.mods.iter() {
