@@ -25,11 +25,14 @@ jobs:
     - name: Code linting
       run: cargo clippy -- -D warnings --allow clippy::result-large-err
     - name: Build Artifacts
-      if: startsWith(github.ref)
+      if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
       run: cargo build --release --target x86_64-unknown-linux-gnu
-    
+
+    - name: Debug build output
+      run: ls -l target/x86_64-unknown-linux-gnu/release/
+
     - name: Upload Artifacts
-      if: startsWith(github.ref)
+      if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
       uses: actions/upload-artifact@v4
       with:
         name: binaries
