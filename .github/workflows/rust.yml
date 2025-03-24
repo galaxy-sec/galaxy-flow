@@ -27,6 +27,7 @@ jobs:
     - name: Setup Rust toolchain
       uses: actions-rs/toolchain@v1
       with:
+        toolchain: stable
         target: ${{ matrix.target }}
         profile: minimal
 
