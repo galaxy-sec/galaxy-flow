@@ -50,7 +50,7 @@ jobs:
       if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
       uses: actions/upload-artifact@v4
       with:
-        name: binaries
+        name: galaxy_flow-${{ matrix.os }}
         path: |
           target/${{ matrix.target }}/release/gm
           target/${{ matrix.target }}/release/gx
