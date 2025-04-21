@@ -44,6 +44,9 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: ${{ matrix.rustup_toolchain }}
+          
+      - name: Add Rust targets
+        run: rustup target add ${{ matrix.target }}
 
       - name: Cargo build
         run: cargo build --release --target ${{ matrix.target }}
