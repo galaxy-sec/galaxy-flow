@@ -47,6 +47,16 @@ jobs:
           
       - name: Add Rust targets
         run: rustup target add ${{ matrix.target }}
+        
+      - name: Install OpenSSL (Linux)
+        if: startsWith(matrix.os, 'ubuntu')
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libssl-dev pkg-config
+          
+      - name: Set OpenSSL environment variable
+        if: startsWith(matrix.os, 'ubuntu')
+        run: echo "OPENSSL_DIR=/usr" >> $GITHUB_ENV
 
       - name: Cargo build
         run: cargo build --release --target ${{ matrix.target }}
