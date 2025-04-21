@@ -20,10 +20,10 @@ jobs:
       id-token: write
     strategy:
       matrix:
+        os: [ubuntu-22.04, ubuntu-22.04-arm, macos-13, macos-14]
         target:
           - x86_64-unknown-linux-gnu
           - aarch64-unknown-linux-gnu
-          - x86_64-pc-windows-msvc
           - x86_64-apple-darwin
           - aarch64-apple-darwin
         rustup_toolchain: [stable]
