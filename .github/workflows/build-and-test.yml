@@ -39,7 +39,7 @@ jobs:
 
       - name: Cargo build (Native TLS)
         run: |
-          cargo build --all --no-default-features --features=native-tls
+          cargo build --all 
           cargo clean
 
       - name: Cargo build (Rust TLS)
