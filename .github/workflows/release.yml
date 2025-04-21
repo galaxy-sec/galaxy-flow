@@ -52,11 +52,14 @@ jobs:
         if: startsWith(matrix.os, 'ubuntu')
         run: |
           sudo apt-get update
-          sudo apt-get install -y libssl-dev pkg-config
+          sudo apt-get install -y libssl-dev pkg-config openssl
           
-      - name: Set OpenSSL environment variable
+      - name: Set OpenSSL environment variables
         if: startsWith(matrix.os, 'ubuntu')
-        run: echo "OPENSSL_DIR=/usr" >> $GITHUB_ENV
+        run: |
+          echo "OPENSSL_DIR=/usr" >> $GITHUB_ENV
+          echo "OPENSSL_LIB_DIR=/usr/lib/x86_64-linux-gnu" >> $GITHUB_ENV
+          echo "OPENSSL_INCLUDE_DIR=/usr/include/openssl" >> $GITHUB_ENV
 
       - name: Cargo build
         run: cargo build --release --target ${{ matrix.target }}
