@@ -36,15 +36,12 @@ orion-error = "0.0.5"
 orion_common = { path = "crates/orion_common" }
 orion_parse = { path = "crates/orion_parse" }
 orion_infra = { path = "crates/orion_infra" }
-async-trait = "0.1"
 derive-getters = "0.5"
 derive_builder = "0.20"
 duct = "0.13"
 
 duct_sh = "0.13"
-err-derive = "0.3"
 thiserror = "2.0"
-futures = "0.3"
 handlebars = "6.3"
 http-types = "2.12"
 lazy_static = "1.4"
@@ -66,9 +63,7 @@ os_info = "3"
 winnow = "0.6"
 colored = "3.0.0"
 anyhow = "1.0.82"
-sodiumoxide = "0.2.7"
 include_dir = "0.7"
-trees = "0.4.1"
 orion-error = "0.0.5"
 
 [features]

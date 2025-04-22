@@ -9,6 +9,6 @@ version.workspace = true
 [dependencies]
 orion_common = { path = "../orion_common" }
 
-log = "~0.4"
-thiserror = "~2.0"
+#log = "~0.4"
+#thiserror = "~2.0"
 winnow = { workspace = true }
