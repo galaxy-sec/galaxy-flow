@@ -20,20 +20,13 @@ jobs:
       id-token: write
     strategy:
       matrix:
-        os: [ubuntu-22.04, ubuntu-22.04-arm, macos-13, macos-14]
         target:
           - x86_64-unknown-linux-gnu
-          - aarch64-unknown-linux-gnu
-          - x86_64-apple-darwin
           - aarch64-apple-darwin
         rustup_toolchain: [stable]
         include:
           - os: ubuntu-22.04
             target: x86_64-unknown-linux-gnu
-          - os: ubuntu-22.04-arm
-            target: aarch64-unknown-linux-gnu
-          - os: macos-13
-            target: x86_64-apple-darwin
           - os: macos-14
             target: aarch64-apple-darwin
     steps:
@@ -44,9 +37,6 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: ${{ matrix.rustup_toolchain }}
-          
-      - name: Add Rust targets
-        run: rustup target add ${{ matrix.target }}
 
       - name: Cargo build
         run: cargo build --release --target ${{ matrix.target }}
@@ -57,9 +47,9 @@ jobs:
       - name: Archive (UNIX)
         run: |
           mkdir -p artifacts
-          cp -av target/${{ matrix.target }}/release/gx  artifacts/
-          cp -av target/${{ matrix.target }}/release/gm  artifacts/
-          tar -czf ${{ github.event.repository.name }}-${{ github.ref_name }}-${{ matrix.target }}.tar.gz  artifacts/*
+          cp -av target/${{ matrix.target }}/release/gx artifacts/
+          cp -av target/${{ matrix.target }}/release/gm artifacts/
+          tar -czf ${{ github.event.repository.name }}-${{ github.ref_name }}-${{ matrix.target }}.tar.gz  artifacts
         if: ${{ ! startsWith(matrix.os, 'windows') }}
 
 
@@ -100,7 +90,7 @@ jobs:
           generate_release_notes: true
           fail_on_unmatched_files: true
           body: |
-            Welcome to this new release of  GalaxyFlow ${{ github.ref_name }}!
+            Welcome to this new release of GalaxyFlow ${{ github.ref_name }}!
 
             All artifacts are signed with this repos identity using Sigstore.
             You can verify the signatures using the `GitHub` CLI.
