@@ -62,8 +62,8 @@ mod main   {
       gx.echo { value="USR_BIN : ${USR_BINS} "; }
       gx.echo { value="RG_OS_SYS: ${RG_OS_SYS} "; }
 
-      gx.echo { value= "ENV_BUILD_FLAG :  ${ENV_BUILD_FLAG}  "; }
-      gx.echo { value= "ENV_TARGET_FLAG : ${ENV_TARGET_FLAG} "; }
+      gx.echo { value= "ENV_BUILD_FLAG :  ${ENV_BUILD_FLAG}  " }
+      gx.echo { value= "ENV_TARGET_FLAG : ${ENV_TARGET_FLAG} " }
       os.path { dst =  "${ENV_RUN}";  }
     }
 
@@ -82,7 +82,7 @@ mod main   {
   #[usage(desp="lint code")]
   flow lint : rust_flow.lint {} ;
   flow test : build : {
-    gx.cmd {cmd = "cargo test --all ${ENV_BUILD_FLAG}"; log = "1" ; out="true" ; }
+    gx.cmd {cmd = "cargo test --all ${ENV_BUILD_FLAG}", log = "1" , out="true" ; }
   }
   flow sys_test : main.build : {
     gx.cmd {cmd = "cargo test --test sys_tests  --all-features  ${ENV_BUILD_FLAG}"; log = "1" ; out="true" ; }

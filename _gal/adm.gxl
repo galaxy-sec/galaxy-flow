@@ -12,9 +12,9 @@ mod main :  {
     main_key = "dv_example" ;
   }
   #[usage(desp="update version of patch ")]
-  flow ver_patch   : ver.patch,_ver_app      { }
+  flow up_v_patch   : ver.patch,_ver_app      { }
   #[usage(desp="update version of feature ")]
-  flow ver_feature : ver.feature, _ver_app  { }
+  flow up_v_feature : ver.feature, _ver_app  { }
   #[usage(desp="add tag by version ")]
   flow ver_tag     : git.tag_ver ;
 

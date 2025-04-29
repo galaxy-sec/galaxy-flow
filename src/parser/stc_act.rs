@@ -1,22 +1,15 @@
-use super::prelude::*;
-use winnow::{
-    combinator::{fail, repeat},
-    ModalResult, Parser,
-};
+use super::{inner::sentence_body, prelude::*};
+use winnow::{combinator::fail, ModalResult, Parser};
 
 use crate::ability::delegate::*;
 use crate::types::*;
 
-use super::{
-    domain::{gal_sentence_beg, gal_sentence_end, gal_var_assign, parse_log},
-    stc_base::gal_act_head,
-};
+use super::{domain::parse_log, stc_base::gal_act_head};
 
 pub fn gal_activity(input: &mut &str) -> ModalResult<Activity> {
     let name = gal_act_head("activity", input)?;
-    gal_sentence_beg.parse_next(input)?;
-    let props: Vec<(String, String)> = repeat(0.., gal_var_assign).parse_next(input)?;
-    gal_sentence_end
+
+    let props = sentence_body
         .context(wn_desc("<activity-end>"))
         .parse_next(input)?;
     let mut dto = ActivityDTO {

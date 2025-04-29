@@ -1,9 +1,9 @@
 use super::prelude::*;
-use winnow::ascii::multispace0;
+use orion_parse::symbol::symbol_comma;
 use winnow::combinator::alt;
 use winnow::combinator::fail;
 
-use winnow::combinator::repeat;
+use winnow::combinator::separated;
 use winnow::ModalResult;
 use winnow::Parser;
 
@@ -31,10 +31,7 @@ use super::domain::parse_log;
 pub fn gal_vars(input: &mut &str) -> ModalResult<RgVars> {
     let mut vars = RgVars::default();
     gal_keyword("gx.vars", input)?;
-    gal_sentence_beg.parse_next(input)?;
-    let founds: Vec<(String, String)> = repeat(0.., gal_var_assign).parse_next(input)?;
-    gal_sentence_end.parse_next(input)?;
-
+    let founds = sentence_body.parse_next(input)?;
     for one in founds {
         vars.insert(one.0, one.1);
     }
@@ -44,8 +41,15 @@ pub fn gal_vars(input: &mut &str) -> ModalResult<RgVars> {
 pub fn gal_echo(input: &mut &str) -> ModalResult<GxEcho> {
     let mut watcher = GxEcho::default();
     gal_keyword("gx.echo", input)?;
-    gal_sentence_beg.parse_next(input)?;
+    let props = sentence_body.parse_next(input)?;
+    for (k, v) in props {
+        if k == "value" {
+            watcher.set(v.as_str());
+        }
+    }
+    //gal_sentence_beg.parse_next(input)?;
     //let cur: &str = input;
+    /*
     if starts_with("\"", input) {
         let v = alt((gal_raw_string, take_string)).parse_next(input)?;
         watcher.set(v.as_str());
@@ -56,6 +60,8 @@ pub fn gal_echo(input: &mut &str) -> ModalResult<GxEcho> {
         }
     }
     gal_sentence_end.parse_next(input)?;
+    */
+
     Ok(watcher)
 }
 
@@ -64,9 +70,7 @@ pub fn gal_version(input: &mut &str) -> ModalResult<RgVersion> {
     builder.verinc(VerInc::Build);
     builder.export("VERSION".into());
     gal_keyword("gx.ver", input)?;
-    gal_sentence_beg.parse_next(input)?;
-    let props: Vec<(String, String)> = repeat(0.., gal_var_assign).parse_next(input)?;
-    gal_sentence_end.parse_next(input)?;
+    let props = sentence_body.parse_next(input)?;
     for (key, val) in props {
         if key == "file" {
             builder.file(val);
@@ -104,9 +108,7 @@ pub fn gal_version(input: &mut &str) -> ModalResult<RgVersion> {
 
 pub fn gal_read(input: &mut &str) -> ModalResult<GxRead> {
     gal_keyword("gx.read", input)?;
-    gal_sentence_beg.parse_next(input)?;
-    let props: Vec<(String, String)> = repeat(0.., gal_var_assign).parse_next(input)?;
-    gal_sentence_end.parse_next(input)?;
+    let props = sentence_body.parse_next(input)?;
     let mut builder = RgReadDtoBuilder::default();
     let mut expect = ShellOption::default();
     for one in props {
@@ -139,9 +141,7 @@ pub fn gal_read(input: &mut &str) -> ModalResult<GxRead> {
 
 pub fn gal_tpl(input: &mut &str) -> ModalResult<GxTpl> {
     gal_keyword("gx.tpl", input)?;
-    gal_sentence_beg.parse_next(input)?;
-    let props: Vec<(String, String)> = repeat(0.., gal_var_assign).parse_next(input)?;
-    gal_sentence_end.parse_next(input)?;
+    let props = sentence_body.parse_next(input)?;
     let mut builder = RgTplDtoBuilder::default();
     for one in props {
         let key = one.0.to_lowercase();
@@ -198,13 +198,19 @@ pub fn gal_vault(input: &mut &str) -> ModalResult<GxVault> {
     }
 }
 */
+pub fn sentence_body(input: &mut &str) -> ModalResult<Vec<(String, String)>> {
+    gal_sentence_beg.parse_next(input)?;
+    let props: Vec<(String, String)> =
+        separated(0.., gal_var_assign, alt((symbol_comma, symbol_semicolon))).parse_next(input)?;
+    opt(alt((symbol_comma, symbol_semicolon))).parse_next(input)?;
+    gal_sentence_end.parse_next(input)?;
+    Ok(props)
+}
 
 pub fn gal_cmd(input: &mut &str) -> ModalResult<GxCmd> {
     let mut builder = GxCmdDtoBuilder::default();
     gal_keyword("gx.cmd", input)?;
-    gal_sentence_beg.parse_next(input)?;
-    let props: Vec<(String, String)> = repeat(0.., gal_var_assign).parse_next(input)?;
-    gal_sentence_end.parse_next(input)?;
+    let props = sentence_body.parse_next(input)?;
     let mut expect = ShellOption::default();
     builder.expect(ShellOption::default());
     for one in props {
@@ -243,22 +249,7 @@ pub fn gal_call(input: &mut &str) -> ModalResult<ActCall> {
     let name = take_var_path
         .context(wn_desc("<call-name>"))
         .parse_next(input)?;
-    gal_sentence_beg.parse_next(input)?;
-    let mut var_props: Vec<(String, String)> = Vec::new();
-    loop {
-        skip_spaces_block.parse_next(input)?;
-        if !starts_with((multispace0, "}"), input) {
-            let sentence = gal_var_assign
-                .context(wn_desc("<var-assign>"))
-                .parse_next(input)?;
-            var_props.push(sentence)
-        } else {
-            break;
-        }
-    }
-    gal_sentence_end
-        .context(wn_desc("<flow-call-end>"))
-        .parse_next(input)?;
+    let var_props = sentence_body.parse_next(input)?;
     let mut props = Vec::new();
     for v_prop in var_props {
         props.push(Property::from(v_prop))
@@ -270,9 +261,7 @@ pub fn gal_call(input: &mut &str) -> ModalResult<ActCall> {
 pub fn gal_assert(input: &mut &str) -> ModalResult<GxAssert> {
     let mut builder = GxAssertBuilder::default();
     gal_keyword("gx.assert", input)?;
-    gal_sentence_beg.parse_next(input)?;
-    let props: Vec<(String, String)> = repeat(0.., gal_var_assign).parse_next(input)?;
-    gal_sentence_end.parse_next(input)?;
+    let props = sentence_body.parse_next(input)?;
     builder.result(true);
     builder.error(None);
     for (key, val) in props {
@@ -301,6 +290,7 @@ pub fn gal_assert(input: &mut &str) -> ModalResult<GxAssert> {
 pub fn gal_prop(input: &mut &str) -> ModalResult<RgProp> {
     skip_spaces_block.parse_next(input)?;
     let prop = gal_var_assign.parse_next(input)?;
+    alt((symbol_comma, symbol_semicolon)).parse_next(input)?;
     let vars = RgProp::ext_new(prop.0, "str".into(), prop.1);
     Ok(vars)
 }

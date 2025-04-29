@@ -2,8 +2,7 @@ use super::prelude::*;
 use orion_parse::{
     atom::{gal_raw_string, skip_spaces_block, starts_with, take_string, take_var_name},
     symbol::{
-        symbol_assign, symbol_brace_beg, symbol_brace_end, symbol_colon, symbol_comma,
-        symbol_semicolon, wn_desc,
+        symbol_assign, symbol_brace_beg, symbol_brace_end, symbol_colon, symbol_semicolon, wn_desc,
     },
 };
 use winnow::combinator::{delimited, repeat, separated};
@@ -84,7 +83,8 @@ pub fn gal_var_assign(input: &mut &str) -> ModalResult<(String, String)> {
     let val = alt((take_string, gal_raw_string))
         .context(wn_desc("<var-val>"))
         .parse_next(input)?;
-    (multispace0, alt((symbol_comma, symbol_semicolon))).parse_next(input)?;
+    multispace0(input)?;
+    //(multispace0, alt((symbol_comma, symbol_semicolon))).parse_next(input)?;
     Ok((key.to_string(), val.to_string()))
 }
 pub fn gal_sentence_beg(input: &mut &str) -> ModalResult<()> {
