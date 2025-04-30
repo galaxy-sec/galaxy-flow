@@ -2,7 +2,10 @@ use std::fmt::Display;
 
 use super::prelude::*;
 use winnow::{
-    ascii::multispace0, combinator::{alt, fail, opt}, error::{ContextError, ErrMode}, ModalResult, Parser
+    ascii::multispace0,
+    combinator::{alt, fail, opt},
+    error::{ContextError, ErrMode},
+    ModalResult, Parser,
 };
 
 use crate::components::code_spc::CodeSpace;
@@ -13,45 +16,39 @@ pub struct WinnowErrorEx(ErrMode<ContextError>);
 
 impl Display for WinnowErrorEx {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-       
         let mut context_vec: Vec<String> = match &self.0 {
             ErrMode::Incomplete(_) => {
-              write!(f, "Incomplete input:", )?;
-              Vec::new()
+                write!(f, "Incomplete input:",)?;
+                Vec::new()
             }
-            ErrMode::Backtrack(err) =>  {
-              collect_context( err)
-            }
-            ErrMode::Cut(err) =>  {
-              collect_context(err)
-            }
+            ErrMode::Backtrack(err) => collect_context(err),
+            ErrMode::Cut(err) => collect_context(err),
         };
         context_vec.reverse();
-          writeln!(f, "parse syntax :", )?;
+        writeln!(f, "parse syntax :",)?;
         for context in context_vec {
-          write!(f, "{}::", context)?;
+            write!(f, "{}::", context)?;
         }
         Ok(())
     }
 }
 
-fn collect_context( err: &ContextError) -> Vec<String> {
-  let mut context_vec = Vec::new();
+fn collect_context(err: &ContextError) -> Vec<String> {
+    let mut context_vec = Vec::new();
     let current = err;
 
     for context in current.context() {
         match context {
-            winnow::error::StrContext::Label(value) =>  {
-              context_vec.push(value.to_string());
+            winnow::error::StrContext::Label(value) => {
+                context_vec.push(value.to_string());
             }
-            winnow::error::StrContext::Expected(value) =>  {
-              context_vec.push(value.to_string());
+            winnow::error::StrContext::Expected(value) => {
+                context_vec.push(value.to_string());
             }
-            _ =>  {
-            }
+            _ => {}
         }
-      }
-      context_vec
+    }
+    context_vec
 }
 impl From<ErrMode<ContextError>> for WinnowErrorEx {
     fn from(err: ErrMode<ContextError>) -> Self {
