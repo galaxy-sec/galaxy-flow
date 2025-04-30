@@ -51,7 +51,6 @@ mod main   {
 
     #[auto_load(entry)]
     flow __into  {
-      //bld_bins = "target/${ENV_TARGET_NAME}/${ENV_BUILD_NAME}" ;
       bld_bins = "target/${ENV_BUILD_NAME}" ;
       prj_bins = "${ENV_ROOT}/bin" ;
       usr_bins = "${HOME}/bin" ;
@@ -88,40 +87,13 @@ mod main   {
     gx.cmd {cmd = "cargo test --test sys_tests  --all-features  ${ENV_BUILD_FLAG}"; log = "1" ; out="true" ; }
   }
 
-  flow _package  {
-    os.path { dst = "${PRJ_BINS}"; }
-    gx.cmd  { cmd = "rm -f ${PRJ_BINS}/r*" ; }
-    os.copy {  src  = "${BLD_BINS}/gx" ; dst  = "${PRJ_BINS}/" ; }
-    os.copy {  src  = "${BLD_BINS}/gm" ; dst  = "${PRJ_BINS}/" ; }
-    gx.cmd { cmd = "tar -czf ${PUB_DST_FILE}  ${PRJ_BINS}"; }
-    }
-
-  flow _repo_args  {
-    pub_repo_generic  = "${ENV_REPO_GENERIC}" ;
-    pub_pkg_key       = "${ENV_PRJ_KEY}" ;
-  }
-  flow _bin_args : ver.use, _repo_args {
-    pub_dst_file      = "${ENV_PRJ_KEY}-${RG_OS_SYS}-${VERSION}.gz" ;
-  }
-  flow _ver_args : ver.use, _repo_args {
-    pub_dst_file      = "version.txt" ;
-  }
-  flow _setup_args : ver.use, _repo_args {
-    pub_dst_file      = "setup/${ENV_MATURITY_TAG}/setup.sh" ;
-  }
-
-  flow _pub_bin  : conf,_bin_args   : _package ;
-
   flow pub_local   {
     os.path { dst = "${USR_BINS}"; }
     os.path { dst = "${PRJ_BINS}"; }
     gx.cmd  { cmd = "rm -f ${PRJ_BINS}/r*" ; }
     os.copy {  src  = "${BLD_BINS}/gx" ; dst  = "${PRJ_BINS}/" ; }
-    os.copy {  src  = "${BLD_BINS}/gm" ; dst  = "${PRJ_BINS}/" ; }
+    os.copy {  src  = "${BLD_BINS}/gm" , dst  = "${PRJ_BINS}/" ; }
     gx.cmd { cmd = "cp ${PRJ_BINS}/g* ${USR_BINS}/" ; }
 
   }
-
-  #[usage(desp="make package and publish to af")]
-  flow pub_package: :  _pub_bin ;
 }

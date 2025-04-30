@@ -3,6 +3,7 @@ use crate::components::code_spc::CodeSpace;
 use crate::parser::comment::ignore_comment;
 use crate::parser::externs::ExternParser;
 use crate::parser::stc_spc::gal_stc_spc;
+use crate::parser::stc_spc::WinnowErrorEx;
 
 use std::fs;
 use std::fs::read_to_string;
@@ -84,7 +85,7 @@ impl GxLoader {
         info!(target: "parse","code len: {}", target_code.len());
         fs::write("./.run.gxl", target_code.as_str()).owe_res()?;
         let mut code = target_code.as_str();
-        let rg_space = gal_stc_spc(&mut code)
+        let rg_space = gal_stc_spc(&mut code).map_err(WinnowErrorEx::from)
             .owe(RunReason::Gxl("gxl error!".into()))
             .position(err_code_prompt(code))
             .want("parse ./.run.gxl file")?;

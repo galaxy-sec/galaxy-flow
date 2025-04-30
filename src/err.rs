@@ -67,57 +67,58 @@ impl From<AssembleReason> for StructReason<RunReason> {
 }
 
 pub fn report_rg_error(e: RunError) {
-    println!("*** galaxy flow parse error! *** : \n");
+    println!("Galaxy Flow Parse Error (Code: {})", e.error_code());
+    println!("--------------------------");
     if let Some(target) = e.target() {
-        println!("[target]:\n{}", target);
+        println!("[TARGET]:\n{}\n", target);
     }
-    println!("[reason]:");
+    println!("[REASON]:");
     match e.reason() {
         StructReason::Universal(uvs_reason) => match uvs_reason {
             UvsReason::LogicError(e) => {
-                println!("logic error: {}", e);
+                println!("LOGIC ERROR: {}\n", e);
             }
             UvsReason::BizError(e) => {
-                println!("biz error: {}", e);
+                println!("BIZ ERROR: {}\n", e);
             }
             UvsReason::DataError(e, _) => {
-                println!("data error: {}", e);
+                println!("DATA ERROR: {}\n", e);
             }
             UvsReason::SysError(e) => {
-                println!("sys error: {}", e);
+                println!("SYS ERROR: {}\n", e);
             }
             UvsReason::ResError(e) => {
-                println!("res error: {}", e);
+                println!("RES ERROR: {}\n", e);
             }
             UvsReason::ConfError(e) => {
-                println!("conf error: {}", e);
+                println!("CONF ERROR: {}\n", e);
             }
             UvsReason::RuleError(e) => {
-                println!("rule error: {}", e);
+                println!("RULE ERROR: {}\n", e);
             }
             UvsReason::PrivacyError(e) => {
-                println!("rule error: {}", e);
+                println!("PRIVACY ERROR: {}\n", e);
             }
         },
         StructReason::Domain(domain) => match domain {
             RunReason::Gxl(e) => {
-                println!("gxl error: {}", e);
+                println!("GXL ERROR: {}\n", e);
             }
             RunReason::Exec(e) => {
-                println!("exe error: {}", e);
+                println!("EXEC ERROR: {}\n", e);
             }
             RunReason::Args(e) => {
-                println!("exe error: {}", e);
+                println!("ARGS ERROR: {}\n", e);
             }
         },
     }
     if let Some(pos) = e.position() {
-        println!("\n[position]:\n{}", pos);
+        println!("\n[POSITION]:\n{}", pos);
     }
     if let Some(detail) = e.detail() {
-        println!("\n[detail]:\n{}", detail);
+        println!("\n[DETAIL]:\n{}", detail);
     }
-    println!("\n[conext]:\n{}", e.context());
+    println!("\n[CONTEXT]:\n{}", e.context());
 }
 
 impl From<ExecReason> for RunReason {
