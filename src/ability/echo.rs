@@ -40,7 +40,7 @@ mod tests {
         let mut watcher = GxEcho::default();
         watcher.set("${HOME}");
         let ctx = ExecContext::default();
-        let mut def = VarsDict::default();
+        let mut def = VarsDict::from_env();
         watcher.exec(ctx.clone(), &mut def).unwrap();
         def.set("HOME", "/root");
         watcher.exec(ctx.clone(), &mut def).unwrap();

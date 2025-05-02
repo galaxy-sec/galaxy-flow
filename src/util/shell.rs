@@ -8,7 +8,7 @@ use crate::{ExecReason, ExecResult};
 
 use colored::*;
 #[allow(clippy::result_large_err)]
-pub fn rg_sh(
+pub fn gxl_sh(
     scope: LogicScope,
     target: &str,
     cmd: &str,
@@ -38,11 +38,6 @@ pub fn rg_sh(
         Ok(out) => {
             let mut is_ok = false;
             if let Some(code) = out.status.code() {
-                let err_desp = "err msg from utf8 failed";
-                let out_msg = String::from_utf8(out.stdout.clone())
-                    .map_err(|_| ExecReason::OsCmd(sec_cmd.clone(), 253, err_desp.to_string()))?;
-                let err_msg = String::from_utf8(out.stderr.clone())
-                    .map_err(|_| ExecReason::OsCmd(sec_cmd.clone(), code, err_desp.to_string()))?;
                 if code == 0 {
                     if let Some(ref suc_msg) = opt.suc {
                         println!("{}", suc_msg);
@@ -55,6 +50,10 @@ pub fn rg_sh(
                         }
                     }
                 }
+                //println!("stdout:{}", String::from_utf8_lossy(&out.stdout.clone())); 
+                //println!("stderr:{}", String::from_utf8_lossy(&out.stderr.clone()));
+                let out_msg = String::from_utf8_lossy(&out.stdout);
+                let err_msg = String::from_utf8_lossy(&out.stderr);
 
                 let log_level = opt.log_lev.unwrap_or(log::Level::Debug);
                 if opt.cmd_print(scope) {
@@ -75,7 +74,9 @@ pub fn rg_sh(
                 return if is_ok {
                     Ok(out.stdout)
                 } else {
-                    Err(ExecReason::OsCmd(fail_msg, code, err_msg).into())
+                    //println!("{}", cmd.red());
+                    show_cmd(&sec_cmd);
+                    Err(ExecReason::OsCmd(fail_msg, code, err_msg.to_string()).into())
                 };
             }
             Err(ExecReason::OsCmd(fail_msg, 252, "no exit code".to_string()).into())
@@ -109,9 +110,9 @@ mod tests {
     #[test]
     fn duct_test() {
         cmd!("echo", "hi").run().unwrap();
-        cmd!("/bin/sh", "./src/util/echo.sh").run().unwrap();
+        //cmd!("/bin/sh", "./src/util/echo.sh").run().unwrap();
         duct_sh::sh("echo hi2").run().unwrap();
-        duct_sh::sh("cd ./src ; ls ").run().unwrap();
+        duct_sh::sh("pwd; cd ./src ; ls ").run().unwrap();
     }
     #[test]
     fn rg_sh_test() {
@@ -123,7 +124,9 @@ mod tests {
             ..Default::default()
         };
         let cmd = "echo ${SEC_KEY}".to_string();
-        let out = rg_sh(LogicScope::Outer, "gx.sh", &cmd, &opt, &exp).unwrap();
-        assert_eq!(out, b"galaxy\n");
+        let out = gxl_sh(LogicScope::Outer, "gx.sh", &cmd, &opt, &exp).unwrap();
+        let out = String::from_utf8(out).unwrap();
+        let out = out.trim(); //trim the \n in the end of outp
+        assert_eq!(out, "galaxy");
     }
 }

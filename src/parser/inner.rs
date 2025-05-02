@@ -216,7 +216,7 @@ pub fn gal_cmd(input: &mut &str) -> ModalResult<GxCmd> {
     for one in props {
         let key = one.0.to_lowercase();
         if key == "forword" || key == "cmd" {
-            builder.forword(one.1);
+            builder.cmd_sh(one.1);
         } else {
             shell_opt_setting(key, one.1, &mut expect);
         }
@@ -314,7 +314,7 @@ mod tests {
     use orion_common::friendly::New2;
     use orion_error::TestAssert;
 
-    use crate::ability::{read::ReadMode, RgReadDto, RgTplDto};
+    use crate::ability::{cmd::ShellPlatform, read::ReadMode, RgReadDto, RgTplDto};
 
     use super::*;
 
@@ -392,7 +392,7 @@ mod tests {
         let obj = gal_cmd(&mut data).assert();
         //let (input, obj) = show_err(data, RgCmdParser::default().parse(ctx, data)).unwrap();
         let xpt = GxCmdDtoBuilder::default()
-            .forword("${PRJ_ROOT}/do.sh".into())
+            .cmd_sh("${PRJ_ROOT}/do.sh".into())
             .expect(expect)
             .build()
             .unwrap();
@@ -412,7 +412,8 @@ mod tests {
         let obj = gal_cmd(&mut data).assert();
         expect.err = Some(String::from("you err"));
         let xpt = GxCmdDtoBuilder::default()
-            .forword("${PRJ_ROOT}/do.sh".into())
+            .cmd_sh("${PRJ_ROOT}/do.sh".into())
+            .platforms(vec![ShellPlatform::Unix])
             .expect(expect)
             .build()
             .unwrap();

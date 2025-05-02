@@ -69,7 +69,7 @@ mod tests {
     fn assert_test() {
         let mut assert = GxAssert::default();
         let ctx = ExecContext::default();
-        let mut def = VarsDict::default();
+        let mut def = VarsDict::from_env();
         assert.expect_eq("hello", "hello");
         assert.exec(ctx.clone(), &mut def).unwrap();
         assert.expect_eq("${HOME}", "${HOME}");

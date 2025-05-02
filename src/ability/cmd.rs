@@ -4,21 +4,29 @@ use crate::{ability::prelude::*, expect::LogicScope};
 pub struct GxCmd {
     dto: GxCmdDto,
 }
+
+#[derive(Clone, Debug,  PartialEq, Default)]
+pub enum ShellPlatform  {
+    #[default]
+    Unix,
+    Windows,
+}
 #[derive(Clone, Debug, Builder, PartialEq, Default)]
 pub struct GxCmdDto {
-    pub forword: String,
+    pub cmd_sh: String,
     pub expect: ShellOption,
+    pub platforms: Vec<ShellPlatform>,
 }
 impl GxCmdDto {
     pub fn update(&mut self, def: &VarsDict) -> ExecResult<()> {
         let ee = EnvExpress::from_env_mix(def.clone());
-        self.forword = ee.eval(&self.forword)?;
+        self.cmd_sh = ee.eval(&self.cmd_sh)?;
         Ok(())
     }
 }
 impl RunnableTrait for GxCmd {
     fn exec(&self, ctx: ExecContext, def: &mut VarsDict) -> EOResult {
-        self.execute_impl(&self.dto.forword, ctx, def)
+        self.execute_impl(&self.dto.cmd_sh, ctx, def)
     }
 }
 impl ComponentRunnable for GxCmd {
@@ -30,7 +38,7 @@ impl ComponentRunnable for GxCmd {
 impl GxCmd {
     pub fn new(forword: String) -> Self {
         let dto = GxCmdDto {
-            forword,
+            cmd_sh: forword,
             ..Default::default()
         };
         Self::dto_new(dto)
@@ -68,9 +76,9 @@ mod tests {
     fn cmd_test() {
         let (context, mut def) = ability_env_init();
         def.set("CONF_ROOT", "${RG_PRJ_ROOT}/example/conf");
-        let res = GxCmd::new(
+        let cmd = GxCmd::new(
           "cd ${CONF_ROOT}/used ; if test ! -L  ./link2.txt ; then ln -s ${CONF_ROOT}/options/link.txt  ./link2.txt ; fi ".into()
           ) ;
-        res.exec(context, &mut def).unwrap();
+        cmd.exec(context, &mut def).unwrap();
     }
 }

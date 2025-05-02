@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::env;
 use std::fmt::{Debug, Display};
 
 use super::traits::{Getter, Setter};
@@ -19,7 +20,20 @@ pub struct SecVar {
 pub struct VarsDict {
     maps: HashMap<String, SecVar>,
 }
+impl VarsDict {
+    pub fn from_env() -> Self {
+        let mut data = VarsDict::new();
+        for (key, value) in env::vars() {
+            if key == "HOMEPATH" {
+                data.set("HOME", value);
+                continue;
+            }
+            data.set(&key, value);
 
+        }
+        data
+    }
+}
 impl SecVar {
     pub fn new(meta: VarMeta, value: String) -> Self {
         SecVar { meta, value }

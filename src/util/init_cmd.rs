@@ -49,7 +49,7 @@ pub fn init_cmd(
     let cmd = format!(
         "export DST_PATH={} ; gx -f {}/{}/_gal/work.gxl  {} ",
         dst,
-        tools.rg_root(),
+        tools.gx_root(),
         repo.repo_name,
         tpl_name,
     );

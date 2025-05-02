@@ -63,7 +63,7 @@ impl GxLoader {
         sh_opt: ShellOption,
     ) -> RunResult<CodeSpace> {
         let e_parser = ExternParser::new();
-        let git_tools = GitTools::new(update).unwrap();
+        let git_tools = GitTools::new(update).owe_res()?;
         let mut target_code = code.to_string();
 
         loop {

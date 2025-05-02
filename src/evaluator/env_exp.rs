@@ -30,10 +30,7 @@ impl EnvExpress {
     }
     #[allow(dead_code)]
     pub fn from_env() -> EnvExpress {
-        let mut data = VarsDict::new();
-        for (key, value) in env::vars() {
-            data.set(&key, value);
-        }
+        let data = VarsDict::from_env();
         EnvExpress::new(data)
     }
     pub fn from_env_mix(map: VarsDict) -> EnvExpress {
