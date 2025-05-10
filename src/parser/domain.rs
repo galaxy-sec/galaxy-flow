@@ -130,6 +130,17 @@ pub fn gal_keyword(keyword: &'static str, input: &mut &str) -> ModalResult<()> {
     Ok(())
 }
 
+pub fn gal_keyword_alt(
+    keyword: &'static str,
+    keyword2: &'static str,
+    input: &mut &str,
+) -> ModalResult<()> {
+    (multispace0, alt((keyword, keyword2)), multispace0)
+        .context(wn_desc(keyword))
+        .parse_next(input)?;
+    Ok(())
+}
+
 pub fn parse_mod_addr(input: &mut &str) -> ModalResult<ModAddr> {
     if starts_with(
         ("{", multispace0, "git", multispace0, "=", multispace0),

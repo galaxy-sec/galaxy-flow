@@ -8,6 +8,7 @@ use crate::util::GitTools;
 use crate::ExecResult;
 use orion_error::ErrorOwe;
 use orion_error::ErrorWith;
+use std::fs;
 use std::fs::read_to_string;
 use winnow::ascii::line_ending;
 use winnow::ascii::till_line_ending;
@@ -51,14 +52,24 @@ impl ExternGit {
 
 impl ExternLocal {
     pub fn fetch_code(&self, name: &str) -> ExecResult<String> {
-        let full_path = format!("{}/{}.gxl", self.path, name);
         let ee = EnvExpress::from_env();
-        let full_path = crate::evaluator::Parser::eval(&ee, &full_path)?;
+        let gxl_full_path = format!("{}/{}.gxl", self.path, name);
+        let gxl_full_path = crate::evaluator::Parser::eval(&ee, &gxl_full_path)?;
+        let rgl_full_path = format!("{}/{}.rgl", self.path, name);
+        let rgl_full_path = crate::evaluator::Parser::eval(&ee, &rgl_full_path)?;
+        if fs::exists(gxl_full_path.as_str()).owe_rule()? {
+            let code = read_to_string(gxl_full_path.as_str())
+                .owe_rule()
+                .with(gxl_full_path)?;
 
-        let code = read_to_string(full_path.as_str())
-            .owe_rule()
-            .with(full_path)?;
-        Ok(code)
+            Ok(code)
+        } else {
+            let code = read_to_string(rgl_full_path.as_str())
+                .owe_rule()
+                .with(gxl_full_path)?;
+
+            Ok(code)
+        }
     }
 }
 

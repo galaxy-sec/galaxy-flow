@@ -1,6 +1,7 @@
 use orion_error::{DomainReason, ErrorCode, StructError};
+use serde::Serialize;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Serialize)]
 pub enum AssembleReason {
     Miss(String),
 }
@@ -25,7 +26,7 @@ impl std::fmt::Display for AssembleReason {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Serialize)]
 pub enum ExecReason {
     OsCmd(String, i32, String),
     Io(String),

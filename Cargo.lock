@@ -866,7 +866,7 @@ dependencies = [
 
 [[package]]
 name = "galaxy_flow"
-version = "0.2.3"
+version = "0.2.4"
 dependencies = [
  "anyhow",
  "clap",
@@ -1456,11 +1456,12 @@ dependencies = [
 
 [[package]]
 name = "orion-error"
-version = "0.0.5"
+version = "0.1.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "96c5e2b2d8f36abf5add222c5d3ac0b9cfe38ff26d903a9f3b3e179cb7412c7b"
+checksum = "033ce84b94a2343e2509ed31be82e7635110ac43c18d6af224af8adca6b8bdae"
 dependencies = [
  "derive-getters",
+ "serde",
  "thiserror 2.0.12",
 ]
 

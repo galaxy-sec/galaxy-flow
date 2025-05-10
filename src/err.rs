@@ -2,8 +2,9 @@ use std::{self, fmt::Display};
 
 use crate::{error::AssembleReason, ExecReason, ExecResult};
 use orion_error::{DomainReason, ErrorCode, StructError, StructReason, UvsReason};
+use serde::Serialize;
 
-#[derive(Debug, thiserror::Error, PartialEq)]
+#[derive(Debug, thiserror::Error, PartialEq, Serialize)]
 pub enum RunReason {
     #[error("gxl error {0}")]
     Gxl(String),
@@ -27,7 +28,7 @@ pub type RunError = StructError<RunReason>;
 pub type RunResult<T> = Result<T, RunError>;
 
 impl DomainReason for RunReason {}
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Serialize)]
 pub enum GxlReason {
     Parse(String),
     Depend(String),

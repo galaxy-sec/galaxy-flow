@@ -3,7 +3,7 @@
 authors = ["wukong<sec-wukong@outlook.com>"]
 edition = "2021"
 name = "galaxy_flow"
-version = "0.2.3"
+version = "0.2.4"
 
 
 [[bin]]
@@ -29,7 +29,7 @@ license = "Apache-2.0"
 
 [workspace.dependencies]
 winnow = "0.6"
-orion-error = "0.0.5"
+orion-error = "0.1.13"
 
 
 [dependencies]
@@ -64,7 +64,7 @@ winnow = "0.6"
 colored = "3.0.0"
 anyhow = "1.0.82"
 include_dir = "0.7"
-orion-error = "0.0.5"
+orion-error = { workspace = true }
 
 [features]
 res_depend_test = []

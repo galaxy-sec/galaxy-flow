@@ -1,3 +1,4 @@
+use super::domain::gal_keyword_alt;
 use super::prelude::*;
 use orion_parse::symbol::symbol_comma;
 use winnow::combinator::alt;
@@ -40,7 +41,7 @@ pub fn gal_vars(input: &mut &str) -> ModalResult<RgVars> {
 
 pub fn gal_echo(input: &mut &str) -> ModalResult<GxEcho> {
     let mut watcher = GxEcho::default();
-    gal_keyword("gx.echo", input)?;
+    gal_keyword_alt("gx.echo", "rg.echo", input)?;
     let props = sentence_body.parse_next(input)?;
     for (k, v) in props {
         if k == "value" {
@@ -69,7 +70,7 @@ pub fn gal_version(input: &mut &str) -> ModalResult<RgVersion> {
     let mut builder = RgVersionBuilder::default();
     builder.verinc(VerInc::Build);
     builder.export("VERSION".into());
-    gal_keyword("gx.ver", input)?;
+    gal_keyword_alt("gx.ver", "rg.ver", input)?;
     let props = sentence_body.parse_next(input)?;
     for (key, val) in props {
         if key == "file" {
@@ -107,7 +108,7 @@ pub fn gal_version(input: &mut &str) -> ModalResult<RgVersion> {
 }
 
 pub fn gal_read(input: &mut &str) -> ModalResult<GxRead> {
-    gal_keyword("gx.read", input)?;
+    gal_keyword_alt("gx.read", "rg.read", input)?;
     let props = sentence_body.parse_next(input)?;
     let mut builder = RgReadDtoBuilder::default();
     let mut expect = ShellOption::default();
@@ -140,7 +141,7 @@ pub fn gal_read(input: &mut &str) -> ModalResult<GxRead> {
 }
 
 pub fn gal_tpl(input: &mut &str) -> ModalResult<GxTpl> {
-    gal_keyword("gx.tpl", input)?;
+    gal_keyword_alt("gx.tpl", "rg.tpl", input)?;
     let props = sentence_body.parse_next(input)?;
     let mut builder = RgTplDtoBuilder::default();
     for one in props {
@@ -209,7 +210,7 @@ pub fn sentence_body(input: &mut &str) -> ModalResult<Vec<(String, String)>> {
 
 pub fn gal_cmd(input: &mut &str) -> ModalResult<GxCmd> {
     let mut builder = GxCmdDtoBuilder::default();
-    gal_keyword("gx.cmd", input)?;
+    gal_keyword_alt("gx.cmd", "rg.cmd", input)?;
     let props = sentence_body.parse_next(input)?;
     let mut expect = ShellOption::default();
     builder.expect(ShellOption::default());
@@ -260,7 +261,7 @@ pub fn gal_call(input: &mut &str) -> ModalResult<ActCall> {
 
 pub fn gal_assert(input: &mut &str) -> ModalResult<GxAssert> {
     let mut builder = GxAssertBuilder::default();
-    gal_keyword("gx.assert", input)?;
+    gal_keyword_alt("gx.assert", "rg.assert", input)?;
     let props = sentence_body.parse_next(input)?;
     builder.result(true);
     builder.error(None);

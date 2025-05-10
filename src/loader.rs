@@ -71,7 +71,7 @@ impl GxLoader {
             let (code, have) = e_parser
                 .extern_parse(&git_tools, &sh_opt, &mut target_code_str)
                 //.owe(RunReason::Gxl("extern parse fail!".into()))
-                .with(err_code_prompt(target_code_str))
+                .with(("code", err_code_prompt(target_code_str)))
                 .err_conv()?;
 
             target_code_str = code.as_str();

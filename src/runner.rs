@@ -1,6 +1,6 @@
 use crate::{components::gxl_spc::GxlSpace, err::RunResult, GxLoader};
 use clap::ArgAction;
-use orion_error::{ErrorConv, StructError, UvsReason, UvsReasonFrom};
+use orion_error::{ErrorConv, StructError, UvsConfFrom, UvsReason};
 use std::path::Path;
 
 pub struct GxlRunner {}
@@ -10,9 +10,10 @@ impl GxlRunner {
         let mut loader = GxLoader::new();
         if let Some(conf) = cmd.conf {
             if !Path::new(conf.as_str()).exists() {
-                return Err(StructError::from(UvsReason::from_conf(
-                    "conf not exists".into(),
+                return Err(StructError::from_uvs_rs(UvsReason::from_conf(
+                    "conf not exists".to_string(),
                 )));
+                //return Err(StructError::from(UvsReason::from_conf("conf not exists")));
             }
             let expect = ShellOption {
                 outer_print: cmd.cmd_print,
