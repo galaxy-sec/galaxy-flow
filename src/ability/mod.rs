@@ -54,8 +54,8 @@ pub use crate::ability::{
     echo::GxEcho,
     read::{GxRead, RgReadDto},
     tpl::GxTpl,
-    tpl::RgTplDto,
-    tpl::RgTplDtoBuilder,
+    tpl::TplDTO,
+    tpl::TplDTOBuilder,
     version::{RgVersion, RgVersionBuilder},
 };
 use crate::evaluator::EnvExpress;

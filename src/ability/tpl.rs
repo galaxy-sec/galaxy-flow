@@ -1,65 +1,181 @@
 use crate::ability::prelude::*;
 use crate::execution::task::Task;
 use handlebars::{to_json, Handlebars};
+use orion_error::WithContext;
+use serde::Serialize;
 use std::fs::File;
-use std::io::Read;
-use std::path::Path;
+use std::path::{Path, PathBuf};
+use std::str::FromStr;
 
 #[derive(Default, Debug, PartialEq, Getters, Clone)]
 pub struct GxTpl {
-    dto: RgTplDto,
+    dto: TplDTO,
+}
+
+#[derive(Clone, Debug, PartialEq, Default)]
+pub enum TPlEngineType {
+    #[default]
+    Handlebars,
+    Helm,
+}
+impl FromStr for TPlEngineType {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "handlebars" => Ok(Self::Handlebars),
+            "helm" => Ok(Self::Helm),
+            _ => Err("unknow engine".to_string()),
+        }
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Builder, Default)]
-pub struct RgTplDto {
+pub struct TplDTO {
     pub tpl: String,
     pub dst: String,
-    //pub subs: Vec<RgProp>,
-    //#[builder(default = "String::new")]
-    #[builder(default = "\"\".to_string()")]
-    pub data: String,
-    //pub log_lev: log::Level,
+    #[builder(default = "None")]
+    pub data: Option<String>,
+    #[builder(default = "None")]
+    pub file: Option<String>,
+    #[builder(default = "TPlEngineType::Handlebars")]
+    pub engine: TPlEngineType,
 }
-impl From<RgTplDto> for GxTpl {
-    fn from(value: RgTplDto) -> Self {
+impl From<TplDTO> for GxTpl {
+    fn from(value: TplDTO) -> Self {
         Self { dto: value }
     }
 }
 
 impl GxTpl {
-    pub fn render(&self, ctx: ExecContext, dto: &RgTplDto, dict: VarsDict) -> ExecResult<()> {
+    pub fn render_path(&self, ctx: ExecContext, dto: &TplDTO, dict: VarsDict) -> ExecResult<()> {
         let exp = EnvExpress::from_env_mix(dict.clone());
-        let tpl = exp.eval(dto.tpl.as_str())?;
-        let dst = exp.eval(dto.dst.as_str())?;
-        let data_str = exp.eval(dto.data.as_str())?;
+        let tpl = PathBuf::from(exp.eval(dto.tpl.as_str())?);
+        let dst = PathBuf::from(exp.eval(dto.dst.as_str())?);
 
-        debug!(target: ctx.path(), "tpl:{}", tpl);
-        debug!(target: ctx.path(),  "dst:{}", dst);
-        let dst_path = Path::new(dst.as_str());
+        let mut err_ctx = WithContext::want("render tpl path");
+        // 处理目录模板
+        if dto.engine != TPlEngineType::Handlebars {
+            return Err(ExecReason::Args(format!(
+                "Only support Handlebars Engine {:?}",
+                dto.engine
+            ))
+            .into());
+        }
+        let mut handlebars = Handlebars::new();
+        handlebars.set_strict_mode(true);
+        // 准备数据
+
+        let data = if let Some(json_file) = &dto.file {
+            err_ctx.with("file", json_file.as_str());
+            let content = std::fs::read_to_string(json_file.as_str())
+                .owe_data()
+                .with(&err_ctx)?;
+            err_ctx.with("need-fmt", "json");
+            serde_json::from_str(content.as_str())
+                .owe_data()
+                .with(&err_ctx)?
+        } else if let Some(data_str) = &dto.data {
+            serde_json::from_str(data_str.as_str())
+                .owe_data()
+                .with(&err_ctx)?
+        } else {
+            to_json(dict.export())
+        };
+        if tpl.is_dir() {
+            self.render_dir_impl(ctx, &handlebars, &tpl, &dst, &data)
+        } else {
+            self.render_file_impl(ctx, &handlebars, &tpl, &dst, &data)
+        }
+    }
+    fn render_dir_impl<T: Serialize>(
+        &self,
+        ctx: ExecContext,
+        handlebars: &Handlebars,
+        tpl_dir: &PathBuf,
+        dst: &PathBuf,
+        data: &T,
+    ) -> ExecResult<()> {
+        for entry in std::fs::read_dir(tpl_dir).owe_data()? {
+            let entry = entry.owe_data()?;
+            let entry_path = entry.path();
+            if entry_path.is_file() {
+                let relative_path = entry_path.strip_prefix(&tpl_dir).owe_data()?;
+                let dst_path = Path::new(dst).join(relative_path);
+                self.render_file_impl(ctx.clone(), &handlebars, &entry_path, &dst_path, &data)?;
+            }
+        }
+        Ok(())
+    }
+
+    fn render_file_impl<T: Serialize>(
+        &self,
+        ctx: ExecContext,
+        handlebars: &Handlebars,
+        tpl: &PathBuf,
+        dst: &PathBuf,
+        data: &T,
+    ) -> ExecResult<()> {
+        debug!(target: ctx.path(), "tpl:{}", tpl.display());
+        debug!(target: ctx.path(),  "dst:{}", dst.display());
+
+        let mut err_ctx = WithContext::want("render tpl");
+        err_ctx.with("tpl", tpl.to_string_lossy());
+        // 2. 验证模板文件
+        let tpl_path = Path::new(&tpl);
+        if !tpl_path.exists() {
+            return Err(
+                ExecReason::Args(format!("Template file not found: {}", tpl.display())).into(),
+            );
+        }
+        if !tpl_path.is_file() {
+            return Err(ExecReason::Args(format!(
+                "Template path is not a file: {}",
+                tpl.display()
+            ))
+            .into());
+        }
+        err_ctx.with("dst", dst.to_string_lossy());
+        // 3. 准备目标文件
+        let dst_path = Path::new(&dst);
+        if let Some(parent) = dst_path.parent() {
+            std::fs::create_dir_all(parent).owe_sys()?;
+        }
         if dst_path.exists() {
-            std::fs::remove_file(dst.as_str()).owe_sys()?;
+            std::fs::remove_file(&dst).owe_sys()?;
         }
 
-        debug!(target: ctx.path(), "read tpl src file: {}", tpl);
-        let mut tpl_file = File::open(tpl.as_str())
-            .map_err(|_| ExecReason::Args(format!("read tpl src fail!{}", tpl)))?;
-        debug!(target: ctx.path(), "crate tpl dst file: {}", dst);
-        let mut dst_file = File::create(dst.as_str())
-            .map_err(|_| ExecReason::Args(format!("create tpl dst fail! {}", dst)))?;
+        // 4. 日志记录
+        debug!(target: ctx.path(), "Processing template: {} → {}", tpl.display(), dst.display());
 
-        let handlebars = Handlebars::new();
+        // 5. 读取模板内容
+        let template = std::fs::read_to_string(&tpl).owe_data().with(&err_ctx)?;
+        //    .map_err(|e| {
+        //    ExecReason::Args(format!("Failed to read template {}: {}", tpl.display(), e))
+        //})?;
 
-        let data = if data_str.is_empty() {
-            to_json(dict.export())
-        } else {
-            serde_json::from_str(data_str.as_str()).owe_data()?
-        };
-        let mut template = String::new();
-        tpl_file.read_to_string(&mut template).owe_data()?;
+        let mut dst_file = File::create(&dst).map_err(|e| {
+            ExecReason::Args(format!(
+                "Failed to create output file {}: {}",
+                dst.display(),
+                e
+            ))
+        })?;
+
         handlebars
-            .render_template_to_write(&template, &data, &mut dst_file)
-            .owe_data()?;
-        debug!(target:ctx.path(),"tpl({}) have generate  file({})", tpl,dst);
+            .render_template_to_write(&template, data, &mut dst_file)
+            .owe_biz()
+            .with(&err_ctx)?;
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            let perms = std::fs::Permissions::from_mode(0o644); // rw-r--r--
+            std::fs::set_permissions(&dst, perms)
+                .owe_sys()
+                .with(&err_ctx)?;
+        }
+
+        debug!(target: ctx.path(), "Successfully generated: {}", dst.display());
         Ok(())
     }
 }
@@ -67,7 +183,7 @@ impl GxTpl {
 impl RunnableTrait for GxTpl {
     fn exec(&self, ctx: ExecContext, def: &mut VarsDict) -> EOResult {
         let mut task = Task::from("build tpl file");
-        self.render(ctx, &self.dto, def.clone())?;
+        self.render_path(ctx, &self.dto, def.clone())?;
         task.finish();
         Ok(ExecOut::Task(task))
     }
@@ -81,14 +197,14 @@ impl ComponentRunnable for GxTpl {
 
 impl GxTpl {
     pub fn new(tpl: String, dst: String) -> Self {
-        let obj = RgTplDto {
+        let obj = TplDTO {
             tpl,
             dst,
             ..Default::default()
         };
         GxTpl { dto: obj }
     }
-    pub fn new_by_dto(dto: RgTplDto) -> Self {
+    pub fn new_by_dto(dto: TplDTO) -> Self {
         GxTpl { dto }
     }
 }
@@ -99,13 +215,17 @@ mod tests {
     use crate::{ability::ability_env_init, traits::Setter};
 
     use super::*;
+    fn files_identical(path1: &str, path2: &str) -> std::io::Result<bool> {
+        let content1 = std::fs::read(path1)?;
+        let content2 = std::fs::read(path2)?;
+        Ok(content1 == content2)
+    }
 
     #[test]
-    fn tpl_test() {
+    fn tpl_test_by_envars() {
         let (mut context, mut def) = ability_env_init();
         let tpl = format!("{}/example/conf/tpls/nginx.conf", context.cur_path());
         let dst = format!("{}/example/conf/options/nginx.conf", context.cur_path());
-        let xpt = format!("{}/example/conf/expect/nginx.conf", context.cur_path());
         let conf_tpl = GxTpl::new(tpl.clone(), dst.clone());
         context.append("RG");
         def.set("RG_PRJ_ROOT", "/home/galaxy");
@@ -113,10 +233,35 @@ mod tests {
         def.set("SOCK_FILE", "galaxy.socket");
         conf_tpl.exec(context.clone(), &mut def).unwrap();
 
-        let xpt_ct = std::fs::read_to_string(xpt);
-        let dst_ct = std::fs::read_to_string(dst);
-        assert_eq!(dst_ct.unwrap(), xpt_ct.unwrap());
+        let ngx_dst = format!("{}/example/conf/options/nginx.conf", context.cur_path());
+        let ngx_xpt = format!("{}/example/conf/expect/nginx.conf", context.cur_path());
+        assert!(files_identical(ngx_dst.as_str(), ngx_xpt.as_str()).unwrap());
     }
+    #[test]
+    fn tpl_test_by_json() {
+        //use ValueDict
+        let (context, mut def) = ability_env_init();
+        let tpl = format!("{}/example/conf/tpls", context.cur_path());
+        let dst = format!("{}/example/conf/export", context.cur_path());
+        let file = format!("{}/example/conf/value.json", context.cur_path());
+
+        let mut dto = TplDTO::default();
+        dto.tpl = tpl.clone();
+        dto.dst = dst.clone();
+        dto.file = Some(file.clone());
+
+        let conf_tpl = GxTpl::new_by_dto(dto);
+        conf_tpl.exec(context.clone(), &mut def).unwrap();
+
+        let ngx_dst = format!("{}/example/conf/export/nginx.conf", context.cur_path());
+        let ngx_xpt = format!("{}/example/conf/expect/nginx.conf", context.cur_path());
+        assert!(files_identical(ngx_dst.as_str(), ngx_xpt.as_str()).unwrap());
+
+        let sys_dst = format!("{}/example/conf/options/sys.toml", context.cur_path());
+        let sys_tpl = format!("{}/example/conf/tpls/sys.toml", context.cur_path());
+        assert!(files_identical(sys_dst.as_str(), sys_tpl.as_str()).unwrap());
+    }
+
     #[test]
     fn handlebar_test() {
         let mut handlebars = Handlebars::new();

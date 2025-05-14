@@ -1,0 +1,10 @@
+{
+  "RG_PRJ_ROOT": "/home/galaxy",
+  "DOMAIN": "www.galaxy-sec.org",
+  "SOCK_FILE": "galaxy.socket",
+  "branchs": [
+    { "name": "main" },
+    { "name": "dev" },
+    { "name": "feature/login" }
+  ]
+}

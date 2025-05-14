@@ -32,9 +32,9 @@ http-types         = "1.0"
 trust-dns-resolver = "0.19"
 url                = "2.1"
 
-{{{rg_lib1}}}
+{{{RG_LIB1}}}
 
-{{{rg_lib2}}}
+{{{RG_LIB2}}}
 
 [features]
 default    = ["nightly"]

@@ -4,6 +4,7 @@ mod env {
       ROOT = ".";
       gx.vars {
         LIB_NAME ="rg-lib" ;
+        VERSION  = "1.0.0" ;
       }
     }
 
@@ -13,6 +14,8 @@ mod main {
   flow test {
     tpl = "${ENV_ROOT}/tests/material/x.tpl" ;
     dst = "${ENV_ROOT}/tests/material" ;
+    rg_lib1 = "x1" ;
+    rg_lib2 = "x2" ;
     gx.tpl {
       tpl = "${TPL}" ; dst = "${DST}/rg-lib1.toml";
       data = ^"{"name": "rg-lib1","tag": "0.1.0" }"^ ;

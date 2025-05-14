@@ -1469,8 +1469,6 @@ dependencies = [
 [[package]]
 name = "orion-exchange"
 version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "59d7ef58106c5f585fb9d5a6ed785ccc26fe146c6b3b7db5ebb374918c5a4835"
 dependencies = [
  "derive-getters",
  "serde",

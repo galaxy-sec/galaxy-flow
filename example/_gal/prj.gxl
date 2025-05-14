@@ -1,9 +1,17 @@
 extern mod os { path= "./_gal/mods"; }
 mod base_env {
-    env cli {
-      ROOT   = "./";
+    env _common {
+      gx.vars {
+        DOMAIN = "domain" ;
+        SOCK_FILE = "socket" ;
+        RG_PRJ_ROOT = "./";
+      }
     }
-    env unit_test {
+    env cli : _common {
+      ROOT   = "./";
+
+    }
+    env unit_test : _common {
       ROOT   = "./example";
     }
 }

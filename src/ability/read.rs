@@ -5,7 +5,7 @@ use crate::expect::{LogicScope, ShellOption};
 use ini::Ini;
 use orion_common::friendly::New2;
 use orion_error::WithContext;
-use orion_exchange::vars::{VarCollection, VarType};
+use orion_exchange::vars::{ValueDict, ValueType};
 use std::io::{self};
 use std::path::PathBuf;
 
@@ -114,29 +114,29 @@ impl GxRead {
                 let toml_content = std::fs::read_to_string(PathBuf::from(toml.as_str()))
                     .owe_data()
                     .with(&err_ctx)?;
-                let data: VarCollection = toml::from_str(toml_content.as_str())
+                let data: ValueDict = toml::from_str(toml_content.as_str())
                     .owe_data()
                     .with(&err_ctx)?;
                 let mut vars = RgVars::default();
-                for var_def in data.vars() {
+                for (k, var_def) in data.dict() {
                     match var_def {
-                        VarType::String(v) => {
-                            let str_k = v.name().clone();
+                        ValueType::String(v) => {
+                            let str_k = k.clone();
                             let str_v = v.value().to_string();
                             vars.append(RgProp::new(str_k, str_v));
                         }
-                        VarType::Bool(v) => {
-                            let str_k = v.name().clone();
+                        ValueType::Bool(v) => {
+                            let str_k = k.clone();
                             let str_v = v.value().to_string();
                             vars.append(RgProp::new(str_k, str_v));
                         }
-                        VarType::Int(v) => {
-                            let str_k = v.name().clone();
+                        ValueType::Int(v) => {
+                            let str_k = k.clone();
                             let str_v = v.value().to_string();
                             vars.append(RgProp::new(str_k, str_v));
                         }
-                        VarType::Float(v) => {
-                            let str_k = v.name().clone();
+                        ValueType::Float(v) => {
+                            let str_k = k.clone();
                             let str_v = v.value().to_string();
                             vars.append(RgProp::new(str_k, str_v));
                         }

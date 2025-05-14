@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use super::domain::gal_keyword_alt;
 use super::prelude::*;
 use orion_parse::symbol::symbol_comma;
@@ -14,11 +16,12 @@ use crate::ability::delegate::ActCall;
 use crate::ability::echo::*;
 use crate::ability::read::ReadMode;
 use crate::ability::read::RgReadDtoBuilder;
+use crate::ability::tpl::TPlEngineType;
 use crate::ability::version::*;
 use crate::ability::GxCmd;
 use crate::ability::GxRead;
 use crate::ability::GxTpl;
-use crate::ability::RgTplDtoBuilder;
+use crate::ability::TplDTOBuilder;
 use crate::components::gxl_var::*;
 use crate::expect::ShellOption;
 use crate::types::Property;
@@ -146,7 +149,7 @@ pub fn gal_read(input: &mut &str) -> ModalResult<GxRead> {
 pub fn gal_tpl(input: &mut &str) -> ModalResult<GxTpl> {
     gal_keyword_alt("gx.tpl", "rg.tpl", input)?;
     let props = sentence_body.parse_next(input)?;
-    let mut builder = RgTplDtoBuilder::default();
+    let mut builder = TplDTOBuilder::default();
     for one in props {
         let key = one.0.to_lowercase();
         let val: String = one.1;
@@ -155,8 +158,16 @@ pub fn gal_tpl(input: &mut &str) -> ModalResult<GxTpl> {
         } else if key == "dst" {
             builder.dst(val);
         } else if key == "data" {
-            builder.data(val);
-            //shell_opt_setting(key, one.1, &mut expect);
+            builder.data(Some(val));
+        } else if key == "engine" {
+            if let Ok(engine) = TPlEngineType::from_str(val.as_str()) {
+                builder.engine(engine);
+            } else {
+                error!(target: "parse", "unknow engine :{}",val);
+                return fail.context(wn_desc("gx.tpl build")).parse_next(input);
+            }
+        } else if key == "file" {
+            builder.file(Some(val));
         }
     }
     match builder.build() {
@@ -318,7 +329,7 @@ mod tests {
     use orion_common::friendly::New2;
     use orion_error::TestAssert;
 
-    use crate::ability::{read::ReadMode, RgReadDto, RgTplDto};
+    use crate::ability::{read::ReadMode, RgReadDto, TplDTO};
 
     use super::*;
 
@@ -535,7 +546,7 @@ mod tests {
                  tpl = "${PRJ_ROOT}/conf_tpl.toml" ;
                  dst = "${PRJ_ROOT}/conf.toml" ;
                  } ;"#;
-        let mut dto = RgTplDto::default();
+        let mut dto = TplDTO::default();
         dto.tpl = tpl.to_string();
         dto.dst = dst.to_string();
         let obj = run_gxl(gal_tpl, &mut data).assert();
@@ -553,10 +564,10 @@ mod tests {
                  data = ^"{"branchs": ["develop","issue/11"]} "^;
                  } ;"#;
         let obj = run_gxl(gal_tpl, &mut data).assert();
-        let mut dto = RgTplDto::default();
+        let mut dto = TplDTO::default();
         dto.tpl = tpl.to_string();
         dto.dst = dst.to_string();
-        dto.data = String::from("{\"branchs\": [\"develop\",\"issue/11\"]} ");
+        dto.data = Some(String::from("{\"branchs\": [\"develop\",\"issue/11\"]} "));
         assert_eq!(data, "");
         assert_eq!(&dto, obj.dto());
     }

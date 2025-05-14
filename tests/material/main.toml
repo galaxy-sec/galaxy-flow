@@ -1,6 +1,6 @@
 [package]
 name    = "rg-engine"
-version = ""
+version = "1.0.0"
 authors = ["wukong <sec-wukong@outlook.com>"]
 edition = "2018"
 
@@ -32,9 +32,9 @@ http-types         = "1.0"
 trust-dns-resolver = "0.19"
 url                = "2.1"
 
+x1
 
-
-
+x2
 
 [features]
 default    = ["nightly"]
