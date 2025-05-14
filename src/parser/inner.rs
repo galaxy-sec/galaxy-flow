@@ -125,6 +125,9 @@ pub fn gal_read(input: &mut &str) -> ModalResult<GxRead> {
         } else if key == "ini" {
             builder.ini(Some(one.1));
             builder.mode(ReadMode::INI);
+        } else if key == "oxc_toml" {
+            builder.oxc_toml(Some(one.1));
+            builder.mode(ReadMode::OxcToml);
         } else {
             shell_opt_setting(key, one.1, &mut expect);
         }
@@ -488,6 +491,22 @@ mod tests {
         assert_eq!(data, "");
         assert_eq!(&dto, obj.dto());
     }
+    #[test]
+    fn read_toml_test() {
+        let mut dto = RgReadDto::default();
+        dto.expect = ShellOption::default();
+        dto.oxc_toml = Some(format!("vars.toml"));
+        dto.mode = ReadMode::OxcToml;
+
+        let mut data = r#"
+                 gx.read {
+                 oxc_toml = "vars.toml";
+                 } ;"#;
+        let obj = run_gxl(gal_read, &mut data).assert();
+        assert_eq!(data, "");
+        assert_eq!(&dto, obj.dto());
+    }
+
     #[test]
     fn read_stdin_test() {
         let mut dto = RgReadDto::default();

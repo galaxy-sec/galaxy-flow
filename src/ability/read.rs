@@ -4,7 +4,10 @@ use crate::expect::{LogicScope, ShellOption};
 
 use ini::Ini;
 use orion_common::friendly::New2;
+use orion_error::WithContext;
+use orion_exchange::vars::{VarCollection, VarType};
 use std::io::{self};
+use std::path::PathBuf;
 
 #[derive(Debug, Default, Builder, PartialEq, Clone, Getters)]
 pub struct GxRead {
@@ -17,6 +20,7 @@ pub enum ReadMode {
     CMD,
     INI,
     STDIN,
+    OxcToml,
 }
 #[derive(Clone, Debug, PartialEq, Default, Builder)]
 pub struct RgReadDto {
@@ -29,6 +33,8 @@ pub struct RgReadDto {
     pub stdin: Option<String>,
     #[builder(default = "None")]
     pub ini: Option<String>,
+    #[builder(default = "None")]
+    pub oxc_toml: Option<String>,
     pub expect: ShellOption,
 }
 
@@ -92,6 +98,48 @@ impl GxRead {
                         let str_k = k.trim().to_string();
                         let str_v = v.trim().to_string();
                         vars.append(RgProp::new(str_k, str_v));
+                    }
+                }
+                vars.export_props(ctx, def, "")?;
+            }
+
+            ReadMode::OxcToml => {
+                let mut err_ctx = WithContext::want("load toml exchange data");
+                let toml = dto
+                    .oxc_toml
+                    .clone()
+                    .ok_or(ExecReason::Exp(String::from("no toml")))?;
+                let toml = exp.eval(&toml)?;
+                err_ctx.with("toml-path", toml.clone());
+                let toml_content = std::fs::read_to_string(PathBuf::from(toml.as_str()))
+                    .owe_data()
+                    .with(&err_ctx)?;
+                let data: VarCollection = toml::from_str(toml_content.as_str())
+                    .owe_data()
+                    .with(&err_ctx)?;
+                let mut vars = RgVars::default();
+                for var_def in data.vars() {
+                    match var_def {
+                        VarType::String(v) => {
+                            let str_k = v.name().clone();
+                            let str_v = v.value().to_string();
+                            vars.append(RgProp::new(str_k, str_v));
+                        }
+                        VarType::Bool(v) => {
+                            let str_k = v.name().clone();
+                            let str_v = v.value().to_string();
+                            vars.append(RgProp::new(str_k, str_v));
+                        }
+                        VarType::Int(v) => {
+                            let str_k = v.name().clone();
+                            let str_v = v.value().to_string();
+                            vars.append(RgProp::new(str_k, str_v));
+                        }
+                        VarType::Float(v) => {
+                            let str_k = v.name().clone();
+                            let str_v = v.value().to_string();
+                            vars.append(RgProp::new(str_k, str_v));
+                        }
                     }
                 }
                 vars.export_props(ctx, def, "")?;
