@@ -40,7 +40,6 @@ orion-exchange = "0.1"
 derive-getters = "0.5"
 derive_builder = "0.20"
 duct = "0.13"
-
 duct_sh = "0.13"
 thiserror = "2.0"
 handlebars = "6.3"
