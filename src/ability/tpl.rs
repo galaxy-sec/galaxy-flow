@@ -100,9 +100,9 @@ impl GxTpl {
             let entry = entry.owe_data()?;
             let entry_path = entry.path();
             if entry_path.is_file() {
-                let relative_path = entry_path.strip_prefix(&tpl_dir).owe_data()?;
+                let relative_path = entry_path.strip_prefix(tpl_dir).owe_data()?;
                 let dst_path = Path::new(dst).join(relative_path);
-                self.render_file_impl(ctx.clone(), &handlebars, &entry_path, &dst_path, &data)?;
+                self.render_file_impl(ctx.clone(), handlebars, &entry_path, &dst_path, &data)?;
             }
         }
         Ok(())
@@ -142,19 +142,19 @@ impl GxTpl {
             std::fs::create_dir_all(parent).owe_sys()?;
         }
         if dst_path.exists() {
-            std::fs::remove_file(&dst).owe_sys()?;
+            std::fs::remove_file(dst).owe_sys()?;
         }
 
         // 4. 日志记录
         debug!(target: ctx.path(), "Processing template: {} → {}", tpl.display(), dst.display());
 
         // 5. 读取模板内容
-        let template = std::fs::read_to_string(&tpl).owe_data().with(&err_ctx)?;
+        let template = std::fs::read_to_string(tpl).owe_data().with(&err_ctx)?;
         //    .map_err(|e| {
         //    ExecReason::Args(format!("Failed to read template {}: {}", tpl.display(), e))
         //})?;
 
-        let mut dst_file = File::create(&dst).map_err(|e| {
+        let mut dst_file = File::create(dst).map_err(|e| {
             ExecReason::Args(format!(
                 "Failed to create output file {}: {}",
                 dst.display(),
@@ -170,7 +170,7 @@ impl GxTpl {
         {
             use std::os::unix::fs::PermissionsExt;
             let perms = std::fs::Permissions::from_mode(0o644); // rw-r--r--
-            std::fs::set_permissions(&dst, perms)
+            std::fs::set_permissions(dst, perms)
                 .owe_sys()
                 .with(&err_ctx)?;
         }
