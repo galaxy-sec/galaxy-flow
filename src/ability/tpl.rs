@@ -67,6 +67,7 @@ impl GxTpl {
         // 准备数据
 
         let data = if let Some(json_file) = &dto.file {
+            let json_file = exp.eval(json_file.as_str())?;
             err_ctx.with("file", json_file.as_str());
             let content = std::fs::read_to_string(json_file.as_str())
                 .owe_data()
@@ -150,9 +151,6 @@ impl GxTpl {
 
         // 5. 读取模板内容
         let template = std::fs::read_to_string(tpl).owe_data().with(&err_ctx)?;
-        //    .map_err(|e| {
-        //    ExecReason::Args(format!("Failed to read template {}: {}", tpl.display(), e))
-        //})?;
 
         let mut dst_file = File::create(dst).map_err(|e| {
             ExecReason::Args(format!(
@@ -174,6 +172,7 @@ impl GxTpl {
                 .owe_sys()
                 .with(&err_ctx)?;
         }
+        println!("render {:30} ---> {}", tpl.display(), dst.display());
 
         debug!(target: ctx.path(), "Successfully generated: {}", dst.display());
         Ok(())

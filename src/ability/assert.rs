@@ -50,6 +50,8 @@ impl RunnableTrait for GxAssert {
                 "assert fail! [{}], expect: {},\n value {}",
                 self.result, expect, value
             ))));
+        } else {
+            println!("assert true : {}", value);
         }
         info!(target: ctx.path(), "value {} match exprect", value);
         Ok(ExecOut::Ignore)

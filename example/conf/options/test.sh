@@ -1,2 +1,0 @@
-develop
-release/1

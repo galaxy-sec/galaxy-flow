@@ -1,0 +1,37 @@
+extern mod os { path= "../../_gal/mods"; }
+mod base_env {
+    env _common {
+      gx.vars {
+        DOMAIN = "domain" ;
+        SOCK_FILE = "socket" ;
+        RG_PRJ_ROOT = "./";
+      }
+    }
+    env cli : _common {
+      ROOT   = "./";
+
+    }
+    env unit_test : _common {
+      ROOT   = "./example";
+    }
+}
+mod env : base_env {
+    #[usage(desp="default")]
+    env default : cli ;
+    env empty {}
+    env ut : unit_test  ;
+}
+
+mod main   {
+  conf = "${ENV_ROOT}/conf" ;
+  flow conf  {
+    os.path { dst = "${MAIN_CONF}/used"; keep = "true" ;}
+    gx.tpl {
+        tpl = "${MAIN_CONF}/tpls/"  ;
+        dst = "${MAIN_CONF}/used/" ;
+        file = "${MAIN_CONF}/value.json" ;
+
+    }
+  }
+
+}

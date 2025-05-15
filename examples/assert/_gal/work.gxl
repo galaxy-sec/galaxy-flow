@@ -1,4 +1,4 @@
-extern mod os { path= "./_gal/mods"; }
+extern mod os { path= "../../_gal/mods"; }
 mod base_env {
     env _common {
       gx.vars {
@@ -64,28 +64,5 @@ mod main   {
     gx.assert { value = "${BASE}" ; expect = "BASE"; }
     gx.assert { value = "${BASE_BEGIN}" ; expect = "BASE_INTO"; }
   }
-
-  flow conf  {
-    os.path { dst = "${MAIN_CONF}/used"; keep = "true" ;}
-    gx.tpl {
-        tpl = "${MAIN_CONF}/tpls/nginx.conf"  ;
-        dst = "${MAIN_CONF}/options/nginx.conf" ;
-    }
-    gx.tpl {
-        tpl = "${MAIN_CONF}/tpls/test.sh"  ;
-        dst = "${MAIN_CONF}/options/test.sh" ;
-        data= ^"{"branchs" : [{ "name": "develop" }, { "name" : "release/1"}]}"^;
-    }
-    os.copy {
-    src  = "${MAIN_CONF}/options/nginx.conf";
-    dst  = "${MAIN_CONF}/used/nginx_ex.conf";
-    }
-
-  }
-  flow commit  {
-    gx.ver { file = "./version.txt" ;  inc = "bugfix" ; }
-    gx.echo { value= "${VERSION}" ; }
-  }
-  flow default : conf , commit ;
 
 }
