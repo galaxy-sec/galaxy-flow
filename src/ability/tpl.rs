@@ -3,6 +3,7 @@ use crate::execution::task::Task;
 use handlebars::{to_json, Handlebars};
 use orion_error::WithContext;
 use serde::Serialize;
+use std::fmt::Display;
 use std::fs::File;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
@@ -29,6 +30,15 @@ impl FromStr for TPlEngineType {
         }
     }
 }
+impl Display for TPlEngineType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let msg = match self {
+            TPlEngineType::Handlebars => "handlebars",
+            TPlEngineType::Helm => "helm",
+        };
+        write!(f, "{}", msg)
+    }
+}
 
 #[derive(Clone, Debug, PartialEq, Builder, Default)]
 pub struct TplDTO {
@@ -46,9 +56,26 @@ impl From<TplDTO> for GxTpl {
         Self { dto: value }
     }
 }
+impl Display for TplDTO {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "[tpl] {},", self.tpl)?;
+        write!(f, "[dst] {},", self.dst)?;
+        write!(f, "[engine] {},", self.engine)?;
+        write!(
+            f,
+            "[data|file|env]: {},",
+            self.data
+                .clone()
+                .or(self.file.clone())
+                .unwrap_or("env".to_string())
+        )?;
+        Ok(())
+    }
+}
 
 impl GxTpl {
     pub fn render_path(&self, ctx: ExecContext, dto: &TplDTO, dict: VarsDict) -> ExecResult<()> {
+        info!(target: ctx.path(), "gx.tpl : {}", dto);
         let exp = EnvExpress::from_env_mix(dict.clone());
         let tpl = PathBuf::from(exp.eval(dto.tpl.as_str())?);
         let dst = PathBuf::from(exp.eval(dto.dst.as_str())?);
@@ -97,14 +124,28 @@ impl GxTpl {
         dst: &PathBuf,
         data: &T,
     ) -> ExecResult<()> {
-        for entry in std::fs::read_dir(tpl_dir).owe_data()? {
+        debug!(target: ctx.path(), "tpl dir: {}", tpl_dir.display());
+        for entry in walkdir::WalkDir::new(tpl_dir) {
             let entry = entry.owe_data()?;
             let entry_path = entry.path();
-            if entry_path.is_file() {
-                let relative_path = entry_path.strip_prefix(tpl_dir).owe_data()?;
-                let dst_path = Path::new(dst).join(relative_path);
-                self.render_file_impl(ctx.clone(), handlebars, &entry_path, &dst_path, &data)?;
+            let relative_path = entry_path.strip_prefix(tpl_dir).owe_data()?;
+            let dst_path = Path::new(dst).join(relative_path);
+
+            if entry_path.is_dir() {
+                // 如果是目录，确保在目标位置创建对应的目录
+                std::fs::create_dir_all(&dst_path).owe_sys()?;
+                debug!(target: ctx.path(), "created dir: {}", dst_path.display());
+            } else if entry_path.is_file() {
+                // 如果是文件，则渲染模板
+                self.render_file_impl(
+                    ctx.clone(),
+                    handlebars,
+                    &entry_path.to_path_buf(),
+                    &dst_path,
+                    &data,
+                )?;
             }
+            // 忽略其他类型（如符号链接等）
         }
         Ok(())
     }

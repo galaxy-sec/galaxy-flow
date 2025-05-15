@@ -65,6 +65,7 @@ winnow = "0.6"
 colored = "3.0.0"
 anyhow = "1.0.82"
 include_dir = "0.7"
+walkdir = "2.5"
 orion-error = { workspace = true }
 
 [features]
