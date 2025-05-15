@@ -1,0 +1,16 @@
+extern mod os { path= "../../_gal/mods"; }
+mod envs {
+    env _dev_local {
+        gx.read { ini = "./var.ini" }
+    }
+    env default : _dev_local ;
+}
+mod main   {
+  flow conf  {
+    gx.echo { value = "${RUST}" }
+    gx.assert { value = "${JAVA}" , expect = "90"  }
+  }
+
+
+
+}

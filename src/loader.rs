@@ -131,7 +131,7 @@ mod tests {
         //log_init(&LogConf::alpha()).assert();
         once_init_log();
         let mut rg = GxLoader::default();
-        let conf = "example/_gal/prj.gxl";
+        let conf = "./_gal/work.gxl";
         let sh_opt = ShellOption {
             outer_print: true,
             ..Default::default()
@@ -141,7 +141,7 @@ mod tests {
         spc.show()?;
         println!("mods:{}", spc.mods().len());
         assert!(spc.mods().len() > 1);
-        spc.exec(["ut"], ["assert_main"], true)?;
+        spc.exec(["alpha"], ["conf"], true)?;
         Ok(())
     }
 }

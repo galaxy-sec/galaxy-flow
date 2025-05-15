@@ -223,8 +223,14 @@ mod tests {
     #[test]
     fn tpl_test_by_envars() {
         let (mut context, mut def) = ability_env_init();
-        let tpl = format!("{}/example/conf/tpls/nginx.conf", context.cur_path());
-        let dst = format!("{}/example/conf/options/nginx.conf", context.cur_path());
+        let tpl = format!(
+            "{}/examples/template/conf/tpls/nginx.conf",
+            context.cur_path()
+        );
+        let dst = format!(
+            "{}/examples/template/conf/used/nginx_env.conf",
+            context.cur_path()
+        );
         let conf_tpl = GxTpl::new(tpl.clone(), dst.clone());
         context.append("RG");
         def.set("RG_PRJ_ROOT", "/home/galaxy");
@@ -232,17 +238,24 @@ mod tests {
         def.set("SOCK_FILE", "galaxy.socket");
         conf_tpl.exec(context.clone(), &mut def).unwrap();
 
-        let ngx_dst = format!("{}/example/conf/options/nginx.conf", context.cur_path());
-        let ngx_xpt = format!("{}/example/conf/expect/nginx.conf", context.cur_path());
+        let ngx_dst = format!(
+            "{}/examples/template/conf/used/nginx_env.conf",
+            context.cur_path()
+        );
+        let ngx_xpt = format!(
+            "{}/examples/template/conf/expect/nginx.conf",
+            context.cur_path()
+        );
         assert!(files_identical(ngx_dst.as_str(), ngx_xpt.as_str()).unwrap());
     }
     #[test]
     fn tpl_test_by_json() {
         //use ValueDict
         let (context, mut def) = ability_env_init();
-        let tpl = format!("{}/example/conf/tpls", context.cur_path());
-        let dst = format!("{}/example/conf/export", context.cur_path());
-        let file = format!("{}/example/conf/value.json", context.cur_path());
+        let root = format!("{}/examples/template/conf", context.cur_path());
+        let tpl = format!("{}/tpls", root);
+        let dst = format!("{}/used", root);
+        let file = format!("{}/value.json", root);
 
         let mut dto = TplDTO::default();
         dto.tpl = tpl.clone();
@@ -252,12 +265,12 @@ mod tests {
         let conf_tpl = GxTpl::new_by_dto(dto);
         conf_tpl.exec(context.clone(), &mut def).unwrap();
 
-        let ngx_dst = format!("{}/example/conf/export/nginx.conf", context.cur_path());
-        let ngx_xpt = format!("{}/example/conf/expect/nginx.conf", context.cur_path());
+        let ngx_dst = format!("{}/used/nginx.conf", root);
+        let ngx_xpt = format!("{}/expect/nginx.conf", root);
         assert!(files_identical(ngx_dst.as_str(), ngx_xpt.as_str()).unwrap());
 
-        let sys_dst = format!("{}/example/conf/options/sys.toml", context.cur_path());
-        let sys_tpl = format!("{}/example/conf/tpls/sys.toml", context.cur_path());
+        let sys_dst = format!("{}/used/sys.toml", root);
+        let sys_tpl = format!("{}/tpls/sys.toml", root);
         assert!(files_identical(sys_dst.as_str(), sys_tpl.as_str()).unwrap());
     }
 

@@ -189,10 +189,10 @@ mod tests {
     #[test]
     fn read_ini_test() {
         let (context, mut def) = ability_env_init();
-        def.set("CONF_ROOT", "${RG_PRJ_ROOT}/example/conf");
+        def.set("CONF_ROOT", "${RG_PRJ_ROOT}/examples/read");
         let mut dto = RgReadDto::default();
         dto.mode = ReadMode::INI;
-        dto.ini = Some(String::from("${CONF_ROOT}/options/vars.ini"));
+        dto.ini = Some(String::from("${CONF_ROOT}/var.ini"));
         let res = GxRead::dto_new(dto);
         res.exec(context, &mut def).unwrap();
     }
