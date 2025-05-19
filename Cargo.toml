@@ -36,8 +36,8 @@ orion-error = "0.1.13"
 orion_common = { path = "crates/orion_common" }
 orion_parse = { path = "crates/orion_parse" }
 orion_infra = { path = "crates/orion_infra" }
-#orion-exchange = "0.1"
-orion-exchange = { path = "../orion-exchange"}
+orion-exchange = "0.1.1"
+#orion-exchange = { path = "../orion-exchange"}
 derive-getters = "0.5"
 derive_builder = "0.20"
 duct = "0.13"
