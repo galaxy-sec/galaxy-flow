@@ -1,5 +1,3 @@
-use orion_error::DomainFrom;
-
 use super::prelude::*;
 
 use crate::ability::prelude::ComponentRunnable;
@@ -37,7 +35,10 @@ impl GxlEnv {
             let link_env = env.clone().assemble(mod_name, src)?;
             return Ok(link_env);
         }
-        AssembleError::err_from_domain(AssembleReason::Miss(format!("env {}", cur_mix)))
+        Err(AssembleError::from(AssembleReason::Miss(format!(
+            "env {}",
+            cur_mix
+        ))))
     }
     fn assemble_impl(&self, mod_name: &str, src: &GxlSpace) -> AResult<Self> {
         let mut buffer = Vec::new();
@@ -146,24 +147,26 @@ impl GxlEnv {
     }
 }
 
-impl RunnableTrait for GxlEnv {
-    fn exec(&self, mut ctx: ExecContext, def: &mut VarsDict) -> EOResult {
+#[async_trait]
+impl AsyncRunnableTrait for GxlEnv {
+    async fn async_exec(&self, mut ctx: ExecContext, def: &mut VarsDict) -> EOResult {
         let env_name = self.meta.name();
         ctx.append(env_name);
 
         debug!(target: ctx.path(),"env {} setting", env_name );
         self.export_props(ctx.clone(), def, "ENV")?;
         for item in &self.items {
-            item.exec(ctx.clone(), def)?;
+            item.async_exec(ctx.clone(), def).await?;
         }
         Ok(ExecOut::Ignore)
     }
 }
-impl RunnableTrait for EnvItem {
-    fn exec(&self, ctx: ExecContext, dict: &mut VarsDict) -> EOResult {
+#[async_trait]
+impl AsyncRunnableTrait for EnvItem {
+    async fn async_exec(&self, ctx: ExecContext, dict: &mut VarsDict) -> EOResult {
         match self {
-            EnvItem::Var(o) => o.exec(ctx, dict),
-            EnvItem::Read(o) => o.exec(ctx, dict),
+            EnvItem::Var(o) => o.async_exec(ctx, dict).await,
+            EnvItem::Read(o) => o.async_exec(ctx, dict).await,
             //EnvItem::Vault(o) => o.exec(ctx, dict),
         }
     }

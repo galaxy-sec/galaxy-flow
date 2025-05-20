@@ -100,7 +100,7 @@ impl ExecLoadTrait for GxlSpace {
                 return target_mod.load_env(ctx, sequ, item_name);
             }
         }
-        ExecError::err_from_domain(ExecReason::Miss(obj_path.into()))
+        Err(ExecError::from(ExecReason::Miss(obj_path.into())))
     }
     fn load_flow(&self, ctx: ExecContext, sequ: &mut Sequence, obj_path: &str) -> ExecResult<()> {
         let v: Vec<&str> = obj_path.split('.').collect();
@@ -111,7 +111,7 @@ impl ExecLoadTrait for GxlSpace {
                 return target_mod.load_flow(ctx, sequ, item_name);
             }
         }
-        ExecError::err_from_domain(ExecReason::Miss(obj_path.into()))
+        Err(ExecError::from(ExecReason::Miss(obj_path.into())))
     }
     fn of_name(&self) -> String {
         "space".to_string()
@@ -127,7 +127,7 @@ impl ExecLoadTrait for GxlSpace {
 }
 
 impl GxlSpace {
-    pub fn exec<VS: LocalInto<Vec<String>>>(
+    pub async fn exec<VS: LocalInto<Vec<String>>>(
         &self,
         envs: VS,
         flow_names: VS,
@@ -167,7 +167,7 @@ impl GxlSpace {
             //.map_err(stc_err_conv)?;
             let mut exec_ctx = ExecContext::new(out);
             exec_ctx.append("exec");
-            let _ = exec_sequ.execute(exec_ctx, &mut def).err_conv()?;
+            let _ = exec_sequ.execute(exec_ctx, &mut def).await.err_conv()?;
             //.map_err(stc_err_conv)?;
         }
         Ok(())
@@ -195,10 +195,10 @@ impl GxlSpace {
             {
                 continue;
             }
-            return Some(RunError::err_from_domain(RunReason::Args(format!(
+            return Some(Err(RunError::from(RunReason::Args(format!(
                 "not fount env {}",
                 env
-            ))));
+            )))));
         }
         None
     }
@@ -218,8 +218,8 @@ mod tests {
 
     use super::*;
 
-    #[test]
-    fn execute_forword() -> AnyResult<()> {
+    #[tokio::test]
+    async fn execute_forword() -> AnyResult<()> {
         let (ctx, mut def) = exec_init_env();
 
         let meta = RgoMeta::build_mod("main");
@@ -249,7 +249,7 @@ mod tests {
         let work_spc = rg_space.assemble_mix().assert();
         work_spc.load_env(ctx.clone(), &mut flow, "env.env1")?;
         work_spc.load_flow(ctx.clone(), &mut flow, "main.flow1")?;
-        let job = flow.test_execute(ctx, &mut def);
+        let job = flow.test_execute(ctx, &mut def).await;
         debug!("job {:#?}", job);
         work_spc.show().unwrap();
         Ok(())

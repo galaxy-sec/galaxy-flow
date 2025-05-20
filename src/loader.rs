@@ -126,8 +126,8 @@ mod tests {
 
     use super::GxLoader;
 
-    #[test]
-    fn test_parse_file() -> AnyResult<()> {
+    #[tokio::test]
+    async fn test_parse_file() -> AnyResult<()> {
         //log_init(&LogConf::alpha()).assert();
         once_init_log();
         let mut rg = GxLoader::default();
@@ -141,7 +141,7 @@ mod tests {
         spc.show()?;
         println!("mods:{}", spc.mods().len());
         assert!(spc.mods().len() > 1);
-        spc.exec(["alpha"], ["conf"], true)?;
+        spc.exec(["alpha"], ["conf"], true).await?;
         Ok(())
     }
 }

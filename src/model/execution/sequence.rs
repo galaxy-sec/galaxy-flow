@@ -1,13 +1,14 @@
+use async_trait::async_trait;
 use orion_common::friendly::AppendAble;
 use orion_common::friendly::MultiNew2;
 
 use crate::context::ExecContext;
 use crate::execution::job::Job;
+use crate::execution::runnable::AsyncRunnableTrait;
 use crate::execution::runnable::ComHold;
 use crate::execution::runnable::ComponentRunnable;
 use crate::execution::runnable::EOResult;
 use crate::execution::runnable::ExecOut;
-use crate::execution::runnable::RunnableTrait;
 use crate::execution::task::Task;
 use crate::meta::GxlType;
 use crate::meta::RgoMeta;
@@ -29,18 +30,18 @@ impl From<&str> for Sequence {
 }
 
 impl Sequence {
-    pub fn execute(&self, ctx: ExecContext, def: &mut VarsDict) -> EOResult {
-        self.forword(ctx, def)
+    pub async fn execute(&self, ctx: ExecContext, def: &mut VarsDict) -> EOResult {
+        self.forword(ctx, def).await
     }
-    pub fn test_execute(&self, ctx: ExecContext, def: &mut VarsDict) -> EOResult {
-        self.forword(ctx, def)
+    pub async fn test_execute(&self, ctx: ExecContext, def: &mut VarsDict) -> EOResult {
+        self.forword(ctx, def).await
     }
 
-    fn forword(&self, ctx: ExecContext, def: &mut VarsDict) -> EOResult {
+    async fn forword(&self, ctx: ExecContext, def: &mut VarsDict) -> EOResult {
         let mut job = Job::from(&self.name);
         for obj in &self.run_items {
             debug!(target: ctx.path() ,"sequ exec runner :{} ",obj.meta().name());
-            let out = obj.exec(ctx.clone(), def)?;
+            let out = obj.async_exec(ctx.clone(), def).await?;
             job.append(out);
         }
         Ok(ExecOut::Job(job))
@@ -63,8 +64,9 @@ impl From<&str> for RunStub {
         }
     }
 }
-impl RunnableTrait for RunStub {
-    fn exec(&self, ctx: ExecContext, _def: &mut VarsDict) -> EOResult {
+#[async_trait]
+impl AsyncRunnableTrait for RunStub {
+    async fn async_exec(&self, ctx: ExecContext, _def: &mut VarsDict) -> EOResult {
         debug!(target:ctx.path(), "{}", self.name);
         let task = Task::from(&self.name);
         Ok(ExecOut::Task(task))
@@ -85,8 +87,8 @@ mod tests {
     fn stub_node(name: &str) -> Arc<dyn ComponentRunnable> {
         Arc::new(RunStub::from(name))
     }
-    #[test]
-    fn build_flow() {
+    #[tokio::test]
+    async fn build_flow() {
         let (ctx, mut def) = exec_init_env();
 
         let mut flow = Sequence::from("test.flow");
@@ -95,7 +97,7 @@ mod tests {
         flow.append(node21.clone());
         flow.append(node22.clone());
 
-        let out = flow.execute(ctx, &mut def);
+        let out = flow.execute(ctx, &mut def).await;
         if let ExecOut::Job(job) = out.unwrap() {
             debug!("{:#?}", job);
             assert_eq!(job.tasks().len(), 2);

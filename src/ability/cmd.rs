@@ -16,8 +16,9 @@ impl GxCmdDto {
         Ok(())
     }
 }
-impl RunnableTrait for GxCmd {
-    fn exec(&self, ctx: ExecContext, def: &mut VarsDict) -> EOResult {
+#[async_trait]
+impl AsyncRunnableTrait for GxCmd {
+    async fn async_exec(&self, ctx: ExecContext, def: &mut VarsDict) -> EOResult {
         self.execute_impl(&self.dto.forword, ctx, def)
     }
 }
@@ -64,13 +65,13 @@ mod tests {
     use super::*;
     use crate::{ability::*, traits::Setter};
 
-    #[test]
-    fn cmd_test() {
+    #[tokio::test]
+    async fn cmd_test() {
         let (context, mut def) = ability_env_init();
         def.set("CONF_ROOT", "${RG_PRJ_ROOT}/example/conf");
         let res = GxCmd::new(
           "cd ${CONF_ROOT}/used ; if test ! -L  ./link2.txt ; then ln -s ${CONF_ROOT}/options/link.txt  ./link2.txt ; fi ".into()
           ) ;
-        res.exec(context, &mut def).unwrap();
+        res.async_exec(context, &mut def).await.unwrap();
     }
 }

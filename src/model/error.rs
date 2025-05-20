@@ -1,9 +1,14 @@
-use orion_error::{DomainReason, ErrorCode, StructError};
+use derive_more::From;
+use orion_error::{ErrorCode, StructError, UvsReason};
 use serde::Serialize;
+use thiserror::Error;
 
-#[derive(Debug, PartialEq, Serialize)]
+#[derive(Debug, PartialEq, Serialize, From, Error)]
 pub enum AssembleReason {
+    #[error("miss : {0}")]
     Miss(String),
+    #[error("{0}")]
+    Uvs(UvsReason),
 }
 
 impl ErrorCode for AssembleReason {
@@ -12,31 +17,36 @@ impl ErrorCode for AssembleReason {
     }
 }
 
-impl DomainReason for AssembleReason {}
 pub type AssembleError = StructError<AssembleReason>;
 pub type AResult<T> = Result<T, AssembleError>;
 
-impl std::fmt::Display for AssembleReason {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            AssembleReason::Miss(msg) => {
-                write!(f, "assemble miss: {}", msg)
-            }
-        }
-    }
-}
-
-#[derive(Debug, PartialEq, Serialize)]
+#[derive(Debug, PartialEq, Serialize, Error)]
 pub enum ExecReason {
+    #[error("cmd err : {1},{2}")]
     OsCmd(String, i32, String),
+    #[error("io err : {0}")]
     Io(String),
+    #[error("check err : {0}")]
     Check(String),
+    #[error("args err : {0}")]
     Args(String),
+    #[error("depend err : {0}")]
     Depend(String),
+    #[error("exp err : {0}")]
     Exp(String),
+    #[error("bug : {0}")]
     Bug(String),
+    #[error("no val: {0}")]
     NoVal(String),
+    #[error("miss : {0}")]
     Miss(String),
+    #[error("{0}")]
+    Uvs(UvsReason),
+}
+impl From<UvsReason> for ExecReason {
+    fn from(value: UvsReason) -> Self {
+        Self::Uvs(value)
+    }
 }
 impl ErrorCode for ExecReason {
     fn error_code(&self) -> i32 {
@@ -44,30 +54,6 @@ impl ErrorCode for ExecReason {
     }
 }
 
-impl DomainReason for ExecReason {}
 pub type ExecError = StructError<ExecReason>;
 pub type ExecResult<T> = Result<T, ExecError>;
 //pub type ExecResult = Result<ExecOut, Box<dyn std::error::Error>>;
-use std::fmt::{self};
-
-impl std::fmt::Display for ExecReason {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            ExecReason::OsCmd(a, b, c) => write!(
-                f,
-                "Cmd exec failed!  code:{} \n{:>10}{}\n{:>10}{}",
-                b, "prompt: ", a, "at: ", c
-            ),
-            ExecReason::Io(e) => write!(f, "exec failed : {}", e),
-            ExecReason::Check(s)
-            | ExecReason::Args(s)
-            | ExecReason::Depend(s)
-            | ExecReason::Exp(s) => {
-                write!(f, "exec failed : {}", s)
-            }
-            ExecReason::Bug(s) => write!(f, "exec failed have Bug: {}", s),
-            ExecReason::NoVal(s) => write!(f, "not found value {}", s),
-            ExecReason::Miss(s) => write!(f, "not found {}", s),
-        }
-    }
-}

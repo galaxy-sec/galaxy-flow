@@ -86,7 +86,10 @@ fn assemble_pipe(
         target.push(linked_flow);
         return Ok(());
     }
-    AssembleError::err_from_domain(AssembleReason::Miss(format!("{}.{}", m_name, flow)))
+    Err(AssembleError::from(AssembleReason::Miss(format!(
+        "{}.{}",
+        m_name, flow
+    ))))
 }
 
 impl From<RgoMeta> for GxlFlow {
@@ -136,28 +139,28 @@ impl GxlFlow {
 }
 
 impl GxlFlow {
-    fn exec_self(&self, ctx: ExecContext, var_dict: &mut VarsDict) -> EOResult {
+    async fn exec_self(&self, ctx: ExecContext, var_dict: &mut VarsDict) -> EOResult {
         let mut job = Job::from(self.meta.name());
         self.export_props(ctx.clone(), var_dict, "")?;
 
         for item in &self.blocks {
-            let task = item.exec(ctx.clone(), var_dict)?;
+            let task = item.async_exec(ctx.clone(), var_dict).await?;
             job.append(task);
         }
         Ok(ExecOut::Job(job))
     }
 }
-
-impl RunnableTrait for GxlFlow {
-    fn exec(&self, mut ctx: ExecContext, var_dict: &mut VarsDict) -> EOResult {
+#[async_trait]
+impl AsyncRunnableTrait for GxlFlow {
+    async fn async_exec(&self, mut ctx: ExecContext, var_dict: &mut VarsDict) -> EOResult {
         let mut job = Job::from(self.meta.name());
         ctx.append(self.meta.name());
         for pre in self.pre_flows() {
-            job.append(pre.exec(ctx.clone(), var_dict)?);
+            job.append(pre.async_exec(ctx.clone(), var_dict).await?);
         }
-        self.exec_self(ctx.clone(), var_dict)?;
+        self.exec_self(ctx.clone(), var_dict).await?;
         for post in self.post_flows() {
-            job.append(post.exec(ctx.clone(), var_dict)?);
+            job.append(post.async_exec(ctx.clone(), var_dict).await?);
         }
         Ok(ExecOut::Job(job))
     }

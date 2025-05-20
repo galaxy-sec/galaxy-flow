@@ -220,8 +220,9 @@ impl GxTpl {
     }
 }
 
-impl RunnableTrait for GxTpl {
-    fn exec(&self, ctx: ExecContext, def: &mut VarsDict) -> EOResult {
+#[async_trait]
+impl AsyncRunnableTrait for GxTpl {
+    async fn async_exec(&self, ctx: ExecContext, def: &mut VarsDict) -> EOResult {
         let mut task = Task::from("build tpl file");
         self.render_path(ctx, &self.dto, def.clone())?;
         task.finish();
@@ -261,8 +262,8 @@ mod tests {
         Ok(content1 == content2)
     }
 
-    #[test]
-    fn tpl_test_by_envars() {
+    #[tokio::test]
+    async fn tpl_test_by_envars() {
         let (mut context, mut def) = ability_env_init();
         let tpl = format!(
             "{}/examples/template/conf/tpls/nginx.conf",
@@ -277,7 +278,10 @@ mod tests {
         def.set("RG_PRJ_ROOT", "/home/galaxy");
         def.set("DOMAIN", "www.galaxy-sec.org");
         def.set("SOCK_FILE", "galaxy.socket");
-        conf_tpl.exec(context.clone(), &mut def).unwrap();
+        conf_tpl
+            .async_exec(context.clone(), &mut def)
+            .await
+            .unwrap();
 
         let ngx_dst = format!(
             "{}/examples/template/conf/used/nginx_env.conf",
@@ -289,8 +293,8 @@ mod tests {
         );
         assert!(files_identical(ngx_dst.as_str(), ngx_xpt.as_str()).unwrap());
     }
-    #[test]
-    fn tpl_test_by_json() {
+    #[tokio::test]
+    async fn tpl_test_by_json() {
         //use ValueDict
         let (context, mut def) = ability_env_init();
         let root = format!("{}/examples/template/conf", context.cur_path());
@@ -304,7 +308,10 @@ mod tests {
         dto.file = Some(file.clone());
 
         let conf_tpl = GxTpl::new_by_dto(dto);
-        conf_tpl.exec(context.clone(), &mut def).unwrap();
+        conf_tpl
+            .async_exec(context.clone(), &mut def)
+            .await
+            .unwrap();
 
         let ngx_dst = format!("{}/used/nginx.conf", root);
         let ngx_xpt = format!("{}/expect/nginx.conf", root);

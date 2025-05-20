@@ -71,8 +71,9 @@ impl PropsTrait for RgVars {
     }
 }
 
-impl RunnableTrait for RgVars {
-    fn exec(&self, ctx: ExecContext, def: &mut VarsDict) -> EOResult {
+#[async_trait]
+impl AsyncRunnableTrait for RgVars {
+    async fn async_exec(&self, ctx: ExecContext, def: &mut VarsDict) -> EOResult {
         let task = Task::from("rg vars setting");
         self.export_props(ctx, def, "")?;
         Ok(ExecOut::Task(task))

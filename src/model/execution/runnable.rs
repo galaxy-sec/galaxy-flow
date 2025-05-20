@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use async_trait::async_trait;
 use orion_error::ErrorOwe;
 
 use crate::context::ExecContext;
@@ -30,15 +31,16 @@ impl Display for ExecOut {
 */
 
 pub type EOResult = ExecResult<ExecOut>;
-#[automock]
-pub trait RunnableTrait {
-    fn exec(&self, ctx: ExecContext, dict: &mut VarsDict) -> EOResult;
+//#[automock]
+#[async_trait]
+pub trait AsyncRunnableTrait {
+    async fn async_exec(&self, ctx: ExecContext, dict: &VarsDict) -> EOResult;
 }
 //#[automock]
-pub trait ComponentRunnable: RunnableTrait {
+pub trait ComponentRunnable: AsyncRunnableTrait {
     fn meta(&self) -> RgoMeta;
 }
-pub trait MetaInfo: RunnableTrait {
+pub trait MetaInfo: AsyncRunnableTrait {
     fn meta(&self) -> RgoMeta;
 }
 pub fn channel_pass_data(recv: &PipeReceiver, send: &PipeSender) -> EOResult {
@@ -48,7 +50,7 @@ pub fn channel_pass_data(recv: &PipeReceiver, send: &PipeSender) -> EOResult {
     Ok(ExecOut::Ignore)
 }
 
-pub type RunHold = std::sync::Arc<dyn RunnableTrait>;
+pub type RunHold = std::sync::Arc<dyn AsyncRunnableTrait>;
 pub type ComHold = std::sync::Arc<dyn ComponentRunnable>;
 
 /*
@@ -59,7 +61,7 @@ pub trait AsyncRunable: Sync + Send {
 */
 //pub type ARunHold = std::sync::Arc<dyn AsyncRunable>;
 
-pub fn make_run_hold<T: RunnableTrait + 'static>(obj: T) -> RunHold {
+pub fn make_run_hold<T: AsyncRunnableTrait + 'static>(obj: T) -> RunHold {
     Arc::new(obj)
 }
 

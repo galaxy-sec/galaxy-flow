@@ -108,8 +108,9 @@ impl RgVersion {
         }
     }
 }
-impl RunnableTrait for RgVersion {
-    fn exec(&self, mut ctx: ExecContext, dict: &mut VarsDict) -> EOResult {
+#[async_trait]
+impl AsyncRunnableTrait for RgVersion {
+    async fn async_exec(&self, mut ctx: ExecContext, dict: &mut VarsDict) -> EOResult {
         ctx.append("version");
         let exp = EnvExpress::from_env_mix(dict.clone());
         let file_path = exp.eval(&self.file)?;
@@ -161,14 +162,14 @@ mod tests {
     use super::*;
     use std::io::Write;
 
-    #[test]
-    fn version_test() {
+    #[tokio::test]
+    async fn version_test() {
         let mut file = File::create("./tests/tmp_version.txt").unwrap();
         file.write_all(b"0.1.0.0").unwrap();
         let ver = RgVersion::new("./tests/tmp_version.txt".into());
         let ctx = ExecContext::default();
         let mut def = VarsDict::default();
-        ver.exec(ctx.clone(), &mut def).unwrap();
+        ver.async_exec(ctx.clone(), &mut def).await.unwrap();
     }
 
     #[test]

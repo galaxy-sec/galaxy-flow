@@ -6,6 +6,7 @@ use crate::annotation::is_auto_func;
 
 use crate::execution::job::Job;
 use crate::execution::runnable::make_stc_hold;
+use crate::execution::runnable::RunnableTrait;
 use crate::menu::*;
 use crate::meta::*;
 
@@ -177,6 +178,18 @@ impl AppendAble<ComHold> for ModRunner {
         self.run_items.push(now)
     }
 }
+#[async_trait]
+impl AsyncRunnableTrait for ModRunner {
+    async fn async_exec(&self, mut ctx: ExecContext, dct: &VarsDict) -> EOResult {
+        ctx.append(self.meta().name());
+        let mut job = Job::default();
+        for i in &self.run_items {
+            job.append(i.async_exec(ctx.clone(), dct).await?);
+        }
+        Ok(ExecOut::Job(job))
+    }
+}
+
 impl RunnableTrait for ModRunner {
     fn exec(&self, mut ctx: ExecContext, dct: &mut VarsDict) -> EOResult {
         ctx.append(self.meta().name());
@@ -213,7 +226,7 @@ impl ExecLoadTrait for GxlMod {
             sequ.append(make_stc_hold(mr));
             return Ok(());
         }
-        ExecError::err_from_domain(ExecReason::Miss(args.into()))
+        Err(ExecError::from(ExecReason::Miss(args.into())))
     }
 
     fn load_flow(&self, mut ctx: ExecContext, sequ: &mut Sequence, args: &str) -> ExecResult<()> {
@@ -244,8 +257,9 @@ impl GxlMod {
     }
 }
 
-impl RunnableTrait for GxlMod {
-    fn exec(&self, ctx: ExecContext, def: &mut VarsDict) -> EOResult {
+#[async_trait]
+impl AsyncRunnableTrait for GxlMod {
+    async fn async_exec(&self, ctx: ExecContext, def: &mut VarsDict) -> EOResult {
         self.exec_self(ctx, def)
     }
 }

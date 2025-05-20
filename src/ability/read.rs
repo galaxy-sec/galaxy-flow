@@ -38,8 +38,9 @@ pub struct RgReadDto {
     pub expect: ShellOption,
 }
 
-impl RunnableTrait for GxRead {
-    fn exec(&self, ctx: ExecContext, def: &mut VarsDict) -> EOResult {
+#[async_trait]
+impl AsyncRunnableTrait for GxRead {
+    async fn async_exec(&self, ctx: ExecContext, def: &mut VarsDict) -> EOResult {
         self.execute_impl(&self.dto, ctx, def)
     }
 }
@@ -68,9 +69,7 @@ impl GxRead {
                 let cmd = dto
                     .cmd
                     .clone()
-                    .ok_or(ExecError::from_domain(ExecReason::Exp(String::from(
-                        "no cmd",
-                    ))))?;
+                    .ok_or(ExecError::from(ExecReason::Exp(String::from("no cmd"))))?;
                 let name = dto
                     .name
                     .clone()
@@ -175,8 +174,8 @@ mod tests {
     use super::*;
     use crate::ability::*;
 
-    #[test]
-    fn read_cmd_test() {
+    #[tokio::test]
+    async fn read_cmd_test() {
         let (context, mut def) = ability_env_init();
         def.set("CONF_ROOT", "${RG_PRJ_ROOT}/example/conf");
         let mut dto = RgReadDto::default();
@@ -184,21 +183,21 @@ mod tests {
         dto.name = Some(format!("RG"));
         dto.cmd = Some(format!("echo galaxy-1.0"));
         let res = GxRead::dto_new(dto);
-        res.exec(context, &mut def).unwrap();
+        res.async_exec(context, &mut def).await.unwrap();
     }
-    #[test]
-    fn read_ini_test() {
+    #[tokio::test]
+    async fn read_ini_test() {
         let (context, mut def) = ability_env_init();
         def.set("CONF_ROOT", "${RG_PRJ_ROOT}/examples/read");
         let mut dto = RgReadDto::default();
         dto.mode = ReadMode::INI;
         dto.ini = Some(String::from("${CONF_ROOT}/var.ini"));
         let res = GxRead::dto_new(dto);
-        res.exec(context, &mut def).unwrap();
+        res.async_exec(context, &mut def).await.unwrap();
     }
     #[ignore]
-    #[test]
-    fn read_stdin_test() {
+    #[tokio::test]
+    async fn read_stdin_test() {
         let (context, mut def) = ability_env_init();
         def.set("CONF_ROOT", "${RG_PRJ_ROOT}/example/conf");
         let mut dto = RgReadDto::default();
@@ -206,7 +205,7 @@ mod tests {
         dto.stdin = Some(String::from("please input you name"));
         dto.name = Some(String::from("name"));
         let res = GxRead::dto_new(dto);
-        res.exec(context, &mut def).unwrap();
+        res.async_exec(context, &mut def).await.unwrap();
     }
 
     #[test]

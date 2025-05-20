@@ -9,7 +9,8 @@ use galaxy_flow::err::*;
 use galaxy_flow::infra::configure_flow_logging;
 use galaxy_flow::runner::{GxlCmd, GxlRunner};
 
-fn main() -> anyhow::Result<()> {
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
     use std::process;
     let mut cmd = GxlCmd::parse();
     configure_flow_logging(cmd.log.clone(), cmd.debug);
@@ -25,7 +26,7 @@ fn main() -> anyhow::Result<()> {
             println!("warning: please use work.gxl !");
         }
     }
-    match GxlRunner::run(cmd) {
+    match GxlRunner::run(cmd).await {
         Err(e) => report_rg_error(e),
         Ok(_) => {
             return Ok(());

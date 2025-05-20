@@ -16,13 +16,16 @@ impl RgCond {
     }
 }
 
-impl RunnableTrait for RgCond {
-    fn exec(&self, ctx: ExecContext, dct: &mut VarsDict) -> EOResult {
+#[async_trait]
+impl AsyncRunnableTrait for RgCond {
+    async fn async_exec(&self, ctx: ExecContext, dct: &VarsDict) -> EOResult {
         EnvVarTag::clear_import(&dct.export());
-        self.cond.cond_exec(&mut RunArgs {
-            ctx,
-            def: dct.clone(),
-        })
+        self.cond
+            .cond_exec(RunArgs {
+                ctx,
+                def: dct.clone(),
+            })
+            .await
     }
 }
 

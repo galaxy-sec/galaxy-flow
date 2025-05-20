@@ -28,8 +28,9 @@ impl GxAssert {
 
 //impl DefaultDTO for RgAssert {}
 
-impl RunnableTrait for GxAssert {
-    fn exec(&self, mut ctx: ExecContext, def: &mut VarsDict) -> EOResult {
+#[async_trait]
+impl AsyncRunnableTrait for GxAssert {
+    async fn async_exec(&self, mut ctx: ExecContext, def: &mut VarsDict) -> EOResult {
         ctx.append("assert");
         let exp = EnvExpress::from_env_mix(def.clone());
         let value = exp.eval(&self.value)?;
@@ -46,7 +47,7 @@ impl RunnableTrait for GxAssert {
                 err_msg = exp.eval(&msg)?;
             }
             println!("{}", err_msg);
-            return Err(ExecError::from_domain(ExecReason::Check(format!(
+            return Err(ExecError::from(ExecReason::Check(format!(
                 "assert fail! [{}], expect: {},\n value {}",
                 self.result, expect, value
             ))));
@@ -67,16 +68,16 @@ impl ComponentRunnable for GxAssert {
 mod tests {
     use super::*;
 
-    #[test]
-    fn assert_test() {
+    #[tokio::test]
+    async fn assert_test() {
         let mut assert = GxAssert::default();
         let ctx = ExecContext::default();
         let mut def = VarsDict::default();
         assert.expect_eq("hello", "hello");
-        assert.exec(ctx.clone(), &mut def).unwrap();
+        assert.async_exec(ctx.clone(), &mut def).await.unwrap();
         assert.expect_eq("${HOME}", "${HOME}");
-        assert.exec(ctx.clone(), &mut def).unwrap();
+        assert.async_exec(ctx.clone(), &mut def).await.unwrap();
         assert.expect_no_eq("${HOME}", "xxxx");
-        assert.exec(ctx.clone(), &mut def).unwrap();
+        assert.async_exec(ctx.clone(), &mut def).await.unwrap();
     }
 }

@@ -7,17 +7,49 @@ use galaxy_flow::runner::GxlCmd;
 #[command(name = "gm")]
 #[command(version, about)]
 pub enum GxAdmCmd {
-    ///rg project work
     #[command(subcommand)]
     Prj(PrjCmd),
-    ///admin work for cur project
     Adm(GxlCmd),
+    #[command(subcommand)]
+    ModSpec(ModSpecCmd),
+    #[command(subcommand)]
+    ModIns(ModInsCmd),
+
+    #[command(subcommand)]
+    SysSpec(SysSpecCmd),
+    #[command(subcommand)]
+    SysIns(SysInsCmd),
     /// vault cmd
     //#[command(subcommand)]
     //Vault(VaultCmd),
     //#[command(subcommand)]
     //Sys(SysCmd),
     Check,
+}
+
+#[derive(Debug, Subcommand)]
+pub enum ModSpecCmd {
+    Crate,
+    Check,
+}
+#[derive(Debug, Subcommand)]
+pub enum SysSpecCmd {
+    Crate,
+    Check,
+}
+
+#[derive(Debug, Subcommand)]
+pub enum ModInsCmd {
+    Crate,
+    Update,
+    Local,
+}
+
+#[derive(Debug, Subcommand)]
+pub enum SysInsCmd {
+    Crate,
+    Update,
+    Local,
 }
 
 #[derive(Debug, Subcommand)]

@@ -1,3 +1,5 @@
+use async_trait::async_trait;
+
 use super::prelude::*;
 
 use crate::ability::delegate::ActCall;
@@ -44,34 +46,38 @@ impl BlockNode {
     }
 }
 
+#[async_trait]
 impl CondExec for BlockNode {
-    fn cond_exec(&self, args: &mut RunArgs) -> EOResult {
-        self.exec(args.ctx.clone(), &mut args.def.clone())
+    async fn cond_exec(&self, args: RunArgs) -> EOResult {
+        self.async_exec(args.ctx.clone(), &mut args.def.clone())
+            .await
     }
 }
-impl RunnableTrait for BlockAction {
-    fn exec(&self, ctx: ExecContext, dct: &mut VarsDict) -> EOResult {
+#[async_trait]
+impl AsyncRunnableTrait for BlockAction {
+    async fn async_exec(&self, ctx: ExecContext, dct: &VarsDict) -> EOResult {
         match self {
-            BlockAction::Command(o) => o.exec(ctx, dct),
-            BlockAction::Echo(o) => o.exec(ctx, dct),
-            BlockAction::Assert(o) => o.exec(ctx, dct),
-            BlockAction::Cond(o) => o.exec(ctx, dct),
-            BlockAction::Read(o) => o.exec(ctx, dct),
-            BlockAction::Version(o) => o.exec(ctx, dct),
-            BlockAction::Tpl(o) => o.exec(ctx, dct),
-            BlockAction::Delegate(o) => o.exec(ctx, dct),
+            BlockAction::Command(o) => o.async_exec(ctx, dct).await,
+            BlockAction::Echo(o) => o.async_exec(ctx, dct).await,
+            BlockAction::Assert(o) => o.async_exec(ctx, dct).await,
+            BlockAction::Cond(o) => o.async_exec(ctx, dct).await,
+            BlockAction::Read(o) => o.async_exec(ctx, dct).await,
+            BlockAction::Version(o) => o.async_exec(ctx, dct).await,
+            BlockAction::Tpl(o) => o.async_exec(ctx, dct).await,
+            BlockAction::Delegate(o) => o.async_exec(ctx, dct).await,
             //BlockAction::Vault(o) => o.exec(ctx, dct),
         }
     }
 }
-impl RunnableTrait for BlockNode {
-    fn exec(&self, ctx: ExecContext, var_dict: &mut VarsDict) -> EOResult {
+#[async_trait]
+impl AsyncRunnableTrait for BlockNode {
+    async fn async_exec(&self, ctx: ExecContext, var_dict: &VarsDict) -> EOResult {
         //ctx.append("block");
         let mut job = Job::from("block");
         self.export_props(ctx.clone(), var_dict, "")?;
 
         for item in &self.items {
-            let task = item.exec(ctx.clone(), var_dict)?;
+            let task = item.async_exec(ctx.clone(), var_dict).await?;
             job.append(task);
         }
         Ok(ExecOut::Job(job))
@@ -148,14 +154,14 @@ mod tests {
         assert_eq!(block.props.len(), 1);
     }
     //test RgBlock exec method
-    #[test]
-    fn test_exec() {
+    #[tokio::test]
+    async fn test_exec() {
         let mut block = BlockNode::new();
         let prop = RgProp::new("test", "hello");
         block.append(prop);
         let ctx = ExecContext::new(false);
         let mut def = VarsDict::default();
-        let res = block.exec(ctx, &mut def);
+        let res = block.async_exec(ctx, &mut def).await;
         assert_eq!(res.is_ok(), true);
     }
 

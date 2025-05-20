@@ -2,9 +2,9 @@ pub use orion_common::friendly::AppendAble;
 
 pub use crate::error::AResult;
 pub use crate::execution::job::Job;
+pub use crate::execution::runnable::AsyncRunnableTrait;
 pub use crate::execution::runnable::EOResult;
 pub use crate::execution::runnable::ExecOut;
-pub use crate::execution::runnable::RunnableTrait;
 
 pub use crate::error::{AssembleError, AssembleReason};
 pub use crate::evaluator::EnvExpress;
@@ -22,9 +22,10 @@ pub use crate::traits::ExecLoadTrait;
 pub use crate::ExecError;
 pub use crate::ExecReason;
 pub use crate::ExecResult;
-pub use orion_error::DomainFrom;
 
 pub use crate::err::{RunError, RunReason, RunResult};
 
 pub use crate::execution::runnable::ComHold;
 pub use crate::execution::sequence::Sequence;
+
+pub use async_trait::async_trait;

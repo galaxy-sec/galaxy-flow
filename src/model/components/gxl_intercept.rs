@@ -20,12 +20,13 @@ impl RgIntercept {
     }
 }
 
-impl RunnableTrait for RgIntercept {
-    fn exec(&self, ctx: ExecContext, var_dict: &mut VarsDict) -> EOResult {
+#[async_trait]
+impl AsyncRunnableTrait for RgIntercept {
+    async fn async_exec(&self, ctx: ExecContext, var_dict: &mut VarsDict) -> EOResult {
         self.export_props(ctx.clone(), var_dict, self.m_name())?;
         let mut job = Job::from("intercept");
         for flow in &self.flows {
-            job.append(flow.exec(ctx.clone(), var_dict)?);
+            job.append(flow.async_exec(ctx.clone(), var_dict).await?);
         }
         Ok(ExecOut::Job(job))
     }
@@ -91,13 +92,14 @@ impl DependTrait<&GxlSpace> for RgFlowRunner {
     }
 }
 
-impl RunnableTrait for RgFlowRunner {
-    fn exec(&self, mut ctx: ExecContext, dict: &mut VarsDict) -> EOResult {
+#[async_trait]
+impl AsyncRunnableTrait for RgFlowRunner {
+    async fn async_exec(&self, mut ctx: ExecContext, dict: &mut VarsDict) -> EOResult {
         let mut job = Job::from("scope_flow");
         ctx.append(self.m_name.as_str());
-        job.append(self.before().exec(ctx.clone(), dict)?);
-        job.append(self.flow().exec(ctx.clone(), dict)?);
-        job.append(self.after().exec(ctx.clone(), dict)?);
+        job.append(self.before().async_exec(ctx.clone(), dict).await?);
+        job.append(self.flow().async_exec(ctx.clone(), dict).await?);
+        job.append(self.after().async_exec(ctx.clone(), dict).await?);
         Ok(ExecOut::Job(job))
     }
 }

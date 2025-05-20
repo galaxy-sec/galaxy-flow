@@ -1,6 +1,7 @@
 pub mod assert;
 pub mod cmd;
 pub mod delegate;
+pub mod download;
 pub mod echo;
 pub mod err_conv;
 pub mod prelude;

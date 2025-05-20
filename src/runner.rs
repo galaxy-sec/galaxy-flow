@@ -1,4 +1,8 @@
-use crate::{components::gxl_spc::GxlSpace, err::RunResult, GxLoader};
+use crate::{
+    components::gxl_spc::GxlSpace,
+    err::{RunError, RunReason, RunResult},
+    GxLoader,
+};
 use clap::ArgAction;
 use orion_error::{ErrorConv, StructError, UvsConfFrom, UvsReason};
 use std::path::Path;
@@ -6,13 +10,11 @@ use std::path::Path;
 pub struct GxlRunner {}
 impl GxlRunner {
     #[allow(clippy::result_large_err)]
-    pub fn run(cmd: GxlCmd) -> RunResult<()> {
+    pub async fn run(cmd: GxlCmd) -> RunResult<()> {
         let mut loader = GxLoader::new();
         if let Some(conf) = cmd.conf {
             if !Path::new(conf.as_str()).exists() {
-                return Err(StructError::from_uvs_rs(UvsReason::from_conf(
-                    "conf not exists".to_string(),
-                )));
+                return Err(StructError::from_conf("conf not exists".to_string()));
                 //return Err(StructError::from(UvsReason::from_conf("conf not exists")));
             }
             let expect = ShellOption {
@@ -31,12 +33,14 @@ impl GxlRunner {
                 } else {
                     cmd.flow.iter().map(|x| x.as_str()).collect()
                 };
-                spc.exec(envs, flws, cmd.cmd_print)?;
+                spc.exec(envs, flws, cmd.cmd_print).await?;
                 println!("\ngod job!");
             }
             Ok(())
         } else {
-            Err(UvsReason::core_conf("conf is empty".to_string()).into())
+            Err(RunError::from(RunReason::from(UvsReason::core_conf(
+                "conf is empty".to_string(),
+            ))))
         }
     }
 }

@@ -1,10 +1,10 @@
 use crate::ability::prelude::*;
 
 #[derive(Clone, Default, Debug, PartialEq)]
-pub struct GxEcho {
+pub struct GxDownLoad {
     value: String,
 }
-impl GxEcho {
+impl GxDownLoad {
     pub fn set(&mut self, val: &str) {
         self.value = val.to_string();
     }
@@ -13,8 +13,12 @@ impl GxEcho {
 // impl DefaultDTO for RgEcho {}
 
 #[async_trait]
-impl AsyncRunnableTrait for GxEcho {
+impl AsyncRunnableTrait for GxDownLoad {
     async fn async_exec(&self, ctx: ExecContext, def: &mut VarsDict) -> EOResult {
+        //let local = LocalAddr::from("./test/data/sys-1");
+        //local.update_rename(&path, "sys-2").await?;
+        //local.update_local(&path).await?;
+
         let ex = EnvExpress::from_env_mix(def.clone());
         let out = ex.eval(&self.value)?;
         info!(target: ctx.path(), "{} :{}", &self.value, out);
@@ -23,7 +27,7 @@ impl AsyncRunnableTrait for GxEcho {
     }
 }
 
-impl ComponentRunnable for GxEcho {
+impl ComponentRunnable for GxDownLoad {
     fn meta(&self) -> RgoMeta {
         RgoMeta::build_ability("gx.echo")
     }
@@ -38,7 +42,7 @@ mod tests {
 
     #[tokio::test]
     async fn echo_test() {
-        let mut watcher = GxEcho::default();
+        let mut watcher = GxDownLoad::default();
         watcher.set("${HOME}");
         let ctx = ExecContext::default();
         let mut def = VarsDict::default();

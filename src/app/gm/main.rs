@@ -1,4 +1,5 @@
 mod args;
+mod spec;
 //mod vault;
 
 #[macro_use]
@@ -7,7 +8,7 @@ extern crate log;
 extern crate clap;
 
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use crate::args::{GxAdmCmd, PrjCmd};
 use clap::Parser;
@@ -19,11 +20,13 @@ use galaxy_flow::util::{GitTools, ModRepo};
 use galaxy_flow::GxLoader;
 use include_dir::{include_dir, Dir};
 use orion_error::{ErrorConv, ErrorOwe};
+use spec::{do_modins_cmd, do_modspec_cmd, do_sysins_cmd, do_syspec_cmd};
 
 const ASSETS_DIR: Dir = include_dir!("src/app/gm/init");
-fn main() {
+#[tokio::main]
+async fn main() {
     use std::process;
-    match GxAdm::run() {
+    match GxAdm::run().await {
         Err(e) => report_rg_error(e),
         Ok(_) => {
             return;
@@ -34,7 +37,7 @@ fn main() {
 
 pub struct GxAdm {}
 impl GxAdm {
-    pub fn run() -> RunResult<()> {
+    pub async fn run() -> RunResult<()> {
         let cmd = GxAdmCmd::parse();
         debug!("galaxy flow running .....");
         let mut gx = GxLoader::new();
@@ -44,6 +47,18 @@ impl GxAdm {
             }
             GxAdmCmd::Adm(cmd) => {
                 Self::do_adm_cmd(cmd)?;
+            }
+            GxAdmCmd::ModSpec(cmd) => {
+                do_modspec_cmd(cmd).await?;
+            }
+            GxAdmCmd::ModIns(cmd) => {
+                do_modins_cmd(cmd).await?;
+            }
+            GxAdmCmd::SysSpec(cmd) => {
+                do_syspec_cmd(cmd).await?;
+            }
+            GxAdmCmd::SysIns(cmd) => {
+                do_sysins_cmd(cmd).await?;
             }
             GxAdmCmd::Check => {
                 Self::do_check_cmd()?;

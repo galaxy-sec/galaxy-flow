@@ -47,10 +47,10 @@ impl DependTrait<&GxlSpace> for ActCall {
             Ok(self.clone_from(act, t_mod))
         } else {
             error!("activity not found: {}.{}", t_mod, act_name);
-            AssembleError::err_from_domain(AssembleReason::Miss(format!(
+            Err(AssembleError::from(AssembleReason::Miss(format!(
                 "activity: {}.{}",
                 t_mod, act_name
-            )))
+            ))))
         }
     }
 }
@@ -68,16 +68,16 @@ impl ActCall {
         ins
     }
 }
-
-impl RunnableTrait for ActCall {
-    fn exec(&self, mut ctx: ExecContext, def: &mut VarsDict) -> EOResult {
+#[async_trait]
+impl AsyncRunnableTrait for ActCall {
+    async fn async_exec(&self, mut ctx: ExecContext, def: &mut VarsDict) -> EOResult {
         ctx.append("@");
         match &self.act {
-            Some(act) => act.exec(ctx, def),
-            None => ExecError::err_from_domain(ExecReason::Depend(format!(
+            Some(act) => act.async_exec(ctx, def).await,
+            None => Err(ExecError::from(ExecReason::Depend(format!(
                 "act call less{}",
                 self.name
-            ))),
+            )))),
         }
     }
 }
@@ -107,8 +107,9 @@ impl ActivityDTO {
     }
 }
 
-impl RunnableTrait for Activity {
-    fn exec(&self, ctx: ExecContext, def: &mut VarsDict) -> EOResult {
+#[async_trait]
+impl AsyncRunnableTrait for Activity {
+    async fn async_exec(&self, ctx: ExecContext, def: &mut VarsDict) -> EOResult {
         self.exec_cmd(ctx, def, &self.dto)
         // Ok(ExecOut::Ignore)
     }
@@ -186,8 +187,8 @@ mod tests {
     use super::*;
 
     #[ignore]
-    #[test]
-    fn act_test() {
+    #[tokio::test]
+    async fn act_test() {
         let (context, mut def) = ability_env_init();
         let expect = ShellOption::default();
         let mut dto = ActivityDTOBuilder::default()
@@ -207,7 +208,7 @@ mod tests {
         });
 
         let act = Activity::dto_new(dto.clone());
-        let result = act.exec(context.clone(), &mut def).assert();
+        let result = act.async_exec(context.clone(), &mut def).await.assert();
         match result {
             ExecOut::Task(task) => {
                 assert_eq!(task.name(), "os.copy");

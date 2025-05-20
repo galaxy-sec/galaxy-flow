@@ -3,7 +3,7 @@
 authors = ["wukong<sec-wukong@outlook.com>"]
 edition = "2021"
 name = "galaxy_flow"
-version = "0.2.5"
+version = "0.3.0"
 
 
 [[bin]]
@@ -29,8 +29,12 @@ license = "Apache-2.0"
 
 [workspace.dependencies]
 winnow = "0.6"
-orion-error = "0.1.13"
-
+orion-error = "~0.2"
+#orion-error =  { path = "../orion-error"}
+orion-syspec = { path = "../orion-syspec"}
+tokio = { version = "1.45", features = ["full"] }
+derive_more = { version = "2.0", features = ["full"] }
+async-trait = "0.1"
 
 [dependencies]
 orion_common = { path = "crates/orion_common" }
@@ -67,6 +71,10 @@ anyhow = "1.0.82"
 include_dir = "0.7"
 walkdir = "2.5"
 orion-error = { workspace = true }
+orion-syspec= { workspace = true }
+tokio = { workspace = true }
+derive_more = { workspace = true }
+async-trait = { workspace = true }
 
 [features]
 res_depend_test = []

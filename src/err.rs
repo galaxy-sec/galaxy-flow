@@ -1,8 +1,8 @@
-use std::{self, fmt::Display};
-
 use crate::{error::AssembleReason, ExecReason, ExecResult};
-use orion_error::{DomainReason, ErrorCode, StructError, StructReason, UvsReason};
+use orion_error::{ErrorCode, StructError, UvsBizFrom, UvsReason};
+use orion_syspec::error::SpecReason;
 use serde::Serialize;
+use thiserror::Error;
 
 #[derive(Debug, thiserror::Error, PartialEq, Serialize)]
 pub enum RunReason {
@@ -12,6 +12,13 @@ pub enum RunReason {
     Exec(String),
     #[error("args error {0}")]
     Args(String),
+    #[error("{0}")]
+    Uvs(UvsReason),
+}
+impl From<UvsReason> for RunReason {
+    fn from(value: UvsReason) -> Self {
+        Self::Uvs(value)
+    }
 }
 
 impl ErrorCode for RunReason {
@@ -20,6 +27,7 @@ impl ErrorCode for RunReason {
             RunReason::Gxl(_) => 530,
             RunReason::Exec(_) => 540,
             RunReason::Args(_) => 550,
+            RunReason::Uvs(uvs_reason) => uvs_reason.error_code(),
         }
     }
 }
@@ -27,45 +35,29 @@ impl ErrorCode for RunReason {
 pub type RunError = StructError<RunReason>;
 pub type RunResult<T> = Result<T, RunError>;
 
-impl DomainReason for RunReason {}
-#[derive(Debug, PartialEq, Serialize)]
+#[derive(Debug, PartialEq, Serialize, Error)]
 pub enum GxlReason {
+    #[error("parse error {0}")]
     Parse(String),
+    #[error("depend error {0}")]
     Depend(String),
+    #[error("less error {0}")]
     Less(String),
+    #[error("none ")]
     None,
+    #[error("{0}")]
+    Uvs(UvsReason),
 }
-impl Display for GxlReason {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            GxlReason::Parse(msg) => {
-                write!(f, "parse: {}", msg)
-            }
-            GxlReason::Depend(msg) => {
-                write!(f, "depend: {}", msg)
-            }
-            GxlReason::Less(msg) => {
-                write!(f, "less: {}", msg)
-            }
-            GxlReason::None => todo!(),
-        }
+
+impl From<UvsReason> for GxlReason {
+    fn from(value: UvsReason) -> Self {
+        Self::Uvs(value)
     }
 }
-impl DomainReason for GxlReason {}
+
 pub type GxlError = StructError<GxlReason>;
 pub type GxlResult<T> = std::result::Result<T, GxlError>;
 pub type NER = ExecResult<()>;
-
-impl From<ExecReason> for StructReason<RunReason> {
-    fn from(value: ExecReason) -> Self {
-        Self::from(RunReason::Exec(value.to_string()))
-    }
-}
-impl From<AssembleReason> for StructReason<RunReason> {
-    fn from(value: AssembleReason) -> Self {
-        Self::from(RunReason::Gxl(value.to_string()))
-    }
-}
 
 pub fn report_rg_error(e: RunError) {
     println!("Galaxy Flow Parse Error (Code: {})", e.error_code());
@@ -75,7 +67,7 @@ pub fn report_rg_error(e: RunError) {
     }
     println!("[REASON]:");
     match e.reason() {
-        StructReason::Universal(uvs_reason) => match uvs_reason {
+        RunReason::Uvs(uvs_reason) => match uvs_reason {
             UvsReason::LogicError(e) => {
                 println!("LOGIC ERROR: {}\n", e);
             }
@@ -101,17 +93,15 @@ pub fn report_rg_error(e: RunError) {
                 println!("PRIVACY ERROR: {}\n", e);
             }
         },
-        StructReason::Domain(domain) => match domain {
-            RunReason::Gxl(e) => {
-                println!("GXL ERROR: {}\n", e);
-            }
-            RunReason::Exec(e) => {
-                println!("EXEC ERROR: {}\n", e);
-            }
-            RunReason::Args(e) => {
-                println!("ARGS ERROR: {}\n", e);
-            }
-        },
+        RunReason::Gxl(e) => {
+            println!("GXL ERROR: {}\n", e);
+        }
+        RunReason::Exec(e) => {
+            println!("EXEC ERROR: {}\n", e);
+        }
+        RunReason::Args(e) => {
+            println!("ARGS ERROR: {}\n", e);
+        }
     }
     if let Some(pos) = e.position() {
         println!("\n[POSITION]:\n{}", pos);
@@ -131,5 +121,15 @@ impl From<ExecReason> for RunReason {
 impl From<AssembleReason> for RunReason {
     fn from(value: AssembleReason) -> Self {
         RunReason::Gxl(value.to_string())
+    }
+}
+
+impl From<SpecReason> for RunReason {
+    fn from(value: SpecReason) -> Self {
+        match value {
+            SpecReason::UnKnow => RunReason::Gxl("unknow".to_string()),
+            SpecReason::Miss(info) => Self::Uvs(UvsReason::from_biz(info)),
+            SpecReason::Uvs(uvs_reason) => Self::Uvs(uvs_reason),
+        }
     }
 }
