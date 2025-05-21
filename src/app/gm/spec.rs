@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use galaxy_flow::err::RunResult;
-use orion_error::{ErrorConv, ErrorOwe};
+use orion_error::ErrorConv;
 use orion_syspec::mod_run::{make_modins_example, RunningModule};
 use orion_syspec::modul::make_mod_spec_example;
 use orion_syspec::sys_run::RunningSystem;

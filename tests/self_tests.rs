@@ -7,8 +7,8 @@ use galaxy_flow::types::AnyResult;
 use galaxy_flow::GxLoader;
 use orion_error::TestAssert;
 
-#[test]
-fn prj_conf() -> AnyResult<()> {
+#[tokio::test]
+async fn prj_conf() -> AnyResult<()> {
     once_init_log();
     let mut loader = GxLoader::new();
     let expect = ShellOption {
@@ -16,6 +16,6 @@ fn prj_conf() -> AnyResult<()> {
         ..Default::default()
     };
     let spc = GxlSpace::try_from(loader.parse_file("./_gal/work.gxl", false, expect)?).assert();
-    spc.exec(vec!["alpha"], vec!["conf"], false)?;
+    spc.exec(vec!["alpha"], vec!["conf"], false).await?;
     Ok(())
 }

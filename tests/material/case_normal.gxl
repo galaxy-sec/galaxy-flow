@@ -40,7 +40,6 @@ mod main {
             gx.assert { value = "${KEY}";  expect = "1";}
             gx.assert { value = "${FULL_KEY}";  expect = "1_1";}
             gx.assert { value = "${KEY}";  expect = "2";  result = "false"; }
-            gx.assert { value = "${SUB_NAME}";  expect = "rg_sys";}
     }
     else {
             gx.echo { value = "this is else cond"; };

@@ -10,8 +10,8 @@ use galaxy_flow::GxLoader;
 use orion_error::{ErrorConv, TestAssert};
 use std::fs::remove_dir_all;
 
-#[test]
-fn conf_base_test() -> AnyResult<()> {
+#[tokio::test]
+async fn conf_base_test() -> AnyResult<()> {
     once_init_log();
     let mut loader = GxLoader::new();
     let expect = ShellOption {
@@ -21,12 +21,12 @@ fn conf_base_test() -> AnyResult<()> {
     let spc =
         GxlSpace::try_from(loader.parse_file("./tests/material/ability.gxl", false, expect)?)
             .assert();
-    spc.exec(vec!["default"], vec!["test"], false)?;
+    spc.exec(vec!["default"], vec!["test"], false).await?;
     Ok(())
 }
 
-#[test]
-fn conf_web_test() {
+#[tokio::test]
+async fn conf_web_test() {
     once_init_log();
     let mut loader = GxLoader::new();
     let sh_opt = ShellOption {
@@ -39,7 +39,9 @@ fn conf_web_test() {
             .unwrap(),
     )
     .assert();
-    spc.exec(vec!["dev"], vec!["api", "api2"], false).unwrap();
+    spc.exec(vec!["dev"], vec!["api", "api2"], false)
+        .await
+        .unwrap();
 }
 
 #[ignore]

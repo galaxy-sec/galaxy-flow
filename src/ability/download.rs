@@ -14,7 +14,7 @@ impl GxDownLoad {
 
 #[async_trait]
 impl AsyncRunnableTrait for GxDownLoad {
-    async fn async_exec(&self, ctx: ExecContext, def: &mut VarsDict) -> EOResult {
+    async fn async_exec(&self, ctx: ExecContext, def: VarsDict) -> VTResult {
         //let local = LocalAddr::from("./test/data/sys-1");
         //local.update_rename(&path, "sys-2").await?;
         //local.update_local(&path).await?;
@@ -23,12 +23,12 @@ impl AsyncRunnableTrait for GxDownLoad {
         let out = ex.eval(&self.value)?;
         info!(target: ctx.path(), "{} :{}", &self.value, out);
         println!("{}", out);
-        Ok(ExecOut::Ignore)
+        Ok((def, ExecOut::Ignore))
     }
 }
 
-impl ComponentRunnable for GxDownLoad {
-    fn meta(&self) -> RgoMeta {
+impl ComponentMeta for GxDownLoad {
+    fn com_meta(&self) -> RgoMeta {
         RgoMeta::build_ability("gx.echo")
     }
 }
@@ -46,8 +46,8 @@ mod tests {
         watcher.set("${HOME}");
         let ctx = ExecContext::default();
         let mut def = VarsDict::default();
-        watcher.async_exec(ctx.clone(), &mut def).await.unwrap();
+        watcher.async_exec(ctx.clone(), def.clone()).await.unwrap();
         def.set("HOME", "/root");
-        watcher.async_exec(ctx.clone(), &mut def).await.unwrap();
+        watcher.async_exec(ctx.clone(), def).await.unwrap();
     }
 }

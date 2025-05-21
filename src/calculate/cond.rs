@@ -2,13 +2,15 @@ use async_trait::async_trait;
 
 use super::express::ExpressEnum;
 use super::express::*;
-use crate::execution::runnable::{EOResult, ExecOut};
+use crate::ability::prelude::VTResult;
+use crate::execution::runnable::ExecOut;
 
 use crate::components::gxl_cond::RunArgs;
+use crate::var::VarsDict;
 use std::sync::Arc;
 #[async_trait]
 pub trait CondExec {
-    async fn cond_exec(&self, args: RunArgs) -> EOResult;
+    async fn cond_exec(&self, def: VarsDict, args: RunArgs) -> VTResult;
 }
 
 pub type CondHandle = Arc<dyn CondExec>;
@@ -24,12 +26,12 @@ impl<T> CondExec for IFExpress<T>
 where
     T: CondExec + std::marker::Sync,
 {
-    async fn cond_exec(&self, args: RunArgs) -> EOResult {
+    async fn cond_exec(&self, def: VarsDict, args: RunArgs) -> VTResult {
         let x = self.express.decide(&args).expect("express decide error");
         if x {
-            self.true_block.cond_exec(args).await
+            self.true_block.cond_exec(def, args).await
         } else {
-            self.false_block.cond_exec(args).await
+            self.false_block.cond_exec(def, args).await
         }
     }
 }
@@ -38,8 +40,8 @@ pub struct StuBlock {
 }
 #[async_trait]
 impl CondExec for StuBlock {
-    async fn cond_exec(&self, _args: RunArgs) -> EOResult {
-        Ok(self.out.clone())
+    async fn cond_exec(&self, _def: VarsDict, _args: RunArgs) -> VTResult {
+        Ok((_def, self.out.clone()))
     }
 }
 
@@ -73,8 +75,10 @@ mod tests {
             },
         );
         assert_eq!(
-            ctrl_express.cond_exec(RunArgs::default()).await,
-            Ok(ExecOut::Code(0))
+            ctrl_express
+                .cond_exec(VarsDict::default(), RunArgs::default())
+                .await,
+            Ok((VarsDict::default(), ExecOut::Code(0)))
         );
     }
 }

@@ -1,3 +1,5 @@
+use crate::ability::prelude::ComponentMeta;
+
 use super::gxl_spc::GxlSpace;
 use super::{prelude::*, GxlFlow};
 
@@ -22,13 +24,15 @@ impl RgIntercept {
 
 #[async_trait]
 impl AsyncRunnableTrait for RgIntercept {
-    async fn async_exec(&self, ctx: ExecContext, var_dict: &mut VarsDict) -> EOResult {
-        self.export_props(ctx.clone(), var_dict, self.m_name())?;
+    async fn async_exec(&self, ctx: ExecContext, mut var_dict: VarsDict) -> VTResult {
         let mut job = Job::from("intercept");
+        self.export_props(ctx.clone(), &mut var_dict, self.m_name())?;
         for flow in &self.flows {
-            job.append(flow.async_exec(ctx.clone(), var_dict).await?);
+            let (cur_dict, task) = flow.async_exec(ctx.clone(), var_dict).await?;
+            var_dict = cur_dict;
+            job.append(task);
         }
-        Ok(ExecOut::Job(job))
+        Ok((var_dict, ExecOut::Job(job)))
     }
 }
 impl DependTrait<&GxlSpace> for RgIntercept {
@@ -58,13 +62,13 @@ impl AppendAble<RgProp> for RgIntercept {
 }
 
 #[derive(Clone, Getters, Debug)]
-pub struct RgFlowRunner {
+pub struct FlowRunner {
     m_name: String,
     flow: GxlFlow,
     before: RgIntercept,
     after: RgIntercept,
 }
-impl RgFlowRunner {
+impl FlowRunner {
     pub(crate) fn new(
         m_name: String,
         props: Vec<RgProp>,
@@ -81,7 +85,7 @@ impl RgFlowRunner {
     }
 }
 
-impl DependTrait<&GxlSpace> for RgFlowRunner {
+impl DependTrait<&GxlSpace> for FlowRunner {
     fn assemble(self, mod_name: &str, src: &GxlSpace) -> AResult<Self> {
         Ok(Self {
             m_name: self.m_name,
@@ -93,18 +97,34 @@ impl DependTrait<&GxlSpace> for RgFlowRunner {
 }
 
 #[async_trait]
-impl AsyncRunnableTrait for RgFlowRunner {
-    async fn async_exec(&self, mut ctx: ExecContext, dict: &mut VarsDict) -> EOResult {
+impl AsyncRunnableTrait for FlowRunner {
+    async fn async_exec(&self, mut ctx: ExecContext, dict: VarsDict) -> VTResult {
+        //let orgion = dict.clone();
         let mut job = Job::from("scope_flow");
         ctx.append(self.m_name.as_str());
-        job.append(self.before().async_exec(ctx.clone(), dict).await?);
-        job.append(self.flow().async_exec(ctx.clone(), dict).await?);
-        job.append(self.after().async_exec(ctx.clone(), dict).await?);
-        Ok(ExecOut::Job(job))
+        // 使用链式调用和模式匹配
+        let dict = {
+            let (d, t) = self.before().async_exec(ctx.clone(), dict).await?;
+            job.append(t);
+            d
+        };
+
+        let dict = {
+            let (d, t) = self.flow().async_exec(ctx.clone(), dict).await?;
+            job.append(t);
+            d
+        };
+
+        let _dict = {
+            let (d, t) = self.after().async_exec(ctx.clone(), dict).await?;
+            job.append(t);
+            d
+        };
+        Ok((_dict, ExecOut::Job(job)))
     }
 }
-impl ComponentRunnable for RgFlowRunner {
-    fn meta(&self) -> RgoMeta {
+impl ComponentMeta for FlowRunner {
+    fn com_meta(&self) -> RgoMeta {
         self.flow().meta().clone()
     }
 }

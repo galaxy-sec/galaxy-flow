@@ -18,12 +18,12 @@ impl GxCmdDto {
 }
 #[async_trait]
 impl AsyncRunnableTrait for GxCmd {
-    async fn async_exec(&self, ctx: ExecContext, def: &mut VarsDict) -> EOResult {
+    async fn async_exec(&self, ctx: ExecContext, def: VarsDict) -> VTResult {
         self.execute_impl(&self.dto.forword, ctx, def)
     }
 }
-impl ComponentRunnable for GxCmd {
-    fn meta(&self) -> RgoMeta {
+impl ComponentMeta for GxCmd {
+    fn com_meta(&self) -> RgoMeta {
         RgoMeta::build_ability("gx.cmd")
     }
 }
@@ -39,7 +39,7 @@ impl GxCmd {
     pub fn dto_new(dto: GxCmdDto) -> Self {
         GxCmd { dto }
     }
-    fn execute_impl(&self, cmd: &String, mut ctx: ExecContext, def: &mut VarsDict) -> EOResult {
+    fn execute_impl(&self, cmd: &String, mut ctx: ExecContext, def: VarsDict) -> VTResult {
         ctx.append("gx.cmd");
         let mut task = Task::from("gx.cmd");
         trace!(target:ctx.path(),"cmd:{}", cmd);
@@ -56,7 +56,7 @@ impl GxCmd {
             &exp
         )?;
         task.finish();
-        Ok(ExecOut::Task(task))
+        Ok((def, ExecOut::Task(task)))
     }
 }
 
@@ -72,6 +72,6 @@ mod tests {
         let res = GxCmd::new(
           "cd ${CONF_ROOT}/used ; if test ! -L  ./link2.txt ; then ln -s ${CONF_ROOT}/options/link.txt  ./link2.txt ; fi ".into()
           ) ;
-        res.async_exec(context, &mut def).await.unwrap();
+        res.async_exec(context, def).await.unwrap();
     }
 }

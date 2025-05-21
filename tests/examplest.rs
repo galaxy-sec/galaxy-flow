@@ -35,35 +35,36 @@ mod tests {
         }
     }
 
-    #[test]
-    fn example_read() -> RunResult<()> {
+    #[tokio::test]
+    async fn example_read() -> RunResult<()> {
         once_init_log();
         let _dir = ScopedRunDir::new("./examples/read");
         let mut loader = GxLoader::new();
         let spc =
             GxlSpace::try_from(loader.parse_file("./_gal/work.gxl", false, test_opt())?).assert();
-        spc.exec(vec!["default"], vec!["conf"], false)?;
+        spc.exec(vec!["default"], vec!["conf"], false).await?;
         Ok(())
     }
 
-    #[test]
-    fn example_assert() -> RunResult<()> {
+    #[tokio::test]
+    async fn example_assert() -> RunResult<()> {
         once_init_log();
         let _dir = ScopedRunDir::new("./examples/assert");
         let mut loader = GxLoader::new();
         let spc =
             GxlSpace::try_from(loader.parse_file("./_gal/work.gxl", false, test_opt())?).assert();
-        spc.exec(vec!["default"], vec!["assert_main"], false)?;
+        spc.exec(vec!["default"], vec!["assert_main"], false)
+            .await?;
         Ok(())
     }
-    #[test]
-    fn example_template() -> RunResult<()> {
+    #[tokio::test]
+    async fn example_template() -> RunResult<()> {
         once_init_log();
         let _dir = ScopedRunDir::new("./examples/template");
         let mut loader = GxLoader::new();
         let spc =
             GxlSpace::try_from(loader.parse_file("./_gal/work.gxl", false, test_opt())?).assert();
-        spc.exec(vec!["default"], vec!["conf"], false)?;
+        spc.exec(vec!["default"], vec!["conf"], false).await?;
         Ok(())
     }
 }

@@ -48,17 +48,20 @@ mod env  {
 }
 
 mod main   {
-
-    #[auto_load(entry)]
-    flow __into  {
       bld_bins = "target/${ENV_BUILD_NAME}" ;
       prj_bins = "${ENV_ROOT}/bin" ;
       usr_bins = "${HOME}/bin" ;
 
+    #[auto_load(entry)]
+    flow __into  {
+      //bld_bins = "target/${ENV_BUILD_NAME}" ;
+      //prj_bins = "${ENV_ROOT}/bin" ;
+      //usr_bins = "${HOME}/bin" ;
+
     }
     flow conf  {
-      gx.echo { value="PRJ_BINS: ${PRJ_BINS} "; }
-      gx.echo { value="USR_BIN : ${USR_BINS} "; }
+      gx.echo { value="PRJ_BINS: ${MAIN_PRJ_BINS} "; }
+      gx.echo { value="USR_BIN : ${MAIN_USR_BINS} "; }
       gx.echo { value="RG_OS_SYS: ${RG_OS_SYS} "; }
 
       gx.echo { value= "ENV_BUILD_FLAG :  ${ENV_BUILD_FLAG}  " }
@@ -75,8 +78,8 @@ mod main   {
 
   #[usage(desp="build system")]
   flow build: ver.use ,conf , rust_flow.build : pub_local {
-      os.path { dst = "${USR_BINS}"; }
-      os.path { dst = "${PRJ_BINS}"; }
+      os.path { dst = "${MAIN_USR_BINS}"; }
+      os.path { dst = "${MAIN_PRJ_BINS}"; }
   }
   #[usage(desp="lint code")]
   flow lint : rust_flow.lint {} ;
@@ -88,12 +91,12 @@ mod main   {
   }
 
   flow pub_local   {
-    os.path { dst = "${USR_BINS}"; }
-    os.path { dst = "${PRJ_BINS}"; }
-    gx.cmd  { cmd = "rm -f ${PRJ_BINS}/r*" ; }
-    os.copy {  src  = "${BLD_BINS}/gx" ; dst  = "${PRJ_BINS}/" ; }
-    os.copy {  src  = "${BLD_BINS}/gm" , dst  = "${PRJ_BINS}/" ; }
-    gx.cmd { cmd = "cp ${PRJ_BINS}/g* ${USR_BINS}/" ; }
+    os.path { dst = "${MAIN_USR_BINS}"; }
+    os.path { dst = "${MAIN_PRJ_BINS}"; }
+    gx.cmd  { cmd = "rm -f ${MAIN_PRJ_BINS}/r*" ; }
+    os.copy {  src  = "${MAIN_BLD_BINS}/gx" ; dst  = "${MAIN_PRJ_BINS}/" ; }
+    os.copy {  src  = "${MAIN_BLD_BINS}/gm" , dst  = "${MAIN_PRJ_BINS}/" ; }
+    gx.cmd { cmd = "cp ${MAIN_PRJ_BINS}/g* ${MAIN_USR_BINS}/" ; }
 
   }
 }

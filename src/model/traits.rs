@@ -8,15 +8,8 @@ use crate::{
 };
 
 use super::{
-    components::gxl_var::RgProp,
-    context::ExecContext,
-    error::AResult,
-    execution::{
-        runnable::{ComHold, RunHold},
-        sequence::Sequence,
-    },
-    var::VarsDict,
-    ExecResult,
+    components::gxl_var::RgProp, context::ExecContext, error::AResult,
+    execution::sequence::Sequence, var::VarsDict, ExecResult,
 };
 
 pub trait DependTrait<T>: Sized {
@@ -32,13 +25,6 @@ pub trait Setter<K, T> {
 pub trait Getter<K, T> {
     fn must_get(&self, key: K) -> &T;
     fn get(&self, key: K) -> Option<&T>;
-}
-
-#[derive(Clone)]
-pub enum SequEnum {
-    MRU(ComHold),
-    Run(RunHold),
-    UNDEF,
 }
 
 pub trait ExecLoadTrait {

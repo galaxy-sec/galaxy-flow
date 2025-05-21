@@ -15,7 +15,7 @@ pub struct SecVar {
     value: String,
 }
 
-#[derive(Debug, Clone, Default, Getters)]
+#[derive(Debug, Clone, Default, Getters, PartialEq)]
 pub struct VarsDict {
     maps: HashMap<String, SecVar>,
 }

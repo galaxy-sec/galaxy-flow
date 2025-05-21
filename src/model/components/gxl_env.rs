@@ -1,8 +1,8 @@
 use super::prelude::*;
 
-use crate::ability::prelude::ComponentRunnable;
 use crate::ability::GxRead;
 use crate::evaluator::Parser;
+use crate::execution::runnable::ComponentMeta;
 use crate::parser::stc_base::AnnDto;
 
 use crate::model::annotation::EnvAnnotation;
@@ -149,21 +149,21 @@ impl GxlEnv {
 
 #[async_trait]
 impl AsyncRunnableTrait for GxlEnv {
-    async fn async_exec(&self, mut ctx: ExecContext, def: &mut VarsDict) -> EOResult {
+    async fn async_exec(&self, mut ctx: ExecContext, mut def: VarsDict) -> VTResult {
         let env_name = self.meta.name();
         ctx.append(env_name);
 
         debug!(target: ctx.path(),"env {} setting", env_name );
-        self.export_props(ctx.clone(), def, "ENV")?;
+        self.export_props(ctx.clone(), &mut def, "ENV")?;
         for item in &self.items {
-            item.async_exec(ctx.clone(), def).await?;
+            (def, _) = item.async_exec(ctx.clone(), def).await?
         }
-        Ok(ExecOut::Ignore)
+        Ok((def, ExecOut::Ignore))
     }
 }
 #[async_trait]
 impl AsyncRunnableTrait for EnvItem {
-    async fn async_exec(&self, ctx: ExecContext, dict: &mut VarsDict) -> EOResult {
+    async fn async_exec(&self, ctx: ExecContext, dict: VarsDict) -> VTResult {
         match self {
             EnvItem::Var(o) => o.async_exec(ctx, dict).await,
             EnvItem::Read(o) => o.async_exec(ctx, dict).await,
@@ -171,8 +171,8 @@ impl AsyncRunnableTrait for EnvItem {
         }
     }
 }
-impl ComponentRunnable for GxlEnv {
-    fn meta(&self) -> RgoMeta {
+impl ComponentMeta for GxlEnv {
+    fn com_meta(&self) -> RgoMeta {
         self.meta.clone()
     }
 }

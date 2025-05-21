@@ -1,4 +1,4 @@
-use super::gxl_intercept::RgFlowRunner;
+use super::gxl_intercept::FlowRunner;
 use super::prelude::*;
 
 use crate::parser::stc_base::AnnDto;
@@ -25,8 +25,8 @@ pub struct RgIntercept {
 pub struct GxlFlow {
     meta: RgoMeta,
     props: Vec<RgProp>,
-    pre_flows: Vec<RgFlowRunner>,
-    post_flows: Vec<RgFlowRunner>,
+    pre_flows: Vec<FlowRunner>,
+    post_flows: Vec<FlowRunner>,
     blocks: Vec<BlockNode>,
 }
 
@@ -74,7 +74,7 @@ fn assemble_pipe(
     m_name: &str,
     flow: &str,
     src: &GxlSpace,
-    target: &mut Vec<RgFlowRunner>,
+    target: &mut Vec<FlowRunner>,
 ) -> AResult<()> {
     let (t_mod, flow_name) = take_mod_obj(m_name, flow);
     if let Some(flow) = src
@@ -139,34 +139,41 @@ impl GxlFlow {
 }
 
 impl GxlFlow {
-    async fn exec_self(&self, ctx: ExecContext, var_dict: &mut VarsDict) -> EOResult {
+    async fn exec_self(&self, ctx: ExecContext, mut var_dict: VarsDict) -> VTResult {
         let mut job = Job::from(self.meta.name());
-        self.export_props(ctx.clone(), var_dict, "")?;
+        self.export_props(ctx.clone(), &mut var_dict, "")?;
 
         for item in &self.blocks {
-            let task = item.async_exec(ctx.clone(), var_dict).await?;
+            let (cur_dict, task) = item.async_exec(ctx.clone(), var_dict).await?;
+            var_dict = cur_dict;
             job.append(task);
         }
-        Ok(ExecOut::Job(job))
+        Ok((var_dict, ExecOut::Job(job)))
     }
 }
 #[async_trait]
 impl AsyncRunnableTrait for GxlFlow {
-    async fn async_exec(&self, mut ctx: ExecContext, var_dict: &mut VarsDict) -> EOResult {
+    async fn async_exec(&self, mut ctx: ExecContext, mut var_dict: VarsDict) -> VTResult {
         let mut job = Job::from(self.meta.name());
         ctx.append(self.meta.name());
         for pre in self.pre_flows() {
-            job.append(pre.async_exec(ctx.clone(), var_dict).await?);
+            let (cur_dict, task) = pre.async_exec(ctx.clone(), var_dict).await?;
+            var_dict = cur_dict;
+            job.append(task);
         }
-        self.exec_self(ctx.clone(), var_dict).await?;
+        let (cur_dict, task) = self.exec_self(ctx.clone(), var_dict).await?;
+        var_dict = cur_dict;
+        job.append(task);
         for post in self.post_flows() {
-            job.append(post.async_exec(ctx.clone(), var_dict).await?);
+            let (cur_dict, task) = post.async_exec(ctx.clone(), var_dict).await?;
+            var_dict = cur_dict;
+            job.append(task);
         }
-        Ok(ExecOut::Job(job))
+        Ok((var_dict, ExecOut::Job(job)))
     }
 }
-impl ComponentRunnable for GxlFlow {
-    fn meta(&self) -> RgoMeta {
+impl ComponentMeta for GxlFlow {
+    fn com_meta(&self) -> RgoMeta {
         self.meta.clone()
     }
 }

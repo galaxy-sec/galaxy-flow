@@ -30,7 +30,7 @@ impl GxAssert {
 
 #[async_trait]
 impl AsyncRunnableTrait for GxAssert {
-    async fn async_exec(&self, mut ctx: ExecContext, def: &mut VarsDict) -> EOResult {
+    async fn async_exec(&self, mut ctx: ExecContext, def: VarsDict) -> VTResult {
         ctx.append("assert");
         let exp = EnvExpress::from_env_mix(def.clone());
         let value = exp.eval(&self.value)?;
@@ -55,11 +55,11 @@ impl AsyncRunnableTrait for GxAssert {
             println!("assert true : {}", value);
         }
         info!(target: ctx.path(), "value {} match exprect", value);
-        Ok(ExecOut::Ignore)
+        Ok((def, ExecOut::Ignore))
     }
 }
-impl ComponentRunnable for GxAssert {
-    fn meta(&self) -> RgoMeta {
+impl ComponentMeta for GxAssert {
+    fn com_meta(&self) -> RgoMeta {
         RgoMeta::build_ability("gx.assert")
     }
 }
@@ -72,12 +72,12 @@ mod tests {
     async fn assert_test() {
         let mut assert = GxAssert::default();
         let ctx = ExecContext::default();
-        let mut def = VarsDict::default();
+        let def = VarsDict::default();
         assert.expect_eq("hello", "hello");
-        assert.async_exec(ctx.clone(), &mut def).await.unwrap();
+        assert.async_exec(ctx.clone(), def.clone()).await.unwrap();
         assert.expect_eq("${HOME}", "${HOME}");
-        assert.async_exec(ctx.clone(), &mut def).await.unwrap();
+        assert.async_exec(ctx.clone(), def.clone()).await.unwrap();
         assert.expect_no_eq("${HOME}", "xxxx");
-        assert.async_exec(ctx.clone(), &mut def).await.unwrap();
+        assert.async_exec(ctx.clone(), def.clone()).await.unwrap();
     }
 }

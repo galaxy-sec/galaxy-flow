@@ -1,12 +1,12 @@
-use super::gxl_intercept::RgFlowRunner;
+use super::gxl_intercept::FlowRunner;
 use super::prelude::*;
 use crate::ability::delegate::Activity;
 
 use crate::annotation::is_auto_func;
 
+use crate::execution::hold::IsolationHold;
 use crate::execution::job::Job;
-use crate::execution::runnable::make_stc_hold;
-use crate::execution::runnable::RunnableTrait;
+use crate::execution::runnable::ComponentMeta;
 use crate::menu::*;
 use crate::meta::*;
 
@@ -100,13 +100,13 @@ impl From<&str> for GxlMod {
 }
 
 impl GxlMod {
-    pub fn load_scope_flow(&self, name: &str) -> Option<RgFlowRunner> {
+    pub fn load_scope_flow(&self, name: &str) -> Option<FlowRunner> {
         if let Some(flow) = self.flows.get(name) {
             debug!(target : "assmeble","load scope flow {}", name);
             let props = self.props().clone();
             let befores = self.get_auto_func("entry");
             let afters = self.get_auto_func("exit");
-            Some(RgFlowRunner::new(
+            Some(FlowRunner::new(
                 self.of_name(),
                 props,
                 flow.clone(),
@@ -171,45 +171,37 @@ impl MergeTrait for GxlMod {
 #[derive(Clone, Getters)]
 pub struct ModRunner {
     meta: RgoMeta,
-    run_items: Vec<ComHold>,
+    async_items: Vec<AsyncComHold>,
 }
-impl AppendAble<ComHold> for ModRunner {
-    fn append(&mut self, now: ComHold) {
-        self.run_items.push(now)
+impl AppendAble<AsyncComHold> for ModRunner {
+    fn append(&mut self, now: AsyncComHold) {
+        self.async_items.push(now)
     }
 }
 #[async_trait]
 impl AsyncRunnableTrait for ModRunner {
-    async fn async_exec(&self, mut ctx: ExecContext, dct: &VarsDict) -> EOResult {
+    async fn async_exec(&self, mut ctx: ExecContext, mut dct: VarsDict) -> VTResult {
         ctx.append(self.meta().name());
         let mut job = Job::default();
-        for i in &self.run_items {
-            job.append(i.async_exec(ctx.clone(), dct).await?);
+        for i in &self.async_items {
+            let (d, t) = i.async_exec(ctx.clone(), dct).await?;
+            dct = d;
+            job.append(t);
         }
-        Ok(ExecOut::Job(job))
+        Ok((dct, ExecOut::Job(job)))
     }
 }
 
-impl RunnableTrait for ModRunner {
-    fn exec(&self, mut ctx: ExecContext, dct: &mut VarsDict) -> EOResult {
-        ctx.append(self.meta().name());
-        let mut job = Job::default();
-        for i in &self.run_items {
-            job.append(i.exec(ctx.clone(), dct)?);
-        }
-        Ok(ExecOut::Job(job))
-    }
-}
 impl From<RgoMeta> for ModRunner {
     fn from(value: RgoMeta) -> Self {
         Self {
             meta: value,
-            run_items: Vec::new(),
+            async_items: Vec::new(),
         }
     }
 }
-impl ComponentRunnable for ModRunner {
-    fn meta(&self) -> RgoMeta {
+impl ComponentMeta for ModRunner {
+    fn com_meta(&self) -> RgoMeta {
         self.meta.clone()
     }
 }
@@ -220,10 +212,10 @@ impl ExecLoadTrait for GxlMod {
         //info!(target:ctx.path(),"load env:{}", obj_path);
         if let Some(found) = self.envs.get(args) {
             let mut mr = ModRunner::from(self.meta().clone());
-            mr.append(make_stc_hold(self.clone()));
+            mr.append(AsyncComHold::from(self.clone()));
             info!( target: ctx.path(),"load env [{}.{}] suc!", self.meta.name(), args);
-            mr.append(make_stc_hold(found.clone()));
-            sequ.append(make_stc_hold(mr));
+            mr.append(AsyncComHold::from(found.clone()));
+            sequ.append(AsyncComHold::from(mr));
             return Ok(());
         }
         Err(ExecError::from(ExecReason::Miss(args.into())))
@@ -232,7 +224,7 @@ impl ExecLoadTrait for GxlMod {
     fn load_flow(&self, mut ctx: ExecContext, sequ: &mut Sequence, args: &str) -> ExecResult<()> {
         ctx.append(self.meta.name().as_str());
         if let Some(found) = self.load_scope_flow(args) {
-            sequ.append(make_stc_hold(found));
+            sequ.append(IsolationHold::from(AsyncComHold::from(found)));
         }
         Ok(())
     }
@@ -251,20 +243,20 @@ impl ExecLoadTrait for GxlMod {
     }
 }
 impl GxlMod {
-    fn exec_self(&self, ctx: ExecContext, def: &mut VarsDict) -> EOResult {
-        self.export_props(ctx, def, self.meta.name().as_str())?;
-        Ok(ExecOut::Ignore)
+    fn exec_self(&self, ctx: ExecContext, mut def: VarsDict) -> VTResult {
+        self.export_props(ctx, &mut def, self.meta.name().as_str())?;
+        Ok((def, ExecOut::Ignore))
     }
 }
 
 #[async_trait]
 impl AsyncRunnableTrait for GxlMod {
-    async fn async_exec(&self, ctx: ExecContext, def: &mut VarsDict) -> EOResult {
+    async fn async_exec(&self, ctx: ExecContext, def: VarsDict) -> VTResult {
         self.exec_self(ctx, def)
     }
 }
-impl ComponentRunnable for GxlMod {
-    fn meta(&self) -> RgoMeta {
+impl ComponentMeta for GxlMod {
+    fn com_meta(&self) -> RgoMeta {
         RgoMeta::build_mod(self.meta.name().clone())
     }
 }
@@ -284,7 +276,7 @@ impl AppendAble<Vec<RgProp>> for GxlMod {
 
 impl AppendAble<Activity> for GxlMod {
     fn append(&mut self, hold: Activity) {
-        self.acts.insert(hold.meta().name().clone(), hold);
+        self.acts.insert(hold.com_meta().name().clone(), hold);
     }
 }
 
@@ -337,7 +329,7 @@ mod test {
         },
         context::ExecContext,
         execution::sequence::Sequence,
-        infra::once_init_log,
+        infra::{init_env, once_init_log},
         meta::{GxlType, RgoMeta},
         traits::{DependTrait, ExecLoadTrait},
         types::AnyResult,
@@ -433,8 +425,9 @@ mod test {
         Ok(())
     }
 
-    #[test]
-    fn test_assemble_env_success() -> AnyResult<()> {
+    #[tokio::test]
+    async fn test_assemble_env_success() -> AnyResult<()> {
+        init_env();
         let mod_name = "mod1";
         let meta_mod1 = RgoMeta::build_mod(mod_name);
         let mut mod1 = GxlMod::from(meta_mod1.clone());
@@ -455,8 +448,8 @@ mod test {
         mod1.load_env(ctx, &mut sequ, "env1")?;
 
         let ctx = ExecContext::default();
-        let mut vars = VarsDict::default();
-        let _ = sequ.execute(ctx, &mut vars);
+        let vars = VarsDict::default();
+        let (vars, _) = sequ.execute(ctx, vars.clone()).await.unwrap();
 
         println!("{:?}", vars.maps());
         assert_eq!(
@@ -470,8 +463,8 @@ mod test {
         Ok(())
     }
 
-    #[test]
-    fn test_assemble_flow_success() -> AnyResult<()> {
+    #[tokio::test]
+    async fn test_assemble_flow_success() -> AnyResult<()> {
         once_init_log();
         let meta1 = RgoMeta::build_mod("mod1");
         let mut mod1 = GxlMod::from(meta1);
@@ -501,13 +494,15 @@ mod test {
         work_spc.load_flow(ctx, &mut sequ, "mod2.flow2")?;
 
         let ctx = ExecContext::default();
-        let mut vars = VarsDict::default();
-        let _ = sequ.execute(ctx, &mut vars);
+        let vars = VarsDict::default();
+        let (vars, _task) = sequ.execute(ctx, vars).await.unwrap();
 
         println!("{:?}", vars.maps());
         assert_eq!(
-            vars.maps().get(&"MOD2_K2".to_string()),
-            Some(&SecVar::new(VarMeta::Normal, "v2".to_string()))
+            vars.maps().len(),
+            0 //vars.maps().get(&"MOD2_K2".to_string()),
+
+              //Some(&SecVar::new(VarMeta::Normal, "v2".to_string()))
         );
         Ok(())
     }

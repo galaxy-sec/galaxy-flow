@@ -222,16 +222,16 @@ impl GxTpl {
 
 #[async_trait]
 impl AsyncRunnableTrait for GxTpl {
-    async fn async_exec(&self, ctx: ExecContext, def: &mut VarsDict) -> EOResult {
+    async fn async_exec(&self, ctx: ExecContext, def: VarsDict) -> VTResult {
         let mut task = Task::from("build tpl file");
         self.render_path(ctx, &self.dto, def.clone())?;
         task.finish();
-        Ok(ExecOut::Task(task))
+        Ok((def, ExecOut::Task(task)))
     }
 }
 
-impl ComponentRunnable for GxTpl {
-    fn meta(&self) -> RgoMeta {
+impl ComponentMeta for GxTpl {
+    fn com_meta(&self) -> RgoMeta {
         RgoMeta::build_ability("gx.tpl")
     }
 }
@@ -278,10 +278,7 @@ mod tests {
         def.set("RG_PRJ_ROOT", "/home/galaxy");
         def.set("DOMAIN", "www.galaxy-sec.org");
         def.set("SOCK_FILE", "galaxy.socket");
-        conf_tpl
-            .async_exec(context.clone(), &mut def)
-            .await
-            .unwrap();
+        conf_tpl.async_exec(context.clone(), def).await.unwrap();
 
         let ngx_dst = format!(
             "{}/examples/template/conf/used/nginx_env.conf",
@@ -296,7 +293,7 @@ mod tests {
     #[tokio::test]
     async fn tpl_test_by_json() {
         //use ValueDict
-        let (context, mut def) = ability_env_init();
+        let (context, def) = ability_env_init();
         let root = format!("{}/examples/template/conf", context.cur_path());
         let tpl = format!("{}/tpls", root);
         let dst = format!("{}/used", root);
@@ -308,10 +305,7 @@ mod tests {
         dto.file = Some(file.clone());
 
         let conf_tpl = GxTpl::new_by_dto(dto);
-        conf_tpl
-            .async_exec(context.clone(), &mut def)
-            .await
-            .unwrap();
+        conf_tpl.async_exec(context.clone(), def).await.unwrap();
 
         let ngx_dst = format!("{}/used/nginx.conf", root);
         let ngx_xpt = format!("{}/expect/nginx.conf", root);

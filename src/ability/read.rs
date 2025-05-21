@@ -1,5 +1,6 @@
 use crate::ability::prelude::*;
 use crate::components::RgVars;
+use crate::execution::runnable::ComponentMeta;
 use crate::expect::{LogicScope, ShellOption};
 
 use ini::Ini;
@@ -40,13 +41,13 @@ pub struct RgReadDto {
 
 #[async_trait]
 impl AsyncRunnableTrait for GxRead {
-    async fn async_exec(&self, ctx: ExecContext, def: &mut VarsDict) -> EOResult {
+    async fn async_exec(&self, ctx: ExecContext, def: VarsDict) -> VTResult {
         self.execute_impl(&self.dto, ctx, def)
     }
 }
 
-impl ComponentRunnable for GxRead {
-    fn meta(&self) -> RgoMeta {
+impl ComponentMeta for GxRead {
+    fn com_meta(&self) -> RgoMeta {
         RgoMeta::build_ability("gx.read")
     }
 }
@@ -59,7 +60,7 @@ impl GxRead {
     pub fn dto_new(dto: RgReadDto) -> Self {
         GxRead { dto }
     }
-    fn execute_impl(&self, dto: &RgReadDto, mut ctx: ExecContext, def: &mut VarsDict) -> EOResult {
+    fn execute_impl(&self, dto: &RgReadDto, mut ctx: ExecContext, mut def: VarsDict) -> VTResult {
         ctx.append("gx.read");
         let mut task = Task::from("gx.read");
         let exp = EnvExpress::from_env_mix(def.clone());
@@ -80,7 +81,7 @@ impl GxRead {
                     .map_err(|msg| ExecReason::Exp(format!("bad result {}", msg)))?;
                 let mut vars = RgVars::default();
                 vars.append(RgProp::new(name, data_str.trim().to_string()));
-                vars.export_props(ctx, def, "")?;
+                vars.export_props(ctx, &mut def, "")?;
             }
             ReadMode::INI => {
                 let ini = dto
@@ -99,7 +100,7 @@ impl GxRead {
                         vars.append(RgProp::new(str_k, str_v));
                     }
                 }
-                vars.export_props(ctx, def, "")?;
+                vars.export_props(ctx, &mut def, "")?;
             }
 
             ReadMode::OxcToml => {
@@ -141,7 +142,7 @@ impl GxRead {
                         }
                     }
                 }
-                vars.export_props(ctx, def, "")?;
+                vars.export_props(ctx, &mut def, "")?;
             }
             ReadMode::STDIN => {
                 let msg = dto
@@ -159,12 +160,12 @@ impl GxRead {
                 stdin.read_line(&mut buffer).owe_data()?;
                 let mut vars = RgVars::default();
                 vars.append(RgProp::new(name, buffer.trim().to_string()));
-                vars.export_props(ctx, def, "")?;
+                vars.export_props(ctx, &mut def, "")?;
             }
             _ => return Err(ExecReason::Exp(String::from("not implementation")).into()),
         }
         task.finish();
-        Ok(ExecOut::Task(task))
+        Ok((def, ExecOut::Task(task)))
     }
 }
 #[cfg(test)]
@@ -183,7 +184,7 @@ mod tests {
         dto.name = Some(format!("RG"));
         dto.cmd = Some(format!("echo galaxy-1.0"));
         let res = GxRead::dto_new(dto);
-        res.async_exec(context, &mut def).await.unwrap();
+        res.async_exec(context, def).await.unwrap();
     }
     #[tokio::test]
     async fn read_ini_test() {
@@ -193,7 +194,7 @@ mod tests {
         dto.mode = ReadMode::INI;
         dto.ini = Some(String::from("${CONF_ROOT}/var.ini"));
         let res = GxRead::dto_new(dto);
-        res.async_exec(context, &mut def).await.unwrap();
+        res.async_exec(context, def).await.unwrap();
     }
     #[ignore]
     #[tokio::test]
@@ -205,7 +206,7 @@ mod tests {
         dto.stdin = Some(String::from("please input you name"));
         dto.name = Some(String::from("name"));
         let res = GxRead::dto_new(dto);
-        res.async_exec(context, &mut def).await.unwrap();
+        res.async_exec(context, def).await.unwrap();
     }
 
     #[test]

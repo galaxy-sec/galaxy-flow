@@ -7,8 +7,8 @@ use galaxy_flow::types::AnyResult;
 use galaxy_flow::{err::*, GxLoader};
 use orion_error::TestAssert;
 
-#[test]
-fn conf_simple_test() -> AnyResult<()> {
+#[tokio::test]
+async fn conf_simple_test() -> AnyResult<()> {
     once_init_log();
     let mut loader = GxLoader::new();
     let opt = ShellOption {
@@ -18,13 +18,13 @@ fn conf_simple_test() -> AnyResult<()> {
     let spc =
         GxlSpace::try_from(loader.parse_file("./tests/material/case_simple.gxl", false, opt)?)
             .assert();
-    spc.exec(vec!["dev"], vec!["api"], false)?;
+    spc.exec(vec!["dev"], vec!["api"], false).await?;
     Ok(())
 }
 
 #[ignore]
-#[test]
-fn conf_cond_test() -> RunResult<()> {
+#[tokio::test]
+async fn conf_cond_test() -> RunResult<()> {
     once_init_log();
     let mut loader = GxLoader::new();
     let opt = ShellOption {
@@ -34,6 +34,6 @@ fn conf_cond_test() -> RunResult<()> {
     let spc =
         GxlSpace::try_from(loader.parse_file("./tests/material/case_cond.gxl", false, opt)?)
             .assert();
-    spc.exec(vec!["dev"], vec!["api", "start"], false)?;
+    spc.exec(vec!["dev"], vec!["api", "start"], false).await?;
     Ok(())
 }

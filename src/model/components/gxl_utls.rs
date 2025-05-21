@@ -1,8 +1,13 @@
-use std::mem::swap;
-use std::sync::mpsc::channel;
+pub fn take_mod_obj(cur_mod: &str, obj_path: &str) -> (String, String) {
+    let parts = obj_path.splitn(2, '.').collect::<Vec<&str>>();
+    if parts.len() == 1 {
+        (cur_mod.to_string(), obj_path.to_string())
+    } else {
+        (parts[0].to_string(), parts[1].to_string())
+    }
+}
 
-use crate::execution::runnable::{channel_pass_data, Pipe, PipeReceiver, PipeSender};
-
+/*
 pub struct ExecPipe {
     keep_rin: PipeReceiver,
     keep_out: PipeSender,
@@ -28,14 +33,6 @@ impl Drop for ExecPipe {
     }
 }
 
-pub fn take_mod_obj(cur_mod: &str, obj_path: &str) -> (String, String) {
-    let parts = obj_path.splitn(2, '.').collect::<Vec<&str>>();
-    if parts.len() == 1 {
-        (cur_mod.to_string(), obj_path.to_string())
-    } else {
-        (parts[0].to_string(), parts[1].to_string())
-    }
-}
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -75,3 +72,5 @@ mod tests {
         );
     }
 }
+
+*/

@@ -151,6 +151,7 @@ impl ExternParser {
                 .build()
                 .unwrap(),
         };
+        debug!("mod-local @PATH: {}", local.path());
         let mut out = String::new();
         for mod_name in extern_mods.mods() {
             let mut code = local.fetch_code(mod_name)?;

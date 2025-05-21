@@ -12,6 +12,7 @@ use crate::ability::RgVersion;
 use crate::context::ExecContext;
 
 use crate::calculate::cond::CondExec;
+use crate::execution::runnable::VTResult;
 use crate::model::components::gxl_cond::RunArgs;
 
 use super::gxl_cond::RgCond;
@@ -48,39 +49,40 @@ impl BlockNode {
 
 #[async_trait]
 impl CondExec for BlockNode {
-    async fn cond_exec(&self, args: RunArgs) -> EOResult {
-        self.async_exec(args.ctx.clone(), &mut args.def.clone())
-            .await
+    async fn cond_exec(&self, def: VarsDict, args: RunArgs) -> VTResult {
+        self.async_exec(args.ctx.clone(), def).await
     }
 }
 #[async_trait]
 impl AsyncRunnableTrait for BlockAction {
-    async fn async_exec(&self, ctx: ExecContext, dct: &VarsDict) -> EOResult {
+    async fn async_exec(&self, ctx: ExecContext, dct: VarsDict) -> VTResult {
         match self {
             BlockAction::Command(o) => o.async_exec(ctx, dct).await,
             BlockAction::Echo(o) => o.async_exec(ctx, dct).await,
             BlockAction::Assert(o) => o.async_exec(ctx, dct).await,
             BlockAction::Cond(o) => o.async_exec(ctx, dct).await,
-            BlockAction::Read(o) => o.async_exec(ctx, dct).await,
-            BlockAction::Version(o) => o.async_exec(ctx, dct).await,
             BlockAction::Tpl(o) => o.async_exec(ctx, dct).await,
             BlockAction::Delegate(o) => o.async_exec(ctx, dct).await,
-            //BlockAction::Vault(o) => o.exec(ctx, dct),
+            BlockAction::Version(o) => o.async_exec(ctx, dct).await,
+            BlockAction::Read(o) => o.async_exec(ctx, dct).await,
         }
     }
 }
+
 #[async_trait]
 impl AsyncRunnableTrait for BlockNode {
-    async fn async_exec(&self, ctx: ExecContext, var_dict: &VarsDict) -> EOResult {
+    async fn async_exec(&self, ctx: ExecContext, var_dict: VarsDict) -> VTResult {
         //ctx.append("block");
         let mut job = Job::from("block");
-        self.export_props(ctx.clone(), var_dict, "")?;
+        let mut cur_var_dict = var_dict;
+        self.export_props(ctx.clone(), &mut cur_var_dict, "")?;
 
         for item in &self.items {
-            let task = item.async_exec(ctx.clone(), var_dict).await?;
+            let (tmp_var_dict, task) = item.async_exec(ctx.clone(), cur_var_dict).await?;
+            cur_var_dict = tmp_var_dict;
             job.append(task);
         }
-        Ok(ExecOut::Job(job))
+        Ok((cur_var_dict, ExecOut::Job(job)))
     }
 }
 impl DependTrait<&GxlSpace> for BlockNode {
@@ -132,12 +134,6 @@ impl AppendAble<Vec<BlockAction>> for BlockNode {
     }
 }
 
-impl AppendAble<SequEnum> for BlockNode {
-    fn append(&mut self, _v: SequEnum) {
-        todo!();
-    }
-}
-
 #[cfg(test)]
 mod tests {
 
@@ -160,31 +156,8 @@ mod tests {
         let prop = RgProp::new("test", "hello");
         block.append(prop);
         let ctx = ExecContext::new(false);
-        let mut def = VarsDict::default();
-        let res = block.async_exec(ctx, &mut def).await;
+        let def = VarsDict::default();
+        let res = block.async_exec(ctx, def).await;
         assert_eq!(res.is_ok(), true);
     }
-
-    /*
-    #[test]
-    fn test_exec2() {
-        use crate::exec::exec_init_env;
-        use crate::stc::rg_cond::RgCond;
-        let (ctx, mut def) = exec_init_env();
-        let mut block = RgBlock::new();
-        block.append(RgProp::new("key1", "val1"));
-        let ctrl_express: IFExpress = IFExpressT::if_ins(
-            ExpressEnum::MU32(BinExpress::equal_ins(MocU32::from("moc_1"), 1)),
-            Arc::new(RgBlock::new()),
-            Arc::new(RgBlock::new()),
-        );
-        let (_tx, rx) = channel();
-        let (tx1, _rx1) = channel();
-
-        block.append(Arc::new(RgCond {
-            cond: Arc::new(ctrl_express),
-        }) as RunHold);
-        block.exec(ctx.clone(), &mut def, (rx, tx1)).unwrap();
-    }
-    */
 }

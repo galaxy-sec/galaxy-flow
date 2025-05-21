@@ -1,7 +1,4 @@
-use std::sync::Arc;
-
 use async_trait::async_trait;
-use orion_error::ErrorOwe;
 
 use crate::context::ExecContext;
 use crate::meta::RgoMeta;
@@ -30,41 +27,44 @@ impl Display for ExecOut {
 }
 */
 
-pub type EOResult = ExecResult<ExecOut>;
+pub type TaskResult = ExecResult<ExecOut>;
+pub type VarsResult = ExecResult<VarsDict>;
+pub type VTResult = ExecResult<(VarsDict, ExecOut)>;
 //#[automock]
 #[async_trait]
 pub trait AsyncRunnableTrait {
-    async fn async_exec(&self, ctx: ExecContext, dict: &VarsDict) -> EOResult;
+    async fn async_exec(&self, ctx: ExecContext, dict: VarsDict) -> VTResult;
+    fn update_vars(&self, _ctx: ExecContext, dict: &VarsDict) -> VarsResult {
+        Ok(dict.clone())
+    }
 }
-//#[automock]
-pub trait ComponentRunnable: AsyncRunnableTrait {
-    fn meta(&self) -> RgoMeta;
+pub trait RunnableTrait {
+    fn exec(&self, ctx: ExecContext, dict: VarsDict) -> VTResult;
+}
+
+pub trait ComponentMeta {
+    fn com_meta(&self) -> RgoMeta;
 }
 pub trait MetaInfo: AsyncRunnableTrait {
     fn meta(&self) -> RgoMeta;
 }
-pub fn channel_pass_data(recv: &PipeReceiver, send: &PipeSender) -> EOResult {
+/*
+pub fn channel_pass_data(recv: &PipeReceiver, send: &PipeSender) -> VTResult {
     while let Ok(data) = recv.try_recv() {
         send.send(data).owe_sys()?;
     }
     Ok(ExecOut::Ignore)
 }
+*/
 
-pub type RunHold = std::sync::Arc<dyn AsyncRunnableTrait>;
-pub type ComHold = std::sync::Arc<dyn ComponentRunnable>;
-
+//pub type RunHold = std::sync::Arc<dyn AsyncRunnableTrait>;
 /*
 #[async_trait]
 pub trait AsyncRunable: Sync + Send {
     async fn async_forword(&self, ctx: ExecContext, dct: VarsDict) -> EResult;
 }
-*/
-//pub type ARunHold = std::sync::Arc<dyn AsyncRunable>;
 
 pub fn make_run_hold<T: AsyncRunnableTrait + 'static>(obj: T) -> RunHold {
     Arc::new(obj)
 }
-
-pub fn make_stc_hold<T: ComponentRunnable + 'static>(obj: T) -> ComHold {
-    Arc::new(obj)
-}
+*/

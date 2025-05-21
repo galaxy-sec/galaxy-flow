@@ -161,14 +161,11 @@ impl GxlSpace {
             }
             let mut cur_ctx = ctx.clone();
             cur_ctx.append("flow");
-            //ctx.append(&f_name);
             self.load_flow(cur_ctx, &mut exec_sequ, f_name.as_str())
                 .err_conv()?;
-            //.map_err(stc_err_conv)?;
             let mut exec_ctx = ExecContext::new(out);
             exec_ctx.append("exec");
-            let _ = exec_sequ.execute(exec_ctx, &mut def).await.err_conv()?;
-            //.map_err(stc_err_conv)?;
+            let _ = exec_sequ.execute(exec_ctx, def.clone()).await.err_conv()?;
         }
         Ok(())
     }
@@ -220,7 +217,7 @@ mod tests {
 
     #[tokio::test]
     async fn execute_forword() -> AnyResult<()> {
-        let (ctx, mut def) = exec_init_env();
+        let (ctx, def) = exec_init_env();
 
         let meta = RgoMeta::build_mod("main");
         let mut rg_mod = GxlMod::from(meta);
@@ -249,7 +246,7 @@ mod tests {
         let work_spc = rg_space.assemble_mix().assert();
         work_spc.load_env(ctx.clone(), &mut flow, "env.env1")?;
         work_spc.load_flow(ctx.clone(), &mut flow, "main.flow1")?;
-        let job = flow.test_execute(ctx, &mut def).await;
+        let (_, job) = flow.test_execute(ctx, def).await.unwrap();
         debug!("job {:#?}", job);
         work_spc.show().unwrap();
         Ok(())

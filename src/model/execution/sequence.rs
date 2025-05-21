@@ -3,16 +3,20 @@ use orion_common::friendly::AppendAble;
 use orion_common::friendly::MultiNew2;
 
 use crate::context::ExecContext;
+use crate::execution::hold::AsyncComHold;
 use crate::execution::job::Job;
 use crate::execution::runnable::AsyncRunnableTrait;
-use crate::execution::runnable::ComHold;
-use crate::execution::runnable::ComponentRunnable;
-use crate::execution::runnable::EOResult;
 use crate::execution::runnable::ExecOut;
+use crate::execution::runnable::RunnableTrait;
 use crate::execution::task::Task;
 use crate::meta::GxlType;
 use crate::meta::RgoMeta;
 use crate::var::VarsDict;
+
+use super::hold::ComHold;
+use super::hold::IsolationHold;
+use super::runnable::ComponentMeta;
+use super::runnable::VTResult;
 
 #[derive(Clone, Getters)]
 pub struct Sequence {
@@ -30,30 +34,38 @@ impl From<&str> for Sequence {
 }
 
 impl Sequence {
-    pub async fn execute(&self, ctx: ExecContext, def: &mut VarsDict) -> EOResult {
+    pub async fn execute(&self, ctx: ExecContext, def: VarsDict) -> VTResult {
         self.forword(ctx, def).await
     }
-    pub async fn test_execute(&self, ctx: ExecContext, def: &mut VarsDict) -> EOResult {
+    pub async fn test_execute(&self, ctx: ExecContext, def: VarsDict) -> VTResult {
         self.forword(ctx, def).await
     }
 
-    async fn forword(&self, ctx: ExecContext, def: &mut VarsDict) -> EOResult {
+    async fn forword(&self, ctx: ExecContext, mut def: VarsDict) -> VTResult {
         let mut job = Job::from(&self.name);
+        warn!(target: ctx.path() ,"sequ size:{} ", self.run_items().len());
         for obj in &self.run_items {
-            debug!(target: ctx.path() ,"sequ exec runner :{} ",obj.meta().name());
-            let out = obj.async_exec(ctx.clone(), def).await?;
+            debug!(target: ctx.path() ,"sequ exec runner :{} ",obj.com_meta().name());
+            let (cur_dict, out) = obj.async_exec(ctx.clone(), def).await?;
+            def = cur_dict;
             job.append(out);
         }
-        Ok(ExecOut::Job(job))
+        Ok((def, ExecOut::Job(job)))
     }
 }
 
-impl AppendAble<ComHold> for Sequence {
-    fn append(&mut self, node: ComHold) {
-        self.run_items.push(node);
+impl AppendAble<AsyncComHold> for Sequence {
+    fn append(&mut self, node: AsyncComHold) {
+        self.run_items.push(node.into());
+    }
+}
+impl AppendAble<IsolationHold> for Sequence {
+    fn append(&mut self, node: IsolationHold) {
+        self.run_items.push(node.into());
     }
 }
 
+#[derive(Clone)]
 pub struct RunStub {
     name: String,
 }
@@ -66,39 +78,46 @@ impl From<&str> for RunStub {
 }
 #[async_trait]
 impl AsyncRunnableTrait for RunStub {
-    async fn async_exec(&self, ctx: ExecContext, _def: &mut VarsDict) -> EOResult {
+    async fn async_exec(&self, ctx: ExecContext, _def: VarsDict) -> VTResult {
         debug!(target:ctx.path(), "{}", self.name);
         let task = Task::from(&self.name);
-        Ok(ExecOut::Task(task))
+        Ok((_def, ExecOut::Task(task)))
     }
 }
-impl ComponentRunnable for RunStub {
-    fn meta(&self) -> RgoMeta {
+
+impl RunnableTrait for RunStub {
+    fn exec(&self, ctx: ExecContext, _def: VarsDict) -> VTResult {
+        debug!(target:ctx.path(), "{}", self.name);
+        let task = Task::from(&self.name);
+        Ok((_def, ExecOut::Task(task)))
+    }
+}
+impl ComponentMeta for RunStub {
+    fn com_meta(&self) -> RgoMeta {
         RgoMeta::new2(GxlType::Ignore, "stub")
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::execution::{exec_init_env, runnable::ComponentRunnable};
+    use crate::execution::exec_init_env;
 
     use super::*;
-    use std::sync::Arc;
-    fn stub_node(name: &str) -> Arc<dyn ComponentRunnable> {
-        Arc::new(RunStub::from(name))
+    fn stub_node(name: &str) -> RunStub {
+        RunStub::from(name)
     }
     #[tokio::test]
     async fn build_flow() {
-        let (ctx, mut def) = exec_init_env();
+        let (ctx, def) = exec_init_env();
 
         let mut flow = Sequence::from("test.flow");
         let node21 = stub_node("self.step1");
         let node22 = stub_node("self.step2");
-        flow.append(node21.clone());
-        flow.append(node22.clone());
+        flow.append(AsyncComHold::from(node21.clone()));
+        flow.append(AsyncComHold::from(node22.clone()));
 
-        let out = flow.execute(ctx, &mut def).await;
-        if let ExecOut::Job(job) = out.unwrap() {
+        let (_, out) = flow.execute(ctx, def).await.unwrap();
+        if let ExecOut::Job(job) = out {
             debug!("{:#?}", job);
             assert_eq!(job.tasks().len(), 2);
             assert_eq!(job.tasks()[0].name(), "self.step1");

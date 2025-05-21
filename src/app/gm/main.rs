@@ -8,7 +8,7 @@ extern crate log;
 extern crate clap;
 
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use crate::args::{GxAdmCmd, PrjCmd};
 use clap::Parser;
@@ -46,7 +46,7 @@ impl GxAdm {
                 Self::do_prj_cmd(&mut gx, prj_cmd)?;
             }
             GxAdmCmd::Adm(cmd) => {
-                Self::do_adm_cmd(cmd)?;
+                Self::do_adm_cmd(cmd).await?;
             }
             GxAdmCmd::ModSpec(cmd) => {
                 do_modspec_cmd(cmd).await?;
@@ -71,13 +71,13 @@ impl GxAdm {
         Ok(())
     }
 
-    fn do_adm_cmd(mut cmd: GxlCmd) -> RunResult<()> {
+    async fn do_adm_cmd(mut cmd: GxlCmd) -> RunResult<()> {
         configure_flow_logging(cmd.log.clone(), cmd.debug);
         debug!("galaxy flow running .....");
         if cmd.conf.is_none() {
             cmd.conf = Some("./_gal/adm.gxl".to_string());
         }
-        GxlRunner::run(cmd)?;
+        GxlRunner::run(cmd).await?;
         Ok(())
     }
 

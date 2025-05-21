@@ -70,7 +70,7 @@ mod main {
     //DOMAIN_A      = "a.api.${ENV_BASE_DOMAIN}";
     DOMAIN_B      = "b.api.${ENV_BASE_DOMAIN}";
     gx.echo {
-      value = "${DOMAIN_A}";
+      value = "${MAIN_NAME}";
     }
     gx.echo {
       value = "${DOMAIN_B}";

@@ -1,5 +1,6 @@
 use crate::ability::prelude::*;
 
+use crate::execution::runnable::ComponentMeta;
 use crate::parser::domain::take_version;
 use crate::traits::Setter;
 use std::cmp::Ordering;
@@ -110,7 +111,7 @@ impl RgVersion {
 }
 #[async_trait]
 impl AsyncRunnableTrait for RgVersion {
-    async fn async_exec(&self, mut ctx: ExecContext, dict: &mut VarsDict) -> EOResult {
+    async fn async_exec(&self, mut ctx: ExecContext, mut dict: VarsDict) -> VTResult {
         ctx.append("version");
         let exp = EnvExpress::from_env_mix(dict.clone());
         let file_path = exp.eval(&self.file)?;
@@ -124,7 +125,7 @@ impl AsyncRunnableTrait for RgVersion {
             dict.set(&self.export.to_uppercase(), format!("{}", &ver));
             let mut file = File::create(file_path.as_str()).owe_res()?;
             file.write_all(ver.to_string().as_bytes()).owe_res()?;
-            Ok(ExecOut::Ignore)
+            Ok((dict, ExecOut::Ignore))
         } else {
             Err(ExecReason::Depend("version file parse failed!".to_string()).into())
         }
@@ -138,8 +139,8 @@ pub fn parse_version(data: &str) -> ExecResult<Version> {
     Ok(Version::new(a, b, c, d))
 }
 
-impl ComponentRunnable for RgVersion {
-    fn meta(&self) -> RgoMeta {
+impl ComponentMeta for RgVersion {
+    fn com_meta(&self) -> RgoMeta {
         RgoMeta::build_ability("gx.ver")
     }
 }
@@ -168,8 +169,8 @@ mod tests {
         file.write_all(b"0.1.0.0").unwrap();
         let ver = RgVersion::new("./tests/tmp_version.txt".into());
         let ctx = ExecContext::default();
-        let mut def = VarsDict::default();
-        ver.async_exec(ctx.clone(), &mut def).await.unwrap();
+        let def = VarsDict::default();
+        ver.async_exec(ctx.clone(), def).await.unwrap();
     }
 
     #[test]

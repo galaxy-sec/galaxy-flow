@@ -70,7 +70,7 @@ impl ActCall {
 }
 #[async_trait]
 impl AsyncRunnableTrait for ActCall {
-    async fn async_exec(&self, mut ctx: ExecContext, def: &mut VarsDict) -> EOResult {
+    async fn async_exec(&self, mut ctx: ExecContext, def: VarsDict) -> VTResult {
         ctx.append("@");
         match &self.act {
             Some(act) => act.async_exec(ctx, def).await,
@@ -109,13 +109,13 @@ impl ActivityDTO {
 
 #[async_trait]
 impl AsyncRunnableTrait for Activity {
-    async fn async_exec(&self, ctx: ExecContext, def: &mut VarsDict) -> EOResult {
+    async fn async_exec(&self, ctx: ExecContext, def: VarsDict) -> VTResult {
         self.exec_cmd(ctx, def, &self.dto)
         // Ok(ExecOut::Ignore)
     }
 }
-impl ComponentRunnable for Activity {
-    fn meta(&self) -> RgoMeta {
+impl ComponentMeta for Activity {
+    fn com_meta(&self) -> RgoMeta {
         RgoMeta::build_activity(self.dto.name.as_str())
     }
 }
@@ -139,12 +139,7 @@ impl Activity {
             }
         }
     }
-    fn execute_impl(
-        &self,
-        mut ctx: ExecContext,
-        def: &mut VarsDict,
-        dto: &ActivityDTO,
-    ) -> EOResult {
+    fn execute_impl(&self, mut ctx: ExecContext, def: VarsDict, dto: &ActivityDTO) -> VTResult {
         ctx.append(format!("{}.{}", self.host, dto.name));
         debug!(target: ctx.path(),"actcall");
         let mut task = Task::from(dto.name.as_str());
@@ -165,9 +160,9 @@ impl Activity {
         debug!(target: ctx.path(),"cmd: {}, opt:{:?}", cmd,opt);
         rg_sh!(LogicScope::Outer, ctx.path(), &cmd, &opt, &exp).with(&r_with)?;
         task.finish();
-        Ok(ExecOut::Task(task))
+        Ok((def, ExecOut::Task(task)))
     }
-    pub fn exec_cmd(&self, ctx: ExecContext, def: &mut VarsDict, dto: &ActivityDTO) -> EOResult {
+    pub fn exec_cmd(&self, ctx: ExecContext, def: VarsDict, dto: &ActivityDTO) -> VTResult {
         self.execute_impl(ctx, def, dto)
     }
 }
@@ -189,7 +184,7 @@ mod tests {
     #[ignore]
     #[tokio::test]
     async fn act_test() {
-        let (context, mut def) = ability_env_init();
+        let (context, def) = ability_env_init();
         let expect = ShellOption::default();
         let mut dto = ActivityDTOBuilder::default()
             .name("os.copy".into())
@@ -208,7 +203,7 @@ mod tests {
         });
 
         let act = Activity::dto_new(dto.clone());
-        let result = act.async_exec(context.clone(), &mut def).await.assert();
+        let (_, result) = act.async_exec(context.clone(), def).await.assert();
         match result {
             ExecOut::Task(task) => {
                 assert_eq!(task.name(), "os.copy");
