@@ -1,5 +1,6 @@
 use derive_more::From;
 use orion_error::{ErrorCode, StructError, UvsReason};
+use orion_syspec::error::SpecReason;
 use serde::Serialize;
 use thiserror::Error;
 
@@ -56,4 +57,13 @@ impl ErrorCode for ExecReason {
 
 pub type ExecError = StructError<ExecReason>;
 pub type ExecResult<T> = Result<T, ExecError>;
-//pub type ExecResult = Result<ExecOut, Box<dyn std::error::Error>>;
+
+impl From<SpecReason> for ExecReason {
+    fn from(value: SpecReason) -> Self {
+        match value {
+            SpecReason::UnKnow => todo!(),
+            SpecReason::Miss(msg) => Self::Miss(msg),
+            SpecReason::Uvs(uvs_reason) => Self::Uvs(uvs_reason),
+        }
+    }
+}

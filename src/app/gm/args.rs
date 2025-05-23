@@ -29,25 +29,30 @@ pub enum GxAdmCmd {
 
 #[derive(Debug, Subcommand)]
 pub enum ModSpecCmd {
-    Crate,
+    Example,
+    Create(SpecArgs),
     Check,
 }
 #[derive(Debug, Subcommand)]
 pub enum SysSpecCmd {
-    Crate,
+    Example,
+    Create,
+    Update,
     Check,
 }
 
 #[derive(Debug, Subcommand)]
 pub enum ModInsCmd {
-    Crate,
+    Example,
+    Create(SpecArgs),
     Update,
     Local,
 }
 
 #[derive(Debug, Subcommand)]
 pub enum SysInsCmd {
-    Crate,
+    Example,
+    Create(SysArgs),
     Update,
     Local,
 }
@@ -57,6 +62,17 @@ pub enum PrjCmd {
     Init,
     RemoteInit(InitArgs),
     Update(PrjArgs),
+}
+
+#[derive(Debug, Args)]
+pub struct SpecArgs {
+    #[arg(short, long)]
+    pub(crate) name: String,
+}
+#[derive(Debug, Args)]
+pub struct SysArgs {
+    #[arg(short, long)]
+    pub(crate) repo: String,
 }
 
 #[derive(Debug, Args)]

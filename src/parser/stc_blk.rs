@@ -10,7 +10,9 @@ use crate::components::gxl_cond::RgCond;
 
 use super::atom::spaced;
 use super::domain::{gal_block_beg, gal_block_end, gal_keyword};
-use super::inner::{gal_assert, gal_call, gal_cmd, gal_echo, gal_read, gal_tpl, gal_version};
+use super::inner::{
+    gal_assert, gal_call, gal_cmd, gal_downlaod, gal_echo, gal_read, gal_tpl, gal_version,
+};
 
 pub fn gal_block(input: &mut &str) -> ModalResult<BlockNode> {
     let mut block = BlockNode::new();
@@ -65,6 +67,9 @@ pub fn gal_sentens_item(input: &mut &str) -> ModalResult<BlockAction> {
     }
     if starts_with("gx.tpl", input) {
         return gal_tpl.map(BlockAction::Tpl).parse_next(input);
+    }
+    if starts_with("gx.down", input) {
+        return gal_downlaod.map(BlockAction::Down).parse_next(input);
     }
     /*
     if starts_with("gx.vault", input) {

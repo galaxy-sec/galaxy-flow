@@ -1,12 +1,26 @@
+use std::path::PathBuf;
+
+use orion_error::ErrorConv;
+use orion_syspec::{
+    artifact::Artifact,
+    error::ToErr,
+    types::{AsyncUpdateable, TomlAble},
+};
+
 use crate::ability::prelude::*;
 
-#[derive(Clone, Default, Debug, PartialEq)]
+#[derive(Clone, Default, Debug, PartialEq, Builder)]
+#[builder(setter(into))]
 pub struct GxDownLoad {
-    value: String,
+    task_file: Option<String>,
+    dst_path: String,
+    #[builder(default)]
+    dst_name: Option<String>,
 }
 impl GxDownLoad {
-    pub fn set(&mut self, val: &str) {
-        self.value = val.to_string();
+    pub fn with_file<S: Into<String>>(mut self, file: S) -> Self {
+        self.task_file = Some(file.into());
+        self
     }
 }
 
@@ -15,15 +29,33 @@ impl GxDownLoad {
 #[async_trait]
 impl AsyncRunnableTrait for GxDownLoad {
     async fn async_exec(&self, ctx: ExecContext, def: VarsDict) -> VTResult {
-        //let local = LocalAddr::from("./test/data/sys-1");
-        //local.update_rename(&path, "sys-2").await?;
-        //local.update_local(&path).await?;
+        if let Some(file) = &self.task_file {
+            let ex = EnvExpress::from_env_mix(def.clone());
+            let task_file = ex.eval(file.as_str())?;
+            info!(target: ctx.path(), "task_file :{} ", task_file);
+            let artifact = if task_file.ends_with("toml") {
+                Artifact::from_toml(&PathBuf::from(task_file)).err_conv()?
+            } else {
+                return ExecReason::Bug("only toml format support".into()).err_result();
+            };
 
-        let ex = EnvExpress::from_env_mix(def.clone());
-        let out = ex.eval(&self.value)?;
-        info!(target: ctx.path(), "{} :{}", &self.value, out);
-        println!("{}", out);
-        Ok((def, ExecOut::Ignore))
+            if let Some(dst_name) = &self.dst_name {
+                artifact
+                    .addr()
+                    .update_rename(&PathBuf::from(self.dst_path.as_str()), dst_name)
+                    .await
+                    .err_conv()?;
+            } else {
+                artifact
+                    .addr()
+                    .update_local(&PathBuf::from(self.dst_path.as_str()))
+                    .await
+                    .err_conv()?;
+            }
+            Ok((def, ExecOut::Ignore))
+        } else {
+            return ExecReason::Miss("task_file".into()).err_result();
+        }
     }
 }
 
@@ -34,20 +66,4 @@ impl ComponentMeta for GxDownLoad {
 }
 
 #[cfg(test)]
-mod tests {
-
-    use crate::traits::Setter;
-
-    use super::*;
-
-    #[tokio::test]
-    async fn echo_test() {
-        let mut watcher = GxDownLoad::default();
-        watcher.set("${HOME}");
-        let ctx = ExecContext::default();
-        let mut def = VarsDict::default();
-        watcher.async_exec(ctx.clone(), def.clone()).await.unwrap();
-        def.set("HOME", "/root");
-        watcher.async_exec(ctx.clone(), def).await.unwrap();
-    }
-}
+mod tests {}

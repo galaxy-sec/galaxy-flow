@@ -3,6 +3,7 @@ use async_trait::async_trait;
 use super::prelude::*;
 
 use crate::ability::delegate::ActCall;
+use crate::ability::download::GxDownLoad;
 use crate::ability::GxAssert;
 use crate::ability::GxCmd;
 use crate::ability::GxEcho;
@@ -29,6 +30,7 @@ pub enum BlockAction {
     Read(GxRead),
     Delegate(ActCall),
     Tpl(GxTpl),
+    Down(GxDownLoad),
     //Vault(GxVault),
 }
 
@@ -65,6 +67,7 @@ impl AsyncRunnableTrait for BlockAction {
             BlockAction::Delegate(o) => o.async_exec(ctx, dct).await,
             BlockAction::Version(o) => o.async_exec(ctx, dct).await,
             BlockAction::Read(o) => o.async_exec(ctx, dct).await,
+            BlockAction::Down(o) => o.async_exec(ctx, dct).await,
         }
     }
 }
@@ -104,6 +107,7 @@ impl DependTrait<&GxlSpace> for BlockNode {
                 BlockAction::Version(v) => BlockAction::Version(v.clone()),
                 BlockAction::Command(v) => BlockAction::Command(v.clone()),
                 BlockAction::Delegate(v) => BlockAction::Delegate(v.assemble(mod_name, src)?),
+                BlockAction::Down(v) => BlockAction::Down(v.clone()),
             };
             ins.append(item);
         }

@@ -115,12 +115,12 @@ impl AsyncRunnableTrait for FlowRunner {
             d
         };
 
-        let _dict = {
+        let dict = {
             let (d, t) = self.after().async_exec(ctx.clone(), dict).await?;
             job.append(t);
             d
         };
-        Ok((_dict, ExecOut::Job(job)))
+        Ok((dict, ExecOut::Job(job)))
     }
 }
 impl ComponentMeta for FlowRunner {

@@ -13,6 +13,8 @@ use winnow::Parser;
 use crate::ability::assert::*;
 use crate::ability::cmd::GxCmdDtoBuilder;
 use crate::ability::delegate::ActCall;
+use crate::ability::download::GxDownLoad;
+use crate::ability::download::GxDownLoadBuilder;
 use crate::ability::echo::*;
 use crate::ability::read::ReadMode;
 use crate::ability::read::RgReadDtoBuilder;
@@ -51,22 +53,31 @@ pub fn gal_echo(input: &mut &str) -> ModalResult<GxEcho> {
             watcher.set(v.as_str());
         }
     }
-    //gal_sentence_beg.parse_next(input)?;
-    //let cur: &str = input;
-    /*
-    if starts_with("\"", input) {
-        let v = alt((gal_raw_string, take_string)).parse_next(input)?;
-        watcher.set(v.as_str());
-    } else {
-        let (k, v) = gal_var_assign.parse_next(input)?;
-        if k == "value" {
-            watcher.set(v.as_str());
+    Ok(watcher)
+}
+
+pub fn gal_downlaod(input: &mut &str) -> ModalResult<GxDownLoad> {
+    let mut down = GxDownLoadBuilder::default();
+    gal_keyword_alt("gx.down", "gx.download", input)?;
+    let props = sentence_body.parse_next(input)?;
+    for (k, v) in &props {
+        if k == "file" {
+            down.task_file(v.clone());
+        }
+        if k == "dst_path" {
+            down.dst_path(v);
+        }
+        if k == "dst_name" {
+            down.dst_name(v.clone());
         }
     }
-    gal_sentence_end.parse_next(input)?;
-    */
-
-    Ok(watcher)
+    match down.build() {
+        Ok(o) => Ok(o),
+        Err(e) => {
+            error!("{}", e);
+            fail.context(wn_desc("gx.down")).parse_next(input)
+        }
+    }
 }
 
 pub fn gal_version(input: &mut &str) -> ModalResult<RgVersion> {
