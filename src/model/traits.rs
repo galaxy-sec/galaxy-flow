@@ -9,7 +9,7 @@ use crate::{
 
 use super::{
     components::gxl_var::RgProp, context::ExecContext, error::AResult,
-    execution::sequence::Sequence, var::VarsDict, ExecResult,
+    execution::sequence::Sequence, var::VarDict, ExecResult,
 };
 
 pub trait DependTrait<T>: Sized {
@@ -38,7 +38,7 @@ pub type AssembleHold = Arc<dyn ExecLoadTrait + 'static + Send + Sync>;
 
 pub trait PropsTrait {
     fn fetch_props(&self) -> &Vec<RgProp>;
-    fn export_props(&self, ctx: ExecContext, dict: &mut VarsDict, prefix: &str) -> ExecResult<()> {
+    fn export_props(&self, ctx: ExecContext, dict: &mut VarDict, prefix: &str) -> ExecResult<()> {
         EnvVarTag::import(&dict.export());
         let key_maker = UpperKeyMaker::new(prefix);
         debug!( target: ctx.path() ,"props export use prefix({})", prefix);

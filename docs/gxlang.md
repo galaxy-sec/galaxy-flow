@@ -1,4 +1,4 @@
-# Galaxy Flow Lang 
+# Galaxy Flow Lang
 
 
 
@@ -20,7 +20,7 @@
 ```
 env dev {
 	root = "${HOME}/my_project" ;
-	gx.read {
+	gx.read_cmd {
 		name = "MY_PATH" ;
 		cmd  = "pwd" ;
 	};
@@ -86,7 +86,7 @@ Galaxy Flow Lang 的目标领域是系统开发和运行领域，该领域具有
 ```
 env dev {
 	root = "${HOME}/my_project" ;
-	gx.read {
+	gx.read_cmd {
 		name = "MY_PATH" ;
 		cmd  = "pwd" ;
 	};

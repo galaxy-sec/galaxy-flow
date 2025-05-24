@@ -5,7 +5,7 @@ use derive_more::From;
 
 use crate::context::ExecContext;
 use crate::meta::RgoMeta;
-use crate::var::VarsDict;
+use crate::var::VarDict;
 use crate::ExecResult;
 
 use super::job::Job;
@@ -31,13 +31,22 @@ impl Display for ExecOut {
 */
 
 pub type TaskResult = ExecResult<ExecOut>;
-pub type VarsResult = ExecResult<VarsDict>;
-pub type VTResult = ExecResult<(VarsDict, ExecOut)>;
+pub type VarsResult = ExecResult<VarSpace>;
+pub type VTResult = ExecResult<(VarSpace, ExecOut)>;
 
 #[derive(Debug, Clone, Default, PartialEq, From, Getters)]
 pub struct VarSpace {
-    globle: VarsDict,
-    nameds: HashMap<String, VarsDict>,
+    globle: VarDict,
+    nameds: HashMap<String, VarDict>,
+}
+impl VarSpace {
+    pub fn globle_mut(&mut self) -> &mut VarDict {
+        &mut self.globle
+    }
+
+    pub fn nameds_mut(&mut self) -> &mut HashMap<String, VarDict> {
+        &mut self.nameds
+    }
 }
 #[derive(Debug, Clone, Default, PartialEq, From)]
 pub enum DictUse {
@@ -48,10 +57,10 @@ pub enum DictUse {
 //#[automock]
 #[async_trait]
 pub trait AsyncRunnableTrait {
-    async fn async_exec(&self, ctx: ExecContext, dict: VarsDict) -> VTResult;
+    async fn async_exec(&self, ctx: ExecContext, dict: VarSpace) -> VTResult;
 }
 pub trait RunnableTrait {
-    fn exec(&self, ctx: ExecContext, dict: VarsDict) -> VTResult;
+    fn exec(&self, ctx: ExecContext, dict: VarSpace) -> VTResult;
 }
 
 pub trait ComponentMeta {

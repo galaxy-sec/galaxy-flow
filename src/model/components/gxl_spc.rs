@@ -3,7 +3,6 @@ use crate::execution::sequence::Sequence;
 use crate::menu::*;
 use crate::traits::Setter;
 use crate::util::traits::*;
-use crate::var::VarsDict;
 use colored::*;
 use orion_error::ErrorConv;
 use std::collections::HashMap;
@@ -135,7 +134,7 @@ impl GxlSpace {
     ) -> RunResult<()> {
         info!(target: "-----------exec stack -------------", "--------------out info--------------");
         let main_ctx = ExecContext::new(out);
-        let mut def = VarsDict::default();
+        let mut def = VarSpace::default();
         let l_envs: Vec<String> = envs.into();
         let l_flws: Vec<String> = flow_names.into();
         info!(target:main_ctx.path(),"galaxy flow execute envs: {:?},flow:  {:?}", l_envs,l_flws);
@@ -151,10 +150,10 @@ impl GxlSpace {
             //let mut ctx = ctx.clone();
             //debug!(target:ctx.path(),"----load flow[{}] sequ begin ----", f_name);
             let mut exec_sequ = Sequence::from("flow");
-            def.set("__ENVS", "UNDEF");
+            def.globle_mut().set("__ENVS", "UNDEF");
 
             let os_sys = get_os_sys();
-            def.set("RG_OS_SYS", os_sys.as_str());
+            def.globle_mut().set("RG_OS_SYS", os_sys.as_str());
 
             if let Some(value) = self.load_envs(ctx.clone(), &l_envs, &mut exec_sequ) {
                 return value;

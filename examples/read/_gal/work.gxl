@@ -1,7 +1,7 @@
 extern mod os { path= "../../_gal/mods"; }
 mod envs {
     env _dev_local {
-        gx.read { ini = "./var.ini" }
+        gx.read_file { file = "./var.ini" }
     }
     env default : _dev_local ;
 }

@@ -28,9 +28,9 @@ impl GxDownLoad {
 
 #[async_trait]
 impl AsyncRunnableTrait for GxDownLoad {
-    async fn async_exec(&self, ctx: ExecContext, def: VarsDict) -> VTResult {
+    async fn async_exec(&self, ctx: ExecContext, def: VarSpace) -> VTResult {
         if let Some(file) = &self.task_file {
-            let ex = EnvExpress::from_env_mix(def.clone());
+            let ex = EnvExpress::from_env_mix(def.globle().clone());
             let task_file = ex.eval(file.as_str())?;
             info!(target: ctx.path(), "task_file :{} ", task_file);
             let artifact = if task_file.ends_with("toml") {

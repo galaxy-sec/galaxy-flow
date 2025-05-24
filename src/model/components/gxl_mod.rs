@@ -180,7 +180,7 @@ impl AppendAble<AsyncComHold> for ModRunner {
 }
 #[async_trait]
 impl AsyncRunnableTrait for ModRunner {
-    async fn async_exec(&self, mut ctx: ExecContext, mut dct: VarsDict) -> VTResult {
+    async fn async_exec(&self, mut ctx: ExecContext, mut dct: VarSpace) -> VTResult {
         ctx.append(self.meta().name());
         let mut job = Job::default();
         for i in &self.async_items {
@@ -243,15 +243,15 @@ impl ExecLoadTrait for GxlMod {
     }
 }
 impl GxlMod {
-    fn exec_self(&self, ctx: ExecContext, mut def: VarsDict) -> VTResult {
-        self.export_props(ctx, &mut def, self.meta.name().as_str())?;
+    fn exec_self(&self, ctx: ExecContext, mut def: VarSpace) -> VTResult {
+        self.export_props(ctx, def.globle_mut(), self.meta.name().as_str())?;
         Ok((def, ExecOut::Ignore))
     }
 }
 
 #[async_trait]
 impl AsyncRunnableTrait for GxlMod {
-    async fn async_exec(&self, ctx: ExecContext, def: VarsDict) -> VTResult {
+    async fn async_exec(&self, ctx: ExecContext, def: VarSpace) -> VTResult {
         self.exec_self(ctx, def)
     }
 }
@@ -333,7 +333,7 @@ mod test {
         meta::{GxlType, RgoMeta},
         traits::{DependTrait, ExecLoadTrait},
         types::AnyResult,
-        var::{SecVar, VarMeta, VarsDict},
+        var::{SecVar, VarMeta},
     };
 
     #[test]
@@ -448,16 +448,16 @@ mod test {
         mod1.load_env(ctx, &mut sequ, "env1")?;
 
         let ctx = ExecContext::default();
-        let vars = VarsDict::default();
+        let vars = VarSpace::default();
         let (vars, _) = sequ.execute(ctx, vars.clone()).await.unwrap();
 
-        println!("{:?}", vars.maps());
+        println!("{:?}", vars.globle().maps());
         assert_eq!(
-            vars.maps().get(&"ENV_KEY1".to_string()),
+            vars.globle().maps().get(&"ENV_KEY1".to_string()),
             Some(&SecVar::new(VarMeta::Normal, "value1".to_string()))
         );
         assert_eq!(
-            vars.maps().get(&"MOD1_KEY2".to_string()),
+            vars.globle().maps().get(&"MOD1_KEY2".to_string()),
             Some(&SecVar::new(VarMeta::Normal, "value1".to_string()))
         );
         Ok(())
@@ -494,12 +494,12 @@ mod test {
         work_spc.load_flow(ctx, &mut sequ, "mod2.flow2")?;
 
         let ctx = ExecContext::default();
-        let vars = VarsDict::default();
+        let vars = VarSpace::default();
         let (vars, _task) = sequ.execute(ctx, vars).await.unwrap();
 
-        println!("{:?}", vars.maps());
+        println!("{:?}", vars.globle().maps());
         assert_eq!(
-            vars.maps().len(),
+            vars.globle().maps().len(),
             0 //vars.maps().get(&"MOD2_K2".to_string()),
 
               //Some(&SecVar::new(VarMeta::Normal, "v2".to_string()))

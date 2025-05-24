@@ -11,12 +11,12 @@ use crate::execution::runnable::RunnableTrait;
 use crate::execution::task::Task;
 use crate::meta::GxlType;
 use crate::meta::RgoMeta;
-use crate::var::VarsDict;
 
 use super::hold::ComHold;
 use super::hold::IsolationHold;
 use super::runnable::ComponentMeta;
 use super::runnable::VTResult;
+use super::runnable::VarSpace;
 
 #[derive(Clone, Getters)]
 pub struct Sequence {
@@ -34,14 +34,14 @@ impl From<&str> for Sequence {
 }
 
 impl Sequence {
-    pub async fn execute(&self, ctx: ExecContext, def: VarsDict) -> VTResult {
+    pub async fn execute(&self, ctx: ExecContext, def: VarSpace) -> VTResult {
         self.forword(ctx, def).await
     }
-    pub async fn test_execute(&self, ctx: ExecContext, def: VarsDict) -> VTResult {
+    pub async fn test_execute(&self, ctx: ExecContext, def: VarSpace) -> VTResult {
         self.forword(ctx, def).await
     }
 
-    async fn forword(&self, ctx: ExecContext, mut def: VarsDict) -> VTResult {
+    async fn forword(&self, ctx: ExecContext, mut def: VarSpace) -> VTResult {
         let mut job = Job::from(&self.name);
         warn!(target: ctx.path() ,"sequ size:{} ", self.run_items().len());
         for obj in &self.run_items {
@@ -78,7 +78,7 @@ impl From<&str> for RunStub {
 }
 #[async_trait]
 impl AsyncRunnableTrait for RunStub {
-    async fn async_exec(&self, ctx: ExecContext, _def: VarsDict) -> VTResult {
+    async fn async_exec(&self, ctx: ExecContext, _def: VarSpace) -> VTResult {
         debug!(target:ctx.path(), "{}", self.name);
         let task = Task::from(&self.name);
         Ok((_def, ExecOut::Task(task)))
@@ -86,7 +86,7 @@ impl AsyncRunnableTrait for RunStub {
 }
 
 impl RunnableTrait for RunStub {
-    fn exec(&self, ctx: ExecContext, _def: VarsDict) -> VTResult {
+    fn exec(&self, ctx: ExecContext, _def: VarSpace) -> VTResult {
         debug!(target:ctx.path(), "{}", self.name);
         let task = Task::from(&self.name);
         Ok((_def, ExecOut::Task(task)))

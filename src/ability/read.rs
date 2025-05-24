@@ -5,6 +5,7 @@ use crate::ability::prelude::*;
 use crate::components::RgVars;
 use crate::execution::runnable::ComponentMeta;
 use crate::expect::{LogicScope, ShellOption};
+use crate::var::VarDict;
 
 use derive_more::From;
 use ini::Ini;
@@ -46,7 +47,7 @@ pub struct CmdDTO {
 
 #[async_trait]
 impl AsyncRunnableTrait for GxRead {
-    async fn async_exec(&self, ctx: ExecContext, def: VarsDict) -> VTResult {
+    async fn async_exec(&self, ctx: ExecContext, def: VarSpace) -> VTResult {
         self.execute_impl(ctx, def)
     }
 }
@@ -57,9 +58,9 @@ impl ComponentMeta for GxRead {
     }
 }
 impl FileDTO {
-    fn execute(&self, mut ctx: ExecContext, mut def: VarsDict) -> VTResult {
+    fn execute(&self, mut ctx: ExecContext, mut def: VarSpace) -> VTResult {
         ctx.append("gx.read_ini");
-        let exp = EnvExpress::from_env_mix(def.clone());
+        let exp = EnvExpress::from_env_mix(def.globle().clone());
         let file = self.file.clone();
         let file_path = PathBuf::from(exp.eval(&file)?);
         if file_path.extension() != PathBuf::from("*.ini").extension() {
@@ -82,19 +83,19 @@ impl FileDTO {
             }
         }
         if let Some(name) = &self.name {
-            let mut name_dict = VarsDict::new(name);
+            let mut name_dict = VarDict::new(name);
             vars.export_props(ctx, &mut name_dict, "")?;
-            return Ok((name_dict, ExecOut::Ignore));
+            def.nameds_mut().insert(name.clone(), name_dict);
         } else {
-            vars.export_props(ctx, &mut def, "")?;
-            return Ok((def, ExecOut::Ignore));
+            vars.export_props(ctx, def.globle_mut(), "")?;
         }
+        return Ok((def, ExecOut::Ignore));
     }
 }
 impl StdinDTO {
-    fn execute(&self, mut ctx: ExecContext, mut def: VarsDict) -> VTResult {
+    fn execute(&self, mut ctx: ExecContext, mut def: VarSpace) -> VTResult {
         ctx.append("gx.read_ini");
-        let exp = EnvExpress::from_env_mix(def.clone());
+        let exp = EnvExpress::from_env_mix(def.globle().clone());
         let msg = self.prompt.clone();
         let name = self.name.clone();
         let msg = exp.eval(&msg)?;
@@ -104,15 +105,15 @@ impl StdinDTO {
         stdin.read_line(&mut buffer).owe_data()?;
         let mut vars = RgVars::default();
         vars.append(RgProp::new(name, buffer.trim().to_string()));
-        vars.export_props(ctx, &mut def, "")?;
+        vars.export_props(ctx, def.globle_mut(), "")?;
         return Ok((def, ExecOut::Ignore));
     }
 }
 
 impl CmdDTO {
-    fn execute(&self, mut ctx: ExecContext, mut def: VarsDict) -> VTResult {
+    fn execute(&self, mut ctx: ExecContext, mut def: VarSpace) -> VTResult {
         ctx.append("gx.read_cmd");
-        let exp = EnvExpress::from_env_mix(def.clone());
+        let exp = EnvExpress::from_env_mix(def.globle().clone());
         let cmd = self.cmd.clone();
         let name = self.name.clone();
         let cmd = exp.eval(&cmd)?;
@@ -121,13 +122,13 @@ impl CmdDTO {
             .map_err(|msg| ExecReason::Exp(format!("bad result {}", msg)))?;
         let mut vars = RgVars::default();
         vars.append(RgProp::new(name, data_str.trim().to_string()));
-        vars.export_props(ctx, &mut def, "")?;
+        vars.export_props(ctx, def.globle_mut(), "")?;
         return Ok((def, ExecOut::Ignore));
     }
 }
 
 impl GxRead {
-    fn execute_impl(&self, ctx: ExecContext, dict: VarsDict) -> VTResult {
+    fn execute_impl(&self, ctx: ExecContext, dict: VarSpace) -> VTResult {
         match &self.imp {
             ReadMode::CMD(cmd_dto) => cmd_dto.execute(ctx, dict),
             ReadMode::FILE(ini_dto) => ini_dto.execute(ctx, dict),
@@ -188,7 +189,8 @@ mod tests {
     #[tokio::test]
     async fn read_cmd_test() {
         let (context, mut def) = ability_env_init();
-        def.set("CONF_ROOT", "${RG_PRJ_ROOT}/example/conf");
+        def.globle_mut()
+            .set("CONF_ROOT", "${RG_PRJ_ROOT}/example/conf");
         let mut dto = CmdDTO::default();
         dto.name = format!("RG");
         dto.cmd = format!("echo galaxy-1.0");
@@ -198,7 +200,8 @@ mod tests {
     #[tokio::test]
     async fn read_ini_test() {
         let (context, mut def) = ability_env_init();
-        def.set("CONF_ROOT", "${RG_PRJ_ROOT}/examples/read");
+        def.globle_mut()
+            .set("CONF_ROOT", "${RG_PRJ_ROOT}/examples/read");
         let mut dto = FileDTO::default();
         dto.file = String::from("${CONF_ROOT}/var.ini");
         let res = GxRead::from(ReadMode::from(dto));
@@ -208,7 +211,8 @@ mod tests {
     #[tokio::test]
     async fn read_stdin_test() {
         let (context, mut def) = ability_env_init();
-        def.set("CONF_ROOT", "${RG_PRJ_ROOT}/example/conf");
+        def.globle_mut()
+            .set("CONF_ROOT", "${RG_PRJ_ROOT}/example/conf");
         let mut dto = StdinDTO::default();
         dto.prompt = String::from("please input you name");
         dto.name = String::from("name");

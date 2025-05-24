@@ -17,7 +17,7 @@ pub struct SecVar {
 }
 
 #[derive(Debug, Clone, Default, Getters, PartialEq)]
-pub struct VarsDict {
+pub struct VarDict {
     useage: DictUse,
     maps: HashMap<String, SecVar>,
 }
@@ -47,7 +47,7 @@ impl Debug for SecVar {
     }
 }
 
-impl Display for VarsDict {
+impl Display for VarDict {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         for (k, v) in &self.maps {
             writeln!(f, "{:30}: {}", k, v)?;
@@ -56,15 +56,15 @@ impl Display for VarsDict {
     }
 }
 
-impl VarsDict {
+impl VarDict {
     pub fn global_new() -> Self {
-        VarsDict {
+        VarDict {
             useage: DictUse::Global,
             maps: HashMap::new(),
         }
     }
     pub fn new<S: Into<String>>(name: S) -> Self {
-        VarsDict {
+        VarDict {
             useage: DictUse::Named(name.into()),
             maps: HashMap::new(),
         }
@@ -104,16 +104,16 @@ impl VarsDict {
     }
 }
 
-impl From<HashMap<String, String>> for VarsDict {
+impl From<HashMap<String, String>> for VarDict {
     fn from(map: HashMap<String, String>) -> Self {
-        let mut dict = VarsDict::global_new();
+        let mut dict = VarDict::global_new();
         for (k, v) in map {
             dict.set(&k, v);
         }
         dict
     }
 }
-impl Getter<&String, SecVar> for VarsDict {
+impl Getter<&String, SecVar> for VarDict {
     fn must_get(&self, key: &String) -> &SecVar {
         if let Some(val) = self.maps.get(key) {
             val
@@ -125,7 +125,7 @@ impl Getter<&String, SecVar> for VarsDict {
         self.maps.get(key)
     }
 }
-impl Getter<&str, SecVar> for VarsDict {
+impl Getter<&str, SecVar> for VarDict {
     fn must_get(&self, key: &str) -> &SecVar {
         if let Some(val) = self.maps.get(key) {
             val
@@ -138,7 +138,7 @@ impl Getter<&str, SecVar> for VarsDict {
     }
 }
 
-impl Setter<&String, String> for VarsDict {
+impl Setter<&String, String> for VarDict {
     fn set(&mut self, key: &String, val: String) {
         //self.maps.insert(key.clone(), val);
         self.maps.insert(
@@ -151,7 +151,7 @@ impl Setter<&String, String> for VarsDict {
     }
 }
 
-impl Setter<&str, String> for VarsDict {
+impl Setter<&str, String> for VarDict {
     fn set(&mut self, key: &str, val: String) {
         self.maps.insert(
             key.to_string(),
@@ -163,13 +163,13 @@ impl Setter<&str, String> for VarsDict {
     }
 }
 
-impl Setter<&str, SecVar> for VarsDict {
+impl Setter<&str, SecVar> for VarDict {
     fn set(&mut self, key: &str, val: SecVar) {
         self.maps.insert(key.to_string(), val);
     }
 }
 
-impl Setter<&str, &str> for VarsDict {
+impl Setter<&str, &str> for VarDict {
     fn set(&mut self, key: &str, val: &str) {
         self.maps.insert(
             key.to_string(),
@@ -186,7 +186,7 @@ mod tests {
     use super::*;
     #[test]
     fn context_use() {
-        let mut def = VarsDict::default();
+        let mut def = VarDict::default();
         def.set("src", format!("hello src"));
         def.set("dst", "hello dst");
         let src = def.must_get("src");

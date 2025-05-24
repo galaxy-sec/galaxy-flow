@@ -111,9 +111,9 @@ impl RgVersion {
 }
 #[async_trait]
 impl AsyncRunnableTrait for RgVersion {
-    async fn async_exec(&self, mut ctx: ExecContext, mut dict: VarsDict) -> VTResult {
+    async fn async_exec(&self, mut ctx: ExecContext, mut dict: VarSpace) -> VTResult {
         ctx.append("version");
-        let exp = EnvExpress::from_env_mix(dict.clone());
+        let exp = EnvExpress::from_env_mix(dict.globle().clone());
         let file_path = exp.eval(&self.file)?;
         debug!(target: ctx.path(),"version file:{}", file_path);
         let data = fs::read_to_string(file_path.as_str())
@@ -122,7 +122,8 @@ impl AsyncRunnableTrait for RgVersion {
         if let Ok((a, b, c, d)) = take_version(&mut data.as_str()) {
             let mut ver = Version::new(a, b, c, d);
             ver.auto(&self.verinc);
-            dict.set(&self.export.to_uppercase(), format!("{}", &ver));
+            dict.globle_mut()
+                .set(&self.export.to_uppercase(), format!("{}", &ver));
             let mut file = File::create(file_path.as_str()).owe_res()?;
             file.write_all(ver.to_string().as_bytes()).owe_res()?;
             Ok((dict, ExecOut::Ignore))
@@ -169,7 +170,7 @@ mod tests {
         file.write_all(b"0.1.0.0").unwrap();
         let ver = RgVersion::new("./tests/tmp_version.txt".into());
         let ctx = ExecContext::default();
-        let def = VarsDict::default();
+        let def = VarSpace::default();
         ver.async_exec(ctx.clone(), def).await.unwrap();
     }
 

@@ -131,7 +131,7 @@ mod tests {
     fn env_read() {
         let mut data = r#"
             env branch_auto {
-                gx.read {
+                gx.read_cmd {
                   name = "BRANCH_ENV";
                   cmd  = ^"git branch --show-current |  sed -E "s/(feature|develop|ver-dev|release|master|issue)(\/.*)?/_branch_\1/g" "^ ;
                   log  = "debug";

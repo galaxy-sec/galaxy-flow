@@ -14,8 +14,8 @@ impl GxEcho {
 
 #[async_trait]
 impl AsyncRunnableTrait for GxEcho {
-    async fn async_exec(&self, ctx: ExecContext, def: VarsDict) -> VTResult {
-        let ex = EnvExpress::from_env_mix(def.clone());
+    async fn async_exec(&self, ctx: ExecContext, def: VarSpace) -> VTResult {
+        let ex = EnvExpress::from_env_mix(def.globle().clone());
         let out = ex.eval(&self.value)?;
         info!(target: ctx.path(), "{} :{}", &self.value, out);
         println!("{}", out);
@@ -41,9 +41,9 @@ mod tests {
         let mut watcher = GxEcho::default();
         watcher.set("${HOME}");
         let ctx = ExecContext::default();
-        let mut def = VarsDict::default();
+        let mut def = VarSpace::default();
         watcher.async_exec(ctx.clone(), def.clone()).await.unwrap();
-        def.set("HOME", "/root");
+        def.globle_mut().set("HOME", "/root");
         watcher.async_exec(ctx.clone(), def).await.unwrap();
     }
 }

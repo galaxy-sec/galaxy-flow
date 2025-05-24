@@ -16,87 +16,87 @@ GXL 语言遵循模块化、层次化的结构，主要由以下核心组件组�
 ## EBNF 语法
 ```EBNF
 
-; GXL 文件由一系列模块定义组成  
-GXL-File = *Module  
+; GXL 文件由一系列模块定义组成
+GXL-File = *Module
 
 
-(* GXL 文件由一系列模块定义组成 *)  
-GXL-File = {Module};  
-  
-(* 模块定义 *)  
-Module = "mod", whitespace, ModuleName, whitespace, "{", whitespace, ModuleContent, whitespace, "}", whitespace, ";";  
-ModuleName = Identifier;  
+(* GXL 文件由一系列模块定义组成 *)
+GXL-File = {Module};
+
+(* 模块定义 *)
+Module = "mod", whitespace, ModuleName, whitespace, "{", whitespace, ModuleContent, whitespace, "}", whitespace, ";";
+ModuleName = Identifier;
 ModuleContent = {Property | Environment | Flow};
 
-(* 属性定义 (键值对) *)  
-Property = PropertyName, whitespace, "=", whitespace, PropertyValue, whitespace, ";";  
-PropertyName = Identifier;  
+(* 属性定义 (键值对) *)
+Property = PropertyName, whitespace, "=", whitespace, PropertyValue, whitespace, ";";
+PropertyName = Identifier;
 PropertyValue = String;
 
-(* 环境定义 *)  
-Environment = "env", whitespace, EnvName, [whitespace, ":", whitespace, EnvRefList], whitespace, "{", whitespace, EnvContent, whitespace, "}";  
-EnvName = Identifier;  
-EnvContent = {Property};  
-EnvRefList = EnvRef, {",", whitespace, EnvRef};  
+(* 环境定义 *)
+Environment = "env", whitespace, EnvName, [whitespace, ":", whitespace, EnvRefList], whitespace, "{", whitespace, EnvContent, whitespace, "}";
+EnvName = Identifier;
+EnvContent = {Property};
+EnvRefList = EnvRef, {",", whitespace, EnvRef};
 EnvRef = Identifier;
 
-(* 流程定义 - 两种形式：直接定义或引用其他流程 *)  
-Flow = DirectFlow | ReferenceFlow;  
-  
-(* 直接定义流程 *)  
-DirectFlow = "flow", whitespace, FlowName, [whitespace, ":", whitespace, FlowRefList [ whitespace , ":" whitespace, FlowRefList ] ], whitespace, "{", whitespace, FlowContent, whitespace, "}", whitespace, ";";  
-FlowName = Identifier;  
-FlowContent = {Command};  
-  
-(* 引用其他流程 *)  
-ReferenceFlow = "flow", whitespace, FlowName, whitespace, ":", whitespace, FlowRefList, whitespace, ";";  
-FlowRefList = FlowRef, {",", whitespace, FlowRef};  
+(* 流程定义 - 两种形式：直接定义或引用其他流程 *)
+Flow = DirectFlow | ReferenceFlow;
+
+(* 直接定义流程 *)
+DirectFlow = "flow", whitespace, FlowName, [whitespace, ":", whitespace, FlowRefList [ whitespace , ":" whitespace, FlowRefList ] ], whitespace, "{", whitespace, FlowContent, whitespace, "}", whitespace, ";";
+FlowName = Identifier;
+FlowContent = {Command};
+
+(* 引用其他流程 *)
+ReferenceFlow = "flow", whitespace, FlowName, whitespace, ":", whitespace, FlowRefList, whitespace, ";";
+FlowRefList = FlowRef, {",", whitespace, FlowRef};
 FlowRef = Identifier;
 
 
-(* 命令定义 *)  
-Command = (BuiltinCommand | ActivityCall), whitespace, ";";  
-  
-(* 内置命令 *)  
-BuiltinCommand = "gx.", CommandName, whitespace, "{", whitespace, CommandProps, whitespace, "}";  
-CommandName = "echo" | "vars" | "cmd" | "read" | "tpl" | "assert" | "ver";  
-CommandProps = {PropertyAssignment};  
-PropertyAssignment = PropertyName, whitespace, "=", whitespace, PropertyValue, whitespace,  ",";  
-  
-(* 活动调用 *)  
-ActivityCall = ActivityName, whitespace, "{", whitespace, CommandProps, whitespace, "}";  
+(* 命令定义 *)
+Command = (BuiltinCommand | ActivityCall), whitespace, ";";
+
+(* 内置命令 *)
+BuiltinCommand = "gx.", CommandName, whitespace, "{", whitespace, CommandProps, whitespace, "}";
+CommandName = "echo" | "vars" | "cmd" | "read" | "tpl" | "assert" | "ver";
+CommandProps = {PropertyAssignment};
+PropertyAssignment = PropertyName, whitespace, "=", whitespace, PropertyValue, whitespace,  ",";
+
+(* 活动调用 *)
+ActivityCall = ActivityName, whitespace, "{", whitespace, CommandProps, whitespace, "}";
 ActivityName = Identifier, {".", Identifier};
 
-(* 标识符 *)  
-Identifier = Alpha, {Alpha | Digit | "_"};  
-Alpha = "A" | "B" | ... | "Z" | "a" | "b" | ... | "z";  
-Digit = "0" | "1" | ... | "9";  
-  
-(* 字符串 *)  
-String = '"', {StringChar}, '"';  
-StringChar = UnescapedChar | EscapedChar;  
-UnescapedChar = ? 除了 " 和 \ 的任何字符 ?;  
-EscapedChar = "\", ("\" | '"');  
-  
-(* 变量引用 *)  
-VariableRef = "${", VariableName, "}";  
-VariableName = Identifier;  
-  
-(* 空白字符 *)  
+(* 标识符 *)
+Identifier = Alpha, {Alpha | Digit | "_"};
+Alpha = "A" | "B" | ... | "Z" | "a" | "b" | ... | "z";
+Digit = "0" | "1" | ... | "9";
+
+(* 字符串 *)
+String = '"', {StringChar}, '"';
+StringChar = UnescapedChar | EscapedChar;
+UnescapedChar = ? 除了 " 和 \ 的任何字符 ?;
+EscapedChar = "\", ("\" | '"');
+
+(* 变量引用 *)
+VariableRef = "${", VariableName, "}";
+VariableName = Identifier;
+
+(* 空白字符 *)
 whitespace = {" " | "\t" | "\r" | "\n"};
 
-(* 外部模块引用 *)  
-ExternModule = "extern", whitespace, "mod", whitespace, ModuleNameList, whitespace, "{", whitespace, ModuleSource, whitespace, "}", whitespace, ";";  
-ModuleNameList = ModuleName, {",", whitespace, ModuleName};  
-ModuleSource = PathSource | GitSource;  
-PathSource = "path", whitespace, "=", whitespace, String;  
+(* 外部模块引用 *)
+ExternModule = "extern", whitespace, "mod", whitespace, ModuleNameList, whitespace, "{", whitespace, ModuleSource, whitespace, "}", whitespace, ";";
+ModuleNameList = ModuleName, {",", whitespace, ModuleName};
+ModuleSource = PathSource | GitSource;
+PathSource = "path", whitespace, "=", whitespace, String;
 GitSource = "git", whitespace, "=", whitespace, String, whitespace, ",", whitespace, "channel", whitespace, "=", whitespace, String;
 
 
-(* 注解 *)  
-Annotation = "#[", AnnotationName, ("(", AnnotationParams, ")")?, "]";  
-AnnotationName = Identifier;  
-AnnotationParams = AnnotationParam, {",", whitespace, AnnotationParam};  
+(* 注解 *)
+Annotation = "#[", AnnotationName, ("(", AnnotationParams, ")")?, "]";
+AnnotationName = Identifier;
+AnnotationParams = AnnotationParam, {",", whitespace, AnnotationParam};
 AnnotationParam = Identifier, whitespace, "=", whitespace, String;
 ```
 
@@ -107,7 +107,7 @@ AnnotationParam = Identifier, whitespace, "=", whitespace, String;
 ``` rust
 env dev {
 	root = "${HOME}/my_project";
-	gx.read {
+	gx.read_cmd {
 		name = "MY_PATH" ;
 		cmd  = "pwd" ;
 	};
@@ -123,7 +123,7 @@ mod my_module {
     -- 环境定义
     env test {
         root = "${HOME}/test_project";
-        gx.read {
+        gx.read_cmd {
             name = "TEST_PATH";
             cmd = "ls";
         };

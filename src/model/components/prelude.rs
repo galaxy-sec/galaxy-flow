@@ -12,7 +12,6 @@ pub use crate::evaluator::EnvExpress;
 pub use crate::meta::RgoMeta;
 pub use crate::traits::DependTrait;
 pub use crate::traits::PropsTrait;
-pub use crate::var::VarsDict;
 
 pub use crate::context::ExecContext;
 pub use crate::traits::MergeTrait;
@@ -29,4 +28,4 @@ pub use crate::execution::sequence::Sequence;
 
 pub use async_trait::async_trait;
 
-pub use crate::ability::prelude::ComponentMeta;
+pub use crate::execution::runnable::{ComponentMeta, VarSpace};

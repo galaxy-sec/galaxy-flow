@@ -1,6 +1,6 @@
 use crate::{
     traits::{Getter, Setter},
-    var::VarsDict,
+    var::VarDict,
     ExecReason, ExecResult,
 };
 use regex::{Captures, Regex};
@@ -15,7 +15,7 @@ pub trait Parser<T> {
 
 pub struct EnvExpress {
     regex: Regex,
-    data: VarsDict,
+    data: VarDict,
 }
 impl Default for EnvExpress {
     fn default() -> Self {
@@ -24,21 +24,21 @@ impl Default for EnvExpress {
 }
 
 impl EnvExpress {
-    pub fn new(data: VarsDict) -> EnvExpress {
+    pub fn new(data: VarDict) -> EnvExpress {
         let regex = Regex::new(r"(\$\{([[:alnum:]_\.]+)\})").expect(" EnvExpress Regex new fail!");
         EnvExpress { regex, data }
     }
     #[allow(dead_code)]
     pub fn from_env() -> EnvExpress {
-        let mut data = VarsDict::global_new();
+        let mut data = VarDict::global_new();
         for (key, value) in env::vars() {
             data.set(&key, value);
         }
         EnvExpress::new(data)
     }
-    pub fn from_env_mix(map: VarsDict) -> EnvExpress {
+    pub fn from_env_mix(map: VarDict) -> EnvExpress {
         //debug!("map: {:?}", &map);
-        let mut data = VarsDict::global_new();
+        let mut data = VarDict::global_new();
         for (key, value) in env::vars() {
             data.set(&key, value);
         }
@@ -136,7 +136,7 @@ mod tests {
         "USER" => "galaxy"
         );
 
-        let ex = EnvExpress::new(VarsDict::from(data));
+        let ex = EnvExpress::new(VarDict::from(data));
         assert_eq!(
             ex.eval("${HOME}/bin").unwrap(),
             String::from("/home/galaxy/bin")
@@ -162,7 +162,7 @@ mod tests {
         "USER"      => "galaxy",
         "CUR_DIR"   => "/home",
         );
-        let ex = EnvExpress::from_env_mix(VarsDict::from(data));
+        let ex = EnvExpress::from_env_mix(VarDict::from(data));
         assert_eq!(
             ex.eval("${HOME}/bin").unwrap(),
             String::from("/home/galaxy/bin")

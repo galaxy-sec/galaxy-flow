@@ -4,7 +4,6 @@ use super::prelude::*;
 use crate::parser::stc_base::AnnDto;
 
 use crate::traits::{DependTrait, PropsTrait};
-use crate::var::VarsDict;
 
 use crate::components::gxl_block::BlockNode;
 use crate::model::annotation::FlowAnnotation;
@@ -139,9 +138,9 @@ impl GxlFlow {
 }
 
 impl GxlFlow {
-    async fn exec_self(&self, ctx: ExecContext, mut var_dict: VarsDict) -> VTResult {
+    async fn exec_self(&self, ctx: ExecContext, mut var_dict: VarSpace) -> VTResult {
         let mut job = Job::from(self.meta.name());
-        self.export_props(ctx.clone(), &mut var_dict, "")?;
+        self.export_props(ctx.clone(), var_dict.globle_mut(), "")?;
 
         for item in &self.blocks {
             let (cur_dict, task) = item.async_exec(ctx.clone(), var_dict).await?;
@@ -153,7 +152,7 @@ impl GxlFlow {
 }
 #[async_trait]
 impl AsyncRunnableTrait for GxlFlow {
-    async fn async_exec(&self, mut ctx: ExecContext, mut var_dict: VarsDict) -> VTResult {
+    async fn async_exec(&self, mut ctx: ExecContext, mut var_dict: VarSpace) -> VTResult {
         let mut job = Job::from(self.meta.name());
         ctx.append(self.meta.name());
         for pre in self.pre_flows() {

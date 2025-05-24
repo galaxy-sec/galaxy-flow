@@ -7,9 +7,8 @@ use crate::components::gxl_mod::ModRunner;
 use crate::components::{GxlEnv, GxlFlow, GxlMod};
 use crate::context::ExecContext;
 use crate::meta::RgoMeta;
-use crate::var::VarsDict;
 
-use super::runnable::{AsyncRunnableTrait, ComponentMeta, VTResult};
+use super::runnable::{AsyncRunnableTrait, ComponentMeta, VTResult, VarSpace};
 use super::sequence::RunStub;
 #[derive(Clone, From)]
 pub enum AsyncComHold {
@@ -34,7 +33,7 @@ pub enum ComHold {
 
 #[async_trait]
 impl AsyncRunnableTrait for AsyncComHold {
-    async fn async_exec(&self, ctx: ExecContext, dct: VarsDict) -> VTResult {
+    async fn async_exec(&self, ctx: ExecContext, dct: VarSpace) -> VTResult {
         match self {
             Self::Flow(obj) => obj.async_exec(ctx, dct).await,
             Self::Stub(obj) => obj.async_exec(ctx, dct).await,
@@ -49,7 +48,7 @@ impl AsyncRunnableTrait for AsyncComHold {
 
 #[async_trait]
 impl AsyncRunnableTrait for IsolationHold {
-    async fn async_exec(&self, ctx: ExecContext, dict: VarsDict) -> VTResult {
+    async fn async_exec(&self, ctx: ExecContext, dict: VarSpace) -> VTResult {
         let origin = dict.clone();
         let (_, task) = self.hold.async_exec(ctx, dict).await?;
         Ok((origin, task))
@@ -58,7 +57,7 @@ impl AsyncRunnableTrait for IsolationHold {
 
 #[async_trait]
 impl AsyncRunnableTrait for ComHold {
-    async fn async_exec(&self, ctx: ExecContext, dict: VarsDict) -> VTResult {
+    async fn async_exec(&self, ctx: ExecContext, dict: VarSpace) -> VTResult {
         match self {
             ComHold::Conduction(h) => h.async_exec(ctx, dict).await,
             ComHold::Isolation(h) => h.async_exec(ctx, dict).await,

@@ -10,18 +10,19 @@ pub mod tpl;
 //pub mod vault;
 pub mod version;
 
-use crate::{
-    context::ExecContext, infra::once_init_log, traits::Setter, var::VarsDict, ExecResult,
-};
+use prelude::VarSpace;
+
+use crate::{context::ExecContext, infra::once_init_log, traits::Setter, ExecResult};
 
 pub struct StubFlowAbi {}
 
 #[allow(dead_code)]
-pub fn ability_env_init() -> (ExecContext, VarsDict) {
+pub fn ability_env_init() -> (ExecContext, VarSpace) {
     once_init_log();
     let context = ExecContext::new(false);
-    let mut def = VarsDict::default();
-    def.set("RG_PRJ_ROOT", context.cur_path().as_str());
+    let mut def = VarSpace::default();
+    def.globle_mut()
+        .set("RG_PRJ_ROOT", context.cur_path().as_str());
     (context, def)
 }
 

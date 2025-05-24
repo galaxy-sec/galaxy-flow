@@ -53,13 +53,13 @@ impl BlockNode {
 
 #[async_trait]
 impl CondExec for BlockNode {
-    async fn cond_exec(&self, def: VarsDict, args: RunArgs) -> VTResult {
+    async fn cond_exec(&self, def: VarSpace, args: RunArgs) -> VTResult {
         self.async_exec(args.ctx.clone(), def).await
     }
 }
 #[async_trait]
 impl AsyncRunnableTrait for BlockAction {
-    async fn async_exec(&self, ctx: ExecContext, dct: VarsDict) -> VTResult {
+    async fn async_exec(&self, ctx: ExecContext, dct: VarSpace) -> VTResult {
         match self {
             BlockAction::Command(o) => o.async_exec(ctx, dct).await,
             BlockAction::Echo(o) => o.async_exec(ctx, dct).await,
@@ -77,11 +77,11 @@ impl AsyncRunnableTrait for BlockAction {
 
 #[async_trait]
 impl AsyncRunnableTrait for BlockNode {
-    async fn async_exec(&self, ctx: ExecContext, var_dict: VarsDict) -> VTResult {
+    async fn async_exec(&self, ctx: ExecContext, var_dict: VarSpace) -> VTResult {
         //ctx.append("block");
         let mut job = Job::from("block");
         let mut cur_var_dict = var_dict;
-        self.export_props(ctx.clone(), &mut cur_var_dict, "")?;
+        self.export_props(ctx.clone(), cur_var_dict.globle_mut(), "")?;
 
         for item in &self.items {
             let (tmp_var_dict, task) = item.async_exec(ctx.clone(), cur_var_dict).await?;
@@ -164,7 +164,7 @@ mod tests {
         let prop = RgProp::new("test", "hello");
         block.append(prop);
         let ctx = ExecContext::new(false);
-        let def = VarsDict::default();
+        let def = VarSpace::default();
         let res = block.async_exec(ctx, def).await;
         assert_eq!(res.is_ok(), true);
     }

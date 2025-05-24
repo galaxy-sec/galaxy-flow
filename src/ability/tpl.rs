@@ -74,9 +74,9 @@ impl Display for TplDTO {
 }
 
 impl GxTpl {
-    pub fn render_path(&self, ctx: ExecContext, dto: &TplDTO, dict: VarsDict) -> ExecResult<()> {
+    pub fn render_path(&self, ctx: ExecContext, dto: &TplDTO, dict: VarSpace) -> ExecResult<()> {
         info!(target: ctx.path(), "gx.tpl : {}", dto);
-        let exp = EnvExpress::from_env_mix(dict.clone());
+        let exp = EnvExpress::from_env_mix(dict.globle().clone());
         let tpl = PathBuf::from(exp.eval(dto.tpl.as_str())?);
         let dst = PathBuf::from(exp.eval(dto.dst.as_str())?);
 
@@ -108,7 +108,7 @@ impl GxTpl {
                 .owe_data()
                 .with(&err_ctx)?
         } else {
-            to_json(dict.export())
+            to_json(dict.globle().export())
         };
         if tpl.is_dir() {
             self.render_dir_impl(ctx, &handlebars, &tpl, &dst, &data)
@@ -222,7 +222,7 @@ impl GxTpl {
 
 #[async_trait]
 impl AsyncRunnableTrait for GxTpl {
-    async fn async_exec(&self, ctx: ExecContext, def: VarsDict) -> VTResult {
+    async fn async_exec(&self, ctx: ExecContext, def: VarSpace) -> VTResult {
         let mut task = Task::from("build tpl file");
         self.render_path(ctx, &self.dto, def.clone())?;
         task.finish();
@@ -275,9 +275,9 @@ mod tests {
         );
         let conf_tpl = GxTpl::new(tpl.clone(), dst.clone());
         context.append("RG");
-        def.set("RG_PRJ_ROOT", "/home/galaxy");
-        def.set("DOMAIN", "www.galaxy-sec.org");
-        def.set("SOCK_FILE", "galaxy.socket");
+        def.globle_mut().set("RG_PRJ_ROOT", "/home/galaxy");
+        def.globle_mut().set("DOMAIN", "www.galaxy-sec.org");
+        def.globle_mut().set("SOCK_FILE", "galaxy.socket");
         conf_tpl.async_exec(context.clone(), def).await.unwrap();
 
         let ngx_dst = format!(
@@ -321,10 +321,10 @@ mod tests {
         let mut handlebars = Handlebars::new();
         let source = "hello {{world}} {{PRJ_HOME}}!";
         assert!(handlebars.register_template_string("t1", source).is_ok());
-        let mut def = VarsDict::default();
-        def.set("world", "世界!".to_string());
-        def.set("PRJ_HOME", "home".to_string());
-        let data = def.export();
+        let mut def = VarSpace::default();
+        def.globle_mut().set("world", "世界!".to_string());
+        def.globle_mut().set("PRJ_HOME", "home".to_string());
+        let data = def.globle().export();
         assert_eq!(handlebars.render("t1", &data).unwrap(), "hello 世界! home!");
 
         let data = r#"

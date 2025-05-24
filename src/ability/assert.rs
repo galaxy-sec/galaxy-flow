@@ -30,9 +30,9 @@ impl GxAssert {
 
 #[async_trait]
 impl AsyncRunnableTrait for GxAssert {
-    async fn async_exec(&self, mut ctx: ExecContext, def: VarsDict) -> VTResult {
+    async fn async_exec(&self, mut ctx: ExecContext, def: VarSpace) -> VTResult {
         ctx.append("assert");
-        let exp = EnvExpress::from_env_mix(def.clone());
+        let exp = EnvExpress::from_env_mix(def.globle().clone());
         let value = exp.eval(&self.value)?;
         let expect = exp.eval(&self.expect)?;
         debug!(target: ctx.path(), "value  {} :{}", &self.value, value);
@@ -72,7 +72,7 @@ mod tests {
     async fn assert_test() {
         let mut assert = GxAssert::default();
         let ctx = ExecContext::default();
-        let def = VarsDict::default();
+        let def = VarSpace::default();
         assert.expect_eq("hello", "hello");
         assert.async_exec(ctx.clone(), def.clone()).await.unwrap();
         assert.expect_eq("${HOME}", "${HOME}");

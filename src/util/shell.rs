@@ -102,8 +102,9 @@ fn show_cmd(sec_cmd: &String) {
 
 #[cfg(test)]
 mod tests {
+    use crate::var::VarDict;
+
     use super::*;
-    use crate::var::VarsDict;
     //use duct_sh::* ;
 
     #[test]
@@ -115,7 +116,7 @@ mod tests {
     }
     #[test]
     fn rg_sh_test() {
-        let mut dict = VarsDict::global_new();
+        let mut dict = VarDict::global_new();
         dict.sec_set("SEC_KEY", "galaxy");
         let exp = EnvExpress::from_env_mix(dict);
         let opt = ShellOption {

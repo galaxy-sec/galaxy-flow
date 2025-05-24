@@ -70,7 +70,7 @@ impl ActCall {
 }
 #[async_trait]
 impl AsyncRunnableTrait for ActCall {
-    async fn async_exec(&self, mut ctx: ExecContext, def: VarsDict) -> VTResult {
+    async fn async_exec(&self, mut ctx: ExecContext, def: VarSpace) -> VTResult {
         ctx.append("@");
         match &self.act {
             Some(act) => act.async_exec(ctx, def).await,
@@ -109,7 +109,7 @@ impl ActivityDTO {
 
 #[async_trait]
 impl AsyncRunnableTrait for Activity {
-    async fn async_exec(&self, ctx: ExecContext, def: VarsDict) -> VTResult {
+    async fn async_exec(&self, ctx: ExecContext, def: VarSpace) -> VTResult {
         self.exec_cmd(ctx, def, &self.dto)
         // Ok(ExecOut::Ignore)
     }
@@ -139,7 +139,7 @@ impl Activity {
             }
         }
     }
-    fn execute_impl(&self, mut ctx: ExecContext, def: VarsDict, dto: &ActivityDTO) -> VTResult {
+    fn execute_impl(&self, mut ctx: ExecContext, def: VarSpace, dto: &ActivityDTO) -> VTResult {
         ctx.append(format!("{}.{}", self.host, dto.name));
         debug!(target: ctx.path(),"actcall");
         let mut task = Task::from(dto.name.as_str());
@@ -148,12 +148,12 @@ impl Activity {
         for prop in &dto.props {
             let mut key = prop.key.clone();
             key.make_ascii_uppercase();
-            dict.set(&key, prop.val.clone());
+            dict.globle_mut().set(&key, prop.val.clone());
         }
         let mut r_with = WithContext::want("run shell");
         r_with.with("exec", dto.executer.clone());
         r_with.with("dto", format!("{:?}", dto.props));
-        let exp = EnvExpress::from_env_mix(dict);
+        let exp = EnvExpress::from_env_mix(dict.globle().clone());
         let cmd = exp.eval(&dto.executer).with(&r_with)?;
         let mut opt = self.dto.expect.clone();
         opt.outer_print = *ctx.cmd_print();
@@ -162,7 +162,7 @@ impl Activity {
         task.finish();
         Ok((def, ExecOut::Task(task)))
     }
-    pub fn exec_cmd(&self, ctx: ExecContext, def: VarsDict, dto: &ActivityDTO) -> VTResult {
+    pub fn exec_cmd(&self, ctx: ExecContext, def: VarSpace, dto: &ActivityDTO) -> VTResult {
         self.execute_impl(ctx, def, dto)
     }
 }

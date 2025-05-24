@@ -34,8 +34,8 @@ gx.echo { value = "${PRJ_ROOT}/test/main.py" ; }
 
 ```bash
 gx.read{ name = "RG"; cmd  = "echo galaxy-1.0"; err = "you err"; } ;
-gx.read { ini = "vars.ini"; }
-gx.read { stdin = "please input you name"; name  = "name";}
+gx.read_file { file = "vars.ini"; }
+gx.read_stdin { prompt = "please input you name"; name  = "name";}
 ```
 
 
@@ -66,10 +66,10 @@ gx.tpl {
 ### gx.ver
 
 ```bash
- gx.ver { file = "./version.txt" ;  inc = "bugfix" ; } 
+ gx.ver { file = "./version.txt" ;  inc = "bugfix" ; }
 ```
-##### inc : 
-* bugfix 
+##### inc :
+* bugfix
 * build
 * feature
 * main
