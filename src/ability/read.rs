@@ -106,7 +106,7 @@ impl StdinDTO {
         let mut vars = RgVars::default();
         vars.append(RgProp::new(name, buffer.trim().to_string()));
         vars.export_props(ctx, def.globle_mut(), "")?;
-        return Ok((def, ExecOut::Ignore));
+        Ok((def, ExecOut::Ignore))
     }
 }
 
@@ -123,7 +123,7 @@ impl CmdDTO {
         let mut vars = RgVars::default();
         vars.append(RgProp::new(name, data_str.trim().to_string()));
         vars.export_props(ctx, def.globle_mut(), "")?;
-        return Ok((def, ExecOut::Ignore));
+        Ok((def, ExecOut::Ignore))
     }
 }
 
@@ -133,7 +133,7 @@ impl GxRead {
             ReadMode::CMD(cmd_dto) => cmd_dto.execute(ctx, dict),
             ReadMode::FILE(ini_dto) => ini_dto.execute(ctx, dict),
             ReadMode::STDIN(stdin_dto) => stdin_dto.execute(ctx, dict),
-            _ => return Err(ExecReason::Exp(String::from("not implementation")).into()),
+            _ => Err(ExecReason::Exp(String::from("not implementation")).into()),
         }
     }
 }
