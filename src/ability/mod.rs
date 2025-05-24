@@ -53,7 +53,7 @@ pub use crate::ability::{
     assert::GxAssert,
     cmd::GxCmd,
     echo::GxEcho,
-    read::{GxRead, RgReadDto},
+    read::GxRead,
     tpl::GxTpl,
     tpl::TplDTO,
     tpl::TplDTOBuilder,

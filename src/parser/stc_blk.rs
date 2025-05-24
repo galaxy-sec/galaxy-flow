@@ -6,12 +6,14 @@ use winnow::combinator::repeat;
 use crate::calculate::cond::IFExpress;
 use crate::calculate::express::{BinExpress, EVarDef, ExpressEnum};
 use crate::components::gxl_block::{BlockAction, BlockNode};
-use crate::components::gxl_cond::RgCond;
+use crate::components::gxl_cond::GxlCond;
+use crate::components::gxl_loop::GxlLoop;
 
 use super::atom::spaced;
 use super::domain::{gal_block_beg, gal_block_end, gal_keyword};
 use super::inner::{
-    gal_assert, gal_call, gal_cmd, gal_downlaod, gal_echo, gal_read, gal_tpl, gal_version,
+    gal_assert, gal_call, gal_cmd, gal_downlaod, gal_echo, gal_read_cmd, gal_read_file,
+    gal_read_stdin, gal_tpl, gal_version,
 };
 
 pub fn gal_block(input: &mut &str) -> ModalResult<BlockNode> {
@@ -62,8 +64,14 @@ pub fn gal_sentens_item(input: &mut &str) -> ModalResult<BlockAction> {
     if starts_with("gx.ver", input) {
         return gal_version.map(BlockAction::Version).parse_next(input);
     }
-    if starts_with("gx.read", input) {
-        return gal_read.map(BlockAction::Read).parse_next(input);
+    if starts_with("gx.read_file", input) {
+        return gal_read_file.map(BlockAction::Read).parse_next(input);
+    }
+    if starts_with("gx.read_cmd", input) {
+        return gal_read_cmd.map(BlockAction::Read).parse_next(input);
+    }
+    if starts_with("gx.read_stdin", input) {
+        return gal_read_stdin.map(BlockAction::Read).parse_next(input);
     }
     if starts_with("gx.tpl", input) {
         return gal_tpl.map(BlockAction::Tpl).parse_next(input);
@@ -81,13 +89,9 @@ pub fn gal_sentens_item(input: &mut &str) -> ModalResult<BlockAction> {
         .context(wn_desc("<flow-call>"))
         .map(BlockAction::Delegate)
         .parse_next(input)
-    //gal_prop.map(make_run_hold).parse_next(input)?;
-    //error!(target : "gxl", "not support gxl :{}" , peek_line(input));
-    //fail.context(wn_desc("not support gxl sentens"))
-    //    .parse_next(input)
 }
 
-pub fn gal_cond(input: &mut &str) -> ModalResult<RgCond> {
+pub fn gal_cond(input: &mut &str) -> ModalResult<GxlCond> {
     //if val == 1
     skip_spaces_block(input)?;
     gal_keyword("if", input)?;
@@ -112,7 +116,24 @@ pub fn gal_cond(input: &mut &str) -> ModalResult<RgCond> {
         true_block,
         false_block,
     );
-    Ok(RgCond::new(ctrl_express))
+    Ok(GxlCond::new(ctrl_express))
+}
+
+pub fn gal_loop(input: &mut &str) -> ModalResult<GxlLoop> {
+    //if val == 1
+    skip_spaces_block(input)?;
+    gal_keyword("for", input)?;
+
+    let (cur_name, _, val_name) = (
+        spaced(take_env_var).context(wn_desc("<cur-var>")),
+        spaced("in").context(wn_desc("in")),
+        spaced(take_env_var).context(wn_desc("<var-set>")),
+    )
+        .parse_next(input)?;
+    let block = gal_block.parse_next(input)?;
+    skip_spaces_block(input)?;
+    multispace0(input)?;
+    Ok(GxlLoop::new(cur_name, val_name, block))
 }
 
 #[cfg(test)]

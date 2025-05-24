@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::fmt::{Debug, Display};
 
+use super::execution::runnable::DictUse;
 use super::traits::{Getter, Setter};
 
 #[derive(Clone, PartialEq, Eq)]
@@ -17,6 +18,7 @@ pub struct SecVar {
 
 #[derive(Debug, Clone, Default, Getters, PartialEq)]
 pub struct VarsDict {
+    useage: DictUse,
     maps: HashMap<String, SecVar>,
 }
 
@@ -55,11 +57,19 @@ impl Display for VarsDict {
 }
 
 impl VarsDict {
-    pub fn new() -> Self {
+    pub fn global_new() -> Self {
         VarsDict {
+            useage: DictUse::Global,
             maps: HashMap::new(),
         }
     }
+    pub fn new<S: Into<String>>(name: S) -> Self {
+        VarsDict {
+            useage: DictUse::Named(name.into()),
+            maps: HashMap::new(),
+        }
+    }
+
     pub fn export(&self) -> HashMap<String, String> {
         let mut map = HashMap::new();
         for (k, v) in &self.maps {
@@ -96,7 +106,7 @@ impl VarsDict {
 
 impl From<HashMap<String, String>> for VarsDict {
     fn from(map: HashMap<String, String>) -> Self {
-        let mut dict = VarsDict::new();
+        let mut dict = VarsDict::global_new();
         for (k, v) in map {
             dict.set(&k, v);
         }
@@ -150,6 +160,12 @@ impl Setter<&str, String> for VarsDict {
                 value: val,
             },
         );
+    }
+}
+
+impl Setter<&str, SecVar> for VarsDict {
+    fn set(&mut self, key: &str, val: SecVar) {
+        self.maps.insert(key.to_string(), val);
     }
 }
 

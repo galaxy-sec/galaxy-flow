@@ -16,8 +16,10 @@ use crate::ability::delegate::ActCall;
 use crate::ability::download::GxDownLoad;
 use crate::ability::download::GxDownLoadBuilder;
 use crate::ability::echo::*;
+use crate::ability::read::CmdDTOBuilder;
+use crate::ability::read::FileDTOBuilder;
 use crate::ability::read::ReadMode;
-use crate::ability::read::RgReadDtoBuilder;
+use crate::ability::read::StdinDTOBuilder;
 use crate::ability::tpl::TPlEngineType;
 use crate::ability::version::*;
 use crate::ability::GxCmd;
@@ -120,39 +122,69 @@ pub fn gal_version(input: &mut &str) -> ModalResult<RgVersion> {
         fail.parse_next(input)
     }
 }
-
-pub fn gal_read(input: &mut &str) -> ModalResult<GxRead> {
-    gal_keyword_alt("gx.read", "rg.read", input)?;
+pub fn gal_read_file(input: &mut &str) -> ModalResult<GxRead> {
+    gal_keyword_alt("gx.read_ini", "rg.read_ini", input)?;
     let props = sentence_body.parse_next(input)?;
-    let mut builder = RgReadDtoBuilder::default();
-    let mut expect = ShellOption::default();
+    let mut builder = FileDTOBuilder::default();
     for one in props {
         let key = one.0.to_lowercase();
-        if key == "cmd" {
-            builder.cmd(Some(one.1));
-            builder.mode(ReadMode::CMD);
-        } else if key == "name" {
+        if key == "name" {
             builder.name(Some(one.1));
-        } else if key == "stdin" {
-            builder.stdin(Some(one.1));
-            builder.mode(ReadMode::STDIN);
-        } else if key == "ini" {
-            builder.ini(Some(one.1));
-            builder.mode(ReadMode::INI);
-        } else if key == "oxc_toml" {
-            builder.oxc_toml(Some(one.1));
-            builder.mode(ReadMode::OxcToml);
-        } else {
-            shell_opt_setting(key, one.1, &mut expect);
+        } else if key == "ini" || key == "file" {
+            builder.file(one.1);
         }
     }
-    builder.expect(expect);
     match builder.build() {
-        Ok(dto) => Ok(GxRead::dto_new(dto)),
+        Ok(dto) => Ok(GxRead::from(ReadMode::from(dto))),
         Err(e) => {
             error!(target: "parse", "{}",e);
-            //println!("{}", e);
             fail.context(wn_desc("read")).parse_next(input)
+        }
+    }
+}
+pub fn gal_read_stdin(input: &mut &str) -> ModalResult<GxRead> {
+    gal_keyword_alt("gx.read_stdin", "rg.read_stdin", input)?;
+    let props = sentence_body.parse_next(input)?;
+    let mut builder = StdinDTOBuilder::default();
+    for one in props {
+        let key = one.0.to_lowercase();
+        if key == "name" {
+            builder.name(one.1);
+        } else if key == "prompt" {
+            builder.prompt(one.1);
+        }
+    }
+    match builder.build() {
+        Ok(dto) => Ok(GxRead::from(ReadMode::from(dto))),
+        Err(e) => {
+            error!(target: "parse", "{}",e);
+            fail.context(wn_desc("read")).parse_next(input)
+        }
+    }
+}
+
+pub fn gal_read_cmd(input: &mut &str) -> ModalResult<GxRead> {
+    gal_keyword("gx.read_cmd", input)?;
+    let props = sentence_body.parse_next(input)?;
+    let mut builder = CmdDTOBuilder::default();
+    let mut sh_opt = ShellOption::default();
+    builder.expect(sh_opt.clone());
+    for one in props {
+        let key = one.0.to_lowercase();
+        if key == "name" {
+            builder.name(one.1);
+        } else if key == "cmd" {
+            builder.cmd(one.1);
+        } else {
+            shell_opt_setting(key, one.1, &mut sh_opt);
+        }
+    }
+    builder.expect(sh_opt);
+    match builder.build() {
+        Ok(dto) => Ok(GxRead::from(ReadMode::from(dto))),
+        Err(e) => {
+            error!(target: "parse", "{}",e);
+            fail.context(wn_desc("read_cmd")).parse_next(input)
         }
     }
 }
@@ -340,7 +372,13 @@ mod tests {
     use orion_common::friendly::New2;
     use orion_error::TestAssert;
 
-    use crate::ability::{read::ReadMode, RgReadDto, TplDTO};
+    use crate::{
+        ability::{
+            read::{CmdDTO, FileDTO, ReadMode, StdinDTO},
+            TplDTO,
+        },
+        infra::once_init_log,
+    };
 
     use super::*;
 
@@ -461,91 +499,71 @@ mod tests {
 
     #[test]
     fn read_cmd_test1() {
-        let mut dto = RgReadDto::default();
+        once_init_log();
+        let mut dto = CmdDTO::default();
         dto.expect = ShellOption::default();
-        dto.mode = ReadMode::CMD;
-        dto.cmd = Some(format!("echo galaxy-1.0"));
-        dto.name = Some(format!("RG"));
+        dto.cmd = format!("echo galaxy-1.0");
+        dto.name = format!("RG");
         let mut data = r#"
-                 gx.read {
+                 gx.read_cmd {
                  name = "RG";
                  cmd  = "echo galaxy-1.0";
                  } ;"#;
-        let obj = run_gxl(gal_read, &mut data).assert();
+        let obj = run_gxl(gal_read_cmd, &mut data).assert();
         assert_eq!(data, "");
-        assert_eq!(&dto, obj.dto());
+        assert_eq!(&ReadMode::from(dto), obj.imp());
     }
     #[test]
     fn read_cmd_test2() {
-        let mut dto = RgReadDto::default();
+        let mut dto = CmdDTO::default();
         dto.expect = ShellOption::default();
         dto.expect.log_lev = Some(log::Level::Info);
 
-        dto.mode = ReadMode::CMD;
-        dto.cmd = Some(format!("echo galaxy-1.0"));
-        dto.name = Some(format!("RG"));
+        dto.cmd = format!("echo galaxy-1.0");
+        dto.name = format!("RG");
         dto.expect.err = Some(format!("you err"));
 
         let mut data = r#"
-                 gx.read{
+                 gx.read_cmd{
                  name = "RG";
                  cmd  = "echo galaxy-1.0";
                  err = "you err";
                  log = "1";
                  } ;"#;
 
-        let obj = run_gxl(gal_read, &mut data).assert();
+        let obj = run_gxl(gal_read_cmd, &mut data).assert();
         assert_eq!(data, "");
-        assert_eq!(&dto, obj.dto());
+        assert_eq!(&ReadMode::from(dto), obj.imp());
     }
     #[test]
     fn read_ini_test() {
-        let mut dto = RgReadDto::default();
-        dto.expect = ShellOption::default();
-        dto.ini = Some(format!("vars.ini"));
-        dto.mode = ReadMode::INI;
+        let mut dto = FileDTO::default();
+        dto.file = format!("vars.ini");
 
         let mut data = r#"
-                 gx.read {
+                 gx.read_ini {
                  ini = "vars.ini";
                  } ;"#;
-        let obj = run_gxl(gal_read, &mut data).assert();
+        let obj = run_gxl(gal_read_file, &mut data).assert();
         assert_eq!(data, "");
-        assert_eq!(&dto, obj.dto());
-    }
-    #[test]
-    fn read_toml_test() {
-        let mut dto = RgReadDto::default();
-        dto.expect = ShellOption::default();
-        dto.oxc_toml = Some(format!("vars.toml"));
-        dto.mode = ReadMode::OxcToml;
-
-        let mut data = r#"
-                 gx.read {
-                 oxc_toml = "vars.toml";
-                 } ;"#;
-        let obj = run_gxl(gal_read, &mut data).assert();
-        assert_eq!(data, "");
-        assert_eq!(&dto, obj.dto());
+        assert_eq!(&ReadMode::from(dto), obj.imp());
     }
 
     #[test]
     fn read_stdin_test() {
-        let mut dto = RgReadDto::default();
-        dto.expect = ShellOption::default();
-        dto.mode = ReadMode::STDIN;
-        dto.name = Some(format!("name"));
-        dto.stdin = Some(format!("please input you name"));
+        let mut dto = StdinDTO::default();
+        dto.name = format!("name");
+        dto.prompt = format!("please input you name");
 
         let mut data = r#"
-                 gx.read {
-                 stdin = "please input you name";
+                 gx.read_stdin {
+                 prompt = "please input you name";
                  name  = "name";
                  } ;"#;
 
-        let obj = run_gxl(gal_read, &mut data).assert();
+        let obj = run_gxl(gal_read_stdin, &mut data).assert();
         assert_eq!(data, "");
-        assert_eq!(&dto, obj.dto());
+        assert_eq!(&ReadMode::from(dto), obj.imp());
     }
 
     #[test]

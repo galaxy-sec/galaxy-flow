@@ -1,4 +1,7 @@
+use std::collections::HashMap;
+
 use async_trait::async_trait;
+use derive_more::From;
 
 use crate::context::ExecContext;
 use crate::meta::RgoMeta;
@@ -30,13 +33,22 @@ impl Display for ExecOut {
 pub type TaskResult = ExecResult<ExecOut>;
 pub type VarsResult = ExecResult<VarsDict>;
 pub type VTResult = ExecResult<(VarsDict, ExecOut)>;
+
+#[derive(Debug, Clone, Default, PartialEq, From, Getters)]
+pub struct VarSpace {
+    globle: VarsDict,
+    nameds: HashMap<String, VarsDict>,
+}
+#[derive(Debug, Clone, Default, PartialEq, From)]
+pub enum DictUse {
+    #[default]
+    Global,
+    Named(String),
+}
 //#[automock]
 #[async_trait]
 pub trait AsyncRunnableTrait {
     async fn async_exec(&self, ctx: ExecContext, dict: VarsDict) -> VTResult;
-    fn update_vars(&self, _ctx: ExecContext, dict: &VarsDict) -> VarsResult {
-        Ok(dict.clone())
-    }
 }
 pub trait RunnableTrait {
     fn exec(&self, ctx: ExecContext, dict: VarsDict) -> VTResult;

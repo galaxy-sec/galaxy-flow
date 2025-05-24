@@ -115,7 +115,7 @@ mod tests {
     }
     #[test]
     fn rg_sh_test() {
-        let mut dict = VarsDict::new();
+        let mut dict = VarsDict::global_new();
         dict.sec_set("SEC_KEY", "galaxy");
         let exp = EnvExpress::from_env_mix(dict);
         let opt = ShellOption {

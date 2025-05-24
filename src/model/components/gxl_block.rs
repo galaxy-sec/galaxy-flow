@@ -1,5 +1,6 @@
 use async_trait::async_trait;
 
+use super::gxl_loop::GxlLoop;
 use super::prelude::*;
 
 use crate::ability::delegate::ActCall;
@@ -16,14 +17,15 @@ use crate::calculate::cond::CondExec;
 use crate::execution::runnable::VTResult;
 use crate::model::components::gxl_cond::RunArgs;
 
-use super::gxl_cond::RgCond;
+use super::gxl_cond::GxlCond;
 use super::gxl_spc::GxlSpace;
 use super::gxl_var::RgProp;
 
 #[derive(Clone, Debug)]
 pub enum BlockAction {
     Command(GxCmd),
-    Cond(RgCond),
+    Cond(GxlCond),
+    Loop(GxlLoop),
     Echo(GxEcho),
     Assert(GxAssert),
     Version(RgVersion),
@@ -63,6 +65,7 @@ impl AsyncRunnableTrait for BlockAction {
             BlockAction::Echo(o) => o.async_exec(ctx, dct).await,
             BlockAction::Assert(o) => o.async_exec(ctx, dct).await,
             BlockAction::Cond(o) => o.async_exec(ctx, dct).await,
+            BlockAction::Loop(o) => o.async_exec(ctx, dct).await,
             BlockAction::Tpl(o) => o.async_exec(ctx, dct).await,
             BlockAction::Delegate(o) => o.async_exec(ctx, dct).await,
             BlockAction::Version(o) => o.async_exec(ctx, dct).await,
@@ -100,6 +103,7 @@ impl DependTrait<&GxlSpace> for BlockNode {
             let item = match x {
                 BlockAction::Tpl(v) => BlockAction::Tpl(v.clone()),
                 BlockAction::Cond(v) => BlockAction::Cond(v.clone()),
+                BlockAction::Loop(v) => BlockAction::Loop(v.clone()),
                 BlockAction::Read(v) => BlockAction::Read(v.clone()),
                 BlockAction::Echo(v) => BlockAction::Echo(v.clone()),
                 //BlockAction::Vault(v) => BlockAction::Vault(v.clone()),

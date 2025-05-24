@@ -1,4 +1,7 @@
-use super::prelude::*;
+use super::{
+    inner::{gal_read_cmd, gal_read_file, gal_read_stdin},
+    prelude::*,
+};
 use orion_parse::{
     atom::{skip_spaces_block, starts_with},
     symbol::wn_desc,
@@ -8,7 +11,7 @@ use crate::components::{gxl_env::EnvItem, gxl_var::RgProp, GxlEnv};
 
 use super::{
     domain::{gal_sentence_beg, gal_sentence_end},
-    inner::{gal_prop, gal_read, gal_vars},
+    inner::{gal_prop, gal_vars},
     stc_base::{gal_ann, gal_env_head},
 };
 
@@ -17,8 +20,14 @@ pub fn gal_env_item(input: &mut &str) -> ModalResult<EnvItem> {
     if starts_with("gx.vars", input) {
         return gal_vars.map(EnvItem::Var).parse_next(input);
     }
-    if starts_with("gx.read", input) {
-        return gal_read.map(EnvItem::Read).parse_next(input);
+    if starts_with("gx.read_stdin", input) {
+        return gal_read_stdin.map(EnvItem::Read).parse_next(input);
+    }
+    if starts_with("gx.read_cmd", input) {
+        return gal_read_cmd.map(EnvItem::Read).parse_next(input);
+    }
+    if starts_with("gx.read_file", input) {
+        return gal_read_file.map(EnvItem::Read).parse_next(input);
     }
     //if starts_with("gx.vault", input) {
     //    return gal_vault.map(EnvItem::Vault).parse_next(input);
