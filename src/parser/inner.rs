@@ -123,7 +123,7 @@ pub fn gal_version(input: &mut &str) -> ModalResult<RgVersion> {
     }
 }
 pub fn gal_read_file(input: &mut &str) -> ModalResult<GxRead> {
-    gal_keyword_alt("gx.read_ini", "rg.read_ini", input)?;
+    gal_keyword_alt("gx.read_file", "rg.read_file", input)?;
     let props = sentence_body.parse_next(input)?;
     let mut builder = FileDTOBuilder::default();
     for one in props {

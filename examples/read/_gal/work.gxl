@@ -9,6 +9,12 @@ mod main   {
   flow conf  {
     gx.echo { value = "${RUST}" }
     gx.assert { value = "${JAVA}" , expect = "90"  }
+
+    gx.read_file { file = "./var2.ini" , name = "DATA"}
+
+    for ${CUR} in ${DATA} {
+        gx.echo { value = "${CUR}" }
+    }
   }
 
 

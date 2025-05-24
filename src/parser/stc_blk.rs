@@ -52,6 +52,9 @@ pub fn gal_sentens_item(input: &mut &str) -> ModalResult<BlockAction> {
     if starts_with("if", input) {
         return gal_cond.map(BlockAction::Cond).parse_next(input);
     }
+    if starts_with("for", input) {
+        return gal_loop.map(BlockAction::Loop).parse_next(input);
+    }
     if starts_with("gx.cmd", input) {
         return gal_cmd.map(BlockAction::Command).parse_next(input);
     }
@@ -143,7 +146,7 @@ mod tests {
 
     use crate::parser::{
         inner::run_gxl,
-        stc_blk::{gal_block, gal_cond},
+        stc_blk::{gal_block, gal_cond, gal_loop},
     };
 
     #[test]
@@ -192,6 +195,31 @@ mod tests {
                 gx.echo { value  = "${PRJ_ROOT}/test/main.py" ; };
              }
         }"#;
+        let _ = run_gxl(gal_block, &mut data).assert();
+        assert_eq!(data, "");
+    }
+
+    #[test]
+    fn test_for() {
+        let mut data = r#"
+            for  ${CUR} in ${DATA} {
+                gx.echo { value  = "${cur}/test/main.py" ; };
+             }
+        "#;
+        let _ = run_gxl(gal_loop, &mut data).assert();
+        assert_eq!(data, "");
+    }
+    #[test]
+    fn test_if_for() {
+        let mut data = r#"
+            {
+            if ${val} == "1" {
+                for  ${CUR} in ${DATA} {
+                    gx.echo { value  = "${cur}/test/main.py" ; };
+                }
+             }
+             }
+        "#;
         let _ = run_gxl(gal_block, &mut data).assert();
         assert_eq!(data, "");
     }
