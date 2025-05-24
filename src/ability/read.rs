@@ -89,7 +89,7 @@ impl FileDTO {
         } else {
             vars.export_props(ctx, def.globle_mut(), "")?;
         }
-        return Ok((def, ExecOut::Ignore));
+        Ok((def, ExecOut::Ignore))
     }
 }
 impl StdinDTO {
