@@ -1,4 +1,7 @@
-use std::{path::PathBuf, str::FromStr};
+use std::{
+    path::{Path, PathBuf},
+    str::FromStr,
+};
 
 use crate::ability::prelude::*;
 use crate::components::RgVars;
@@ -42,8 +45,8 @@ pub struct FileDTO {
 }
 
 impl FileDTO {
-    fn from_ini(&self, ctx: ExecContext, file_path: &PathBuf) -> ExecResult<VarDict> {
-        let file = Ini::load_from_file(file_path.clone()).map_err(|e| {
+    fn impl_ini(&self, ctx: ExecContext, file_path: &Path) -> ExecResult<VarDict> {
+        let file = Ini::load_from_file(file_path).map_err(|e| {
             ExecReason::Args(format!(
                 "load ini file:[{}] error: {}",
                 file_path.display(),
@@ -68,11 +71,11 @@ impl FileDTO {
         let file = self.file.clone();
         let file_path = PathBuf::from(exp.eval(&file)?);
         let mut cur_dict = if file_path.extension() == PathBuf::from("*.ini").extension() {
-            self.from_ini(ctx, &file_path)?
+            self.impl_ini(ctx, &file_path)?
         } else if file_path.extension() == PathBuf::from("*.json").extension() {
-            self.from_json(ctx, &file_path)?
+            self.impl_json(ctx, &file_path)?
         } else if file_path.extension() == PathBuf::from("*.toml").extension() {
-            self.from_toml(ctx, &file_path)?
+            self.impl_toml(ctx, &file_path)?
         } else {
             return ExecReason::Args(format!("not support format :{}", file_path.display()))
                 .err_result();
@@ -86,18 +89,18 @@ impl FileDTO {
         Ok((def, ExecOut::Ignore))
     }
 
-    fn from_toml_mlist(&self, _ctx: ExecContext, content: String) -> ExecResult<VarDict> {
+    fn impl_toml_mlist(&self, _ctx: ExecContext, content: String) -> ExecResult<VarDict> {
         let data: ModulesList = toml::from_str(content.as_str()).owe_data()?;
         let x = data.export();
         Ok(VarDict::from(x))
     }
 
-    fn from_toml_vdict(&self, _ctx: ExecContext, content: String) -> ExecResult<VarDict> {
+    fn impl_toml_vdict(&self, _ctx: ExecContext, content: String) -> ExecResult<VarDict> {
         let data: ValueDict = toml::from_str(content.as_str()).owe_data()?;
         Ok(VarDict::from(data))
     }
 
-    fn from_toml(&self, ctx: ExecContext, file_path: &PathBuf) -> ExecResult<VarDict> {
+    fn impl_toml(&self, ctx: ExecContext, file_path: &PathBuf) -> ExecResult<VarDict> {
         let mut err_ctx = WithContext::want("load toml exchange data");
         err_ctx.with_path("path", file_path);
         let toml_content = std::fs::read_to_string(PathBuf::from(file_path))
@@ -106,14 +109,14 @@ impl FileDTO {
         if let Some(x) = &self.entity {
             let entity = ReadEntity::from_str(x.as_str()).owe_data()?;
             match entity {
-                ReadEntity::MList => self.from_toml_mlist(ctx, toml_content),
-                ReadEntity::VDict => self.from_toml_vdict(ctx, toml_content),
+                ReadEntity::MList => self.impl_toml_mlist(ctx, toml_content),
+                ReadEntity::VDict => self.impl_toml_vdict(ctx, toml_content),
             }
         } else {
             ExecReason::Miss("entity".into()).err_result()
         }
     }
-    fn from_json(&self, _ctx: ExecContext, file_path: &PathBuf) -> ExecResult<VarDict> {
+    fn impl_json(&self, _ctx: ExecContext, file_path: &PathBuf) -> ExecResult<VarDict> {
         let mut err_ctx = WithContext::want("load toml exchange data");
         err_ctx.with_path("path", file_path);
         let content = std::fs::read_to_string(PathBuf::from(file_path))
