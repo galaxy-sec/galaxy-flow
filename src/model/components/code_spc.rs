@@ -5,22 +5,25 @@ use orion_common::friendly::AppendAble;
 use crate::error::AResult;
 use crate::traits::ExecLoadTrait;
 
-use super::gxl_mod::merge_to_head;
+use super::gxl_mod::merge_mod;
 use super::gxl_spc::GxlSpace;
 use super::GxlMod;
 
 #[derive(Clone, Getters, Default)]
 pub struct CodeSpace {
-    mods: HashMap<String, Vec<GxlMod>>, //mods: BTreeMap<String, RgMod>,
+    mods: Vec<String>,
+    store: HashMap<String, Vec<GxlMod>>, //mods: BTreeMap<String, RgMod>,
 }
 
 impl CodeSpace {
     #[allow(clippy::result_large_err)]
     pub fn assemble_mix(&self) -> AResult<GxlSpace> {
         let mut target_spc = GxlSpace::default();
-        for (_, m) in self.mods.iter() {
-            if let Some(target_mod) = merge_to_head(m.clone()) {
-                target_spc.append(target_mod);
+        for m_name in self.mods.iter() {
+            if let Some(m) = self.store.get(m_name) {
+                if let Some(target_mod) = merge_mod(m.clone()) {
+                    target_spc.append(target_mod);
+                }
             }
         }
         target_spc.assemble_depend()?;
@@ -39,16 +42,17 @@ impl AppendAble<GxlMod> for CodeSpace {
     fn append(&mut self, rg_mod: GxlMod) {
         let key = rg_mod.of_name();
         let mix = rg_mod.meta().mix().clone();
-        if let Some(_vec) = self.mods.get(&key) {
+        if let Some(_vec) = self.store.get(&key) {
             warn!(target: "stc","重复 mod  {}", key);
         } else {
             let mut mod_vec = vec![rg_mod];
             for item in &mix {
-                if let Some(i_vec) = self.mods.get(item) {
+                if let Some(i_vec) = self.store.get(item) {
                     mod_vec.append(&mut i_vec.clone());
                 }
             }
-            self.mods.insert(key, mod_vec);
+            self.mods.push(key.clone());
+            self.store.insert(key, mod_vec);
         }
     }
 }
@@ -62,7 +66,7 @@ mod tests {
     use crate::components::{GxlEnv, GxlFlow, GxlMod, RgVars};
     use crate::execution::exec_init_env;
     use crate::execution::sequence::Sequence;
-    use crate::meta::RgoMeta;
+    use crate::meta::GxlMeta;
     use crate::types::AnyResult;
 
     use super::*;
@@ -71,7 +75,7 @@ mod tests {
     async fn execute_forword() -> AnyResult<()> {
         let (ctx, def) = exec_init_env();
 
-        let meta = RgoMeta::build_mod("main");
+        let meta = GxlMeta::build_mod("main");
         let mut rg_mod = GxlMod::from(meta);
         rg_mod.append(RgProp::new("key1", "val1"));
 
@@ -80,7 +84,7 @@ mod tests {
         let mut rg_vars = RgVars::default();
         rg_vars.append(RgProp::new("key1", "val1"));
 
-        let meta = RgoMeta::build_mod("env");
+        let meta = GxlMeta::build_mod("env");
         let mut rg_mod_env = GxlMod::from(meta);
         rg_mod.append(RgProp::new("key1", "val1"));
 

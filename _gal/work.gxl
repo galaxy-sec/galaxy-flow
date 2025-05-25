@@ -7,7 +7,7 @@ mod env  {
     root      = ".";
     run       = "./run";
     target_name = "";
-    prj_key   = "galaxy_flowell" ;
+    prj_key   = "galaxy_flow" ;
 
   }
   env _branch_auto {
@@ -60,6 +60,7 @@ mod main   {
 
     }
     flow conf  {
+      gx.echo { value="${ENV_PRJ_KEY}"; }
       gx.echo { value="PRJ_BINS: ${MAIN_PRJ_BINS} "; }
       gx.echo { value="USR_BIN : ${MAIN_USR_BINS} "; }
       gx.echo { value="RG_OS_SYS: ${RG_OS_SYS} "; }
@@ -91,6 +92,7 @@ mod main   {
   }
 
   flow pub_local   {
+
     os.path { dst = "${MAIN_USR_BINS}"; }
     os.path { dst = "${MAIN_PRJ_BINS}"; }
     gx.cmd  { cmd = "rm -f ${MAIN_PRJ_BINS}/r*" ; }

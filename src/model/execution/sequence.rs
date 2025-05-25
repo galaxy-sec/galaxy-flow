@@ -9,8 +9,8 @@ use crate::execution::runnable::AsyncRunnableTrait;
 use crate::execution::runnable::ExecOut;
 use crate::execution::runnable::RunnableTrait;
 use crate::execution::task::Task;
+use crate::meta::GxlMeta;
 use crate::meta::GxlType;
-use crate::meta::RgoMeta;
 
 use super::hold::ComHold;
 use super::hold::IsolationHold;
@@ -93,8 +93,8 @@ impl RunnableTrait for RunStub {
     }
 }
 impl ComponentMeta for RunStub {
-    fn com_meta(&self) -> RgoMeta {
-        RgoMeta::new2(GxlType::Ignore, "stub")
+    fn com_meta(&self) -> GxlMeta {
+        GxlMeta::new2(GxlType::Ignore, "stub")
     }
 }
 

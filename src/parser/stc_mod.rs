@@ -6,8 +6,8 @@ use super::prelude::*;
 use crate::{
     annotation::ModAnnotation,
     components::{gxl_mod::ModItem, gxl_var::RgProp, GxlMod},
+    meta::GxlMeta,
     meta::GxlType,
-    meta::RgoMeta,
 };
 
 use super::{
@@ -57,7 +57,7 @@ pub fn gal_stc_mod(input: &mut &str) -> ModalResult<GxlMod> {
     let head = gal_mod_head
         .context(wn_desc("<flow-head>"))
         .parse_next(input)?;
-    let mut meta = RgoMeta::new3(GxlType::Mod, head.name().clone(), ann_vec);
+    let mut meta = GxlMeta::new3(GxlType::Mod, head.name().clone(), ann_vec);
     meta.set_mix(head.mix().clone());
     let mut obj = GxlMod::from(meta);
     gal_block_beg.parse_next(input)?;

@@ -4,7 +4,7 @@ use crate::ability::prelude::*;
 
 use crate::components::gxl_spc::GxlSpace;
 use crate::expect::{LogicScope, ShellOption};
-use crate::model::components::gxl_utls::take_mod_obj;
+use crate::model::components::gxl_utls::mod_obj_name;
 use crate::rg_sh;
 
 use crate::traits::DependTrait;
@@ -42,8 +42,8 @@ impl From<(String, Vec<Property>)> for ActCall {
 
 impl DependTrait<&GxlSpace> for ActCall {
     fn assemble(self, mod_name: &str, src: &GxlSpace) -> AResult<Self> {
-        let (t_mod, act_name) = take_mod_obj(mod_name, self.name.as_str());
-        if let Some(act) = src.mods().get(&t_mod).and_then(|m| m.acts().get(&act_name)) {
+        let (t_mod, act_name) = mod_obj_name(mod_name, self.name.as_str());
+        if let Some(act) = src.get(&t_mod).and_then(|m| m.acts().get(&act_name)) {
             Ok(self.clone_from(act, t_mod))
         } else {
             error!("activity not found: {}.{}", t_mod, act_name);
@@ -115,8 +115,8 @@ impl AsyncRunnableTrait for Activity {
     }
 }
 impl ComponentMeta for Activity {
-    fn com_meta(&self) -> RgoMeta {
-        RgoMeta::build_activity(self.dto.name.as_str())
+    fn com_meta(&self) -> GxlMeta {
+        GxlMeta::build_activity(self.dto.name.as_str())
     }
 }
 

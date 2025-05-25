@@ -4,7 +4,7 @@ use async_trait::async_trait;
 use derive_more::From;
 
 use crate::context::ExecContext;
-use crate::meta::RgoMeta;
+use crate::meta::GxlMeta;
 use crate::var::VarDict;
 use crate::ExecResult;
 
@@ -64,10 +64,10 @@ pub trait RunnableTrait {
 }
 
 pub trait ComponentMeta {
-    fn com_meta(&self) -> RgoMeta;
+    fn com_meta(&self) -> GxlMeta;
 }
 pub trait MetaInfo: AsyncRunnableTrait {
-    fn meta(&self) -> RgoMeta;
+    fn meta(&self) -> GxlMeta;
 }
 /*
 pub fn channel_pass_data(recv: &PipeReceiver, send: &PipeSender) -> VTResult {

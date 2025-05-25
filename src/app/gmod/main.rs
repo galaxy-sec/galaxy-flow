@@ -2,7 +2,6 @@ mod args;
 mod spec;
 //mod vault;
 
-#[macro_use]
 extern crate log;
 #[macro_use]
 extern crate clap;

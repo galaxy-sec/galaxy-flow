@@ -22,7 +22,7 @@ pub enum SysSpecCmd {
 #[derive(Debug, Subcommand)]
 pub enum SysInsCmd {
     Example,
-    Create(SysInsArgs),
+    New(SysInsArgs),
     Update,
     Local,
 }

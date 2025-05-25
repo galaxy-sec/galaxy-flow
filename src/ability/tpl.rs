@@ -231,8 +231,8 @@ impl AsyncRunnableTrait for GxTpl {
 }
 
 impl ComponentMeta for GxTpl {
-    fn com_meta(&self) -> RgoMeta {
-        RgoMeta::build_ability("gx.tpl")
+    fn com_meta(&self) -> GxlMeta {
+        GxlMeta::build_ability("gx.tpl")
     }
 }
 

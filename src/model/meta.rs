@@ -23,7 +23,7 @@ impl GxlType {
 }
 
 #[derive(Clone, Getters, Default)]
-pub struct RgoMeta {
+pub struct GxlMeta {
     class: GxlType,
     name: String,
     mix: Vec<String>,
@@ -32,7 +32,7 @@ pub struct RgoMeta {
     postorder: Vec<String>,
 }
 
-impl Debug for RgoMeta {
+impl Debug for GxlMeta {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("STCMeta")
             .field("class", &self.class)
@@ -40,22 +40,22 @@ impl Debug for RgoMeta {
             .finish()
     }
 }
-impl RgoMeta {
-    pub(crate) fn build_ability(arg: &str) -> RgoMeta {
-        RgoMeta::new2(GxlType::Ability(arg.to_string()), arg.to_string())
+impl GxlMeta {
+    pub(crate) fn build_ability(arg: &str) -> GxlMeta {
+        GxlMeta::new2(GxlType::Ability(arg.to_string()), arg.to_string())
     }
-    pub fn build_activity(arg: &str) -> RgoMeta {
-        RgoMeta::new2(GxlType::Activity, arg.to_string())
+    pub fn build_activity(arg: &str) -> GxlMeta {
+        GxlMeta::new2(GxlType::Activity, arg.to_string())
     }
-    pub fn build_var(arg: &str) -> RgoMeta {
-        RgoMeta::new2(GxlType::Vars, arg.to_string())
+    pub fn build_var(arg: &str) -> GxlMeta {
+        GxlMeta::new2(GxlType::Vars, arg.to_string())
     }
 
     pub fn build_mod<S: Into<String>>(name: S) -> Self {
-        RgoMeta::new2(GxlType::Mod, name.into())
+        GxlMeta::new2(GxlType::Mod, name.into())
     }
     pub fn build_env<S: Into<String>>(name: S) -> Self {
-        RgoMeta::new2(GxlType::Env, name.into())
+        GxlMeta::new2(GxlType::Env, name.into())
     }
     pub fn build_env_mix<S: Into<String> + Clone>(name: S, mix: Vec<S>) -> Self {
         let mut mix_string: Vec<String> = Vec::new();
@@ -123,7 +123,7 @@ impl RgoMeta {
         None
     }
 }
-impl MultiNew2<GxlType, String> for RgoMeta {
+impl MultiNew2<GxlType, String> for GxlMeta {
     fn new2(cls: GxlType, name: String) -> Self {
         Self {
             class: cls,
@@ -135,7 +135,7 @@ impl MultiNew2<GxlType, String> for RgoMeta {
         }
     }
 }
-impl MultiNew2<GxlType, &str> for RgoMeta {
+impl MultiNew2<GxlType, &str> for GxlMeta {
     fn new2(cls: GxlType, name: &str) -> Self {
         Self {
             class: cls,
@@ -148,7 +148,7 @@ impl MultiNew2<GxlType, &str> for RgoMeta {
     }
 }
 
-impl MultiNew3<GxlType, String, Vec<AnnEnum>> for RgoMeta {
+impl MultiNew3<GxlType, String, Vec<AnnEnum>> for GxlMeta {
     fn new3(cls: GxlType, name: String, anns: Vec<AnnEnum>) -> Self {
         Self {
             class: cls,
@@ -161,7 +161,7 @@ impl MultiNew3<GxlType, String, Vec<AnnEnum>> for RgoMeta {
     }
 }
 
-impl RgoMeta {
+impl GxlMeta {
     pub fn add_annotate(&mut self, ann: AnnEnum) {
         self.annotations.push(ann);
     }

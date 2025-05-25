@@ -9,7 +9,7 @@ pub use crate::execution::runnable::VTResult;
 
 pub use crate::error::{AssembleError, AssembleReason};
 pub use crate::evaluator::EnvExpress;
-pub use crate::meta::RgoMeta;
+pub use crate::meta::GxlMeta;
 pub use crate::traits::DependTrait;
 pub use crate::traits::PropsTrait;
 

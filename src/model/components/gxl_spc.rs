@@ -10,14 +10,18 @@ use std::collections::HashMap;
 use super::code_spc::CodeSpace;
 use super::GxlMod;
 
-#[derive(Clone, Getters, Default)]
+#[derive(Clone, Default)]
 pub struct GxlSpace {
-    mods: HashMap<String, GxlMod>,
+    mods: Vec<String>,
+    store: HashMap<String, GxlMod>,
 }
 
 impl GxlSpace {
     pub fn get(&self, key: &str) -> Option<&GxlMod> {
-        self.mods.get(key)
+        self.store.get(key)
+    }
+    pub fn len(&self) -> usize {
+        self.store.len()
     }
     pub fn main(&self) -> ExecResult<GxlMod> {
         self.get("main")
@@ -52,9 +56,11 @@ impl GxlSpace {
 
     pub(crate) fn assemble_depend(&mut self) -> AResult<Self> {
         let mut spc = Self::default();
-        for (k, m) in self.mods.iter() {
-            let x = m.clone().assemble(k.as_str(), self)?;
-            spc.append(x);
+        for k in self.mods.iter() {
+            if let Some(x) = self.get(k) {
+                let updated = x.clone().assemble(k.as_str(), self)?;
+                spc.append(updated);
+            }
         }
         Ok(spc)
     }
@@ -62,7 +68,8 @@ impl GxlSpace {
 
 impl AppendAble<GxlMod> for GxlSpace {
     fn append(&mut self, now: GxlMod) {
-        self.mods.insert(now.of_name(), now);
+        self.mods.push(now.of_name());
+        self.store.insert(now.of_name(), now);
     }
 }
 fn get_os_sys() -> String {
@@ -95,7 +102,7 @@ impl ExecLoadTrait for GxlSpace {
         if v.len() >= 2 {
             let mod_name = v[0];
             let item_name = v[1];
-            if let Some(target_mod) = self.mods.get(mod_name) {
+            if let Some(target_mod) = self.store.get(mod_name) {
                 return target_mod.load_env(ctx, sequ, item_name);
             }
         }
@@ -106,7 +113,7 @@ impl ExecLoadTrait for GxlSpace {
         if v.len() >= 2 {
             let mod_name = v[0];
             let item_name = v[1];
-            if let Some(target_mod) = self.mods.get(mod_name) {
+            if let Some(target_mod) = self.store.get(mod_name) {
                 return target_mod.load_flow(ctx, sequ, item_name);
             }
         }
@@ -209,7 +216,7 @@ mod tests {
     use crate::components::gxl_var::RgProp;
     use crate::components::{GxlEnv, GxlFlow, GxlMod, RgVars};
     use crate::execution::exec_init_env;
-    use crate::meta::RgoMeta;
+    use crate::meta::GxlMeta;
     use crate::types::AnyResult;
 
     use super::*;
@@ -218,7 +225,7 @@ mod tests {
     async fn execute_forword() -> AnyResult<()> {
         let (ctx, def) = exec_init_env();
 
-        let meta = RgoMeta::build_mod("main");
+        let meta = GxlMeta::build_mod("main");
         let mut rg_mod = GxlMod::from(meta);
         rg_mod.append(RgProp::new("key1", "val1"));
 
@@ -227,7 +234,7 @@ mod tests {
         let mut rg_vars = RgVars::default();
         rg_vars.append(RgProp::new("key1", "val1"));
 
-        let meta = RgoMeta::build_mod("env");
+        let meta = GxlMeta::build_mod("env");
         let mut rg_mod_env = GxlMod::from(meta);
         rg_mod.append(RgProp::new("key1", "val1"));
 

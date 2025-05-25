@@ -10,14 +10,14 @@ use std::collections::VecDeque;
 use std::sync::Arc;
 
 use super::gxl_spc::GxlSpace;
-use super::gxl_utls::take_mod_obj;
+use super::gxl_utls::mod_obj_name;
 use super::gxl_var::RgProp;
 use super::RgVars;
 use std::io::Write;
 
 #[derive(Clone, Getters, Debug, Default)]
 pub struct GxlEnv {
-    meta: RgoMeta,
+    meta: GxlMeta,
     props: Vec<RgProp>,
     items: Vec<EnvItem>,
 }
@@ -30,14 +30,14 @@ pub enum EnvItem {
 impl GxlEnv {
     fn get_env(mod_name: &str, mix: &str, src: &GxlSpace) -> AResult<Self> {
         let cur_mix = EnvExpress::from_env().eval(mix).unwrap_or(mix.to_string());
-        let (t_mod, env_name) = take_mod_obj(mod_name, cur_mix.as_str());
-        if let Some(env) = src.mods().get(&t_mod).and_then(|m| m.envs().get(&env_name)) {
+        let (t_mod, env_name) = mod_obj_name(mod_name, cur_mix.as_str());
+        if let Some(env) = src.get(&t_mod).and_then(|m| m.envs().get(&env_name)) {
             let link_env = env.clone().assemble(mod_name, src)?;
             return Ok(link_env);
         }
         Err(AssembleError::from(AssembleReason::Miss(format!(
-            "env {}",
-            cur_mix
+            "mod : {} env {} : by {} , {} ",
+            mod_name, cur_mix, t_mod, env_name
         ))))
     }
     fn assemble_impl(&self, mod_name: &str, src: &GxlSpace) -> AResult<Self> {
@@ -81,14 +81,14 @@ impl DependTrait<&GxlSpace> for GxlEnv {
 impl From<&str> for GxlEnv {
     fn from(name: &str) -> Self {
         Self {
-            meta: RgoMeta::build_env(name.to_string()),
+            meta: GxlMeta::build_env(name.to_string()),
             props: Vec::new(),
             items: Vec::new(),
         }
     }
 }
-impl From<RgoMeta> for GxlEnv {
-    fn from(meta: RgoMeta) -> Self {
+impl From<GxlMeta> for GxlEnv {
+    fn from(meta: GxlMeta) -> Self {
         Self {
             meta,
             ..Default::default()
@@ -99,7 +99,7 @@ impl From<RgoMeta> for GxlEnv {
 impl From<String> for GxlEnv {
     fn from(name: String) -> Self {
         Self {
-            meta: RgoMeta::build_env(name),
+            meta: GxlMeta::build_env(name),
             props: Vec::new(),
             items: Vec::new(),
         }
@@ -108,7 +108,7 @@ impl From<String> for GxlEnv {
 
 impl From<(String, Vec<String>)> for GxlEnv {
     fn from(value: (String, Vec<String>)) -> Self {
-        let mut meta = RgoMeta::build_env(value.0);
+        let mut meta = GxlMeta::build_env(value.0);
         meta.set_mix(value.1);
         Self {
             meta,
@@ -127,7 +127,7 @@ impl GxlEnv {
         };
         self.meta.set_anns(ann_vec);
     }
-    pub fn meta_mut(&mut self) -> &mut RgoMeta {
+    pub fn meta_mut(&mut self) -> &mut GxlMeta {
         &mut self.meta
     }
     pub fn merge(&mut self, other: &Self) {
@@ -172,7 +172,7 @@ impl AsyncRunnableTrait for EnvItem {
     }
 }
 impl ComponentMeta for GxlEnv {
-    fn com_meta(&self) -> RgoMeta {
+    fn com_meta(&self) -> GxlMeta {
         self.meta.clone()
     }
 }

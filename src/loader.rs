@@ -139,8 +139,8 @@ mod tests {
         let spc = GxlSpace::try_from(rg.parse_file(conf, false, sh_opt)?).assert();
         info!("test begin");
         spc.show()?;
-        println!("mods:{}", spc.mods().len());
-        assert!(spc.mods().len() > 1);
+        println!("mods:{}", spc.len());
+        assert!(spc.len() > 1);
         spc.exec(["alpha"], ["conf"], true).await?;
         Ok(())
     }

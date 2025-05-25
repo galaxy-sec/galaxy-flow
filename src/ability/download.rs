@@ -9,7 +9,7 @@ use orion_syspec::{
 
 use crate::ability::prelude::*;
 
-#[derive(Clone, Default, Debug, PartialEq, Builder)]
+#[derive(Clone, Default, Debug, PartialEq, Builder, Getters)]
 #[builder(setter(into))]
 pub struct GxDownLoad {
     task_file: Option<String>,
@@ -32,6 +32,7 @@ impl AsyncRunnableTrait for GxDownLoad {
         if let Some(file) = &self.task_file {
             let ex = EnvExpress::from_env_mix(def.globle().clone());
             let task_file = ex.eval(file.as_str())?;
+            let dst_file = ex.eval(self.dst_path())?;
             info!(target: ctx.path(), "task_file :{} ", task_file);
             let artifact = if task_file.ends_with("toml") {
                 Artifact::from_toml(&PathBuf::from(task_file)).err_conv()?
@@ -40,15 +41,16 @@ impl AsyncRunnableTrait for GxDownLoad {
             };
 
             if let Some(dst_name) = &self.dst_name {
+                let dst_name = ex.eval(dst_name)?;
                 artifact
                     .addr()
-                    .update_rename(&PathBuf::from(self.dst_path.as_str()), dst_name)
+                    .update_rename(&PathBuf::from(dst_file), dst_name.as_str())
                     .await
                     .err_conv()?;
             } else {
                 artifact
                     .addr()
-                    .update_local(&PathBuf::from(self.dst_path.as_str()))
+                    .update_local(&PathBuf::from(dst_file))
                     .await
                     .err_conv()?;
             }
@@ -60,8 +62,8 @@ impl AsyncRunnableTrait for GxDownLoad {
 }
 
 impl ComponentMeta for GxDownLoad {
-    fn com_meta(&self) -> RgoMeta {
-        RgoMeta::build_ability("gx.echo")
+    fn com_meta(&self) -> GxlMeta {
+        GxlMeta::build_ability("gx.echo")
     }
 }
 

@@ -10,7 +10,7 @@ use crate::model::annotation::FlowAnnotation;
 use std::sync::Arc;
 
 use super::gxl_spc::GxlSpace;
-use super::gxl_utls::take_mod_obj;
+use super::gxl_utls::mod_obj_name;
 use super::gxl_var::RgProp;
 use std::io::Write;
 
@@ -22,7 +22,7 @@ pub struct RgIntercept {
 
 #[derive(Clone, Getters, Debug)]
 pub struct GxlFlow {
-    meta: RgoMeta,
+    meta: GxlMeta,
     props: Vec<RgProp>,
     pre_flows: Vec<FlowRunner>,
     post_flows: Vec<FlowRunner>,
@@ -75,12 +75,8 @@ fn assemble_pipe(
     src: &GxlSpace,
     target: &mut Vec<FlowRunner>,
 ) -> AResult<()> {
-    let (t_mod, flow_name) = take_mod_obj(m_name, flow);
-    if let Some(flow) = src
-        .mods()
-        .get(&t_mod)
-        .and_then(|m| m.load_scope_flow(&flow_name))
-    {
+    let (t_mod, flow_name) = mod_obj_name(m_name, flow);
+    if let Some(flow) = src.get(&t_mod).and_then(|m| m.load_scope_flow(&flow_name)) {
         let linked_flow = flow.assemble(m_name, src)?;
         target.push(linked_flow);
         return Ok(());
@@ -91,8 +87,8 @@ fn assemble_pipe(
     ))))
 }
 
-impl From<RgoMeta> for GxlFlow {
-    fn from(meta: RgoMeta) -> Self {
+impl From<GxlMeta> for GxlFlow {
+    fn from(meta: GxlMeta) -> Self {
         Self {
             meta,
             props: Vec::new(),
@@ -105,7 +101,7 @@ impl From<RgoMeta> for GxlFlow {
 
 impl From<&str> for GxlFlow {
     fn from(name: &str) -> Self {
-        let meta = RgoMeta::build_flow(name);
+        let meta = GxlMeta::build_flow(name);
         Self {
             meta,
             props: Vec::new(),
@@ -128,7 +124,7 @@ impl GxlFlow {
     pub fn load_ins(name: String) -> Self {
         debug!("load RgFlow: {} ", name);
         Self {
-            meta: RgoMeta::build_flow(name),
+            meta: GxlMeta::build_flow(name),
             props: Vec::new(),
             pre_flows: Vec::new(),
             post_flows: Vec::new(),
@@ -172,7 +168,7 @@ impl AsyncRunnableTrait for GxlFlow {
     }
 }
 impl ComponentMeta for GxlFlow {
-    fn com_meta(&self) -> RgoMeta {
+    fn com_meta(&self) -> GxlMeta {
         self.meta.clone()
     }
 }
@@ -254,9 +250,9 @@ mod tests {
         let mut rg_mod = GxlMod::from("test_mod");
 
         // 创建一些 RgFlow 实例
-        let flow1 = GxlFlow::from(RgoMeta::build_env("flow1".to_string()));
-        let flow2 = GxlFlow::from(RgoMeta::build_env("flow2".to_string()));
-        let flow3 = GxlFlow::from(RgoMeta::build_env("flow3".to_string()));
+        let flow1 = GxlFlow::from(GxlMeta::build_env("flow1".to_string()));
+        let flow2 = GxlFlow::from(GxlMeta::build_env("flow2".to_string()));
+        let flow3 = GxlFlow::from(GxlMeta::build_env("flow3".to_string()));
 
         // 将这些 RgFlow 实例添加到 RgMod 中
         rg_mod.append(flow1);

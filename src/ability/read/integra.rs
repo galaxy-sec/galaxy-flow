@@ -4,7 +4,7 @@ use derive_more::From;
 use crate::{
     ability::prelude::{AsyncRunnableTrait, ComponentMeta, VTResult, VarSpace},
     context::ExecContext,
-    meta::RgoMeta,
+    meta::GxlMeta,
     ExecReason,
 };
 
@@ -31,8 +31,8 @@ impl AsyncRunnableTrait for GxRead {
 }
 
 impl ComponentMeta for GxRead {
-    fn com_meta(&self) -> RgoMeta {
-        RgoMeta::build_ability("gx.read")
+    fn com_meta(&self) -> GxlMeta {
+        GxlMeta::build_ability("gx.read")
     }
 }
 impl GxRead {

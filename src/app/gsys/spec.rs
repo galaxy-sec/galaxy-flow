@@ -30,7 +30,7 @@ pub async fn do_syspec_cmd(cmd: args::SysSpecCmd) -> RunResult<()> {
 pub async fn do_sysins_cmd(cmd: args::SysInsCmd) -> RunResult<()> {
     let current_dir = std::env::current_dir().expect("无法获取当前目录");
     match cmd {
-        args::SysInsCmd::Create(sys_args) => {
+        args::SysInsCmd::New(sys_args) => {
             let spec = make_runsystem_new(sys_args.repo(), sys_args.path());
             spec.save_to(&PathBuf::from("./")).err_conv()?;
         }

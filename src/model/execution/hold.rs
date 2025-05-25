@@ -6,7 +6,7 @@ use crate::components::gxl_intercept::FlowRunner;
 use crate::components::gxl_mod::ModRunner;
 use crate::components::{GxlEnv, GxlFlow, GxlMod};
 use crate::context::ExecContext;
-use crate::meta::RgoMeta;
+use crate::meta::GxlMeta;
 
 use super::runnable::{AsyncRunnableTrait, ComponentMeta, VTResult, VarSpace};
 use super::sequence::RunStub;
@@ -66,7 +66,7 @@ impl AsyncRunnableTrait for ComHold {
 }
 
 impl ComponentMeta for ComHold {
-    fn com_meta(&self) -> RgoMeta {
+    fn com_meta(&self) -> GxlMeta {
         match self {
             ComHold::Conduction(h) => h.com_meta(),
             ComHold::Isolation(h) => h.hold.com_meta(),
@@ -75,7 +75,7 @@ impl ComponentMeta for ComHold {
 }
 
 impl ComponentMeta for AsyncComHold {
-    fn com_meta(&self) -> RgoMeta {
+    fn com_meta(&self) -> GxlMeta {
         match self {
             Self::Flow(obj) => obj.com_meta(),
             Self::Stub(obj) => obj.com_meta(),

@@ -7,7 +7,7 @@ use super::{
 
 use crate::{
     components::{gxl_var::RgProp, GxlFlow},
-    meta::RgoMeta,
+    meta::GxlMeta,
 };
 
 use super::{
@@ -20,7 +20,7 @@ pub fn gal_stc_flow_body(input: &mut &str) -> ModalResult<GxlFlow> {
     let head = galaxy_flow_head
         .context(wn_desc("<flow-head>"))
         .parse_next(input)?;
-    let mut meta = RgoMeta::build_flow(head.first);
+    let mut meta = GxlMeta::build_flow(head.first);
     meta.set_preorder(head.before);
     meta.set_postorder(head.after);
     let mut obj = GxlFlow::from(meta);

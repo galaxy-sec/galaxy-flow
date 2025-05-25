@@ -23,8 +23,8 @@ impl AsyncRunnableTrait for GxCmd {
     }
 }
 impl ComponentMeta for GxCmd {
-    fn com_meta(&self) -> RgoMeta {
-        RgoMeta::build_ability("gx.cmd")
+    fn com_meta(&self) -> GxlMeta {
+        GxlMeta::build_ability("gx.cmd")
     }
 }
 

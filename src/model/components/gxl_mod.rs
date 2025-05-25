@@ -26,7 +26,7 @@ pub enum ModItem {
 
 #[derive(Clone, Getters, Default, Debug)]
 pub struct GxlMod {
-    meta: RgoMeta,
+    meta: GxlMeta,
     props: Vec<RgProp>,
     env_names: Vec<MenuItem>,
     flow_names: Vec<MenuItem>,
@@ -35,7 +35,7 @@ pub struct GxlMod {
     acts: HashMap<String, Activity>,
 }
 
-pub fn merge_to_head(mut mixs: Vec<GxlMod>) -> Option<GxlMod> {
+pub fn merge_mod(mut mixs: Vec<GxlMod>) -> Option<GxlMod> {
     let mut buffer = Vec::new();
     if let Some(mut target) = mixs.pop() {
         let _ = write!(&mut buffer, "{}", target.of_name());
@@ -50,7 +50,8 @@ pub fn merge_to_head(mut mixs: Vec<GxlMod>) -> Option<GxlMod> {
     None
 }
 impl DependTrait<&GxlSpace> for GxlMod {
-    fn assemble(self, mod_name: &str, src: &GxlSpace) -> AResult<Self> {
+    fn assemble(self, _mod_name: &str, src: &GxlSpace) -> AResult<Self> {
+        let mod_name = &self.meta.name();
         let mut ins = GxlMod::from(self.meta().clone());
 
         for p in self.props().iter() {
@@ -83,8 +84,8 @@ impl PropsTrait for GxlMod {
     }
 }
 
-impl From<RgoMeta> for GxlMod {
-    fn from(meta: RgoMeta) -> Self {
+impl From<GxlMeta> for GxlMod {
+    fn from(meta: GxlMeta) -> Self {
         Self {
             meta,
             ..Default::default()
@@ -94,7 +95,7 @@ impl From<RgoMeta> for GxlMod {
 
 impl From<&str> for GxlMod {
     fn from(name: &str) -> Self {
-        let meta = RgoMeta::build_mod(name);
+        let meta = GxlMeta::build_mod(name);
         Self::from(meta)
     }
 }
@@ -118,7 +119,7 @@ impl GxlMod {
         }
     }
 
-    fn up_meta(&mut self, meta: RgoMeta) {
+    fn up_meta(&mut self, meta: GxlMeta) {
         self.meta = meta;
     }
 
@@ -170,7 +171,7 @@ impl MergeTrait for GxlMod {
 
 #[derive(Clone, Getters)]
 pub struct ModRunner {
-    meta: RgoMeta,
+    meta: GxlMeta,
     async_items: Vec<AsyncComHold>,
 }
 impl AppendAble<AsyncComHold> for ModRunner {
@@ -192,8 +193,8 @@ impl AsyncRunnableTrait for ModRunner {
     }
 }
 
-impl From<RgoMeta> for ModRunner {
-    fn from(value: RgoMeta) -> Self {
+impl From<GxlMeta> for ModRunner {
+    fn from(value: GxlMeta) -> Self {
         Self {
             meta: value,
             async_items: Vec::new(),
@@ -201,7 +202,7 @@ impl From<RgoMeta> for ModRunner {
     }
 }
 impl ComponentMeta for ModRunner {
-    fn com_meta(&self) -> RgoMeta {
+    fn com_meta(&self) -> GxlMeta {
         self.meta.clone()
     }
 }
@@ -256,8 +257,8 @@ impl AsyncRunnableTrait for GxlMod {
     }
 }
 impl ComponentMeta for GxlMod {
-    fn com_meta(&self) -> RgoMeta {
-        RgoMeta::build_mod(self.meta.name().clone())
+    fn com_meta(&self) -> GxlMeta {
+        GxlMeta::build_mod(self.meta.name().clone())
     }
 }
 
@@ -322,7 +323,7 @@ mod test {
 
     use crate::{
         components::{
-            gxl_mod::{merge_to_head, ModItem},
+            gxl_mod::{merge_mod, ModItem},
             gxl_spc::GxlSpace,
             gxl_var::RgProp,
             GxlEnv, GxlFlow, GxlMod, RgVars,
@@ -330,7 +331,7 @@ mod test {
         context::ExecContext,
         execution::sequence::Sequence,
         infra::{init_env, once_init_log},
-        meta::{GxlType, RgoMeta},
+        meta::{GxlMeta, GxlType},
         traits::{DependTrait, ExecLoadTrait},
         types::AnyResult,
         var::{SecVar, VarMeta},
@@ -339,31 +340,31 @@ mod test {
     #[test]
     fn test_merge_to_head_empty() {
         let mixs: Vec<GxlMod> = vec![];
-        let result = merge_to_head(mixs);
+        let result = merge_mod(mixs);
         assert!(result.is_none());
     }
 
     #[test]
     fn test_merge_to_head_single() {
-        let mod1 = GxlMod::from(RgoMeta::build_mod("mod1"));
+        let mod1 = GxlMod::from(GxlMeta::build_mod("mod1"));
         let mixs: Vec<GxlMod> = vec![mod1];
-        let result = merge_to_head(mixs);
+        let result = merge_mod(mixs);
         assert_eq!(result.is_some(), true);
     }
 
     #[test]
     fn test_merge_to_head_multiple() {
-        let meta1 = RgoMeta::build_mod("mod1");
+        let meta1 = GxlMeta::build_mod("mod1");
         let mut mod1 = GxlMod::from(meta1.clone());
         mod1.props.push(RgProp::new("k1", "v1"));
 
-        let meta2 = RgoMeta::new2(GxlType::Mod, "mod2".to_string());
+        let meta2 = GxlMeta::new2(GxlType::Mod, "mod2".to_string());
         let mut mod2 = GxlMod::from(meta2);
         mod2.props.push(RgProp::new("k2", "v2"));
 
         let mixs: Vec<GxlMod> = vec![mod1, mod2];
 
-        let result = merge_to_head(mixs);
+        let result = merge_mod(mixs);
         assert_eq!(result.is_some(), true);
 
         if let Some(target) = result {
@@ -378,7 +379,7 @@ mod test {
     #[test]
     fn test_assemble_depend_boundary() -> AnyResult<()> {
         let mod_name = "mod4";
-        let mod4 = GxlMod::from(RgoMeta::build_mod(mod_name));
+        let mod4 = GxlMod::from(GxlMeta::build_mod(mod_name));
 
         // 不添加任何依赖项
 
@@ -393,7 +394,7 @@ mod test {
     fn test_assemble_depend_basic() -> AnyResult<()> {
         // 创建 mod1 并添加属性和环境变量
         let mod_name = "mod1";
-        let meta_mod1 = RgoMeta::build_mod(mod_name);
+        let meta_mod1 = GxlMeta::build_mod(mod_name);
         let mut mod1 = GxlMod::from(meta_mod1.clone());
         let mut env1 = GxlEnv::from("env1");
         env1.append(RgProp::new("key1", "value1"));
@@ -401,11 +402,11 @@ mod test {
 
         // 创建 mod2 并引用 mod1 的环境变量
         let mod_name2 = "mod2";
-        let meta_mod2 = RgoMeta::build_mod(mod_name2);
+        let meta_mod2 = GxlMeta::build_mod(mod_name2);
         let mut mod2 = GxlMod::from(meta_mod2.clone());
 
         // 假设 mod2 添加了一个依赖于 mod1 的环境变量
-        let mut env2 = GxlEnv::from(RgoMeta::build_env_mix("env2", vec!["mod1.env1"]));
+        let mut env2 = GxlEnv::from(GxlMeta::build_env_mix("env2", vec!["mod1.env1"]));
         env2.append(RgProp::new("key2", "value2"));
         mod2.append(ModItem::Env(env2));
 
@@ -429,7 +430,7 @@ mod test {
     async fn test_assemble_env_success() -> AnyResult<()> {
         init_env();
         let mod_name = "mod1";
-        let meta_mod1 = RgoMeta::build_mod(mod_name);
+        let meta_mod1 = GxlMeta::build_mod(mod_name);
         let mut mod1 = GxlMod::from(meta_mod1.clone());
 
         // 添加一个环境变量
@@ -466,18 +467,18 @@ mod test {
     #[tokio::test]
     async fn test_assemble_flow_success() -> AnyResult<()> {
         once_init_log();
-        let meta1 = RgoMeta::build_mod("mod1");
+        let meta1 = GxlMeta::build_mod("mod1");
         let mut mod1 = GxlMod::from(meta1);
         mod1.append(RgProp::new("k1", "v1"));
         mod1.append(GxlFlow::from("flow1"));
 
         let mod_name = "mod2";
-        let meta2 = RgoMeta::build_mod(mod_name);
+        let meta2 = GxlMeta::build_mod(mod_name);
         let mut mod2 = GxlMod::from(meta2.clone());
         mod2.append(RgProp::new("k2", "v2"));
 
         // 添加一个流程
-        let flow1 = GxlFlow::from(RgoMeta::build_flow_pre("flow2", "mod1.flow1"));
+        let flow1 = GxlFlow::from(GxlMeta::build_flow_pre("flow2", "mod1.flow1"));
         mod2.append(flow1);
 
         // 设置自动入口流程

@@ -1,4 +1,4 @@
-pub fn take_mod_obj(cur_mod: &str, obj_path: &str) -> (String, String) {
+pub fn mod_obj_name(cur_mod: &str, obj_path: &str) -> (String, String) {
     let parts = obj_path.splitn(2, '.').collect::<Vec<&str>>();
     if parts.len() == 1 {
         (cur_mod.to_string(), obj_path.to_string())
