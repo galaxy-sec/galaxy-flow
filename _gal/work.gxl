@@ -94,8 +94,7 @@ mod main   {
     os.path { dst = "${MAIN_USR_BINS}"; }
     os.path { dst = "${MAIN_PRJ_BINS}"; }
     gx.cmd  { cmd = "rm -f ${MAIN_PRJ_BINS}/r*" ; }
-    os.copy {  src  = "${MAIN_BLD_BINS}/gx" ; dst  = "${MAIN_PRJ_BINS}/" ; }
-    os.copy {  src  = "${MAIN_BLD_BINS}/gm" , dst  = "${MAIN_PRJ_BINS}/" ; }
+    gx.cmd { cmd = "cp ${MAIN_BLD_BINS}/g* ${MAIN_PRJ_BINS}/" ; }
     gx.cmd { cmd = "cp ${MAIN_PRJ_BINS}/g* ${MAIN_USR_BINS}/" ; }
 
   }

@@ -1,5 +1,4 @@
 mod args;
-mod spec;
 //mod vault;
 
 #[macro_use]
@@ -20,7 +19,6 @@ use galaxy_flow::util::{GitTools, ModRepo};
 use galaxy_flow::GxLoader;
 use include_dir::{include_dir, Dir};
 use orion_error::{ErrorConv, ErrorOwe};
-use spec::{do_modins_cmd, do_modspec_cmd, do_sysins_cmd, do_syspec_cmd};
 
 const ASSETS_DIR: Dir = include_dir!("src/app/gm/init");
 #[tokio::main]
@@ -47,18 +45,6 @@ impl GxAdm {
             }
             GxAdmCmd::Adm(cmd) => {
                 Self::do_adm_cmd(cmd).await?;
-            }
-            GxAdmCmd::ModSpec(cmd) => {
-                do_modspec_cmd(cmd).await?;
-            }
-            GxAdmCmd::ModIns(cmd) => {
-                do_modins_cmd(cmd).await?;
-            }
-            GxAdmCmd::SysSpec(cmd) => {
-                do_syspec_cmd(cmd).await?;
-            }
-            GxAdmCmd::SysIns(cmd) => {
-                do_sysins_cmd(cmd).await?;
             }
             GxAdmCmd::Check => {
                 Self::do_check_cmd()?;

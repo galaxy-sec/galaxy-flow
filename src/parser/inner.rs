@@ -132,6 +132,8 @@ pub fn gal_read_file(input: &mut &str) -> ModalResult<GxRead> {
             builder.name(Some(one.1));
         } else if key == "ini" || key == "file" {
             builder.file(one.1);
+        } else if key == "entity" {
+            builder.entity(Some(one.1));
         }
     }
     match builder.build() {

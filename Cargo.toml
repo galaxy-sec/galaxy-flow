@@ -7,12 +7,20 @@ version = "0.3.0"
 
 
 [[bin]]
+name = "gflow"
+path = "src/app/gflow/main.rs"
+
+[[bin]]
 name = "gm"
 path = "src/app/gm/main.rs"
 
 [[bin]]
-name = "gx"
-path = "src/app/gx/main.rs"
+name = "gsys"
+path = "src/app/gsys/main.rs"
+
+[[bin]]
+name = "gmod"
+path = "src/app/gmod/main.rs"
 
 [workspace]
 members = [

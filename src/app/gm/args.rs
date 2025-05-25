@@ -1,6 +1,7 @@
 //use crate::vault::{SysCmd, VaultCmd};
 use clap::ArgAction;
 use clap::Parser;
+use derive_getters::Getters;
 use galaxy_flow::runner::GxlCmd;
 
 #[derive(Debug, Parser)] // requires `derive` feature
@@ -10,20 +11,6 @@ pub enum GxAdmCmd {
     #[command(subcommand)]
     Prj(PrjCmd),
     Adm(GxlCmd),
-    #[command(subcommand)]
-    ModSpec(ModSpecCmd),
-    #[command(subcommand)]
-    ModIns(ModInsCmd),
-
-    #[command(subcommand)]
-    SysSpec(SysSpecCmd),
-    #[command(subcommand)]
-    SysIns(SysInsCmd),
-    /// vault cmd
-    //#[command(subcommand)]
-    //Vault(VaultCmd),
-    //#[command(subcommand)]
-    //Sys(SysCmd),
     Check,
 }
 
@@ -52,7 +39,7 @@ pub enum ModInsCmd {
 #[derive(Debug, Subcommand)]
 pub enum SysInsCmd {
     Example,
-    Create(SysArgs),
+    Create(SysInsArgs),
     Update,
     Local,
 }
@@ -64,18 +51,26 @@ pub enum PrjCmd {
     Update(PrjArgs),
 }
 
-#[derive(Debug, Args)]
+#[derive(Debug, Args, Getters)]
 pub struct SpecArgs {
     #[arg(short, long)]
     pub(crate) name: String,
 }
-#[derive(Debug, Args)]
-pub struct SysArgs {
+#[derive(Debug, Args, Getters)]
+pub struct SySpecArgs {
     #[arg(short, long)]
     pub(crate) repo: String,
 }
 
-#[derive(Debug, Args)]
+#[derive(Debug, Args, Getters)]
+pub struct SysInsArgs {
+    #[arg(short, long)]
+    pub(crate) repo: String,
+    #[arg(short, long)]
+    pub(crate) path: String,
+}
+
+#[derive(Debug, Args, Getters)]
 pub struct InitArgs {
     /// chose init tpl  from rg-tpl repo. eg: --tpl open_pages , --tpl rust_prj
     #[arg(short, long, default_value = "simple")]
