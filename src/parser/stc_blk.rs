@@ -1,3 +1,4 @@
+use super::inner::cmd::gal_cmd_block;
 use super::prelude::*;
 use orion_parse::atom::take_env_var;
 use orion_parse::symbol::symbol_cmp;
@@ -58,6 +59,10 @@ pub fn gal_sentens_item(input: &mut &str) -> ModalResult<BlockAction> {
     if starts_with("gx.cmd", input) {
         return gal_cmd.map(BlockAction::Command).parse_next(input);
     }
+    if starts_with("```cmd", input) {
+        return gal_cmd_block.map(BlockAction::Command).parse_next(input);
+    }
+
     if starts_with("gx.echo", input) {
         return gal_echo.map(BlockAction::Echo).parse_next(input);
     }

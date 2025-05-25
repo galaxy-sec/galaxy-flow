@@ -62,9 +62,6 @@ pub fn gal_version(input: &mut &str) -> ModalResult<RgVersion> {
 #[cfg(test)]
 mod tests {
 
-    use orion_common::friendly::New2;
-    use orion_error::TestAssert;
-
     use crate::parser::inner::common::run_gxl;
 
     use super::*;

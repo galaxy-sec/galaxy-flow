@@ -1,25 +1,25 @@
 use crate::{ability::prelude::*, expect::LogicScope};
 
-#[derive(Clone, Debug, Default, Builder, PartialEq)]
+#[derive(Clone, Debug, Default, Builder, PartialEq, Getters)]
 pub struct GxCmd {
     dto: GxCmdDto,
 }
 #[derive(Clone, Debug, Builder, PartialEq, Default)]
 pub struct GxCmdDto {
-    pub forword: String,
+    pub cmd: String,
     pub expect: ShellOption,
 }
 impl GxCmdDto {
     pub fn update(&mut self, def: &VarSpace) -> ExecResult<()> {
         let ee = EnvExpress::from_env_mix(def.globle().clone());
-        self.forword = ee.eval(&self.forword)?;
+        self.cmd = ee.eval(&self.cmd)?;
         Ok(())
     }
 }
 #[async_trait]
 impl AsyncRunnableTrait for GxCmd {
     async fn async_exec(&self, ctx: ExecContext, def: VarSpace) -> VTResult {
-        self.execute_impl(&self.dto.forword, ctx, def)
+        self.execute_impl(&self.dto.cmd, ctx, def)
     }
 }
 impl ComponentMeta for GxCmd {
@@ -31,7 +31,7 @@ impl ComponentMeta for GxCmd {
 impl GxCmd {
     pub fn new(forword: String) -> Self {
         let dto = GxCmdDto {
-            forword,
+            cmd: forword,
             ..Default::default()
         };
         Self::dto_new(dto)

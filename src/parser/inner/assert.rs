@@ -37,8 +37,6 @@ pub fn gal_assert(input: &mut &str) -> ModalResult<GxAssert> {
 #[cfg(test)]
 mod tests {
 
-    use orion_error::TestAssert;
-
     use super::*;
 
     #[test]
