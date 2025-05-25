@@ -31,7 +31,7 @@ license = "Apache-2.0"
 winnow = "0.6"
 orion-error = "~0.2"
 #orion-error =  { path = "../orion-error"}
-orion-syspec = { path = "../orion-syspec"}
+orion-syspec = { path = "../orion-syspec" }
 tokio = { version = "1.45", features = ["full"] }
 derive_more = { version = "2.0", features = ["full"] }
 async-trait = "0.1"
@@ -40,7 +40,8 @@ async-trait = "0.1"
 orion_common = { path = "crates/orion_common" }
 orion_parse = { path = "crates/orion_parse" }
 orion_infra = { path = "crates/orion_infra" }
-orion-exchange = "0.1.1"
+orion-exchange = { git = "https://github.com/galaxy-sec/orion-exchange.git", branch = "main" }
+#orion-exchange = "0.1.1"
 #orion-exchange = { path = "../orion-exchange"}
 derive-getters = "0.5"
 derive_builder = "0.20"
@@ -71,7 +72,7 @@ anyhow = "1.0.82"
 include_dir = "0.7"
 walkdir = "2.5"
 orion-error = { workspace = true }
-orion-syspec= { workspace = true }
+orion-syspec = { workspace = true }
 tokio = { workspace = true }
 derive_more = { workspace = true }
 async-trait = { workspace = true }

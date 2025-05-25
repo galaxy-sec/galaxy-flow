@@ -1152,7 +1152,7 @@ dependencies = [
  "mockall",
  "once_cell",
  "orion-error",
- "orion-exchange 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "orion-exchange",
  "orion-syspec",
  "orion_common",
  "orion_infra",
@@ -2085,17 +2085,6 @@ dependencies = [
 [[package]]
 name = "orion-exchange"
 version = "0.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "183269bee349908c980fcce8e5ef60a9f3f0b8c65ab159e4488822753cdea087"
-dependencies = [
- "derive-getters",
- "serde",
- "serde_derive",
-]
-
-[[package]]
-name = "orion-exchange"
-version = "0.1.1"
 source = "git+https://github.com/galaxy-sec/orion-exchange.git?branch=main#b441bba1ceb4ebda2752a7e8c1ff9d54a2ca1faa"
 dependencies = [
  "derive-getters",
@@ -2124,7 +2113,7 @@ dependencies = [
  "lazy_static",
  "log",
  "orion-error",
- "orion-exchange 0.1.1 (git+https://github.com/galaxy-sec/orion-exchange.git?branch=main)",
+ "orion-exchange",
  "regex",
  "reqwest",
  "serde",

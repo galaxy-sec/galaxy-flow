@@ -1,6 +1,8 @@
 use std::collections::HashMap;
 use std::fmt::{Debug, Display};
 
+use orion_exchange::vars::{ValueDict, ValueType};
+
 use super::execution::runnable::DictUse;
 use super::traits::{Getter, Setter};
 
@@ -22,6 +24,36 @@ pub struct VarDict {
     maps: HashMap<String, SecVar>,
 }
 
+impl From<ValueDict> for VarDict {
+    fn from(data: ValueDict) -> Self {
+        let mut dict = Self::default();
+        for (k, var_def) in data.dict() {
+            match var_def {
+                ValueType::String(v) => {
+                    let str_k = k.clone();
+                    let str_v = v.value().to_string();
+                    dict.set(str_k, str_v);
+                }
+                ValueType::Bool(v) => {
+                    let str_k = k.clone();
+                    let str_v = v.value().to_string();
+                    dict.set(str_k, str_v);
+                }
+                ValueType::Int(v) => {
+                    let str_k = k.clone();
+                    let str_v = v.value().to_string();
+                    dict.set(str_k, str_v);
+                }
+                ValueType::Float(v) => {
+                    let str_k = k.clone();
+                    let str_v = v.value().to_string();
+                    dict.set(str_k, str_v);
+                }
+            }
+        }
+        dict
+    }
+}
 impl SecVar {
     pub fn new(meta: VarMeta, value: String) -> Self {
         SecVar { meta, value }
@@ -102,6 +134,10 @@ impl VarDict {
             },
         );
     }
+
+    pub(crate) fn set_name(&mut self, name: &str) {
+        self.useage = DictUse::Named(name.into());
+    }
 }
 
 impl From<HashMap<String, String>> for VarDict {
@@ -143,6 +179,18 @@ impl Setter<&String, String> for VarDict {
         //self.maps.insert(key.clone(), val);
         self.maps.insert(
             key.to_string(),
+            SecVar {
+                meta: VarMeta::Normal,
+                value: val,
+            },
+        );
+    }
+}
+
+impl Setter<String, String> for VarDict {
+    fn set(&mut self, key: String, val: String) {
+        self.maps.insert(
+            key,
             SecVar {
                 meta: VarMeta::Normal,
                 value: val,
