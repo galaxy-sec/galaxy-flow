@@ -139,6 +139,7 @@ echo ${HOME};
             {
             gx.cmd { cmd = "echo ${HOME}" }
             ```cmd
+                cp /a /b;
                 echo ${HOME};
                 echo ${HOME};
             ```

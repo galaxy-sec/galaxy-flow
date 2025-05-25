@@ -7,6 +7,7 @@ enum DslStatus {
     Code,
     Data,
     RawData,
+    RawBlock,
 }
 fn ignore_comment_line(status: &mut DslStatus, input: &mut &str) -> ModalResult<String> {
     //let mut status = DslStatus::Code;
@@ -17,8 +18,8 @@ fn ignore_comment_line(status: &mut DslStatus, input: &mut &str) -> ModalResult<
         }
         match status {
             DslStatus::Code => {
-                let code =
-                    take_while(0.., |c| c != '"' && c != '/' && c != '^').parse_next(input)?;
+                let code = take_while(0.., |c| c != '"' && c != '/' && c != '^' && c != '`')
+                    .parse_next(input)?;
                 out += code;
                 if input.is_empty() {
                     break;
@@ -29,6 +30,13 @@ fn ignore_comment_line(status: &mut DslStatus, input: &mut &str) -> ModalResult<
                     *status = DslStatus::RawData;
                     continue;
                 }
+                let rst = opt("```").parse_next(input)?;
+                if let Some(code) = rst {
+                    out += code;
+                    *status = DslStatus::RawBlock;
+                    continue;
+                }
+
                 let rst = opt("\"").parse_next(input)?;
                 if let Some(code) = rst {
                     out += code;
@@ -57,6 +65,19 @@ fn ignore_comment_line(status: &mut DslStatus, input: &mut &str) -> ModalResult<
                     out += data;
                 }
             },
+            DslStatus::RawBlock => match opt(take_until(0.., "```")).parse_next(input)? {
+                Some(data) => {
+                    out += data;
+                    let data = "```".parse_next(input)?;
+                    out += data;
+                    *status = DslStatus::Code;
+                }
+                None => {
+                    let data = till_line_ending.parse_next(input)?;
+                    out += data;
+                }
+            },
+
             DslStatus::Data => {
                 //dbg_in(in_ctx.path(), cur)?;
                 let data = take_till(0.., |c| c == '"').parse_next(input)?;
@@ -238,11 +259,27 @@ mod tests {
     }
 
     #[test]
-    fn test_complex_mixed_case() {
+    fn test_complex_mixed_case1() {
         let mut data = r#"
         code /* multi-line comment */ "string with // comment"
         // single-line comment
         ^"raw data with /* comment */"^
+        /* another multi-line comment */
+        more code
+        "#;
+        let _ = ignore_comment(&mut data).assert();
+    }
+
+    #[test]
+    fn test_complex_mixed_case2() {
+        let mut data = r#"
+        code /* multi-line comment */ "string with // comment"
+        // single-line comment
+        ```
+        cp  ./a.txt  ./b.txt
+        /*
+
+        ```
         /* another multi-line comment */
         more code
         "#;

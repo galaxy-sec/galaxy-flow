@@ -32,6 +32,10 @@ mod main   {
         file = "${MAIN_CONF}/value.json" ;
 
     }
+    ```cmd
+    echo "hello" ;
+    cp  ./conf/value.json  ./conf/used/back.json ;
+    ```
   }
 
 }
