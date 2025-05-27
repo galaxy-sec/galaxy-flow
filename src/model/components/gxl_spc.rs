@@ -144,7 +144,8 @@ impl GxlSpace {
     ) -> RunResult<()> {
         info!(target: "-----------exec stack -------------", "--------------out info--------------");
         let main_ctx = ExecContext::new(out);
-        let mut def = VarSpace::default();
+        let mut var_space = VarSpace::default();
+        var_space.load_secfile()?;
         let l_envs: Vec<String> = envs.into();
         let l_flws: Vec<String> = flow_names.into();
         info!(target:main_ctx.path(),"galaxy flow execute envs: {:?},flow:  {:?}", l_envs,l_flws);
@@ -157,13 +158,11 @@ impl GxlSpace {
             } else {
                 f_name.to_string()
             };
-            //let mut ctx = ctx.clone();
-            //debug!(target:ctx.path(),"----load flow[{}] sequ begin ----", f_name);
             let mut exec_sequ = Sequence::from("flow");
-            def.globle_mut().set("__ENVS", "UNDEF");
+            var_space.globle_mut().set("__ENVS", "UNDEF");
 
             let os_sys = get_os_sys();
-            def.globle_mut().set("RG_OS_SYS", os_sys.as_str());
+            var_space.globle_mut().set("RG_OS_SYS", os_sys.as_str());
 
             if let Some(value) = self.load_envs(ctx.clone(), &l_envs, &mut exec_sequ) {
                 return value;
@@ -174,7 +173,10 @@ impl GxlSpace {
                 .err_conv()?;
             let mut exec_ctx = ExecContext::new(out);
             exec_ctx.append("exec");
-            let _ = exec_sequ.execute(exec_ctx, def.clone()).await.err_conv()?;
+            let _ = exec_sequ
+                .execute(exec_ctx, var_space.clone())
+                .await
+                .err_conv()?;
         }
         Ok(())
     }

@@ -15,7 +15,6 @@ impl GxlRunner {
         if let Some(conf) = cmd.conf {
             if !Path::new(conf.as_str()).exists() {
                 return Err(StructError::from_conf("conf not exists".to_string()));
-                //return Err(StructError::from(UvsReason::from_conf("conf not exists")));
             }
             let expect = ShellOption {
                 outer_print: cmd.cmd_print,

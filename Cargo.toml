@@ -3,7 +3,7 @@
 authors = ["wukong<sec-wukong@outlook.com>"]
 edition = "2021"
 name = "galaxy_flow"
-version = "0.3.1"
+version = "0.3.3"
 
 
 [[bin]]
@@ -48,9 +48,6 @@ async-trait = "0.1"
 orion_common = { path = "crates/orion_common" }
 orion_parse = { path = "crates/orion_parse" }
 orion_infra = { path = "crates/orion_infra" }
-orion-exchange = { git = "https://github.com/galaxy-sec/orion-exchange.git", branch = "main" }
-#orion-exchange = "0.1.1"
-#orion-exchange = { path = "../orion-exchange"}
 derive-getters = "0.5"
 derive_builder = "0.20"
 duct = "0.13"
@@ -91,3 +88,4 @@ res_depend_test = []
 
 [dev-dependencies]
 rstest = "0.25"
+tempfile = "3.10"

@@ -1,0 +1,77 @@
+use orion_error::ErrorConv;
+
+use crate::ability::prelude::*;
+
+use crate::{
+    runner::{GxlCmd, GxlRunner},
+    util::path::WorkDir,
+};
+
+#[derive(Clone, Debug, Default, Builder, PartialEq, Getters)]
+pub struct GxRun {
+    run_path: String,
+    gxl_path: String,
+    env_conf: String,
+    flow_cmd: Vec<String>,
+}
+impl GxRun {
+    pub fn new<S>(run_path: S, gxl_path: S, env_conf: S, flow_cmd: Vec<S>) -> Self
+    where
+        S: Into<String> + Clone,
+    {
+        Self {
+            run_path: run_path.into(),
+            gxl_path: gxl_path.into(),
+            env_conf: env_conf.into(),
+            flow_cmd: flow_cmd.iter().map(|x| x.clone().into()).collect(),
+        }
+    }
+}
+#[async_trait]
+impl AsyncRunnableTrait for GxRun {
+    async fn async_exec(&self, mut ctx: ExecContext, def: VarSpace) -> VTResult {
+        ctx.append("gx.run");
+        let mut task = Task::from("gx.run");
+        let exp = EnvExpress::from_env_mix(def.globle().clone());
+        let cmd = GxlCmd {
+            env: exp.eval(&self.env_conf)?,
+            flow: self.flow_cmd.clone(),
+            debug: 0,
+            conf: Some(self.gxl_path.clone()),
+            log: None,
+            cmd_print: true,
+        };
+        let run_path = exp.eval(&self.run_path)?;
+        let _g = WorkDir::change(run_path)
+            .owe_res()
+            .with(self.run_path().clone())?;
+        GxlRunner::run(cmd).await.err_conv()?;
+        task.finish();
+        Ok((def, ExecOut::Task(task)))
+    }
+}
+impl ComponentMeta for GxRun {
+    fn com_meta(&self) -> GxlMeta {
+        GxlMeta::build_ability("gx.gxl")
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{ability::*, traits::Setter};
+
+    #[tokio::test]
+    async fn gxl_test() {
+        let (context, mut def) = ability_env_init();
+        def.globle_mut()
+            .set("CONF_ROOT", "${RG_PRJ_ROOT}/example/conf");
+        let res = GxRun::new(
+            "./examples/assert",
+            "_gal/work.gxl",
+            "default",
+            vec!["assert_main"],
+        );
+        res.async_exec(context, def).await.unwrap();
+    }
+}

@@ -1,7 +1,7 @@
 use orion_common::friendly::New2;
 
 use super::prelude::*;
-use crate::execution::runnable::{ComponentMeta, VarSpace};
+use crate::execution::runnable::ComponentMeta;
 use crate::execution::task::Task;
 use crate::expect::StrMap;
 

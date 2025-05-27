@@ -2,6 +2,7 @@ pub mod assert;
 pub mod cmd;
 pub mod common;
 pub mod down;
+pub mod gxl;
 pub mod read;
 pub mod tpl;
 pub mod ver;

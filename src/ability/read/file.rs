@@ -12,8 +12,8 @@ use derive_more::{Display, From};
 use ini::Ini;
 use orion_common::friendly::New2;
 use orion_error::WithContext;
-use orion_exchange::vars::ValueDict;
-use orion_syspec::{error::ToErr, system::ModulesList};
+use orion_syspec::vars::ValueDict;
+use orion_syspec::{error::ToErr, system::ModulesList, types::Configable};
 
 #[derive(Clone, Debug, PartialEq, From, Display)]
 //#[display("Java EE: {}")]
@@ -74,8 +74,8 @@ impl FileDTO {
             self.impl_ini(ctx, &file_path)?
         } else if file_path.extension() == PathBuf::from("*.json").extension() {
             self.impl_json(ctx, &file_path)?
-        } else if file_path.extension() == PathBuf::from("*.toml").extension() {
-            self.impl_toml(ctx, &file_path)?
+        } else if file_path.extension() == PathBuf::from("*.yml").extension() {
+            self.impl_entity(ctx, &file_path)?
         } else {
             return ExecReason::Args(format!("not support format :{}", file_path.display()))
                 .err_result();
@@ -89,28 +89,25 @@ impl FileDTO {
         Ok((def, ExecOut::Ignore))
     }
 
-    fn impl_toml_mlist(&self, _ctx: ExecContext, content: String) -> ExecResult<VarDict> {
-        let data: ModulesList = toml::from_str(content.as_str()).owe_data()?;
+    fn impl_toml_mlist(&self, _ctx: ExecContext, file_path: &PathBuf) -> ExecResult<VarDict> {
+        let data: ModulesList = ModulesList::from_conf(file_path).owe_data()?;
         let x = data.export();
         Ok(VarDict::from(x))
     }
 
-    fn impl_toml_vdict(&self, _ctx: ExecContext, content: String) -> ExecResult<VarDict> {
-        let data: ValueDict = toml::from_str(content.as_str()).owe_data()?;
+    fn impl_toml_vdict(&self, _ctx: ExecContext, file_path: &PathBuf) -> ExecResult<VarDict> {
+        let data = ValueDict::from_conf(file_path).owe_data()?;
         Ok(VarDict::from(data))
     }
 
-    fn impl_toml(&self, ctx: ExecContext, file_path: &PathBuf) -> ExecResult<VarDict> {
+    fn impl_entity(&self, ctx: ExecContext, file_path: &PathBuf) -> ExecResult<VarDict> {
         let mut err_ctx = WithContext::want("load toml exchange data");
         err_ctx.with_path("path", file_path);
-        let toml_content = std::fs::read_to_string(PathBuf::from(file_path))
-            .owe_data()
-            .with(&err_ctx)?;
         if let Some(x) = &self.entity {
             let entity = ReadEntity::from_str(x.as_str()).owe_data()?;
             match entity {
-                ReadEntity::MList => self.impl_toml_mlist(ctx, toml_content),
-                ReadEntity::VDict => self.impl_toml_vdict(ctx, toml_content),
+                ReadEntity::MList => self.impl_toml_mlist(ctx, file_path),
+                ReadEntity::VDict => self.impl_toml_vdict(ctx, file_path),
             }
         } else {
             ExecReason::Miss("entity".into()).err_result()

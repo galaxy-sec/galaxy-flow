@@ -8,8 +8,9 @@ use crate::components::{GxlEnv, GxlFlow, GxlMod};
 use crate::context::ExecContext;
 use crate::meta::GxlMeta;
 
-use super::runnable::{AsyncRunnableTrait, ComponentMeta, VTResult, VarSpace};
+use super::runnable::{AsyncRunnableTrait, ComponentMeta, VTResult};
 use super::sequence::RunStub;
+use super::VarSpace;
 #[derive(Clone, From)]
 pub enum AsyncComHold {
     Flow(GxlFlow),
@@ -87,43 +88,3 @@ impl ComponentMeta for AsyncComHold {
         }
     }
 }
-
-/*
-#[derive(Clone, From)]
-pub enum SyncComHold {
-    Read(GxRead),
-    Env(GxlEnv),
-    Mox(GxlMod),
-    Stub(RunStub),
-    Runner(ModRunner),
-}
-
-#[derive(Clone, From)]
-pub enum ComHold {
-    AsyncCom(AsyncComHold),
-    SyncCom(SyncComHold),
-}
-
-impl RunnableTrait for SyncComHold {
-    fn exec(&self, ctx: ExecContext, dict: VarsDict) -> VTResult {
-        match self {
-            SyncComHold::Read(obj) => obj.exec(ctx, dict),
-            SyncComHold::Env(obj) => obj.exec(ctx, dict),
-            SyncComHold::Mox(obj) => obj.exec(ctx, dict),
-            SyncComHold::Stub(obj) => obj.exec(ctx, dict),
-            SyncComHold::Runner(obj) => obj.exec(ctx, dict),
-        }
-    }
-}
-impl ComponentMeta for SyncComHold {
-    fn com_meta(&self) -> RgoMeta {
-        match self {
-            SyncComHold::Read(obj) => obj.com_meta(),
-            SyncComHold::Env(obj) => obj.com_meta(),
-            SyncComHold::Mox(obj) => obj.com_meta(),
-            SyncComHold::Stub(obj) => obj.com_meta(),
-            SyncComHold::Runner(obj) => obj.com_meta(),
-        }
-    }
-}
-*/

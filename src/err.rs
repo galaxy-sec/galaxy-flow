@@ -114,7 +114,18 @@ pub fn report_rg_error(e: RunError) {
 
 impl From<ExecReason> for RunReason {
     fn from(value: ExecReason) -> Self {
-        RunReason::Exec(value.to_string())
+        match value {
+            ExecReason::Uvs(uvs_reason) => Self::Uvs(uvs_reason),
+            _ => RunReason::Exec(value.to_string()),
+        }
+    }
+}
+impl From<RunReason> for ExecReason {
+    fn from(value: RunReason) -> Self {
+        match value {
+            RunReason::Uvs(uvs_reason) => Self::Uvs(uvs_reason),
+            _ => Self::Args(value.to_string()),
+        }
     }
 }
 

@@ -15,9 +15,6 @@ pub fn gal_downlaod(input: &mut &str) -> ModalResult<GxDownLoad> {
         if k == "dst_path" {
             down.dst_path(v);
         }
-        if k == "dst_name" {
-            down.dst_name(v.clone());
-        }
     }
     match down.build() {
         Ok(o) => Ok(o),

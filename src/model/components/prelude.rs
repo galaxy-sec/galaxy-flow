@@ -28,4 +28,5 @@ pub use crate::execution::sequence::Sequence;
 
 pub use async_trait::async_trait;
 
-pub use crate::execution::runnable::{ComponentMeta, VarSpace};
+pub use crate::execution::runnable::ComponentMeta;
+pub use crate::execution::VarSpace;

@@ -1,9 +1,9 @@
 use std::collections::HashMap;
 use std::fmt::{Debug, Display};
 
-use orion_exchange::vars::{ValueDict, ValueType};
+use orion_syspec::vars::{ValueDict, ValueType};
 
-use super::execution::runnable::DictUse;
+use super::execution::DictUse;
 use super::traits::{Getter, Setter};
 
 #[derive(Clone, PartialEq, Eq)]
@@ -16,6 +16,14 @@ pub enum VarMeta {
 pub struct SecVar {
     meta: VarMeta,
     value: String,
+}
+impl SecVar {
+    pub fn sec_value<S: Into<String>>(val: S) -> Self {
+        SecVar {
+            meta: VarMeta::Security,
+            value: val.into(),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Default, Getters, PartialEq)]
@@ -138,6 +146,12 @@ impl VarDict {
     pub(crate) fn set_name(&mut self, name: &str) {
         self.useage = DictUse::Named(name.into());
     }
+    pub fn contains_key(&self, key: &str) -> bool {
+        self.maps().contains_key(key)
+    }
+    pub fn is_empty(&self) -> bool {
+        self.maps().is_empty()
+    }
 }
 
 impl From<HashMap<String, String>> for VarDict {
@@ -214,6 +228,11 @@ impl Setter<&str, String> for VarDict {
 impl Setter<&str, SecVar> for VarDict {
     fn set(&mut self, key: &str, val: SecVar) {
         self.maps.insert(key.to_string(), val);
+    }
+}
+impl Setter<String, SecVar> for VarDict {
+    fn set(&mut self, key: String, val: SecVar) {
+        self.maps.insert(key, val);
     }
 }
 

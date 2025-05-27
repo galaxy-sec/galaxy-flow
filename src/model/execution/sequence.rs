@@ -16,7 +16,7 @@ use super::hold::ComHold;
 use super::hold::IsolationHold;
 use super::runnable::ComponentMeta;
 use super::runnable::VTResult;
-use super::runnable::VarSpace;
+use super::VarSpace;
 
 #[derive(Clone, Getters)]
 pub struct Sequence {

@@ -9,6 +9,7 @@ use crate::ability::GxAssert;
 use crate::ability::GxCmd;
 use crate::ability::GxEcho;
 use crate::ability::GxRead;
+use crate::ability::GxRun;
 use crate::ability::GxTpl;
 use crate::ability::RgVersion;
 use crate::context::ExecContext;
@@ -24,6 +25,7 @@ use super::gxl_var::RgProp;
 #[derive(Clone, Debug)]
 pub enum BlockAction {
     Command(GxCmd),
+    GxlRun(GxRun),
     Cond(GxlCond),
     Loop(GxlLoop),
     Echo(GxEcho),
@@ -62,6 +64,7 @@ impl AsyncRunnableTrait for BlockAction {
     async fn async_exec(&self, ctx: ExecContext, dct: VarSpace) -> VTResult {
         match self {
             BlockAction::Command(o) => o.async_exec(ctx, dct).await,
+            BlockAction::GxlRun(o) => o.async_exec(ctx, dct).await,
             BlockAction::Echo(o) => o.async_exec(ctx, dct).await,
             BlockAction::Assert(o) => o.async_exec(ctx, dct).await,
             BlockAction::Cond(o) => o.async_exec(ctx, dct).await,
@@ -110,6 +113,7 @@ impl DependTrait<&GxlSpace> for BlockNode {
                 BlockAction::Assert(v) => BlockAction::Assert(v.clone()),
                 BlockAction::Version(v) => BlockAction::Version(v.clone()),
                 BlockAction::Command(v) => BlockAction::Command(v.clone()),
+                BlockAction::GxlRun(v) => BlockAction::GxlRun(v.clone()),
                 BlockAction::Delegate(v) => BlockAction::Delegate(v.assemble(mod_name, src)?),
                 BlockAction::Down(v) => BlockAction::Down(v.clone()),
             };

@@ -14,5 +14,5 @@ pub use orion_error::ErrorOwe;
 pub use orion_error::ErrorWith;
 
 pub use crate::execution::runnable::ComponentMeta;
-pub use crate::execution::runnable::VarSpace;
+pub use crate::execution::VarSpace;
 pub use async_trait::async_trait;
