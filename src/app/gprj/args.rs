@@ -9,7 +9,7 @@ use galaxy_flow::runner::GxlCmd;
 #[command(version, about)]
 pub enum GxAdmCmd {
     #[command(subcommand)]
-    Prj(PrjCmd),
+    Init(InitCmd),
     Adm(GxlCmd),
     Check,
 }
@@ -45,9 +45,9 @@ pub enum SysInsCmd {
 }
 
 #[derive(Debug, Subcommand)]
-pub enum PrjCmd {
-    Init,
-    RemoteInit(InitArgs),
+pub enum InitCmd {
+    Local,
+    Remote(InitArgs),
     Update(PrjArgs),
 }
 

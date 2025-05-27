@@ -14,6 +14,7 @@ pub struct GxUpLoad {
     username: Option<String>,
     #[builder(default)]
     password: Option<String>,
+    method: String,
 }
 
 #[derive(Clone, Default, Debug, PartialEq, Builder, Getters)]
@@ -31,15 +32,18 @@ pub struct GxDownLoad {
 impl AsyncRunnableTrait for GxUpLoad {
     async fn async_exec(&self, _ctx: ExecContext, def: VarSpace) -> VTResult {
         let ex = EnvExpress::from_env_mix(def.globle().clone());
-        let mut addr = HttpAddr::from(self.svc_url());
+        let mut addr = HttpAddr::from(ex.eval(self.svc_url())?);
         if let (Some(username), Some(password)) = (self.username(), self.password()) {
+            let username = ex.eval(username)?;
+            let password = ex.eval(password)?;
             addr = addr.with_credentials(username, password);
         }
         let dst_file = ex.eval(self.local_file())?;
         let mut task = Task::from("gx.download").with_target(&dst_file);
         let dst_path = PathBuf::from(&dst_file);
+        let method = ex.eval(self.method())?.to_uppercase();
         if dst_path.exists() {
-            addr.upload(&dst_path).await.err_conv()?;
+            addr.upload(&dst_path, &method).await.err_conv()?;
             task.finish();
             Ok((def, ExecOut::Task(task)))
         } else {
@@ -58,8 +62,10 @@ impl ComponentMeta for GxUpLoad {
 impl AsyncRunnableTrait for GxDownLoad {
     async fn async_exec(&self, _ctx: ExecContext, def: VarSpace) -> VTResult {
         let ex = EnvExpress::from_env_mix(def.globle().clone());
-        let mut addr = HttpAddr::from(self.svc_url());
+        let mut addr = HttpAddr::from(ex.eval(self.svc_url())?);
         if let (Some(username), Some(password)) = (self.username(), self.password()) {
+            let username = ex.eval(username)?;
+            let password = ex.eval(password)?;
             addr = addr.with_credentials(username, password);
         }
         let dst_file = ex.eval(self.local_file())?;

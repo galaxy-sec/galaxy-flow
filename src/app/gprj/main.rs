@@ -9,7 +9,8 @@ extern crate clap;
 use std::fs;
 use std::path::Path;
 
-use crate::args::{GxAdmCmd, PrjCmd};
+use crate::args::GxAdmCmd;
+use crate::args::InitCmd;
 use clap::Parser;
 use galaxy_flow::err::*;
 use galaxy_flow::expect::ShellOption;
@@ -20,7 +21,7 @@ use galaxy_flow::GxLoader;
 use include_dir::{include_dir, Dir};
 use orion_error::{ErrorConv, ErrorOwe};
 
-const ASSETS_DIR: Dir = include_dir!("src/app/gm/init");
+const ASSETS_DIR: Dir = include_dir!("src/app/gprj/init");
 #[tokio::main]
 async fn main() {
     use std::process;
@@ -40,7 +41,7 @@ impl GxAdm {
         debug!("galaxy flow running .....");
         let mut gx = GxLoader::new();
         match cmd {
-            GxAdmCmd::Prj(prj_cmd) => {
+            GxAdmCmd::Init(prj_cmd) => {
                 Self::do_prj_cmd(&mut gx, prj_cmd)?;
             }
             GxAdmCmd::Adm(cmd) => {
@@ -83,14 +84,14 @@ impl GxAdm {
         Ok(())
     }
 
-    fn do_prj_cmd(load: &mut GxLoader, prj_cmd: PrjCmd) -> RunResult<()> {
+    fn do_prj_cmd(load: &mut GxLoader, prj_cmd: InitCmd) -> RunResult<()> {
         match prj_cmd {
-            PrjCmd::Init => {
+            InitCmd::Local => {
                 let current_dir = std::env::current_dir().expect("Failed to get current directory");
                 write_dir_to_disk(&ASSETS_DIR, &current_dir)
                     .expect("Failed to write directory to disk");
             }
-            PrjCmd::RemoteInit(args) => {
+            InitCmd::Remote(args) => {
                 configure_flow_logging(args.log.clone(), args.debug);
                 let sh_opt = ShellOption {
                     outer_print: args.cmd_print,
@@ -100,7 +101,7 @@ impl GxAdm {
                 let repo = ModRepo::new(args.repo.as_str(), args.channel.as_str()).owe_res()?;
                 load.init(repo, "./", true, args.tpl.as_str(), sh_opt)?;
             }
-            PrjCmd::Update(args) => {
+            InitCmd::Update(args) => {
                 configure_flow_logging(args.log.clone(), args.debug);
                 let sh_opt = ShellOption {
                     outer_print: args.cmd_print,

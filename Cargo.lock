@@ -1133,7 +1133,7 @@ dependencies = [
 
 [[package]]
 name = "galaxy_flow"
-version = "0.3.4"
+version = "0.3.5"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1169,6 +1169,7 @@ dependencies = [
  "tempfile",
  "thiserror 2.0.12",
  "tokio",
+ "tokio-util",
  "toml 0.8.22",
  "url",
  "walkdir",
@@ -2065,10 +2066,10 @@ dependencies = [
 [[package]]
 name = "orion-syspec"
 version = "0.1.5"
-source = "git+https://github.com/galaxy-sec/orion-syspec.git#231e18dc987bbdf982fbf0c428b742b6fccc3d8b"
 dependencies = [
  "anyhow",
  "async-trait",
+ "bytes",
  "comfy-table",
  "contracts",
  "delegate",
@@ -2094,6 +2095,7 @@ dependencies = [
  "strfmt",
  "thiserror 1.0.69",
  "tokio",
+ "tokio-util",
  "toml 0.7.8",
  "tracing",
  "url",

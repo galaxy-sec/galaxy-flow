@@ -1,13 +1,13 @@
 extern mod head { path = "./_gal/"; }
 
 mod env  {
-   env _init : rust_env.init ;
-   env _common    {
+   env _common  : rust_env.init ,rust_env.release  {
     sudo      = "false";
     root      = ".";
     run       = "./run";
     target_name = "";
     prj_key   = "galaxy_flow" ;
+    DIST_REPO = "unknow";
 
   }
   env _branch_auto {
@@ -18,33 +18,20 @@ mod env  {
         }
   }
 
-  env _apple {
-    target_name = "aarch64-apple-darwin" ;
-    target_flag = "--target=${ENV_TARGET_NAME}";
+  env macos {
+    DIST_REPO = "macos" ;
   }
 
-  #[usage(desp="cicd env",color="red")]
-  env ci : _common  {
-    pub_action="publish.pub_ci";
+  env ubuntu {
+    DIST_REPO = "ubuntu" ;
   }
- #[usage(desp="developer local env",color="red")]
-  env local : _common {
-    pub_action="publish.pub_dev";
-  }
-  env _auto            : _common,_branch_auto;
 
-  #[usage(desp="use alpha res",color="green")]
-  env debug : _init, _common,rust_env.debug;
-
-  #[usage(desp="use alpha res",color="green")]
-  env alpha   : _init, _common,rust_env.release;
-
-  #[usage(desp="use beta res",color="green")]
-  env beta    :  _init,_common, rust_env.release;
+  #[usage(desp="use debug ",color="blue")]
+  env debug :  rust_env.debug;
 
 
-  #[usage(desp="default auto ")]
-  env default    : _init,local,_auto;
+  #[usage(desp="default mamcos", color="green")]
+  env default    : _common,macos;
 }
 
 mod main   {
@@ -98,6 +85,31 @@ mod main   {
     gx.cmd  { cmd = "rm -f ${MAIN_PRJ_BINS}/r*" ; }
     gx.cmd { cmd = "cp ${MAIN_BLD_BINS}/g* ${MAIN_PRJ_BINS}/" ; }
     gx.cmd { cmd = "cp ${MAIN_PRJ_BINS}/g* ${MAIN_USR_BINS}/" ; }
-
   }
+  flow _pub_gsys: : _pub_dysec {
+    UP_TARGET = "gsys";
+  }
+  flow _pub_gmod: : _pub_dysec {
+    UP_TARGET = "gmod";
+  }
+  flow _pub_gflow: : _pub_dysec {
+    UP_TARGET = "gflow";
+  }
+  flow _pub_gprj: : _pub_dysec {
+    UP_TARGET = "gprj";
+  }
+  flow pub_dysec  : _pub_gflow,_pub_gprj,_pub_gmod,_pub_gsys ;
+
+  flow _pub_dysec :ver.use {
+    gx.assert { value = "${ENV_DIST_REPO}" , expect = "unknow" , result = "false" , error = "not choose macos or ubuntu" }
+    gx.echo { value = "pub ${UP_TARGET} to dysec " }
+    gx.upload {
+        url = "https://dy-sec-generic.pkg.coding.net/galaxy-open/${ENV_DIST_REPO}/${UP_TARGET}?version=${VERSION}",
+        username = "${SEC_GFLOW_LOGIN}",
+        method = "PUT",
+        password = "${SEC_GFLOW_PASSWORD}",
+        local_file = "./${MAIN_BLD_BINS}/${UP_TARGET}"
+    }
+  }
+
 }
