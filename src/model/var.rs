@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::fmt::{Debug, Display};
 
-use orion_exchange::vars::{ValueDict, ValueType};
+use orion_syspec::vars::{ValueDict, ValueType};
 
 use super::execution::runnable::DictUse;
 use super::traits::{Getter, Setter};

@@ -4,7 +4,7 @@ use orion_error::ErrorConv;
 use orion_syspec::{
     artifact::Artifact,
     error::ToErr,
-    types::{AsyncUpdateable, TomlAble},
+    types::{AsyncUpdateable, Configable},
 };
 
 use crate::ability::prelude::*;
@@ -34,7 +34,7 @@ impl AsyncRunnableTrait for GxDownLoad {
             let task_file = ex.eval(file.as_str())?;
             info!(target: ctx.path(), "task_file :{} ", task_file);
             let artifact = if task_file.ends_with("toml") {
-                Artifact::from_toml(&PathBuf::from(task_file)).err_conv()?
+                Artifact::from_conf(&PathBuf::from(task_file)).err_conv()?
             } else {
                 return ExecReason::Bug("only toml format support".into()).err_result();
             };

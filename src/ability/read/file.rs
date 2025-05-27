@@ -9,7 +9,7 @@ use derive_more::{Display, From};
 use ini::Ini;
 use orion_common::friendly::New2;
 use orion_error::WithContext;
-use orion_exchange::vars::ValueDict;
+use orion_syspec::vars::ValueDict;
 use orion_syspec::{error::ToErr, system::ModulesList};
 
 #[derive(Clone, Debug, PartialEq, From, Display)]
@@ -88,7 +88,7 @@ impl FileDTO {
 
     fn from_toml_mlist(&self, _ctx: ExecContext, content: String) -> ExecResult<VarDict> {
         let data: ModulesList = toml::from_str(content.as_str()).owe_data()?;
-        let x = data.export();
+        let x:ValueDict = data.export();
         Ok(VarDict::from(x))
     }
 
