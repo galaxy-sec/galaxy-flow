@@ -59,13 +59,12 @@ impl ComponentMeta for GxRun {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{ability::*, traits::Setter};
+    use crate::ability::*;
 
-    #[tokio::test]
-    async fn gxl_test() {
-        let (context, mut def) = ability_env_init();
-        def.globle_mut()
-            .set("CONF_ROOT", "${RG_PRJ_ROOT}/example/conf");
+    #[ignore = "will change current run dir"]
+    #[tokio::test(flavor = "current_thread")]
+    async fn gxl_run_test() {
+        let (context, def) = ability_env_init();
         let res = GxRun::new(
             "./examples/assert",
             "_gal/work.gxl",

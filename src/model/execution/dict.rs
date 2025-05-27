@@ -18,6 +18,12 @@ pub struct VarSpace {
     globle: VarDict,
     nameds: HashMap<String, VarDict>,
 }
+
+pub fn sec_value_default_path() -> PathBuf {
+    home_dir()
+        .map(|x| x.join(".galaxy/sec_value.yml"))
+        .unwrap_or(PathBuf::from("./"))
+}
 impl VarSpace {
     pub fn globle_mut(&mut self) -> &mut VarDict {
         &mut self.globle
@@ -29,8 +35,8 @@ impl VarSpace {
 
     pub(crate) fn load_secfile(&mut self) -> RunResult<()> {
         let env_path = std::env::var("GAL_SEC_FILE_PATH").map(PathBuf::from);
-        let default = home_dir().map(|x| x.join(".galaxy/sec_value.yml"));
-        let path = env_path.unwrap_or(default.unwrap());
+        let default = sec_value_default_path();
+        let path = env_path.unwrap_or(default);
         if path.exists() {
             let dict = ValueDict::from_conf(&path).err_conv()?;
             info!(target: "exec","  load {}", path.display());
@@ -57,7 +63,7 @@ pub enum DictUse {
 
 #[cfg(test)]
 mod tests {
-    use crate::traits::Getter;
+    use crate::{execution::dict::sec_value_default_path, traits::Getter};
 
     use super::VarSpace;
     use std::{fs::File, io::Write};
@@ -77,7 +83,7 @@ mod tests {
         let mut var_space = VarSpace::default();
 
         // 临时修改路径指向我们的测试文件
-        let original_path = "./galaxy/sec_value.yml";
+        let original_path = sec_value_default_path();
         std::env::set_var("GAL_SEC_FILE_PATH", file_path.to_str().unwrap());
 
         let result = var_space.load_secfile();

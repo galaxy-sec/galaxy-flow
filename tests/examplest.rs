@@ -1,6 +1,7 @@
 //extern crate galaxy_flow;
 //#[cfg(feature = "res_depend_test")]
 mod tests {
+    use galaxy_flow::util::path::WorkDir;
     use galaxy_flow::{
         components::gxl_spc::GxlSpace, err::RunResult, expect::ShellOption, infra::once_init_log,
         GxLoader,
@@ -46,10 +47,10 @@ mod tests {
         Ok(())
     }
 
-    #[tokio::test]
+    #[tokio::test(flavor = "current_thread")]
     async fn example_assert() -> RunResult<()> {
         once_init_log();
-        let _dir = ScopedRunDir::new("./examples/assert");
+        let _dir = WorkDir::change("./examples/assert");
         let mut loader = GxLoader::new();
         let spc =
             GxlSpace::try_from(loader.parse_file("./_gal/work.gxl", false, test_opt())?).assert();
@@ -57,10 +58,10 @@ mod tests {
             .await?;
         Ok(())
     }
-    #[tokio::test]
+    #[tokio::test(flavor = "current_thread")]
     async fn example_template() -> RunResult<()> {
         once_init_log();
-        let _dir = ScopedRunDir::new("./examples/template");
+        let _dir = WorkDir::change("./examples/template");
         let mut loader = GxLoader::new();
         let spc =
             GxlSpace::try_from(loader.parse_file("./_gal/work.gxl", false, test_opt())?).assert();
