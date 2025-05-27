@@ -16,7 +16,7 @@ pub fn gal_run(input: &mut &str) -> ModalResult<GxRun> {
         if key == "env" {
             builder.env_conf(one.1);
         } else if key == "flow" {
-            let flows = one.1.split(",").map(|x| String::from(x)).collect();
+            let flows = one.1.split(",").map(String::from).collect();
             builder.flow_cmd(flows);
         } else if key == "conf" {
             builder.gxl_path(one.1);

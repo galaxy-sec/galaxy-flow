@@ -89,13 +89,13 @@ impl FileDTO {
         Ok((def, ExecOut::Ignore))
     }
 
-    fn impl_toml_mlist(&self, _ctx: ExecContext, file_path: &PathBuf) -> ExecResult<VarDict> {
+    fn impl_toml_mlist(&self, _ctx: ExecContext, file_path: &Path) -> ExecResult<VarDict> {
         let data: ModulesList = ModulesList::from_conf(file_path).owe_data()?;
         let x = data.export();
         Ok(VarDict::from(x))
     }
 
-    fn impl_toml_vdict(&self, _ctx: ExecContext, file_path: &PathBuf) -> ExecResult<VarDict> {
+    fn impl_toml_vdict(&self, _ctx: ExecContext, file_path: &Path) -> ExecResult<VarDict> {
         let data = ValueDict::from_conf(file_path).owe_data()?;
         Ok(VarDict::from(data))
     }
