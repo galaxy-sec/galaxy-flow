@@ -1,14 +1,14 @@
+pub mod artifact;
 pub mod assert;
 pub mod cmd;
 pub mod delegate;
-pub mod download;
 pub mod echo;
 pub mod err_conv;
 pub mod gxl;
+pub mod load;
 pub mod prelude;
 pub mod read;
 pub mod tpl;
-pub mod upload;
 //pub mod vault;
 pub mod version;
 
@@ -70,3 +70,6 @@ pub trait EnvRender {
 
 pub use gxl::GxRun;
 pub use gxl::GxRunBuilder;
+
+pub use artifact::*;
+pub use load::{GxDownLoad, GxDownLoadBuilder, GxUpLoad, GxUpLoadBuilder};

@@ -14,8 +14,8 @@ use crate::components::gxl_loop::GxlLoop;
 use super::atom::spaced;
 use super::domain::{gal_block_beg, gal_block_end, gal_keyword};
 use super::inner::{
-    gal_assert, gal_call, gal_cmd, gal_downlaod, gal_echo, gal_read_cmd, gal_read_file,
-    gal_read_stdin, gal_tpl, gal_version,
+    gal_artifact, gal_assert, gal_call, gal_cmd, gal_download, gal_echo, gal_read_cmd,
+    gal_read_file, gal_read_stdin, gal_tpl, gal_upload, gal_version,
 };
 
 pub fn gal_block(input: &mut &str) -> ModalResult<BlockNode> {
@@ -88,8 +88,14 @@ pub fn gal_sentens_item(input: &mut &str) -> ModalResult<BlockAction> {
     if starts_with("gx.tpl", input) {
         return gal_tpl.map(BlockAction::Tpl).parse_next(input);
     }
-    if starts_with("gx.down", input) {
-        return gal_downlaod.map(BlockAction::Down).parse_next(input);
+    if starts_with("gx.artifact", input) {
+        return gal_artifact.map(BlockAction::Artifact).parse_next(input);
+    }
+    if starts_with("gx.download", input) {
+        return gal_download.map(BlockAction::DownLoad).parse_next(input);
+    }
+    if starts_with("gx.upload", input) {
+        return gal_upload.map(BlockAction::UpLoad).parse_next(input);
     }
     /*
     if starts_with("gx.vault", input) {

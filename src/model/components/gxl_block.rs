@@ -3,14 +3,16 @@ use async_trait::async_trait;
 use super::gxl_loop::GxlLoop;
 use super::prelude::*;
 
+use crate::ability::artifact::GxArtifact;
 use crate::ability::delegate::ActCall;
-use crate::ability::download::GxDownLoad;
 use crate::ability::GxAssert;
 use crate::ability::GxCmd;
+use crate::ability::GxDownLoad;
 use crate::ability::GxEcho;
 use crate::ability::GxRead;
 use crate::ability::GxRun;
 use crate::ability::GxTpl;
+use crate::ability::GxUpLoad;
 use crate::ability::RgVersion;
 use crate::context::ExecContext;
 
@@ -34,8 +36,9 @@ pub enum BlockAction {
     Read(GxRead),
     Delegate(ActCall),
     Tpl(GxTpl),
-    Down(GxDownLoad),
-    //Vault(GxVault),
+    Artifact(GxArtifact),
+    DownLoad(GxDownLoad),
+    UpLoad(GxUpLoad),
 }
 
 #[derive(Clone, Getters, Default, Debug)]
@@ -73,7 +76,9 @@ impl AsyncRunnableTrait for BlockAction {
             BlockAction::Delegate(o) => o.async_exec(ctx, dct).await,
             BlockAction::Version(o) => o.async_exec(ctx, dct).await,
             BlockAction::Read(o) => o.async_exec(ctx, dct).await,
-            BlockAction::Down(o) => o.async_exec(ctx, dct).await,
+            BlockAction::Artifact(o) => o.async_exec(ctx, dct).await,
+            BlockAction::UpLoad(o) => o.async_exec(ctx, dct).await,
+            BlockAction::DownLoad(o) => o.async_exec(ctx, dct).await,
         }
     }
 }
@@ -115,7 +120,9 @@ impl DependTrait<&GxlSpace> for BlockNode {
                 BlockAction::Command(v) => BlockAction::Command(v.clone()),
                 BlockAction::GxlRun(v) => BlockAction::GxlRun(v.clone()),
                 BlockAction::Delegate(v) => BlockAction::Delegate(v.assemble(mod_name, src)?),
-                BlockAction::Down(v) => BlockAction::Down(v.clone()),
+                BlockAction::Artifact(v) => BlockAction::Artifact(v.clone()),
+                BlockAction::DownLoad(v) => BlockAction::DownLoad(v.clone()),
+                BlockAction::UpLoad(v) => BlockAction::UpLoad(v.clone()),
             };
             ins.append(item);
         }
