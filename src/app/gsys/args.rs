@@ -5,36 +5,21 @@ use derive_getters::Getters;
 #[command(name = "gm")]
 #[command(version, about)]
 pub enum GSysCmd {
-    #[command(subcommand)]
-    Spec(SysSpecCmd),
-    #[command(subcommand)]
-    Inst(SysInsCmd),
-}
-
-#[derive(Debug, Subcommand)]
-pub enum SysSpecCmd {
     Example,
-    Create,
-    Update,
-    Check,
-}
-
-#[derive(Debug, Subcommand)]
-pub enum SysInsCmd {
-    Example,
-    New(SysInsArgs),
+    New(NewArgs),
+    Load(LoadArgs),
     Update,
     Local,
 }
 
 #[derive(Debug, Args, Getters)]
-pub struct SySpecArgs {
+pub struct NewArgs {
     #[arg(short, long)]
-    pub(crate) repo: String,
+    pub(crate) name: String,
 }
 
 #[derive(Debug, Args, Getters)]
-pub struct SysInsArgs {
+pub struct LoadArgs {
     #[arg(short, long)]
     pub(crate) repo: String,
     #[arg(short, long)]

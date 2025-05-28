@@ -9,7 +9,7 @@ extern crate clap;
 use crate::args::GxModCmd;
 use clap::Parser;
 use galaxy_flow::err::*;
-use spec::{do_modins_cmd, do_modspec_cmd};
+use spec::do_mod_cmd;
 
 #[tokio::main]
 async fn main() {
@@ -27,14 +27,7 @@ pub struct GxMod {}
 impl GxMod {
     pub async fn run() -> RunResult<()> {
         let cmd = GxModCmd::parse();
-        match cmd {
-            GxModCmd::Spec(cmd) => {
-                do_modspec_cmd(cmd).await?;
-            }
-            GxModCmd::Inst(cmd) => {
-                do_modins_cmd(cmd).await?;
-            }
-        }
+        do_mod_cmd(cmd).await?;
         Ok(())
     }
 }

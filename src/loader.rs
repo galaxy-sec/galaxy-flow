@@ -141,7 +141,7 @@ mod tests {
         spc.show()?;
         println!("mods:{}", spc.len());
         assert!(spc.len() > 1);
-        spc.exec(["alpha"], ["conf"], true).await?;
+        spc.exec(["default"], ["conf"], true).await?;
         Ok(())
     }
 }

@@ -38,16 +38,19 @@ impl AsyncRunnableTrait for GxUpLoad {
             let password = ex.eval(password)?;
             addr = addr.with_credentials(username, password);
         }
-        let dst_file = ex.eval(self.local_file())?;
-        let mut task = Task::from("gx.download").with_target(&dst_file);
-        let dst_path = PathBuf::from(&dst_file);
+        let local_file = ex.eval(self.local_file())?;
+        let mut task = Task::from("gx.upload").with_target(&local_file);
+        let local_file_path = PathBuf::from(&local_file);
         let method = ex.eval(self.method())?.to_uppercase();
-        if dst_path.exists() {
-            addr.upload(&dst_path, &method).await.err_conv()?;
+        if local_file_path.exists() {
+            addr.upload(&local_file_path, &method).await.err_conv()?;
             task.finish();
             Ok((def, ExecOut::Task(task)))
         } else {
-            return ExecReason::Miss("dst_file".into()).err_result();
+            return ExecReason::Miss("local_file".into())
+                .err_result()
+                .want("gx.upload")
+                .with(&local_file_path);
         }
     }
 }
@@ -68,15 +71,18 @@ impl AsyncRunnableTrait for GxDownLoad {
             let password = ex.eval(password)?;
             addr = addr.with_credentials(username, password);
         }
-        let dst_file = ex.eval(self.local_file())?;
-        let mut task = Task::from("gx.download").with_target(&dst_file);
-        let dst_path = PathBuf::from(&dst_file);
-        if let Some(true) = dst_path.parent().map(|x| x.exists()) {
-            addr.download(&dst_path).await.err_conv()?;
+        let local_file = ex.eval(self.local_file())?;
+        let mut task = Task::from("gx.download").with_target(&local_file);
+        let local_file_path = PathBuf::from(&local_file);
+        if let Some(true) = local_file_path.parent().map(|x| x.exists()) {
+            addr.download(&local_file_path).await.err_conv()?;
             task.finish();
             Ok((def, ExecOut::Task(task)))
         } else {
-            return ExecReason::Miss("dst_file".into()).err_result();
+            return ExecReason::Miss("local_file_parent".into())
+                .err_result()
+                .want("gx.download")
+                .with(&local_file_path);
         }
     }
 }

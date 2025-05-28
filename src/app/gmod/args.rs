@@ -3,27 +3,11 @@ use clap::Parser;
 use derive_getters::Getters;
 
 #[derive(Debug, Parser)] // requires `derive` feature
-#[command(name = "gm")]
+#[command(name = "gmod")]
 #[command(version, about)]
 pub enum GxModCmd {
-    #[command(subcommand)]
-    Spec(ModSpecCmd),
-    #[command(subcommand)]
-    Inst(ModInsCmd),
-}
-
-#[derive(Debug, Subcommand)]
-pub enum ModSpecCmd {
     Example,
-    Create(SpecArgs),
-    Check,
-}
-
-#[derive(Debug, Subcommand)]
-pub enum ModInsCmd {
-    Example,
-    Create(SpecArgs),
-    Update,
+    New(SpecArgs),
     Local,
 }
 

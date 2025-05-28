@@ -10,7 +10,7 @@ extern crate clap;
 use args::GSysCmd;
 use clap::Parser;
 use galaxy_flow::err::*;
-use spec::{do_sysins_cmd, do_syspec_cmd};
+use spec::do_sys_cmd;
 
 #[tokio::main]
 async fn main() {
@@ -29,14 +29,7 @@ impl GxSys {
     pub async fn run() -> RunResult<()> {
         let cmd = GSysCmd::parse();
         debug!("galaxy flow running .....");
-        match cmd {
-            GSysCmd::Spec(cmd) => {
-                do_syspec_cmd(cmd).await?;
-            }
-            GSysCmd::Inst(cmd) => {
-                do_sysins_cmd(cmd).await?;
-            }
-        }
+        do_sys_cmd(cmd).await?;
         Ok(())
     }
 }
