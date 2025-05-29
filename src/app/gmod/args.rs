@@ -8,7 +8,7 @@ use derive_getters::Getters;
 pub enum GxModCmd {
     Example,
     New(SpecArgs),
-    Local,
+    Localize,
 }
 
 #[derive(Debug, Args, Getters)]

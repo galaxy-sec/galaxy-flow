@@ -29,7 +29,7 @@ pub async fn do_sys_cmd(cmd: GSysCmd) -> RunResult<()> {
             let spec = SysModelSpec::load_from(&current_dir).err_conv()?;
             spec.update_local().await.err_conv()?;
         }
-        GSysCmd::Local => {
+        GSysCmd::Localize => {
             let spec = SysModelSpec::load_from(&current_dir).err_conv()?;
             spec.localize(None).await.err_conv()?;
         }

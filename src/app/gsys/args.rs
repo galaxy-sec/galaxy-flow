@@ -9,7 +9,7 @@ pub enum GSysCmd {
     New(NewArgs),
     Load(LoadArgs),
     Update,
-    Local,
+    Localize,
 }
 
 #[derive(Debug, Args, Getters)]

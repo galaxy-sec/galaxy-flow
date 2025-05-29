@@ -37,7 +37,7 @@ impl AsyncRunnableTrait for GxRun {
             env: exp.eval(&self.env_conf)?,
             flow: self.flow_cmd.clone(),
             debug: 0,
-            conf: Some(self.gxl_path.clone()),
+            conf: Some(exp.eval(&self.gxl_path)?),
             log: None,
             cmd_print: true,
         };
@@ -45,6 +45,7 @@ impl AsyncRunnableTrait for GxRun {
         let _g = WorkDir::change(run_path)
             .owe_res()
             .with(self.run_path().clone())?;
+        debug!(target:ctx.path(), "{:#?}", cmd);
         GxlRunner::run(cmd).await.err_conv()?;
         task.finish();
         Ok((def, ExecOut::Task(task)))

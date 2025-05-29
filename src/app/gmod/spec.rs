@@ -12,13 +12,13 @@ pub async fn do_mod_cmd(cmd: args::GxModCmd) -> RunResult<()> {
     match cmd {
         args::GxModCmd::Example => {
             let spec = make_mod_spec_example().err_conv()?;
-            spec.save_to(&PathBuf::from("./")).err_conv()?;
+            spec.save_to(&PathBuf::from("./"), None).err_conv()?;
         }
         args::GxModCmd::New(spec_args) => {
             let spec = make_mod_spec_new(spec_args.name.as_str()).err_conv()?;
-            spec.save_to(&PathBuf::from("./")).err_conv()?;
+            spec.save_to(&PathBuf::from("./"), None).err_conv()?;
         }
-        args::GxModCmd::Local => {
+        args::GxModCmd::Localize => {
             let spec = ModTargetSpec::load_from(&current_dir).err_conv()?;
             spec.localize(None).await.err_conv()?;
         }
