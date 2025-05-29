@@ -1133,7 +1133,7 @@ dependencies = [
 
 [[package]]
 name = "galaxy_flow"
-version = "0.3.7"
+version = "0.3.8"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2065,7 +2065,8 @@ dependencies = [
 
 [[package]]
 name = "orion-syspec"
-version = "0.2.0"
+version = "0.2.1"
+source = "git+https://github.com/galaxy-sec/orion-syspec.git#fc557714afe9c65316bf134b9feb3e3e71e9b1c3"
 dependencies = [
  "anyhow",
  "async-trait",

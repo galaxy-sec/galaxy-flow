@@ -1,6 +1,7 @@
 use galaxy_flow::err::RunResult;
 use orion_error::ErrorConv;
-use orion_syspec::module::spec::{make_mod_spec_example, make_mod_spec_new, ModuleSpec};
+use orion_syspec::module::spec::{make_mod_spec_example, make_mod_spec_new};
+use orion_syspec::module::target::ModTargetSpec;
 use orion_syspec::types::{Localizable, Persistable};
 use std::path::PathBuf;
 
@@ -18,7 +19,7 @@ pub async fn do_mod_cmd(cmd: args::GxModCmd) -> RunResult<()> {
             spec.save_to(&PathBuf::from("./")).err_conv()?;
         }
         args::GxModCmd::Local => {
-            let spec = ModuleSpec::load_from(&current_dir).err_conv()?;
+            let spec = ModTargetSpec::load_from(&current_dir).err_conv()?;
             spec.localize(None).await.err_conv()?;
         }
     }
