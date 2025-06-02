@@ -1,7 +1,7 @@
 use std::{collections::HashMap, env::home_dir, path::PathBuf};
 
 use derive_more::From;
-use orion_error::ErrorConv;
+use orion_error::{ErrorConv, ErrorOwe};
 use orion_syspec::{
     types::Configable,
     vars::{ValueDict, ValueType},
@@ -20,10 +20,14 @@ pub struct VarSpace {
 }
 
 pub fn sec_value_default_path() -> PathBuf {
+    galaxy_dot_path().join("sec_value.yml")
+}
+pub fn galaxy_dot_path() -> PathBuf {
     home_dir()
-        .map(|x| x.join(".galaxy/sec_value.yml"))
+        .map(|x| x.join(".galaxy"))
         .unwrap_or(PathBuf::from("./"))
 }
+
 impl VarSpace {
     pub fn globle_mut(&mut self) -> &mut VarDict {
         &mut self.globle
@@ -49,6 +53,10 @@ impl VarSpace {
         } else {
             let mut default = ValueDict::new();
             default.insert("example_key1", ValueType::from("value"));
+            let dot_path = galaxy_dot_path();
+            if !dot_path.exists() {
+                std::fs::create_dir_all(dot_path).owe_res()?;
+            }
             default.save_conf(&path).err_conv()?;
         }
         Ok(())
