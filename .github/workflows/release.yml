@@ -47,11 +47,12 @@ jobs:
       - name: Archive (UNIX)
         run: |
           mkdir -p artifacts
-          cp -av target/${{ matrix.target }}/release/gx artifacts/
-          cp -av target/${{ matrix.target }}/release/gm artifacts/
+          cp -av target/${{ matrix.target }}/release/gflow artifacts/
+          cp -av target/${{ matrix.target }}/release/gprj artifacts/
+          cp -av target/${{ matrix.target }}/release/gmod artifacts/
+          cp -av target/${{ matrix.target }}/release/gsys artifacts/
           tar -czf ${{ github.event.repository.name }}-${{ github.ref_name }}-${{ matrix.target }}.tar.gz  artifacts
         if: ${{ ! startsWith(matrix.os, 'windows') }}
-
 
       - name: Attest Build Provenance
         uses: actions/attest-build-provenance@v2

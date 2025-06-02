@@ -2089,6 +2089,7 @@ dependencies = [
 [[package]]
 name = "orion-syspec"
 version = "0.3.0"
+source = "git+https://github.com/galaxy-sec/orion-syspec.git#fff149ee569274a4432a36c10307b3d1c137a592"
 dependencies = [
  "anyhow",
  "async-trait",
