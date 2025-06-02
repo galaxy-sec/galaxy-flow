@@ -24,6 +24,7 @@ pub type AResult<T> = Result<T, AssembleError>;
 #[derive(Debug, PartialEq, Serialize, Error)]
 pub enum ExecReason {
     #[error("cmd err : {1},{2}")]
+    //#[display("cmd: {_0}")]
     OsCmd(String, i32, String),
     #[error("io err : {0}")]
     Io(String),
@@ -62,8 +63,9 @@ impl From<SpecReason> for ExecReason {
     fn from(value: SpecReason) -> Self {
         match value {
             SpecReason::UnKnow => todo!(),
-            SpecReason::Miss(msg) => Self::Miss(msg),
             SpecReason::Uvs(uvs_reason) => Self::Uvs(uvs_reason),
+            SpecReason::Localize(r) => Self::Depend(r.to_string()),
+            SpecReason::Element(r) => Self::Depend(r.to_string()),
         }
     }
 }

@@ -3,7 +3,7 @@
 authors = ["wukong<sec-wukong@outlook.com>"]
 edition = "2021"
 name = "galaxy_flow"
-version = "0.3.17"
+version = "0.3.18"
 
 
 [[bin]]
@@ -37,10 +37,10 @@ license = "Apache-2.0"
 
 [workspace.dependencies]
 winnow = "0.6"
-orion-error = "~0.2"
-#orion-error =  { path = "../orion-error"}
-#orion-syspec = { path = "../orion-syspec" }
-orion-syspec = { git = "https://github.com/galaxy-sec/orion-syspec.git" }
+orion-error = "~0.3"
+#orion-error = { path = "../orion-error" }
+orion-syspec = { path = "../orion-syspec" }
+#orion-syspec = { git = "https://github.com/galaxy-sec/orion-syspec.git" }
 tokio = { version = "1.45", features = ["full"] }
 derive_more = { version = "2.0", features = ["full"] }
 async-trait = "0.1"

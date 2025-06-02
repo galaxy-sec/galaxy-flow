@@ -109,7 +109,10 @@ pub fn report_rg_error(e: RunError) {
     if let Some(detail) = e.detail() {
         println!("\n[DETAIL]:\n{}", detail);
     }
-    println!("\n[CONTEXT]:\n{}", e.context());
+    println!("\n[CONTEXT]:\n");
+    for x in e.context() {
+        println!("{}", x)
+    }
 }
 
 impl From<ExecReason> for RunReason {
@@ -139,8 +142,9 @@ impl From<SpecReason> for RunReason {
     fn from(value: SpecReason) -> Self {
         match value {
             SpecReason::UnKnow => RunReason::Gxl("unknow".to_string()),
-            SpecReason::Miss(info) => Self::Uvs(UvsReason::from_biz(info)),
             SpecReason::Uvs(uvs_reason) => Self::Uvs(uvs_reason),
+            SpecReason::Localize(r) => Self::Uvs(UvsReason::from_biz(r.to_string())),
+            SpecReason::Element(r) => Self::Uvs(UvsReason::from_biz(r.to_string())),
         }
     }
 }

@@ -1133,7 +1133,7 @@ dependencies = [
 
 [[package]]
 name = "galaxy_flow"
-version = "0.3.17"
+version = "0.3.18"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1267,6 +1267,29 @@ dependencies = [
  "futures-core",
  "js-sys",
  "wasm-bindgen",
+]
+
+[[package]]
+name = "gtmpl"
+version = "0.7.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9b924c0ea1149cd5cc9b208b33a4acb036ffb4b39c10048569de20616988a2b4"
+dependencies = [
+ "anyhow",
+ "gtmpl_value",
+ "lazy_static",
+ "percent-encoding",
+ "thiserror 1.0.69",
+]
+
+[[package]]
+name = "gtmpl_value"
+version = "0.5.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1d61bf6605eabca491ef6db6ed194e0aa82900ccc8bdea4c56ac277102152dd5"
+dependencies = [
+ "anyhow",
+ "thiserror 1.0.69",
 ]
 
 [[package]]
@@ -2053,9 +2076,9 @@ dependencies = [
 
 [[package]]
 name = "orion-error"
-version = "0.2.0"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4b4db7fe503792bb9b5d70dceea0d044ae1e60bf878722a5176e20c01cb4ae9f"
+checksum = "e5723a9708ddd9b0aa90a4c42dae21531375a131dc4b7fd71379566b4eb8a5e5"
 dependencies = [
  "derive-getters",
  "derive_more",
@@ -2065,8 +2088,7 @@ dependencies = [
 
 [[package]]
 name = "orion-syspec"
-version = "0.2.10"
-source = "git+https://github.com/galaxy-sec/orion-syspec.git#09abcda9cdf2bf38a71e5fab4fbfec047d0efcc9"
+version = "0.3.0"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2080,6 +2102,8 @@ dependencies = [
  "fs_extra",
  "futures",
  "git2",
+ "glob",
+ "gtmpl",
  "handlebars",
  "home",
  "indicatif",
@@ -2102,6 +2126,7 @@ dependencies = [
  "url",
  "walkdir",
  "wildmatch",
+ "winnow 0.6.26",
 ]
 
 [[package]]
