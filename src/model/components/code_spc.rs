@@ -39,13 +39,13 @@ impl AppendAble<Vec<GxlMod>> for CodeSpace {
     }
 }
 impl AppendAble<GxlMod> for CodeSpace {
-    fn append(&mut self, rg_mod: GxlMod) {
-        let key = rg_mod.of_name();
-        let mix = rg_mod.meta().mix().clone();
+    fn append(&mut self, gxl_mod: GxlMod) {
+        let key = gxl_mod.of_name();
+        let mix = gxl_mod.meta().mix().clone();
         if let Some(_vec) = self.store.get(&key) {
             warn!(target: "stc","重复 mod  {}", key);
         } else {
-            let mut mod_vec = vec![rg_mod];
+            let mut mod_vec = vec![gxl_mod];
             for item in &mix {
                 if let Some(i_vec) = self.store.get(item) {
                     mod_vec.append(&mut i_vec.clone());
@@ -76,30 +76,30 @@ mod tests {
         let (ctx, def) = exec_init_env();
 
         let meta = GxlMeta::build_mod("main");
-        let mut rg_mod = GxlMod::from(meta);
-        rg_mod.append(RgProp::new("key1", "val1"));
+        let mut gxl_mod = GxlMod::from(meta);
+        gxl_mod.append(RgProp::new("key1", "val1"));
 
-        let rg_flow = GxlFlow::load_ins("flow1".to_string());
+        let gxl_flow = GxlFlow::load_ins("flow1".to_string());
 
-        let mut rg_vars = RgVars::default();
-        rg_vars.append(RgProp::new("key1", "val1"));
+        let mut gxl_vars = RgVars::default();
+        gxl_vars.append(RgProp::new("key1", "val1"));
 
         let meta = GxlMeta::build_mod("env");
-        let mut rg_mod_env = GxlMod::from(meta);
-        rg_mod.append(RgProp::new("key1", "val1"));
+        let mut gxl_mod_env = GxlMod::from(meta);
+        gxl_mod.append(RgProp::new("key1", "val1"));
 
-        let mut rg_env = GxlEnv::from("env1");
-        rg_env.append(RgProp::new("key1", "val1"));
-        rg_env.append(rg_vars);
-        rg_mod_env.append(rg_env);
+        let mut gxl_env = GxlEnv::from("env1");
+        gxl_env.append(RgProp::new("key1", "val1"));
+        gxl_env.append(gxl_vars);
+        gxl_mod_env.append(gxl_env);
 
-        rg_mod.append(rg_flow);
-        let mut rg_space = CodeSpace::default();
-        rg_space.append(rg_mod_env);
-        rg_space.append(rg_mod);
+        gxl_mod.append(gxl_flow);
+        let mut gxl_space = CodeSpace::default();
+        gxl_space.append(gxl_mod_env);
+        gxl_space.append(gxl_mod);
 
         let mut flow = Sequence::from("test");
-        let work_spc = rg_space.assemble_mix().assert();
+        let work_spc = gxl_space.assemble_mix().assert();
         work_spc.load_env(ctx.clone(), &mut flow, "env.env1")?;
         work_spc.load_flow(ctx.clone(), &mut flow, "main.flow1")?;
         let job = flow.test_execute(ctx, def).await;

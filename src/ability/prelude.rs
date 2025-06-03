@@ -7,7 +7,7 @@ pub use crate::execution::task::Task;
 pub use crate::meta::*;
 pub use crate::model::expect::ShellOption;
 pub use crate::traits::PropsTrait;
-pub use crate::{rg_sh, ExecResult};
+pub use crate::{gxl_sh, ExecResult};
 pub use crate::{ExecError, ExecReason};
 pub use orion_common::friendly::AppendAble;
 pub use orion_error::ErrorOwe;

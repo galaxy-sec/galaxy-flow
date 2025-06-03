@@ -3,7 +3,7 @@ use orion_error::ErrorOwe;
 use crate::err::*;
 use crate::evaluator::*;
 use crate::expect::{LogicScope, ShellOption};
-use crate::rg_sh;
+use crate::gxl_sh;
 use crate::ExecReason;
 use crate::ExecResult;
 use std::fs;
@@ -16,7 +16,7 @@ const RG_ROOT: &str = "${HOME}/.galaxy";
 const VENDOR_ROOT: &str = "${HOME}/.galaxy/vendor";
 #[derive(Default, Getters)]
 pub struct GitTools {
-    rg_root: String,
+    gxl_root: String,
     vendor_root: String,
     force: bool,
     exp_engine: EnvExpress,
@@ -28,7 +28,7 @@ impl GitTools {
         let vendor_root = ee.eval(VENDOR_ROOT)?;
         Ok(GitTools {
             force,
-            rg_root,
+            gxl_root: rg_root,
             vendor_root,
             exp_engine: ee,
         })
@@ -38,11 +38,11 @@ impl GitTools {
         let update = if self.force { "true" } else { "false" };
         let cmd = format!(
             "{}/{} {} {}-{} {} {} {}",
-            self.rg_root, SH_NAME, url, repo, tag, tag, update, self.vendor_root
+            self.gxl_root, SH_NAME, url, repo, tag, tag, update, self.vendor_root
         );
 
         debug!(target:"sys/mod", "mod update cmd:{}", cmd);
-        rg_sh!(
+        gxl_sh!(
             LogicScope::Inner,
             "cmd:pull-mod",
             &cmd,
@@ -56,18 +56,18 @@ impl GitTools {
         let update = if self.force { "true" } else { "false" };
         let cmd = format!(
             "{}/{} {} {} {} {} {}",
-            self.rg_root, SH_NAME, url, repo, tag, update, self.rg_root
+            self.gxl_root, SH_NAME, url, repo, tag, update, self.gxl_root
         );
 
         debug!(target:"sys/mod", "mod update cmd:{}", cmd);
-        rg_sh!(LogicScope::Inner, "cmd:init", &cmd, opt, &self.exp_engine)?;
+        gxl_sh!(LogicScope::Inner, "cmd:init", &cmd, opt, &self.exp_engine)?;
         Ok(())
     }
     fn build_remote_git(&self) -> NER {
-        let sh_path = format!("{}/{}", self.rg_root, SH_NAME);
+        let sh_path = format!("{}/{}", self.gxl_root, SH_NAME);
         let shell = include_str!("remote_git.sh");
         build_shell(
-            self.rg_root().as_str(),
+            self.gxl_root().as_str(),
             "remote_git",
             shell,
             sh_path.as_str(),
@@ -75,36 +75,36 @@ impl GitTools {
     }
     pub fn check_run(&self) -> ExecResult<()> {
         self.build_check_shell()?;
-        let cmd = format!("{}/{}", self.rg_root, "git_check.sh");
+        let cmd = format!("{}/{}", self.gxl_root, "git_check.sh");
         debug!(target:"sys", "cmd:{}", cmd);
         let sh_opt = ShellOption {
             outer_print: true,
             inner_print: true,
             ..Default::default()
         };
-        rg_sh!(
+        gxl_sh!(
             LogicScope::Outer,
             "cmd",
             "echo $PATH",
             &sh_opt,
             &self.exp_engine
         )?;
-        rg_sh!(LogicScope::Outer, "cmd", "pwd", &sh_opt, &self.exp_engine)?;
-        rg_sh!(
+        gxl_sh!(LogicScope::Outer, "cmd", "pwd", &sh_opt, &self.exp_engine)?;
+        gxl_sh!(
             LogicScope::Outer,
             "cmd",
             "ls -l ${HOME}/.galaxy",
             &sh_opt,
             &self.exp_engine
         )?;
-        rg_sh!(LogicScope::Outer, "cmd", &cmd, &sh_opt, &self.exp_engine)?;
+        gxl_sh!(LogicScope::Outer, "cmd", &cmd, &sh_opt, &self.exp_engine)?;
         Ok(())
     }
     fn build_check_shell(&self) -> NER {
         let sh_name = "git_check.sh";
-        let sh_path = format!("{}/{}", self.rg_root, sh_name);
+        let sh_path = format!("{}/{}", self.gxl_root, sh_name);
         let shell = include_str!("git_check.sh");
-        build_shell(self.rg_root().as_str(), sh_name, shell, sh_path.as_str())
+        build_shell(self.gxl_root().as_str(), sh_name, shell, sh_path.as_str())
     }
 }
 

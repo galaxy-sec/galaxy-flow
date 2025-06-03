@@ -4,8 +4,8 @@ use crate::ability::prelude::*;
 
 use crate::components::gxl_spc::GxlSpace;
 use crate::expect::{LogicScope, ShellOption};
+use crate::gxl_sh;
 use crate::model::components::gxl_utls::mod_obj_name;
-use crate::rg_sh;
 
 use crate::traits::DependTrait;
 use crate::traits::Setter;
@@ -158,7 +158,7 @@ impl Activity {
         let mut opt = self.dto.expect.clone();
         opt.outer_print = *ctx.cmd_print();
         debug!(target: ctx.path(),"cmd: {}, opt:{:?}", cmd,opt);
-        rg_sh!(LogicScope::Outer, ctx.path(), &cmd, &opt, &exp).with(&r_with)?;
+        gxl_sh!(LogicScope::Outer, ctx.path(), &cmd, &opt, &exp).with(&r_with)?;
         task.finish();
         Ok((def, ExecOut::Task(task)))
     }

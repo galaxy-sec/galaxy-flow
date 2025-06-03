@@ -154,7 +154,7 @@ mod tests {
     async fn read_ini_test() {
         let (context, mut def) = ability_env_init();
         def.globle_mut()
-            .set("CONF_ROOT", "${RG_PRJ_ROOT}/examples/read");
+            .set("CONF_ROOT", "${GXL_PRJ_ROOT}/examples/read");
         let mut dto = FileDTO::default();
         dto.file = String::from("${CONF_ROOT}/var.ini");
         let res = GxRead::from(ReadMode::from(dto));

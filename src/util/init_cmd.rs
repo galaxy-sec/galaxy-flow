@@ -1,7 +1,7 @@
 use super::*;
 use crate::expect::LogicScope;
 use crate::{err::*, expect::ShellOption};
-use crate::{rg_sh, ExecReason, ExecResult};
+use crate::{gxl_sh, ExecReason, ExecResult};
 use std::path::Path;
 
 #[derive(Default, Builder)]
@@ -49,11 +49,11 @@ pub fn init_cmd(
     let cmd = format!(
         "export DST_PATH={} ; gx -f {}/{}/_gal/work.gxl  {} ",
         dst,
-        tools.rg_root(),
+        tools.gxl_root(),
         repo.repo_name,
         tpl_name,
     );
-    rg_sh!(
+    gxl_sh!(
         LogicScope::Inner,
         "cmd:init",
         &cmd,

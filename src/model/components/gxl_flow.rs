@@ -203,13 +203,13 @@ mod tests {
     #[test]
     fn test_assemble_com_without_dependencies() {
         // 创建一个 RgMod 实例
-        let rg_mod = GxlMod::from("test_mod");
+        let gxl_mod = GxlMod::from("test_mod");
 
         // 创建一个目标 RgFlow 实例，没有依赖关系
         let target_flow = GxlFlow::from("target_flow");
 
         let mut spc = GxlSpace::default();
-        spc.append(rg_mod);
+        spc.append(gxl_mod);
         // 调用 assemble_com 方法
         let assembled_flow = target_flow.assemble("test_mod", &spc).assert();
 
@@ -221,15 +221,15 @@ mod tests {
     #[test]
     fn test_assemble_com_with_missing_dependencies() {
         // 创建一个 RgMod 实例，包含部分依赖关系
-        let mut rg_mod = GxlMod::from("test_mod");
+        let mut gxl_mod = GxlMod::from("test_mod");
 
         // 创建一些 RgFlow 实例
         let flow1 = GxlFlow::from("flow1");
         let flow2 = GxlFlow::from("flow2");
 
         // 将这些 RgFlow 实例添加到 RgMod 中
-        rg_mod.append(flow1);
-        rg_mod.append(flow2);
+        gxl_mod.append(flow1);
+        gxl_mod.append(flow2);
 
         // 创建一个目标 RgFlow 实例，包含部分存在的依赖关系
         let mut target_flow = GxlFlow::from("target_flow");
@@ -239,7 +239,7 @@ mod tests {
             .set_postorder(vec!["flow2", "non_existent2"]);
 
         let mut spc = GxlSpace::default();
-        spc.append(rg_mod);
+        spc.append(gxl_mod);
         // 调用 assemble_com 方法
         assert!(target_flow.assemble("test_mod", &spc).is_err());
     }
@@ -247,7 +247,7 @@ mod tests {
     #[test]
     fn test_assemble_com_with_multiple_dependencies() {
         // 创建一个 RgMod 实例，包含多个依赖关系
-        let mut rg_mod = GxlMod::from("test_mod");
+        let mut gxl_mod = GxlMod::from("test_mod");
 
         // 创建一些 RgFlow 实例
         let flow1 = GxlFlow::from(GxlMeta::build_env("flow1".to_string()));
@@ -255,16 +255,16 @@ mod tests {
         let flow3 = GxlFlow::from(GxlMeta::build_env("flow3".to_string()));
 
         // 将这些 RgFlow 实例添加到 RgMod 中
-        rg_mod.append(flow1);
-        rg_mod.append(flow2);
-        rg_mod.append(flow3);
+        gxl_mod.append(flow1);
+        gxl_mod.append(flow2);
+        gxl_mod.append(flow3);
 
         // 创建一个目标 RgFlow 实例，包含多个依赖关系
         let mut target_flow = GxlFlow::from("target_flow");
         target_flow.meta.set_preorder(vec!["flow1", "flow2"]);
         target_flow.meta.set_postorder(vec!["flow3"]);
         let mut spc = GxlSpace::default();
-        spc.append(rg_mod);
+        spc.append(gxl_mod);
 
         // 调用 assemble_com 方法
         let assembled_flow = target_flow.assemble("test_mod", &spc).assert();

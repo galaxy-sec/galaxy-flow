@@ -36,7 +36,7 @@ url                = "2.1"
 
 {{{RG_LIB2}}}
 
-[features]
+[feature]
 default    = ["nightly"]
 nightly    = ["nightly_rg-lib"]
 beta       = ["beta_rg-lib"]

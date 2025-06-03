@@ -18,7 +18,7 @@ impl CmdDTO {
         let cmd = self.cmd.clone();
         let name = self.name.clone();
         let cmd = exp.eval(&cmd)?;
-        let data = rg_sh!(LogicScope::Outer, ctx.path(), &cmd, &self.expect, &exp)?;
+        let data = gxl_sh!(LogicScope::Outer, ctx.path(), &cmd, &self.expect, &exp)?;
         let data_str = String::from_utf8(data)
             .map_err(|msg| ExecReason::Exp(format!("bad result {}", msg)))?;
         let mut vars = RgVars::default();
@@ -38,7 +38,7 @@ mod tests {
     async fn read_cmd_test() {
         let (context, mut def) = ability_env_init();
         def.globle_mut()
-            .set("CONF_ROOT", "${RG_PRJ_ROOT}/example/conf");
+            .set("CONF_ROOT", "${GXL_PRJ_ROOT}/example/conf");
         let mut dto = CmdDTO::default();
         dto.name = format!("RG");
         dto.cmd = format!("echo galaxy-1.0");

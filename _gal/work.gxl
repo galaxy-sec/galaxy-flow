@@ -50,7 +50,7 @@ mod main   {
       gx.echo { value="${ENV_PRJ_KEY}"; }
       gx.echo { value="PRJ_BINS: ${MAIN_PRJ_BINS} "; }
       gx.echo { value="USR_BIN : ${MAIN_USR_BINS} "; }
-      gx.echo { value="RG_OS_SYS: ${RG_OS_SYS} "; }
+      gx.echo { value="GXL_OS_SYS: ${GXL_OS_SYS} "; }
 
       gx.echo { value= "ENV_BUILD_FLAG :  ${ENV_BUILD_FLAG}  " }
       gx.echo { value= "ENV_TARGET_FLAG : ${ENV_TARGET_FLAG} " }

@@ -27,7 +27,7 @@ async fn main() -> anyhow::Result<()> {
         }
     }
     match GxlRunner::run(cmd).await {
-        Err(e) => report_rg_error(e),
+        Err(e) => report_gxl_error(e),
         Ok(_) => {
             return Ok(());
         }

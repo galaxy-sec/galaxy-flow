@@ -1,5 +1,5 @@
 #[macro_export]
-macro_rules! rg_sh {
+macro_rules! gxl_sh {
     ( $scope : expr ,$target : expr, $cmd : expr, $opt : expr , $exp : expr) => {
         $crate::util::rg_sh($scope, $target, $cmd, $opt, $exp)
     };

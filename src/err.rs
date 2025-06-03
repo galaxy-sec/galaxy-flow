@@ -59,7 +59,7 @@ pub type GxlError = StructError<GxlReason>;
 pub type GxlResult<T> = std::result::Result<T, GxlError>;
 pub type NER = ExecResult<()>;
 
-pub fn report_rg_error(e: RunError) {
+pub fn report_gxl_error(e: RunError) {
     println!("Galaxy Flow Parse Error (Code: {})", e.error_code());
     println!("--------------------------");
     if let Some(target) = e.target() {

@@ -48,7 +48,7 @@ impl GxCmd {
 
         let mut expect = self.dto.expect.clone();
         expect.outer_print = *ctx.cmd_print();
-        rg_sh!(
+        gxl_sh!(
             LogicScope::Outer,
             ctx.tag_path("cmd").as_str(),
             &cmd,
@@ -69,7 +69,7 @@ mod tests {
     async fn cmd_test() {
         let (context, mut def) = ability_env_init();
         def.globle_mut()
-            .set("CONF_ROOT", "${RG_PRJ_ROOT}/example/conf");
+            .set("CONF_ROOT", "${GXL_PRJ_ROOT}/example/conf");
         let res = GxCmd::new(
           "cd ${CONF_ROOT}/used ; if test ! -L  ./link2.txt ; then ln -s ${CONF_ROOT}/options/link.txt  ./link2.txt ; fi ".into()
           ) ;

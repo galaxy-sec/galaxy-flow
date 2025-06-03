@@ -4,7 +4,7 @@ mod base_env {
       gx.vars {
         DOMAIN = "domain" ;
         SOCK_FILE = "socket" ;
-        RG_PRJ_ROOT = "./";
+        GXL_PRJ_ROOT = "./";
       }
     }
     env cli : _common {

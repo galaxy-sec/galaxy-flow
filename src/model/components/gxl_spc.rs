@@ -162,7 +162,7 @@ impl GxlSpace {
             var_space.globle_mut().set("__ENVS", "UNDEF");
 
             let os_sys = get_os_sys();
-            var_space.globle_mut().set("RG_OS_SYS", os_sys.as_str());
+            var_space.globle_mut().set("GXL_OS_SYS", os_sys.as_str());
 
             if let Some(value) = self.load_envs(ctx.clone(), &l_envs, &mut exec_sequ) {
                 return value;
@@ -231,30 +231,30 @@ mod tests {
         let (ctx, def) = exec_init_env();
 
         let meta = GxlMeta::build_mod("main");
-        let mut rg_mod = GxlMod::from(meta);
-        rg_mod.append(RgProp::new("key1", "val1"));
+        let mut gxl_mod = GxlMod::from(meta);
+        gxl_mod.append(RgProp::new("key1", "val1"));
 
-        let rg_flow = GxlFlow::load_ins("flow1".to_string());
+        let gxl_flow = GxlFlow::load_ins("flow1".to_string());
 
         let mut rg_vars = RgVars::default();
         rg_vars.append(RgProp::new("key1", "val1"));
 
         let meta = GxlMeta::build_mod("env");
-        let mut rg_mod_env = GxlMod::from(meta);
-        rg_mod.append(RgProp::new("key1", "val1"));
+        let mut gxl_mod_env = GxlMod::from(meta);
+        gxl_mod.append(RgProp::new("key1", "val1"));
 
-        let mut rg_env = GxlEnv::from("env1");
-        rg_env.append(RgProp::new("key1", "val1"));
-        rg_env.append(rg_vars);
-        rg_mod_env.append(rg_env);
+        let mut gxl_env = GxlEnv::from("env1");
+        gxl_env.append(RgProp::new("key1", "val1"));
+        gxl_env.append(rg_vars);
+        gxl_mod_env.append(gxl_env);
 
-        rg_mod.append(rg_flow);
-        let mut rg_space = CodeSpace::default();
-        rg_space.append(rg_mod_env);
-        rg_space.append(rg_mod);
+        gxl_mod.append(gxl_flow);
+        let mut gxl_space = CodeSpace::default();
+        gxl_space.append(gxl_mod_env);
+        gxl_space.append(gxl_mod);
 
         let mut flow = Sequence::from("test");
-        let work_spc = rg_space.assemble_mix().assert();
+        let work_spc = gxl_space.assemble_mix().assert();
         work_spc.load_env(ctx.clone(), &mut flow, "env.env1")?;
         work_spc.load_flow(ctx.clone(), &mut flow, "main.flow1")?;
         let (_, job) = flow.test_execute(ctx, def).await.unwrap();

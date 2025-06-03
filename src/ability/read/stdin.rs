@@ -40,7 +40,7 @@ mod tests {
     async fn read_stdin_test() {
         let (context, mut def) = ability_env_init();
         def.globle_mut()
-            .set("CONF_ROOT", "${RG_PRJ_ROOT}/example/conf");
+            .set("CONF_ROOT", "${GXL_PRJ_ROOT}/example/conf");
         let mut dto = StdinDTO::default();
         dto.prompt = String::from("please input you name");
         dto.name = String::from("name");

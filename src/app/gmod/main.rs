@@ -15,7 +15,7 @@ use spec::do_mod_cmd;
 async fn main() {
     use std::process;
     match GxMod::run().await {
-        Err(e) => report_rg_error(e),
+        Err(e) => report_gxl_error(e),
         Ok(_) => {
             return;
         }

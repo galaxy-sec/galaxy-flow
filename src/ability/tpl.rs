@@ -275,7 +275,7 @@ mod tests {
         );
         let conf_tpl = GxTpl::new(tpl.clone(), dst.clone());
         context.append("RG");
-        def.globle_mut().set("RG_PRJ_ROOT", "/home/galaxy");
+        def.globle_mut().set("GXL_PRJ_ROOT", "/home/galaxy");
         def.globle_mut().set("DOMAIN", "www.galaxy-sec.org");
         def.globle_mut().set("SOCK_FILE", "galaxy.socket");
         conf_tpl.async_exec(context.clone(), def).await.unwrap();

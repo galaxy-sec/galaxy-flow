@@ -85,12 +85,12 @@ impl GxLoader {
         info!(target: "parse","code len: {}", target_code.len());
         fs::write("./.run.gxl", target_code.as_str()).owe_res()?;
         let mut code = target_code.as_str();
-        let rg_space = gal_stc_spc(&mut code)
+        let gxl_space = gal_stc_spc(&mut code)
             .map_err(WinnowErrorEx::from)
             .owe(RunReason::Gxl("gxl error!".into()))
             .position(err_code_prompt(code))
             .want("parse ./.run.gxl file")?;
-        Ok(rg_space)
+        Ok(gxl_space)
     }
 
     pub fn init(

@@ -26,7 +26,7 @@ const ASSETS_DIR: Dir = include_dir!("src/app/gprj/init");
 async fn main() {
     use std::process;
     match GxAdm::run().await {
-        Err(e) => report_rg_error(e),
+        Err(e) => report_gxl_error(e),
         Ok(_) => {
             return;
         }
