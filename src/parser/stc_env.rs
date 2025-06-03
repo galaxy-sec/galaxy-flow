@@ -111,7 +111,7 @@ mod tests {
     }
     #[test]
     fn env_mix() {
-        let mut data = r#" env  dev : base "#;
+        let mut data = r#" env  dev : base;"#;
         let env = run_gxl(gal_stc_env, &mut data).assert();
         assert_eq!(env.props().len(), 0);
         assert_eq!(data, "");

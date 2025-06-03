@@ -1,5 +1,8 @@
 use orion_parse::symbol::CmpSymbol;
 
+use crate::context::ExecContext;
+use crate::execution::VarSpace;
+
 use super::dynval::{EnvVarTag, EvalError, MocVarTag, ValueEval, VarDef};
 use std::fmt::Debug;
 use std::num::ParseIntError;
@@ -68,15 +71,12 @@ pub type DecideResult = Result<bool, EvalError>;
 pub trait EvalArgs {}
 impl EvalArgs for u32 {}
 impl EvalArgs for () {}
-pub trait Evaluation<A>
-where
-    A: EvalArgs,
-{
-    fn decide(&self, args: &A) -> DecideResult;
+pub trait Evaluation {
+    fn decide(&self, ctx: ExecContext, args: &VarSpace) -> DecideResult;
 }
 
-impl Evaluation<()> for BinExpress<&str, &str> {
-    fn decide(&self, _: &()) -> DecideResult {
+impl Evaluation for BinExpress<&str, &str> {
+    fn decide(&self, _ctx: ExecContext, _vars_dict: &VarSpace) -> DecideResult {
         Ok(match self.relation {
             BinRelation::EQ => self.first.eq_ignore_ascii_case(self.second),
             BinRelation::NE => !self.first.eq_ignore_ascii_case(self.second),
@@ -88,8 +88,8 @@ impl Evaluation<()> for BinExpress<&str, &str> {
     }
 }
 
-impl Evaluation<()> for BinExpress<String, String> {
-    fn decide(&self, _: &()) -> DecideResult {
+impl Evaluation for BinExpress<String, String> {
+    fn decide(&self, _ctx: ExecContext, _vars_dict: &VarSpace) -> DecideResult {
         Ok(match self.relation {
             BinRelation::EQ => self.first == self.second,
             BinRelation::NE => self.first != self.second,
@@ -101,8 +101,8 @@ impl Evaluation<()> for BinExpress<String, String> {
     }
 }
 
-impl Evaluation<()> for BinExpress<u32, u32> {
-    fn decide(&self, _: &()) -> DecideResult {
+impl Evaluation for BinExpress<u32, u32> {
+    fn decide(&self, _ctx: ExecContext, _vars_dict: &VarSpace) -> DecideResult {
         Ok(match self.relation {
             BinRelation::EQ => self.first == self.second,
             BinRelation::NE => self.first != self.second,
@@ -114,17 +114,17 @@ impl Evaluation<()> for BinExpress<u32, u32> {
     }
 }
 
-impl<T, E, A> Evaluation<A> for BinExpress<T, E>
+impl<T, E> Evaluation for BinExpress<T, E>
 where
     T: ValueEval<E> + Debug + Clone,
     E: PartialEq + PartialOrd,
-    A: EvalArgs,
+    //    A: EvalArgs,
 {
-    fn decide(&self, _args: &A) -> DecideResult {
+    fn decide(&self, _ctx: ExecContext, _args: &VarSpace) -> DecideResult {
         let first = self
             .first
-            .eval()
-            .map_err(|_| EvalError::ValueError(format!("{:?}", self.first.clone())))?;
+            .eval(&_args)
+            .map_err(|e| EvalError::ValueError(format!("{:?} , e:{}", self.first.clone(), e)))?;
         match self.relation {
             BinRelation::EQ => Ok(first.eq(&self.second)),
             BinRelation::NE => Ok(!first.eq(&self.second)),
@@ -152,22 +152,21 @@ pub enum ExpressEnum {
     MStr(BinExpress<VarDef<String, MocVarTag>, String>),
 }
 
-impl<A> Evaluation<A> for ExpressEnum
-where
-    A: EvalArgs,
-{
-    fn decide(&self, args: &A) -> DecideResult {
+impl Evaluation for ExpressEnum {
+    fn decide(&self, ctx: ExecContext, args: &VarSpace) -> DecideResult {
         match self {
-            ExpressEnum::MU32(x) => x.decide(args),
-            ExpressEnum::MStr(x) => x.decide(args),
-            ExpressEnum::EU32(x) => x.decide(args),
-            ExpressEnum::EStr(x) => x.decide(args),
+            ExpressEnum::MU32(x) => x.decide(ctx, args),
+            ExpressEnum::MStr(x) => x.decide(ctx, args),
+            ExpressEnum::EU32(x) => x.decide(ctx, args),
+            ExpressEnum::EStr(x) => x.decide(ctx, args),
         }
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use crate::execution::VarSpace;
+
     use super::*;
 
     //test bind express
@@ -175,35 +174,59 @@ mod tests {
     fn test_bin_express() {
         let bin_express = BinExpress::eq("a", "b");
         assert_eq!(bin_express.relation, BinRelation::EQ);
-        assert_eq!(bin_express.decide(&()), Ok(false));
+        assert_eq!(
+            bin_express.decide(ExecContext::default(), &VarSpace::default()),
+            Ok(false)
+        );
         let bin_express = BinExpress::eq("a", "a");
         assert_eq!(bin_express.relation, BinRelation::EQ);
-        assert_eq!(bin_express.decide(&()), Ok(true));
+        assert_eq!(
+            bin_express.decide(ExecContext::default(), &VarSpace::default()),
+            Ok(true)
+        );
     }
     //test for i32 test bin express
     #[test]
     fn test_bin_express_i32() {
         let bin_express = BinExpress::eq(1, 2);
         assert_eq!(bin_express.relation, BinRelation::EQ);
-        assert_eq!(bin_express.decide(&()), Ok(false));
+        assert_eq!(
+            bin_express.decide(ExecContext::default(), &VarSpace::default()),
+            Ok(false)
+        );
         let bin_express = BinExpress::eq(1, 1);
         assert_eq!(bin_express.relation, BinRelation::EQ);
-        assert_eq!(bin_express.decide(&()), Ok(true));
+        assert_eq!(
+            bin_express.decide(ExecContext::default(), &VarSpace::default()),
+            Ok(true)
+        );
         let bin_express = BinExpress::gt(2, 1);
         assert_eq!(bin_express.relation, BinRelation::GT);
-        assert_eq!(bin_express.decide(&()), Ok(true));
+        assert_eq!(
+            bin_express.decide(ExecContext::default(), &VarSpace::default()),
+            Ok(true)
+        );
         let bin_express = BinExpress::gt(1, 2);
         assert_eq!(bin_express.relation, BinRelation::GT);
-        assert_eq!(bin_express.decide(&()), Ok(false));
+        assert_eq!(
+            bin_express.decide(ExecContext::default(), &VarSpace::default()),
+            Ok(false)
+        );
     }
     #[test]
     fn test_bin_express_dynstr() {
         type VarMoc = VarDef<String, MocVarTag>;
         let bin_express = BinExpress::eq(VarMoc::from("moc_1"), "1".to_string());
         assert_eq!(bin_express.relation, BinRelation::EQ);
-        assert_eq!(bin_express.decide(&()), Ok(true));
+        assert_eq!(
+            bin_express.decide(ExecContext::default(), &VarSpace::default()),
+            Ok(true)
+        );
         let bin_express = BinExpress::eq(VarMoc::from("moc_1"), "2".to_string());
         assert_eq!(bin_express.relation, BinRelation::EQ);
-        assert_eq!(bin_express.decide(&()), Ok(false));
+        assert_eq!(
+            bin_express.decide(ExecContext::default(), &VarSpace::default()),
+            Ok(false)
+        );
     }
 }

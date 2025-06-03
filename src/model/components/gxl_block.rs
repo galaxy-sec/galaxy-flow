@@ -18,7 +18,6 @@ use crate::context::ExecContext;
 
 use crate::calculate::cond::CondExec;
 use crate::execution::runnable::VTResult;
-use crate::model::components::gxl_cond::RunArgs;
 
 use super::gxl_cond::GxlCond;
 use super::gxl_spc::GxlSpace;
@@ -58,8 +57,8 @@ impl BlockNode {
 
 #[async_trait]
 impl CondExec for BlockNode {
-    async fn cond_exec(&self, def: VarSpace, args: RunArgs) -> VTResult {
-        self.async_exec(args.ctx.clone(), def).await
+    async fn cond_exec(&self, ctx: ExecContext, def: VarSpace) -> VTResult {
+        self.async_exec(ctx, def).await
     }
 }
 #[async_trait]

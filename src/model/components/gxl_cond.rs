@@ -1,6 +1,5 @@
 use super::prelude::*;
 use crate::calculate::cond::{CondExec, IFExpress};
-use crate::calculate::express::EvalArgs;
 
 use super::gxl_block::BlockNode;
 
@@ -19,16 +18,6 @@ impl GxlCond {
 impl AsyncRunnableTrait for GxlCond {
     async fn async_exec(&self, ctx: ExecContext, dct: VarSpace) -> VTResult {
         //EnvVarTag::clear_import(&dct.export());
-        self.cond
-            .cond_exec(dct.clone(), RunArgs { ctx, def: dct })
-            .await
+        self.cond.cond_exec(ctx, dct).await
     }
 }
-
-#[derive(Debug, Default)]
-pub struct RunArgs {
-    pub ctx: ExecContext,
-    pub def: VarSpace,
-}
-
-impl EvalArgs for RunArgs {}

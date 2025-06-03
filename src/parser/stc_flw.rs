@@ -1,21 +1,8 @@
-use winnow::combinator::repeat;
+use super::{prelude::*, stc_blk::gal_block};
 
-use super::{
-    domain::{gal_block_beg, gal_block_end},
-    prelude::*,
-    stc_blk::gal_block,
-};
+use crate::{components::GxlFlow, meta::GxlMeta};
 
-use crate::{
-    components::{gxl_var::RgProp, GxlFlow},
-    meta::GxlMeta,
-};
-
-use super::{
-    inner::gal_prop,
-    stc_base::{gal_ann, galaxy_flow_head},
-    stc_blk::gal_block_code,
-};
+use super::stc_base::{gal_ann, galaxy_flow_head};
 
 pub fn gal_stc_flow_body(input: &mut &str) -> ModalResult<GxlFlow> {
     let head = galaxy_flow_head
@@ -94,8 +81,6 @@ mod tests {
         let flow = run_gxl(gal_stc_flow, &mut data).assert();
         assert_eq!(data, "");
         assert_eq!(flow.meta().name(), "start");
-
-        assert!(flow.props().iter().any(|x| x.key() == "key"));
     }
 
     #[test]

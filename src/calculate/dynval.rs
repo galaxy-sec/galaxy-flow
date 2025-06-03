@@ -1,5 +1,5 @@
 use crate::evaluator::EnvExpress;
-use crate::var::VarDict;
+use crate::execution::VarSpace;
 use std::collections::HashMap;
 use std::fmt::{Debug, Formatter};
 use std::marker::PhantomData;
@@ -125,47 +125,53 @@ impl<T, E> From<&str> for VarDef<T, E> {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, thiserror::Error)]
 pub enum EvalError {
+    #[error("parse error")]
     ParseError,
+    #[error("value error {0}")]
     ValueError(String),
+    #[error("var miss '{0}'")]
+    VarMiss(String),
+    #[error("unthinking")]
     Unthinking,
 }
 pub type EvalResult<T> = Result<T, EvalError>;
 
 #[automock]
 pub trait ValueEval<R> {
-    fn eval(&self) -> EvalResult<R>;
+    fn eval(&self, vars: &VarSpace) -> EvalResult<R>;
 }
 
 impl ValueEval<u32> for VarDef<u32, EnvVarTag> {
-    fn eval(&self) -> EvalResult<u32> {
-        let exp = EnvExpress::from_env_mix(VarDict::from(EnvVarTag::export()));
+    fn eval(&self, vars: &VarSpace) -> EvalResult<u32> {
+        let exp = EnvExpress::from_env_mix(vars.globle().clone());
         let one = exp
             .eval_val(&self.var.to_uppercase())
-            .ok_or(EvalError::ValueError(self.var.clone()))?;
+            .ok_or(EvalError::VarMiss(self.var.clone()))?;
         Ok(one.parse::<u32>().unwrap())
     }
 }
 impl ValueEval<String> for VarDef<String, EnvVarTag> {
-    fn eval(&self) -> EvalResult<String> {
-        let exp = EnvExpress::from_env_mix(VarDict::from(EnvVarTag::export()));
+    fn eval(&self, vars: &VarSpace) -> EvalResult<String> {
+        //let exp = EnvExpress::from_env_mix(VarDict::from(EnvVarTag::export()));
+        let exp = EnvExpress::from_env_mix(vars.globle().clone());
         let one = exp
             .eval_val(&self.var.to_uppercase())
-            .ok_or(EvalError::ValueError(self.var.clone()))?;
+            .ok_or(EvalError::VarMiss(self.var.clone()))?;
         Ok(one.clone())
     }
 }
 
 pub type MocU32 = VarDef<u32, MocVarTag>;
 impl ValueEval<u32> for VarDef<u32, MocVarTag> {
-    fn eval(&self) -> EvalResult<u32> {
+    fn eval(&self, _vars: &VarSpace) -> EvalResult<u32> {
         let v = self.var.strip_prefix("moc_").ok_or(EvalError::Unthinking)?;
         v.parse::<u32>().map_err(|_| EvalError::ParseError)
     }
 }
 impl ValueEval<String> for VarDef<String, MocVarTag> {
-    fn eval(&self) -> EvalResult<String> {
+    fn eval(&self, _vars: &VarSpace) -> EvalResult<String> {
         let v = self.var.strip_prefix("moc_").ok_or(EvalError::Unthinking)?;
         Ok(v.to_string())
     }
@@ -178,7 +184,7 @@ mod tests {
     struct MocT(u32);
     type VarMoc2 = VarDef<MocT, MocVarTag>;
     impl ValueEval<MocT> for VarMoc2 {
-        fn eval(&self) -> EvalResult<MocT> {
+        fn eval(&self, _vars: &VarSpace) -> EvalResult<MocT> {
             Ok(MocT(2))
         }
     }
@@ -186,6 +192,6 @@ mod tests {
     #[test]
     fn test_var_from() {
         let val = VarMoc2::from("x");
-        assert_eq!(val.eval(), Ok(MocT(2)));
+        assert_eq!(val.eval(&VarSpace::default()), Ok(MocT(2)));
     }
 }

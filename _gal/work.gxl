@@ -51,7 +51,7 @@ mod main   {
     #[auto_load(entry)]
     flow __into  {
         if ${GXL_OS_SYS} == "arm64_macos_15" {
-            user_bins2 = "2";
+            DIST_REPO = "macos2";
             gx.echo { value="${ENV_PRJ_KEY}"; }
         }
 

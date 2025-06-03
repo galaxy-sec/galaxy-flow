@@ -3,7 +3,7 @@ use super::prelude::*;
 
 use crate::parser::stc_base::AnnDto;
 
-use crate::traits::{DependTrait, PropsTrait};
+use crate::traits::DependTrait;
 
 use crate::components::gxl_block::BlockNode;
 use crate::model::annotation::FlowAnnotation;
@@ -58,9 +58,9 @@ impl DependTrait<&GxlSpace> for GxlFlow {
                 String::from_utf8(buffer).unwrap()
             );
         }
-        for prop in self.props() {
-            target.append(prop.clone());
-        }
+        //for prop in self.props() {
+        //    target.append(prop.clone());
+        //}
         for block in self.blocks {
             let full_block = block.assemble(mod_name, src)?;
             target.append(full_block);
@@ -91,7 +91,6 @@ impl From<GxlMeta> for GxlFlow {
     fn from(meta: GxlMeta) -> Self {
         Self {
             meta,
-            props: Vec::new(),
             pre_flows: Vec::new(),
             post_flows: Vec::new(),
             blocks: Vec::new(),
@@ -104,7 +103,6 @@ impl From<&str> for GxlFlow {
         let meta = GxlMeta::build_flow(name);
         Self {
             meta,
-            props: Vec::new(),
             pre_flows: Vec::new(),
             post_flows: Vec::new(),
             blocks: Vec::new(),
@@ -125,7 +123,6 @@ impl GxlFlow {
         debug!("load RgFlow: {} ", name);
         Self {
             meta: GxlMeta::build_flow(name),
-            props: Vec::new(),
             pre_flows: Vec::new(),
             post_flows: Vec::new(),
             blocks: Vec::new(),
@@ -136,7 +133,6 @@ impl GxlFlow {
 impl GxlFlow {
     async fn exec_self(&self, ctx: ExecContext, mut var_dict: VarSpace) -> VTResult {
         let mut job = Job::from(self.meta.name());
-        self.export_props(ctx.clone(), var_dict.globle_mut(), "")?;
 
         for item in &self.blocks {
             let (cur_dict, task) = item.async_exec(ctx.clone(), var_dict).await?;
@@ -172,17 +168,7 @@ impl ComponentMeta for GxlFlow {
         self.meta.clone()
     }
 }
-impl PropsTrait for GxlFlow {
-    fn fetch_props(&self) -> &Vec<RgProp> {
-        &self.props
-    }
-}
 
-impl AppendAble<RgProp> for GxlFlow {
-    fn append(&mut self, prop: RgProp) {
-        self.props.push(prop);
-    }
-}
 impl AppendAble<BlockNode> for GxlFlow {
     fn append(&mut self, block: BlockNode) {
         self.blocks.push(block);
