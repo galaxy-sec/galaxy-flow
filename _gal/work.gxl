@@ -1,14 +1,5 @@
 extern mod head { path = "./_gal/"; }
 
-mod auto_env {
-    env x86_64_ubuntu_24{
-        DIST_REPO = "ubuntu" ;
-    }
-    env arm64_macos_15 {
-        DIST_REPO = "macos" ;
-    }
-
-}
 mod env  {
    env _common  : rust_env.init ,rust_env.release   {
     sudo      = "false";
@@ -19,28 +10,13 @@ mod env  {
     DIST_REPO = "unknow";
 
   }
-  env _branch_auto {
-      gx.read_cmd {
-        name = "BRANCH_ENV";
-        cmd  = ^"git branch --show-current |  sed -E "s/(feature|develop|ver-dev|release|master|issue)(\/.*)?/_branch_\1/g" "^ ;
-        log  = "debug";
-        }
-  }
-
-  env macos {
-    DIST_REPO = "macos" ;
-  }
-
-  env ubuntu {
-    DIST_REPO = "ubuntu" ;
-  }
 
   #[usage(desp="use debug ",color="blue")]
-  env debug :  rust_env.debug;
+  env debug :  _common,rust_env.debug;
 
 
   #[usage(desp="default mamcos", color="green")]
-  env default    : _common,macos;
+  env default    : _common;
 }
 
 mod main   {
@@ -53,13 +29,12 @@ mod main   {
         DIST_REPO = "unkonw";
         gx.echo { value= "${GXL_OS_SYS}" }
         if ${GXL_OS_SYS} =* "arm64_macos_*" {
-            DIST_REPO = "macos2";
+            DIST_REPO = "macos";
         } else if ${GXL_OS_SYS} =* "x86_64_ubuntu*" {
-            DIST_REPO = "ubuntu";
+            DIST_REPO = "ubuntu22";
         }
         else {
-            //gx.assert  { value = "first", expect = "second" };
-            DIST_REPO = "ubuntu3";
+            DIST_REPO = "other";
         }
 
     }
@@ -119,7 +94,6 @@ mod main   {
   flow pub_dysec  : _pub_gflow,_pub_gprj,_pub_gmod,_pub_gsys ;
 
   flow _pub_dysec :ver.use {
-    gx.assert { value = "${ENV_DIST_REPO}" , expect = "unknow" , result = "false" , error = "not choose macos or ubuntu" }
     gx.echo { value = "pub ${UP_TARGET} to dysec " }
     gx.upload {
         url = "https://dy-sec-generic.pkg.coding.net/galaxy-open/${DIST_REPO}/${UP_TARGET}?version=${VERSION}",
