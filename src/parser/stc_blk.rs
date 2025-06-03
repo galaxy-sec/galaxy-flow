@@ -113,9 +113,28 @@ pub fn gal_sentens_item(input: &mut &str) -> ModalResult<BlockAction> {
         .map(BlockAction::Delegate)
         .parse_next(input)
 }
+pub fn gal_else_if(input: &mut &str) -> ModalResult<GxlCond> {
+    skip_spaces_block(input)?;
+    gal_keyword("else", input)?;
+    gal_keyword("if", input)?;
+    let (name, cmp, value) = (
+        spaced(take_env_var).context(wn_desc("<env-var>")),
+        spaced(symbol_cmp).context(wn_desc("operator")),
+        spaced(take_string).context(wn_desc("<value-str>")),
+    )
+        .parse_next(input)?;
+    let true_block = gal_block.parse_next(input)?;
+    skip_spaces_block(input)?;
+    let ctrl_express = IFExpress::new(
+        ExpressEnum::EStr(BinExpress::from_op(cmp, EVarDef::new(name), value)),
+        true_block,
+        Vec::new(),
+        None,
+    );
+    Ok(GxlCond::new(ctrl_express))
+}
 
 pub fn gal_cond(input: &mut &str) -> ModalResult<GxlCond> {
-    //if val == 1
     skip_spaces_block(input)?;
     gal_keyword("if", input)?;
 
@@ -127,16 +146,19 @@ pub fn gal_cond(input: &mut &str) -> ModalResult<GxlCond> {
         .parse_next(input)?;
     let true_block = gal_block.parse_next(input)?;
     skip_spaces_block(input)?;
+    let elseif_conds: Vec<GxlCond> = repeat(0.., gal_else_if).parse_next(input)?;
+
     multispace0(input)?;
     let false_block = if starts_with("else", input) {
         gal_keyword("else", input)?;
-        gal_block.parse_next(input)?
+        Some(gal_block.parse_next(input)?)
     } else {
-        BlockNode::new()
+        None
     };
     let ctrl_express = IFExpress::new(
         ExpressEnum::EStr(BinExpress::from_op(cmp, EVarDef::new(name), value)),
         true_block,
+        elseif_conds,
         false_block,
     );
     Ok(GxlCond::new(ctrl_express))
@@ -164,9 +186,12 @@ mod tests {
 
     use orion_error::TestAssert;
 
-    use crate::parser::{
-        inner::run_gxl,
-        stc_blk::{gal_block, gal_cond, gal_loop},
+    use crate::{
+        calculate::express::BinRelation,
+        parser::{
+            inner::run_gxl,
+            stc_blk::{gal_block, gal_cond, gal_loop},
+        },
     };
 
     #[test]
@@ -201,7 +226,18 @@ mod tests {
                 gx.echo { value  = "${PRJ_ROOT}/test/main.py" ; };
              }"#;
         let _ = run_gxl(gal_cond, &mut data).assert();
-        //assert_eq!(blk.items().len(), 1);
+        assert_eq!(data, "");
+
+        let mut data = r#"
+            if ${val} == "1" {
+                gx.echo { value  = "${PRJ_ROOT}/test/main.py" ; };
+             } else if ${val} == "2" {
+                gx.echo { value  = "${PRJ_ROOT}/test/main.py" ; };
+             }
+             else {
+                gx.echo { value  = "${PRJ_ROOT}/test/main.py" ; };
+             }"#;
+        let _ = run_gxl(gal_cond, &mut data).assert();
         assert_eq!(data, "");
     }
     #[test]
@@ -241,6 +277,19 @@ mod tests {
              }
         "#;
         let _ = run_gxl(gal_block, &mut data).assert();
+        assert_eq!(data, "");
+    }
+    #[test]
+    fn test_if_for2() {
+        let mut data = r#"
+            if ${val} =* "hello*" {
+                for  ${CUR} in ${DATA} {
+                    gx.echo { value  = "${cur}/test/main.py" ; };
+                }
+             }
+        "#;
+        let cond = run_gxl(gal_cond, &mut data).assert();
+        assert_eq!(cond.cond.express().relation(), &BinRelation::WE);
         assert_eq!(data, "");
     }
 }

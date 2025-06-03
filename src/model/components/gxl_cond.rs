@@ -4,9 +4,17 @@ use crate::calculate::cond::{CondExec, IFExpress};
 use super::gxl_block::BlockNode;
 
 #[derive(Clone, Getters, Debug)]
+pub struct TGxlCond<T> {
+    pub(crate) cond: IFExpress<T>,
+}
+
+pub type GxlCond = TGxlCond<BlockNode>;
+/*
+#[derive(Clone, Getters, Debug)]
 pub struct GxlCond {
     pub(crate) cond: IFExpress<BlockNode>,
 }
+*/
 
 impl GxlCond {
     pub fn new(cond: IFExpress<BlockNode>) -> Self {

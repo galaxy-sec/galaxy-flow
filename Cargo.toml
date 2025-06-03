@@ -72,11 +72,12 @@ url = "2.5"
 clap = { version = "4.5", features = ["derive"] }
 env_logger = "0.10.0"
 os_info = "3"
-winnow = "0.6"
+winnow = { workspace = true }
 colored = "3.0.0"
 anyhow = "1.0.82"
 include_dir = "0.7"
 walkdir = "2.5"
+wildmatch = "~2.4"
 orion-error = { workspace = true }
 orion-syspec = { workspace = true }
 tokio = { workspace = true }

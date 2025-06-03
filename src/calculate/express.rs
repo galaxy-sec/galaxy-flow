@@ -1,4 +1,5 @@
 use orion_parse::symbol::CmpSymbol;
+use wildmatch::WildMatch;
 
 use crate::context::ExecContext;
 use crate::execution::VarSpace;
@@ -15,6 +16,12 @@ pub enum BinRelation {
     GT,
     LE,
     LT,
+    /// wide match
+    WE,
+}
+
+pub trait WildEq<Rhs: ?Sized = Self> {
+    fn we(&self, other: &Rhs) -> bool;
 }
 #[derive(Clone, Debug)]
 pub struct BinExpress<T, E> {
@@ -55,13 +62,13 @@ impl<T, E> BinExpress<T, E> {
     }
     pub fn from_op(op: CmpSymbol, first: T, second: E) -> Self {
         match op {
-            CmpSymbol::We => todo!(),
             CmpSymbol::Eq => Self::new(BinRelation::EQ, first, second),
             CmpSymbol::Ne => todo!(),
             CmpSymbol::Gt => Self::new(BinRelation::GT, first, second),
             CmpSymbol::Ge => todo!(),
             CmpSymbol::Lt => todo!(),
             CmpSymbol::Le => Self::new(BinRelation::LE, first, second),
+            CmpSymbol::We => Self::new(BinRelation::WE, first, second),
         }
     }
 }
@@ -84,6 +91,14 @@ impl Evaluation for BinExpress<&str, &str> {
             BinRelation::GT => self.first.len() >= self.second.len(),
             BinRelation::LE => self.first.len() < self.second.len(),
             BinRelation::LT => self.first.len() <= self.second.len(),
+            BinRelation::WE => {
+                let (patten, value) = if self.first.contains("*") || self.first.contains("?") {
+                    (WildMatch::new(self.first), self.second)
+                } else {
+                    (WildMatch::new(self.second), self.first)
+                };
+                return Ok(patten.matches(value));
+            }
         })
     }
 }
@@ -97,6 +112,14 @@ impl Evaluation for BinExpress<String, String> {
             BinRelation::GT => self.first.len() >= self.second.len(),
             BinRelation::LE => self.first.len() < self.second.len(),
             BinRelation::LT => self.first.len() <= self.second.len(),
+            BinRelation::WE => {
+                let (patten, value) = if self.first.contains("*") || self.first.contains("?") {
+                    (WildMatch::new(self.first.as_str()), self.second.as_str())
+                } else {
+                    (WildMatch::new(self.second.as_str()), self.first.as_str())
+                };
+                return Ok(patten.matches(value));
+            }
         })
     }
 }
@@ -105,6 +128,7 @@ impl Evaluation for BinExpress<u32, u32> {
     fn decide(&self, _ctx: ExecContext, _vars_dict: &VarSpace) -> DecideResult {
         Ok(match self.relation {
             BinRelation::EQ => self.first == self.second,
+            BinRelation::WE => self.first == self.second,
             BinRelation::NE => self.first != self.second,
             BinRelation::GE => self.first > self.second,
             BinRelation::GT => self.first >= self.second,
@@ -117,7 +141,7 @@ impl Evaluation for BinExpress<u32, u32> {
 impl<T, E> Evaluation for BinExpress<T, E>
 where
     T: ValueEval<E> + Debug + Clone,
-    E: PartialEq + PartialOrd,
+    E: PartialEq + PartialOrd + WildEq,
     //    A: EvalArgs,
 {
     fn decide(&self, _ctx: ExecContext, vars_dict: &VarSpace) -> DecideResult {
@@ -127,6 +151,7 @@ where
             .map_err(|e| EvalError::ValueError(format!("{:?} , e:{}", self.first.clone(), e)))?;
         match self.relation {
             BinRelation::EQ => Ok(first.eq(&self.second)),
+            BinRelation::WE => Ok(first.we(&self.second)),
             BinRelation::NE => Ok(!first.eq(&self.second)),
             BinRelation::GE => Ok(first.ge(&self.second)),
             BinRelation::GT => Ok(first.gt(&self.second)),
@@ -141,6 +166,23 @@ impl From<ParseIntError> for EvalError {
         EvalError::ParseError
     }
 }
+impl WildEq for u32 {
+    fn we(&self, other: &Self) -> bool {
+        self == other
+    }
+}
+
+impl WildEq for String {
+    fn we(&self, other: &Self) -> bool {
+        let (patten, value) = if self.contains("*") || self.contains("?") {
+            (WildMatch::new(self.as_str()), other.as_str())
+        } else {
+            (WildMatch::new(other.as_str()), self.as_str())
+        };
+        patten.matches(value)
+    }
+}
+
 pub type BEU32Moc = BinExpress<VarDef<u32, MocVarTag>, u32>;
 pub type BEStrMoc = BinExpress<VarDef<String, MocVarTag>, String>;
 pub type EVarDef = VarDef<String, EnvVarTag>;
@@ -159,6 +201,16 @@ impl Evaluation for ExpressEnum {
             ExpressEnum::MStr(x) => x.decide(ctx, args),
             ExpressEnum::EU32(x) => x.decide(ctx, args),
             ExpressEnum::EStr(x) => x.decide(ctx, args),
+        }
+    }
+}
+impl ExpressEnum {
+    pub fn relation(&self) -> &BinRelation {
+        match self {
+            ExpressEnum::MU32(x) => &x.relation,
+            ExpressEnum::MStr(x) => &x.relation,
+            ExpressEnum::EU32(x) => &x.relation,
+            ExpressEnum::EStr(x) => &x.relation,
         }
     }
 }
