@@ -54,7 +54,7 @@ mod tests {
     fn flow_test0() {
         let mut data = r#"
     flow start {
-         gx.echo { value  = "${PRJ_ROOT}/test/main.py" ; };
+         gx.echo ( value  : "${PRJ_ROOT}/test/main.py"  );
     };"#;
         let flow = run_gxl(gal_stc_flow, &mut data).assert();
         assert_eq!(data, "");
@@ -64,8 +64,8 @@ mod tests {
     fn flow_test1() {
         let mut data = r#"
     flow start {
-         gx.echo { value  = "${PRJ_ROOT}/test/main.py" ; };
-         gx.echo { value  = "${PRJ_ROOT}/test/main.py" ; };
+        gx.echo ( value  : "${PRJ_ROOT}/test/main.py"  );
+        gx.echo ( value  : "${PRJ_ROOT}/test/main.py"  );
     };"#;
         let flow = run_gxl(gal_stc_flow, &mut data).assert();
         assert_eq!(data, "");
@@ -76,7 +76,7 @@ mod tests {
         let mut data = r#"
         flow start {
              key = "value";
-             gx.echo { value  = "${PRJ_ROOT}/test/main.py" ; };
+             gx.echo ( value  : "${PRJ_ROOT}/test/main.py"  );
         };"#;
         let flow = run_gxl(gal_stc_flow, &mut data).assert();
         assert_eq!(data, "");
@@ -88,7 +88,7 @@ mod tests {
         let mut data = r#"
     #[usage(desp="test",color="red"),auto_load(entry)]
     flow start {
-         gx.echo { value  = "${PRJ_ROOT}/test/main.py" ; };
+         gx.echo ( value  : "${PRJ_ROOT}/test/main.py"  );
     };"#;
         let flow = run_gxl(gal_stc_flow, &mut data).assert();
         assert_eq!(data, "");
@@ -104,10 +104,10 @@ mod tests {
     #[use(test)]
     flow start {
          if ${VAL} == "1" {
-            gx.echo { value  = "${PRJ_ROOT}/test/main.py" ; };
+            gx.echo ( value  : "${PRJ_ROOT}/test/main.py"  );
          }
          else {
-            gx.echo { value  = "${PRJ_ROOT}/test/main.py" ; };
+            gx.echo ( value  : "${PRJ_ROOT}/test/main.py"  );
          }
     };"#;
         let flow = run_gxl(gal_stc_flow, &mut data).assert();
@@ -129,7 +129,7 @@ mod tests {
         let mut data = r#"
     #[auto_load(entry)]
     flow test: test_a,test_b : test_c, test_d {
-         gx.echo { value  = "${PRJ_ROOT}/test/main.py" ; };
+         gx.echo ( value  : "${PRJ_ROOT}/test/main.py"  );
     };"#;
         let flow = run_gxl(gal_stc_flow, &mut data).assert();
         assert_eq!(data, "");
@@ -147,15 +147,15 @@ mod tests {
     fn flow_test6() {
         let mut data = r#"
         flow x {
-            conf.tpl {
-              tpl = "${MAIN_CONF}/tpls/test.sh"  ;
-              dst = "${MAIN_CONF}/options/test.sh" ;
-              data = ^"hello"^ ;
-            };
-            os.copy {
-                src  = "${MAIN_CONF}/options/nginx.conf";
-                dst  = "${MAIN_CONF}/used/nginx_ex.conf";
-            };
+            conf.tpl (
+              tpl : "${MAIN_CONF}/tpls/test.sh"  ,
+              dst : "${MAIN_CONF}/options/test.sh" ,
+              data : ^"hello"^ ,
+            );
+            os.copy (
+                src  : "${MAIN_CONF}/options/nginx.conf",
+                dst  : "${MAIN_CONF}/used/nginx_ex.conf",
+            );
         }
             "#;
 

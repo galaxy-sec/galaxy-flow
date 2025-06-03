@@ -1,5 +1,5 @@
 use super::super::prelude::*;
-use super::common::{sentence_body, shell_opt_setting};
+use super::common::{sentence_call_args, shell_opt_setting};
 
 use crate::ability::cmd::GxCmdDtoBuilder;
 use crate::ability::GxCmd;
@@ -9,7 +9,7 @@ use crate::parser::domain::{gal_keyword, gal_keyword_alt};
 pub fn gal_cmd(input: &mut &str) -> ModalResult<GxCmd> {
     let mut builder = GxCmdDtoBuilder::default();
     gal_keyword_alt("gx.cmd", "rg.cmd", input)?;
-    let props = sentence_body.parse_next(input)?;
+    let props = sentence_call_args.parse_next(input)?;
     let mut expect = ShellOption::default();
     builder.expect(ShellOption::default());
     for one in props {
@@ -68,9 +68,9 @@ mod tests {
     fn cmd_test() {
         let expect = ShellOption::default();
         let mut data = r#"
-             gx.cmd{
-             cmd = "${PRJ_ROOT}/do.sh";
-             } ;"#;
+             gx.cmd(
+             cmd : "${PRJ_ROOT}/do.sh",
+             ) ;"#;
         let obj = gal_cmd(&mut data).assert();
         //let (input, obj) = show_err(data, RgCmdParser::default().parse(ctx, data)).unwrap();
         let xpt = GxCmdDtoBuilder::default()
@@ -86,11 +86,11 @@ mod tests {
         let mut expect = ShellOption::default();
         expect.log_lev = Some(log::Level::Info);
         let mut data = r#"
-             gx.cmd{
-             cmd = "${PRJ_ROOT}/do.sh";
-             err = "you err";
-             log = "1";
-             } ;"#;
+             gx.cmd(
+             cmd : "${PRJ_ROOT}/do.sh",
+             err : "you err",
+             log : "1",
+             ) ;"#;
         let obj = gal_cmd(&mut data).assert();
         expect.err = Some(String::from("you err"));
         let xpt = GxCmdDtoBuilder::default()
@@ -105,11 +105,11 @@ mod tests {
     #[test]
     fn cmd_test3() {
         let mut data = r#"
-            conf.tpl {
-              tpl = "${MAIN_CONF}/tpls/test.sh"  ;
-              dst = "${MAIN_CONF}/options/test.sh" ;
-              data = ^"hello"^;
-            }
+            conf.tpl (
+              tpl : "${MAIN_CONF}/tpls/test.sh"  ,
+              dst : "${MAIN_CONF}/options/test.sh" ,
+              data : ^"hello"^,
+            );
             "#;
         let _obj = run_gxl(gal_call, &mut data).assert();
         assert_eq!(data, "");
@@ -137,7 +137,7 @@ echo ${HOME};
     fn cmd_block_3() {
         let mut data = r#"
             {
-            gx.cmd { cmd = "echo ${HOME}" }
+            gx.cmd ( cmd : "echo ${HOME}" )
             ```cmd
                 cp /a /b;
                 echo ${HOME};

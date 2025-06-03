@@ -1,5 +1,5 @@
 use super::super::prelude::*;
-use super::common::sentence_body;
+use super::common::sentence_call_args;
 use std::str::FromStr;
 
 use crate::ability::tpl::TPlEngineType;
@@ -9,7 +9,7 @@ use crate::parser::domain::gal_keyword_alt;
 
 pub fn gal_tpl(input: &mut &str) -> ModalResult<GxTpl> {
     gal_keyword_alt("gx.tpl", "rg.tpl", input)?;
-    let props = sentence_body.parse_next(input)?;
+    let props = sentence_call_args.parse_next(input)?;
     let mut builder = TplDTOBuilder::default();
     for one in props {
         let key = one.0.to_lowercase();
@@ -54,10 +54,10 @@ mod tests {
         let tpl = "${PRJ_ROOT}/conf_tpl.toml";
         let dst = "${PRJ_ROOT}/conf.toml";
         let mut data = r#"
-                 gx.tpl {
-                 tpl = "${PRJ_ROOT}/conf_tpl.toml" ;
-                 dst = "${PRJ_ROOT}/conf.toml" ;
-                 } ;"#;
+                 gx.tpl (
+                 tpl : "${PRJ_ROOT}/conf_tpl.toml" ,
+                 dst : "${PRJ_ROOT}/conf.toml" ,
+                 ) ;"#;
         let mut dto = TplDTO::default();
         dto.tpl = tpl.to_string();
         dto.dst = dst.to_string();
@@ -70,11 +70,11 @@ mod tests {
         let tpl = "${PRJ_ROOT}/conf_tpl.toml";
         let dst = "${PRJ_ROOT}/conf.toml";
         let mut data = r#"
-                 gx.tpl {
-                 tpl = "${PRJ_ROOT}/conf_tpl.toml" ;
-                 dst = "${PRJ_ROOT}/conf.toml";
-                 data = ^"{"branchs": ["develop","issue/11"]} "^;
-                 } ;"#;
+                 gx.tpl (
+                 tpl : "${PRJ_ROOT}/conf_tpl.toml" ,
+                 dst : "${PRJ_ROOT}/conf.toml",
+                 data : ^"{"branchs": ["develop","issue/11"]} "^,
+                 ) ;"#;
         let obj = run_gxl(gal_tpl, &mut data).assert();
         let mut dto = TplDTO::default();
         dto.tpl = tpl.to_string();

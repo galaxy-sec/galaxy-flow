@@ -2,7 +2,8 @@ use super::prelude::*;
 use orion_parse::{
     atom::{gal_raw_string, skip_spaces_block, starts_with, take_string, take_var_name},
     symbol::{
-        symbol_assign, symbol_brace_beg, symbol_brace_end, symbol_colon, symbol_semicolon, wn_desc,
+        symbol_assign, symbol_brace_beg, symbol_brace_end, symbol_bracket_beg, symbol_bracket_end,
+        symbol_colon, symbol_semicolon, wn_desc,
     },
 };
 use winnow::combinator::{delimited, repeat, separated};
@@ -87,6 +88,45 @@ pub fn gal_var_assign(input: &mut &str) -> ModalResult<(String, String)> {
     //(multispace0, alt((symbol_comma, symbol_semicolon))).parse_next(input)?;
     Ok((key.to_string(), val.to_string()))
 }
+
+pub fn gal_var_input(input: &mut &str) -> ModalResult<(String, String)> {
+    let _ = multispace0.parse_next(input)?;
+    let key = take_while(1.., ('0'..='9', 'A'..='Z', 'a'..='z', ['_', '.']))
+        .context(wn_desc("<var-name>"))
+        .parse_next(input)?;
+    symbol_colon.parse_next(input)?;
+    let _ = multispace0.parse_next(input)?;
+    let val = alt((take_string, gal_raw_string))
+        .context(wn_desc("<var-val>"))
+        .parse_next(input)?;
+    multispace0(input)?;
+    //(multispace0, alt((symbol_comma, symbol_semicolon))).parse_next(input)?;
+    Ok((key.to_string(), val.to_string()))
+}
+
+pub fn gal_call_beg(input: &mut &str) -> ModalResult<()> {
+    skip_spaces_block
+        .context(wn_desc("<space-line>"))
+        .parse_next(input)?;
+    symbol_bracket_beg
+        .context(wn_desc("<call-beg>"))
+        .parse_next(input)?;
+    skip_spaces_block
+        .context(wn_desc("<space-line>"))
+        .parse_next(input)?;
+    Ok(())
+}
+pub fn gal_call_end(input: &mut &str) -> ModalResult<()> {
+    skip_spaces_block.parse_next(input)?;
+    symbol_bracket_end
+        .context(wn_desc("<call-end>"))
+        .parse_next(input)?;
+    skip_spaces_block.parse_next(input)?;
+    opt(symbol_semicolon).parse_next(input)?;
+    skip_spaces_block.parse_next(input)?;
+    Ok(())
+}
+
 pub fn gal_sentence_beg(input: &mut &str) -> ModalResult<()> {
     skip_spaces_block
         .context(wn_desc("<space-line>"))

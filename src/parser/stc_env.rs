@@ -1,4 +1,5 @@
 use super::{
+    domain::{gal_sentence_beg, gal_sentence_end},
     inner::{gal_read_cmd, gal_read_file, gal_read_stdin},
     prelude::*,
 };
@@ -10,7 +11,6 @@ use orion_parse::{
 use crate::components::{gxl_env::EnvItem, gxl_var::RgProp, GxlEnv};
 
 use super::{
-    domain::{gal_sentence_beg, gal_sentence_end},
     inner::{gal_prop, gal_vars},
     stc_base::{gal_ann, gal_env_head},
 };
@@ -131,11 +131,11 @@ mod tests {
     fn env_read() {
         let mut data = r#"
             env branch_auto {
-                gx.read_cmd {
-                  name = "BRANCH_ENV";
-                  cmd  = ^"git branch --show-current |  sed -E "s/(feature|develop|ver-dev|release|master|issue)(\/.*)?/_branch_\1/g" "^ ;
-                  log  = "debug";
-                  }
+                gx.read_cmd (
+                  name : "BRANCH_ENV",
+                  cmd  : ^"git branch --show-current |  sed -E "s/(feature|develop|ver-dev|release|master|issue)(\/.*)?/_branch_\1/g" "^ ,
+                  log  : "debug",
+                  )
             }
             "#;
         let _env = run_gxl(gal_stc_env, &mut data).assert();

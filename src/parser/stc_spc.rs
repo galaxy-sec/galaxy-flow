@@ -95,10 +95,10 @@ mod main{
   root = "xxx" ;
   name = "xxx" ;
   flow  api {
-    gx.echo { value = "${PRJ_ROOT}"; } ;
+    gx.echo ( value : "${PRJ_ROOT}" ) ;
   } ;
   flow admin {
-    gx.echo { value = "${PRJ_ROOT}"; } ;
+    gx.echo ( value : "${PRJ_ROOT}" ) ;
   } ;
   flow test : admin,api  ;
 };
@@ -120,10 +120,10 @@ mod main{
   root = "xxx" ;
   name = "xxx" ;
   flow  api {
-    gx.echo { value = "${PRJ_ROOT}"; } ;
+    gx.echo ( value : "${PRJ_ROOT}" ) ;
   } ;
   flow admin {
-    gx.echo { value = "${PRJ_ROOT}"; } ;
+    gx.echo ( value : "${PRJ_ROOT}" ) ;
   } ;
   flow test : admin,api  ;
 };

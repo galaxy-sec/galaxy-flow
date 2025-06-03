@@ -8,16 +8,15 @@ mod rust_cmd  {
 }
 mod rust_flow  {
   flow coverage {
-    rust_cmd.coverage { log = "1"; }
+    rust_cmd.coverage ( log : "1" );
   }
   flow lint        {
-    gx.cmd {cmd = "cargo fmt"; log = "1" ; out="true" ; }
-    //gx.cmd {cmd = "git commit -a -m 'format code'"; log = "1" ; out="true" ; expect = "[0,1,255]"; }
-    gx.cmd {cmd = "cargo fix --allow-dirty"; log = "1" ; out="true" ; }
-    gx.cmd {cmd = "cargo clippy -- -D warnings";}
+    gx.cmd (cmd : "cargo fmt", log : "1" , out:"true"  );
+    gx.cmd (cmd : "cargo fix --allow-dirty", log : "1" , out:"true"  );
+    gx.cmd (cmd : "cargo clippy -- -D warnings");
   }
    flow build {
-    gx.cmd { forword = "cargo build  ${ENV_BUILD_FLAG} ${ENV_TARGET_FLAG} " ; }
+    gx.cmd ( cmd: "cargo build  ${ENV_BUILD_FLAG} ${ENV_TARGET_FLAG} "  );
   }
 }
 

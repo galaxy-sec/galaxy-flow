@@ -1,5 +1,5 @@
 use super::super::prelude::*;
-use super::common::sentence_body;
+use super::common::sentence_call_args;
 use super::common::shell_opt_setting;
 use winnow::combinator::fail;
 
@@ -17,7 +17,7 @@ use crate::parser::domain::gal_keyword_alt;
 
 pub fn gal_read_file(input: &mut &str) -> ModalResult<GxRead> {
     gal_keyword_alt("gx.read_file", "rg.read_file", input)?;
-    let props = sentence_body.parse_next(input)?;
+    let props = sentence_call_args.parse_next(input)?;
     let mut builder = FileDTOBuilder::default();
     for one in props {
         let key = one.0.to_lowercase();
@@ -39,7 +39,7 @@ pub fn gal_read_file(input: &mut &str) -> ModalResult<GxRead> {
 }
 pub fn gal_read_stdin(input: &mut &str) -> ModalResult<GxRead> {
     gal_keyword_alt("gx.read_stdin", "rg.read_stdin", input)?;
-    let props = sentence_body.parse_next(input)?;
+    let props = sentence_call_args.parse_next(input)?;
     let mut builder = StdinDTOBuilder::default();
     for one in props {
         let key = one.0.to_lowercase();
@@ -60,7 +60,7 @@ pub fn gal_read_stdin(input: &mut &str) -> ModalResult<GxRead> {
 
 pub fn gal_read_cmd(input: &mut &str) -> ModalResult<GxRead> {
     gal_keyword("gx.read_cmd", input)?;
-    let props = sentence_body.parse_next(input)?;
+    let props = sentence_call_args.parse_next(input)?;
     let mut builder = CmdDTOBuilder::default();
     let mut sh_opt = ShellOption::default();
     builder.expect(sh_opt.clone());
@@ -104,10 +104,10 @@ mod tests {
         dto.cmd = format!("echo galaxy-1.0");
         dto.name = format!("RG");
         let mut data = r#"
-                 gx.read_cmd {
-                 name = "RG";
-                 cmd  = "echo galaxy-1.0";
-                 } ;"#;
+                 gx.read_cmd (
+                 name : "RG",
+                 cmd  : "echo galaxy-1.0",
+                 ) ;"#;
         let obj = run_gxl(gal_read_cmd, &mut data).assert();
         assert_eq!(data, "");
         assert_eq!(&ReadMode::from(dto), obj.imp());
@@ -123,12 +123,12 @@ mod tests {
         dto.expect.err = Some(format!("you err"));
 
         let mut data = r#"
-                 gx.read_cmd{
-                 name = "RG";
-                 cmd  = "echo galaxy-1.0";
-                 err = "you err";
-                 log = "1";
-                 } ;"#;
+                 gx.read_cmd(
+                 name : "RG",
+                 cmd  : "echo galaxy-1.0",
+                 err : "you err",
+                 log : "1",
+                 ) ;"#;
 
         let obj = run_gxl(gal_read_cmd, &mut data).assert();
         assert_eq!(data, "");
@@ -140,9 +140,9 @@ mod tests {
         dto.file = format!("vars.ini");
 
         let mut data = r#"
-                 gx.read_file {
-                 file = "vars.ini";
-                 } ;"#;
+                 gx.read_file (
+                 file : "vars.ini"
+                 ) ;"#;
         let obj = run_gxl(gal_read_file, &mut data).assert();
         assert_eq!(data, "");
         assert_eq!(&ReadMode::from(dto), obj.imp());
@@ -155,10 +155,10 @@ mod tests {
         dto.prompt = format!("please input you name");
 
         let mut data = r#"
-                 gx.read_stdin {
-                 prompt = "please input you name";
-                 name  = "name";
-                 } ;"#;
+                 gx.read_stdin (
+                 prompt : "please input you name",
+                 name  : "name",
+                 ) ;"#;
 
         let obj = run_gxl(gal_read_stdin, &mut data).assert();
         assert_eq!(data, "");

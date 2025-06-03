@@ -1,6 +1,6 @@
 mod git {
   flow tag_ver  {
-    gx.ver { file = "${ENV_ROOT}/version.txt" ;  inc = "null" ; }
+    gx.ver { file = "${ENV_ROOT}/version.txt" ;  inc : "null" ; }
     gx.cmd { forword = "git tag ${VERSION}" ; }
     gx.cmd { forword = "git push --tags" ; }
   }

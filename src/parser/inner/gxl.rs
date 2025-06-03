@@ -1,5 +1,5 @@
 use super::super::prelude::*;
-use super::common::sentence_body;
+use super::common::sentence_call_args;
 
 use crate::{
     ability::{gxl::GxRunBuilder, GxRun},
@@ -9,7 +9,7 @@ use crate::{
 pub fn gal_run(input: &mut &str) -> ModalResult<GxRun> {
     let mut builder = GxRunBuilder::default();
     gal_keyword("gx.run", input)?;
-    let props = sentence_body.parse_next(input)?;
+    let props = sentence_call_args.parse_next(input)?;
     builder.gxl_path("./_gal/work.gxl".into());
     for one in props {
         let key = one.0.to_lowercase();
@@ -46,7 +46,7 @@ mod tests {
     fn cmd_test() {
         once_init_log();
         let mut data = r#"
-             gx.run { local = "${PRJ_ROOT}"; env = "dev" ; flow = "conf,test" } ;"#;
+             gx.run ( local : "${PRJ_ROOT}", env : "dev" , flow : "conf,test" ) ;"#;
         let obj = gal_run(&mut data).assert();
         assert_eq!(obj.env_conf(), "dev");
         assert_eq!(obj.env_conf(), "dev");

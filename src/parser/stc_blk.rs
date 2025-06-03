@@ -198,10 +198,10 @@ mod tests {
     fn test_block_1() {
         let mut data = r#"
         {
-             gx.echo { value  = "${PRJ_ROOT}/test/main.py" ; };
-             gx.echo { value  = "${PRJ_ROOT}/test/main.py" ; };
+             gx.echo ( value  : "${PRJ_ROOT}/test/main.py"  );
+             gx.echo ( value  : "${PRJ_ROOT}/test/main.py"  );
 
-             gx.assert { value = "hello" ; expect = "hello" ; err = "errinfo";} ;
+             gx.assert ( value : "hello" , expect : "hello" , err : "errinfo") ;
         }"#;
         let blk = run_gxl(gal_block, &mut data).assert();
         assert_eq!(blk.items().len(), 3);
@@ -212,7 +212,7 @@ mod tests {
     fn test_block_if() {
         let mut data = r#"
             if ${val} == "1" {
-                gx.echo { value  = "${PRJ_ROOT}/test/main.py" ; };
+                gx.echo ( value  : "${PRJ_ROOT}/test/main.py"  );
              }"#;
         let _ = run_gxl(gal_cond, &mut data).assert();
         //assert_eq!(blk.items().len(), 1);
@@ -220,22 +220,22 @@ mod tests {
 
         let mut data = r#"
             if ${val} == "1" {
-                gx.echo { value  = "${PRJ_ROOT}/test/main.py" ; };
+                gx.echo ( value  : "${PRJ_ROOT}/test/main.py"  );
              }
              else {
-                gx.echo { value  = "${PRJ_ROOT}/test/main.py" ; };
+                gx.echo ( value  : "${PRJ_ROOT}/test/main.py"  );
              }"#;
         let _ = run_gxl(gal_cond, &mut data).assert();
         assert_eq!(data, "");
 
         let mut data = r#"
             if ${val} == "1" {
-                gx.echo { value  = "${PRJ_ROOT}/test/main.py" ; };
+                gx.echo ( value  : "${PRJ_ROOT}/test/main.py"  );
              } else if ${val} == "2" {
-                gx.echo { value  = "${PRJ_ROOT}/test/main.py" ; };
+                gx.echo ( value  : "${PRJ_ROOT}/test/main.py"  );
              }
              else {
-                gx.echo { value  = "${PRJ_ROOT}/test/main.py" ; };
+                gx.echo ( value  : "${PRJ_ROOT}/test/main.py"  );
              }"#;
         let _ = run_gxl(gal_cond, &mut data).assert();
         assert_eq!(data, "");
@@ -245,10 +245,10 @@ mod tests {
         let mut data = r#"
         {
             if ${val} == "1" {
-                gx.echo { value  = "${PRJ_ROOT}/test/main.py" ; };
+                gx.echo ( value  : "${PRJ_ROOT}/test/main.py"  );
              }
              else {
-                gx.echo { value  = "${PRJ_ROOT}/test/main.py" ; };
+                gx.echo ( value  : "${PRJ_ROOT}/test/main.py"  );
              }
         }"#;
         let _ = run_gxl(gal_block, &mut data).assert();
@@ -259,7 +259,7 @@ mod tests {
     fn test_for() {
         let mut data = r#"
             for  ${CUR} in ${DATA} {
-                gx.echo { value  = "${cur}/test/main.py" ; };
+                gx.echo ( value  : "${cur}/test/main.py"  );
              }
         "#;
         let _ = run_gxl(gal_loop, &mut data).assert();
@@ -271,7 +271,7 @@ mod tests {
             {
             if ${val} == "1" {
                 for  ${CUR} in ${DATA} {
-                    gx.echo { value  = "${cur}/test/main.py" ; };
+                    gx.echo ( value  : "${cur}/test/main.py"  );
                 }
              }
              }
@@ -284,7 +284,7 @@ mod tests {
         let mut data = r#"
             if ${val} =* "hello*" {
                 for  ${CUR} in ${DATA} {
-                    gx.echo { value  = "${cur}/test/main.py" ; };
+                    gx.echo ( value  : "${cur}/test/main.py"  );
                 }
              }
         "#;

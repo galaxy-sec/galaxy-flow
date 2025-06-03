@@ -27,7 +27,7 @@ mod main   {
     #[auto_load(entry)]
     flow __into  {
         DIST_REPO = "unkonw";
-        gx.echo { value= "${GXL_OS_SYS}" }
+        gx.echo ( value: "${GXL_OS_SYS}" )
         if ${GXL_OS_SYS} =* "arm64_macos_*" {
             DIST_REPO = "macos";
         } else if ${GXL_OS_SYS} =* "x86_64_ubuntu*" {
@@ -40,44 +40,44 @@ mod main   {
     }
     flow conf  {
 
-      gx.echo { value="${ENV_PRJ_KEY}"; }
-      gx.echo { value="PRJ_BINS: ${MAIN_PRJ_BINS} "; }
-      gx.echo { value="USR_BIN : ${MAIN_USR_BINS} "; }
-      gx.echo { value="GXL_OS_SYS: ${GXL_OS_SYS} "; }
+      gx.echo ( value:"${ENV_PRJ_KEY}" );
+      gx.echo ( value:"PRJ_BINS: ${MAIN_PRJ_BINS} " );
+      gx.echo ( value:"USR_BIN : ${MAIN_USR_BINS} " );
+      gx.echo ( value:"GXL_OS_SYS: ${GXL_OS_SYS} " );
 
-      gx.echo { value= "ENV_BUILD_FLAG :  ${ENV_BUILD_FLAG}  " }
-      gx.echo { value= "ENV_TARGET_FLAG : ${ENV_TARGET_FLAG} " }
-      os.path { dst =  "${ENV_RUN}";  }
+      gx.echo ( value: "ENV_BUILD_FLAG :  ${ENV_BUILD_FLAG}  " );
+      gx.echo ( value: "ENV_TARGET_FLAG : ${ENV_TARGET_FLAG} " );
+      os.path ( dst :  "${ENV_RUN}"  );
     }
 
 
   #[usage(desp="use project cargo conf")]
   flow cargo_env {
-    gx.cmd  { cmd = "cp -f build/cargo.conf $CARGO_HOME/config"; }
+    gx.cmd  ( cmd : "cp -f build/cargo.conf $CARGO_HOME/config" );
   }
   flow coverage : rust_flow.coverage ;
 
   #[usage(desp="build system")]
   flow build: ver.use ,conf , rust_flow.build : pub_local {
-      os.path { dst = "${MAIN_USR_BINS}"; }
-      os.path { dst = "${MAIN_PRJ_BINS}"; }
+      os.path ( dst : "${MAIN_USR_BINS}" );
+      os.path ( dst : "${MAIN_PRJ_BINS}" );
   }
   #[usage(desp="lint code")]
   flow lint : rust_flow.lint {} ;
   flow test : build : {
-    gx.cmd {cmd = "cargo test --all ${ENV_BUILD_FLAG}", log = "1" , out="true" ; }
+    gx.cmd (cmd : "cargo test --all ${ENV_BUILD_FLAG}", log : "1" , out:"true"  );
   }
   flow sys_test : main.build : {
-    gx.cmd {cmd = "cargo test --test sys_tests  --all-features  ${ENV_BUILD_FLAG}"; log = "1" ; out="true" ; }
+    gx.cmd (cmd : "cargo test --test sys_tests  --all-features  ${ENV_BUILD_FLAG}", log : "1" , out:"true"  );
   }
 
   flow pub_local   {
 
-    os.path { dst = "${MAIN_USR_BINS}"; }
-    os.path { dst = "${MAIN_PRJ_BINS}"; }
-    gx.cmd  { cmd = "rm -f ${MAIN_PRJ_BINS}/r*" ; }
-    gx.cmd { cmd = "cp ${MAIN_BLD_BINS}/g* ${MAIN_PRJ_BINS}/" ; }
-    gx.cmd { cmd = "cp ${MAIN_PRJ_BINS}/g* ${MAIN_USR_BINS}/" ; }
+    os.path ( dst : "${MAIN_USR_BINS}" );
+    os.path ( dst : "${MAIN_PRJ_BINS}" );
+    gx.cmd  ( cmd : "rm -f ${MAIN_PRJ_BINS}/r*"  );
+    gx.cmd ( cmd : "cp ${MAIN_BLD_BINS}/g* ${MAIN_PRJ_BINS}/"  );
+    gx.cmd ( cmd : "cp ${MAIN_PRJ_BINS}/g* ${MAIN_USR_BINS}/"  );
   }
   flow _pub_gsys: : _pub_dysec {
     UP_TARGET = "gsys";
@@ -94,14 +94,14 @@ mod main   {
   flow pub_dysec  : _pub_gflow,_pub_gprj,_pub_gmod,_pub_gsys ;
 
   flow _pub_dysec :ver.use {
-    gx.echo { value = "pub ${UP_TARGET} to dysec " }
-    gx.upload {
-        url = "https://dy-sec-generic.pkg.coding.net/galaxy-open/${DIST_REPO}/${UP_TARGET}?version=${VERSION}",
-        username = "${SEC_GFLOW_LOGIN}",
-        method = "PUT",
-        password = "${SEC_GFLOW_PASSWORD}",
-        local_file = "./${MAIN_BLD_BINS}/${UP_TARGET}"
-    }
+    gx.echo ( value : "pub ${UP_TARGET} to dysec " );
+    gx.upload (
+        url : "https://dy-sec-generic.pkg.coding.net/galaxy-open/${DIST_REPO}/${UP_TARGET}?version=${VERSION}",
+        username : "${SEC_GFLOW_LOGIN}",
+        method : "PUT",
+        password : "${SEC_GFLOW_PASSWORD}",
+        local_file : "./${MAIN_BLD_BINS}/${UP_TARGET}"
+    );
   }
 
 }

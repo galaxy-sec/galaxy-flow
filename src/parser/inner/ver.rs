@@ -1,5 +1,5 @@
 use super::super::prelude::*;
-use super::common::sentence_body;
+use super::common::sentence_call_args;
 use winnow::combinator::fail;
 
 use crate::ability::echo::*;
@@ -9,7 +9,7 @@ use crate::parser::domain::gal_keyword_alt;
 pub fn gal_echo(input: &mut &str) -> ModalResult<GxEcho> {
     let mut watcher = GxEcho::default();
     gal_keyword_alt("gx.echo", "rg.echo", input)?;
-    let props = sentence_body.parse_next(input)?;
+    let props = sentence_call_args.parse_next(input)?;
     for (k, v) in props {
         if k == "value" {
             watcher.set(v.as_str());
@@ -23,7 +23,7 @@ pub fn gal_version(input: &mut &str) -> ModalResult<RgVersion> {
     builder.verinc(VerInc::Build);
     builder.export("VERSION".into());
     gal_keyword_alt("gx.ver", "rg.ver", input)?;
-    let props = sentence_body.parse_next(input)?;
+    let props = sentence_call_args.parse_next(input)?;
     for (key, val) in props {
         if key == "file" {
             builder.file(val);
@@ -69,7 +69,7 @@ mod tests {
     #[test]
     fn echo_test() -> ModalResult<()> {
         let mut data = r#"
-             gx.echo { value = "${PRJ_ROOT}/test/main.py" ; } ;"#;
+             gx.echo ( value : "${PRJ_ROOT}/test/main.py" ) ;"#;
         let found = run_gxl(gal_echo, &mut data)?;
         let mut expect = GxEcho::default();
         expect.set(r#"${PRJ_ROOT}/test/main.py"#);
@@ -80,7 +80,7 @@ mod tests {
     #[test]
     fn ver_test() {
         let mut data = r#"
-             gx.ver  { file = "./tests/version.txt";  inc = "build" ; } ;"#;
+             gx.ver  ( file : "./tests/version.txt",  inc : "build"  ) ;"#;
         let found = gal_version(&mut data).unwrap();
         let expect = RgVersion::new(format!("./tests/version.txt"));
         assert_eq!(found, expect);
