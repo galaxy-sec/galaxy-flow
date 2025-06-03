@@ -33,13 +33,13 @@ where
             self.true_block.cond_exec(ctx, def).await
         } else {
             for cond in &self.elseif_blocks {
-                if let Ok((vars,out)) = cond.cond.cond_exec(ctx.clone(), def.clone()).await {
+                if let Ok((vars, out)) = cond.cond.cond_exec(ctx.clone(), def.clone()).await {
                     if out != ExecOut::Ignore {
-                        return Ok((vars,out));
+                        return Ok((vars, out));
                     }
                 }
             }
-            if let Some(false_cond ) = self.false_block.as_ref() {
+            if let Some(false_cond) = self.false_block.as_ref() {
                 return false_cond.cond_exec(ctx, def).await;
             }
             Ok((def, ExecOut::Ignore))
@@ -88,7 +88,7 @@ mod tests {
                 out: ExecOut::Code(0),
             },
             Vec::new(),
-            Some( StuBlock {
+            Some(StuBlock {
                 out: ExecOut::Code(1),
             }),
         );
@@ -99,7 +99,7 @@ mod tests {
             Ok((VarSpace::default(), ExecOut::Code(0)))
         );
     }
-    
+
     #[tokio::test]
     async fn test_elseif_blocks() {
         let ctrl_express = IFExpress::new(
@@ -128,7 +128,7 @@ mod tests {
             Ok((VarSpace::default(), ExecOut::Code(1)))
         );
     }
-    
+
     #[tokio::test]
     async fn test_false_block() {
         let ctrl_express = IFExpress::new(
