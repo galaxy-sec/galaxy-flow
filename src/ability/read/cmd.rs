@@ -12,9 +12,9 @@ pub struct CmdDTO {
 }
 
 impl CmdDTO {
-    pub fn execute(&self, mut ctx: ExecContext, mut def: VarSpace) -> VTResult {
+    pub fn execute(&self, mut ctx: ExecContext, mut vars_dict: VarSpace) -> VTResult {
         ctx.append("gx.read_cmd");
-        let exp = EnvExpress::from_env_mix(def.globle().clone());
+        let exp = EnvExpress::from_env_mix(vars_dict.globle().clone());
         let cmd = self.cmd.clone();
         let name = self.name.clone();
         let cmd = exp.eval(&cmd)?;
@@ -23,8 +23,8 @@ impl CmdDTO {
             .map_err(|msg| ExecReason::Exp(format!("bad result {}", msg)))?;
         let mut vars = RgVars::default();
         vars.append(RgProp::new(name, data_str.trim().to_string()));
-        vars.export_props(ctx, def.globle_mut(), "")?;
-        Ok((def, ExecOut::Ignore))
+        vars.export_props(ctx, vars_dict.globle_mut(), "")?;
+        Ok((vars_dict, ExecOut::Ignore))
     }
 }
 

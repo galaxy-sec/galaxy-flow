@@ -65,9 +65,9 @@ impl FileDTO {
         vars.export_props(ctx, &mut dict, "")?;
         Ok(dict)
     }
-    pub fn execute(&self, mut ctx: ExecContext, mut def: VarSpace) -> VTResult {
+    pub fn execute(&self, mut ctx: ExecContext, mut vars_dict: VarSpace) -> VTResult {
         ctx.append("gx.read_file");
-        let exp = EnvExpress::from_env_mix(def.globle().clone());
+        let exp = EnvExpress::from_env_mix(vars_dict.globle().clone());
         let file = self.file.clone();
         let file_path = PathBuf::from(exp.eval(&file)?);
         let mut cur_dict = if file_path.extension() == PathBuf::from("*.ini").extension() {
@@ -82,11 +82,11 @@ impl FileDTO {
         };
         if let Some(name) = &self.name {
             cur_dict.set_name(name);
-            def.nameds_mut().insert(name.clone(), cur_dict);
+            vars_dict.nameds_mut().insert(name.clone(), cur_dict);
         } else {
-            def.globle_mut().merge_dict(cur_dict);
+            vars_dict.globle_mut().merge_dict(cur_dict);
         }
-        Ok((def, ExecOut::Ignore))
+        Ok((vars_dict, ExecOut::Ignore))
     }
 
     fn impl_toml_mlist(&self, _ctx: ExecContext, file_path: &Path) -> ExecResult<VarDict> {

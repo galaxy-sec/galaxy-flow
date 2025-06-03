@@ -10,16 +10,16 @@ pub struct GxCmdDto {
     pub expect: ShellOption,
 }
 impl GxCmdDto {
-    pub fn update(&mut self, def: &VarSpace) -> ExecResult<()> {
-        let ee = EnvExpress::from_env_mix(def.globle().clone());
+    pub fn update(&mut self, vars_dict: &VarSpace) -> ExecResult<()> {
+        let ee = EnvExpress::from_env_mix(vars_dict.globle().clone());
         self.cmd = ee.eval(&self.cmd)?;
         Ok(())
     }
 }
 #[async_trait]
 impl AsyncRunnableTrait for GxCmd {
-    async fn async_exec(&self, ctx: ExecContext, def: VarSpace) -> VTResult {
-        self.execute_impl(&self.dto.cmd, ctx, def)
+    async fn async_exec(&self, ctx: ExecContext, vars_dict: VarSpace) -> VTResult {
+        self.execute_impl(&self.dto.cmd, ctx, vars_dict)
     }
 }
 impl ComponentMeta for GxCmd {
@@ -39,11 +39,11 @@ impl GxCmd {
     pub fn dto_new(dto: GxCmdDto) -> Self {
         GxCmd { dto }
     }
-    fn execute_impl(&self, cmd: &String, mut ctx: ExecContext, def: VarSpace) -> VTResult {
+    fn execute_impl(&self, cmd: &String, mut ctx: ExecContext, vars_dict: VarSpace) -> VTResult {
         ctx.append("gx.cmd");
         let mut task = Task::from("gx.cmd");
         trace!(target:ctx.path(),"cmd:{}", cmd);
-        let exp = EnvExpress::from_env_mix(def.globle().clone());
+        let exp = EnvExpress::from_env_mix(vars_dict.globle().clone());
         //let exe_cmd = ee.parse(cmd)?;
 
         let mut expect = self.dto.expect.clone();
@@ -56,7 +56,7 @@ impl GxCmd {
             &exp
         )?;
         task.finish();
-        Ok((def, ExecOut::Task(task)))
+        Ok((vars_dict, ExecOut::Task(task)))
     }
 }
 

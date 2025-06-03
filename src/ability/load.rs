@@ -30,8 +30,8 @@ pub struct GxDownLoad {
 
 #[async_trait]
 impl AsyncRunnableTrait for GxUpLoad {
-    async fn async_exec(&self, _ctx: ExecContext, def: VarSpace) -> VTResult {
-        let ex = EnvExpress::from_env_mix(def.globle().clone());
+    async fn async_exec(&self, _ctx: ExecContext, vars_dict: VarSpace) -> VTResult {
+        let ex = EnvExpress::from_env_mix(vars_dict.globle().clone());
         let mut addr = HttpAddr::from(ex.eval(self.svc_url())?);
         if let (Some(username), Some(password)) = (self.username(), self.password()) {
             let username = ex.eval(username)?;
@@ -45,7 +45,7 @@ impl AsyncRunnableTrait for GxUpLoad {
         if local_file_path.exists() {
             addr.upload(&local_file_path, &method).await.err_conv()?;
             task.finish();
-            Ok((def, ExecOut::Task(task)))
+            Ok((vars_dict, ExecOut::Task(task)))
         } else {
             return ExecReason::Miss("local_file".into())
                 .err_result()
@@ -63,8 +63,8 @@ impl ComponentMeta for GxUpLoad {
 
 #[async_trait]
 impl AsyncRunnableTrait for GxDownLoad {
-    async fn async_exec(&self, _ctx: ExecContext, def: VarSpace) -> VTResult {
-        let ex = EnvExpress::from_env_mix(def.globle().clone());
+    async fn async_exec(&self, _ctx: ExecContext, vars_dict: VarSpace) -> VTResult {
+        let ex = EnvExpress::from_env_mix(vars_dict.globle().clone());
         let mut addr = HttpAddr::from(ex.eval(self.svc_url())?);
         if let (Some(username), Some(password)) = (self.username(), self.password()) {
             let username = ex.eval(username)?;
@@ -77,7 +77,7 @@ impl AsyncRunnableTrait for GxDownLoad {
         if let Some(true) = local_file_path.parent().map(|x| x.exists()) {
             addr.download(&local_file_path).await.err_conv()?;
             task.finish();
-            Ok((def, ExecOut::Task(task)))
+            Ok((vars_dict, ExecOut::Task(task)))
         } else {
             return ExecReason::Miss("local_file_parent".into())
                 .err_result()

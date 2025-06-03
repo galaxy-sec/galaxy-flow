@@ -120,10 +120,10 @@ where
     E: PartialEq + PartialOrd,
     //    A: EvalArgs,
 {
-    fn decide(&self, _ctx: ExecContext, _args: &VarSpace) -> DecideResult {
+    fn decide(&self, _ctx: ExecContext, vars_dict: &VarSpace) -> DecideResult {
         let first = self
             .first
-            .eval(&_args)
+            .eval(vars_dict)
             .map_err(|e| EvalError::ValueError(format!("{:?} , e:{}", self.first.clone(), e)))?;
         match self.relation {
             BinRelation::EQ => Ok(first.eq(&self.second)),

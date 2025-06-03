@@ -12,9 +12,9 @@ pub struct StdinDTO {
 }
 
 impl StdinDTO {
-    pub fn execute(&self, mut ctx: ExecContext, mut def: VarSpace) -> VTResult {
+    pub fn execute(&self, mut ctx: ExecContext, mut vars_dict: VarSpace) -> VTResult {
         ctx.append("gx.read_ini");
-        let exp = EnvExpress::from_env_mix(def.globle().clone());
+        let exp = EnvExpress::from_env_mix(vars_dict.globle().clone());
         let msg = self.prompt.clone();
         let name = self.name.clone();
         let msg = exp.eval(&msg)?;
@@ -24,8 +24,8 @@ impl StdinDTO {
         stdin.read_line(&mut buffer).owe_data()?;
         let mut vars = RgVars::default();
         vars.append(RgProp::new(name, buffer.trim().to_string()));
-        vars.export_props(ctx, def.globle_mut(), "")?;
-        Ok((def, ExecOut::Ignore))
+        vars.export_props(ctx, vars_dict.globle_mut(), "")?;
+        Ok((vars_dict, ExecOut::Ignore))
     }
 }
 

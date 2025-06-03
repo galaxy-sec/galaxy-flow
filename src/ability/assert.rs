@@ -30,9 +30,9 @@ impl GxAssert {
 
 #[async_trait]
 impl AsyncRunnableTrait for GxAssert {
-    async fn async_exec(&self, mut ctx: ExecContext, def: VarSpace) -> VTResult {
+    async fn async_exec(&self, mut ctx: ExecContext, vars_dict: VarSpace) -> VTResult {
         ctx.append("assert");
-        let exp = EnvExpress::from_env_mix(def.globle().clone());
+        let exp = EnvExpress::from_env_mix(vars_dict.globle().clone());
         let value = exp.eval(&self.value)?;
         let expect = exp.eval(&self.expect)?;
         debug!(target: ctx.path(), "value  {} :{}", &self.value, value);
@@ -55,7 +55,7 @@ impl AsyncRunnableTrait for GxAssert {
             println!("assert true : {}", value);
         }
         info!(target: ctx.path(), "value {} match exprect", value);
-        Ok((def, ExecOut::Ignore))
+        Ok((vars_dict, ExecOut::Ignore))
     }
 }
 impl ComponentMeta for GxAssert {

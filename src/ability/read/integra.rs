@@ -25,8 +25,8 @@ pub enum ReadMode {
 
 #[async_trait]
 impl AsyncRunnableTrait for GxRead {
-    async fn async_exec(&self, ctx: ExecContext, def: VarSpace) -> VTResult {
-        self.execute_impl(ctx, def)
+    async fn async_exec(&self, ctx: ExecContext, vars_dict: VarSpace) -> VTResult {
+        self.execute_impl(ctx, vars_dict)
     }
 }
 

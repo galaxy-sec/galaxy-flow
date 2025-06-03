@@ -29,10 +29,10 @@ impl GxRun {
 }
 #[async_trait]
 impl AsyncRunnableTrait for GxRun {
-    async fn async_exec(&self, mut ctx: ExecContext, def: VarSpace) -> VTResult {
+    async fn async_exec(&self, mut ctx: ExecContext, vars_dict: VarSpace) -> VTResult {
         ctx.append("gx.run");
         let mut task = Task::from("gx.run");
-        let exp = EnvExpress::from_env_mix(def.globle().clone());
+        let exp = EnvExpress::from_env_mix(vars_dict.globle().clone());
         let cmd = GxlCmd {
             env: exp.eval(&self.env_conf)?,
             flow: self.flow_cmd.clone(),
@@ -48,7 +48,7 @@ impl AsyncRunnableTrait for GxRun {
         debug!(target:ctx.path(), "{:#?}", cmd);
         GxlRunner::run(cmd).await.err_conv()?;
         task.finish();
-        Ok((def, ExecOut::Task(task)))
+        Ok((vars_dict, ExecOut::Task(task)))
     }
 }
 impl ComponentMeta for GxRun {

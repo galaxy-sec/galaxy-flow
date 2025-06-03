@@ -22,8 +22,8 @@ pub struct GxArtifact {
 
 #[async_trait]
 impl AsyncRunnableTrait for GxArtifact {
-    async fn async_exec(&self, ctx: ExecContext, def: VarSpace) -> VTResult {
-        let exp = EnvExpress::from_env_mix(def.globle().clone());
+    async fn async_exec(&self, ctx: ExecContext, vars_dict: VarSpace) -> VTResult {
+        let exp = EnvExpress::from_env_mix(vars_dict.globle().clone());
         let pkg_file = exp.eval(self.pkg_file())?;
         let dst_file = exp.eval(self.dst_path())?;
         info!(target: ctx.path(), "task_file :{} ", pkg_file);
@@ -41,7 +41,7 @@ impl AsyncRunnableTrait for GxArtifact {
                 .err_conv()?;
         }
 
-        Ok((def, ExecOut::Ignore))
+        Ok((vars_dict, ExecOut::Ignore))
     }
 }
 
