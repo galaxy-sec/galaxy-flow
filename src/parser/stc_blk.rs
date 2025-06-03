@@ -5,6 +5,7 @@ use orion_parse::atom::take_env_var;
 use orion_parse::symbol::symbol_cmp;
 use winnow::combinator::repeat;
 
+use crate::ability::prelude::RgProp;
 use crate::calculate::cond::IFExpress;
 use crate::calculate::express::{BinExpress, EVarDef, ExpressEnum};
 use crate::components::gxl_block::{BlockAction, BlockNode};
@@ -14,7 +15,7 @@ use crate::components::gxl_loop::GxlLoop;
 use super::atom::spaced;
 use super::domain::{gal_block_beg, gal_block_end, gal_keyword};
 use super::inner::{
-    gal_artifact, gal_assert, gal_call, gal_cmd, gal_download, gal_echo, gal_read_cmd,
+    gal_artifact, gal_assert, gal_call, gal_cmd, gal_download, gal_echo, gal_prop, gal_read_cmd,
     gal_read_file, gal_read_stdin, gal_tpl, gal_upload, gal_version,
 };
 
@@ -23,12 +24,16 @@ pub fn gal_block(input: &mut &str) -> ModalResult<BlockNode> {
     gal_block_beg
         .context(wn_desc("<block-beg>"))
         .parse_next(input)?;
-    let sentens: Vec<BlockAction> = repeat(1.., gal_sentens_item)
+    let props: Vec<RgProp> = repeat(0.., gal_prop).parse_next(input)?;
+    let sentens: Vec<BlockAction> = repeat(0.., gal_sentens_item)
         .context(wn_desc("<sentens>"))
         .parse_next(input)?;
     gal_block_end
         .context(wn_desc("<block-end>"))
         .parse_next(input)?;
+    for i in props {
+        block.append(i);
+    }
     block.append(sentens);
     Ok(block)
 }

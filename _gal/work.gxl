@@ -1,7 +1,16 @@
 extern mod head { path = "./_gal/"; }
 
+mod auto_env {
+    env x86_64_ubuntu_24{
+        DIST_REPO = "ubuntu" ;
+    }
+    env arm64_macos_15 {
+        DIST_REPO = "macos" ;
+    }
+
+}
 mod env  {
-   env _common  : rust_env.init ,rust_env.release  {
+   env _common  : rust_env.init ,rust_env.release   {
     sudo      = "false";
     root      = ".";
     run       = "./run";
@@ -41,12 +50,14 @@ mod main   {
 
     #[auto_load(entry)]
     flow __into  {
-      //bld_bins = "target/${ENV_BUILD_NAME}" ;
-      //prj_bins = "${ENV_ROOT}/bin" ;
-      //usr_bins = "${HOME}/bin" ;
+        if ${GXL_OS_SYS} == "arm64_macos_15" {
+            user_bins2 = "2";
+            gx.echo { value="${ENV_PRJ_KEY}"; }
+        }
 
     }
     flow conf  {
+
       gx.echo { value="${ENV_PRJ_KEY}"; }
       gx.echo { value="PRJ_BINS: ${MAIN_PRJ_BINS} "; }
       gx.echo { value="USR_BIN : ${MAIN_USR_BINS} "; }

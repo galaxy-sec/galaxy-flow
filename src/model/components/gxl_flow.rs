@@ -23,7 +23,7 @@ pub struct RgIntercept {
 #[derive(Clone, Getters, Debug)]
 pub struct GxlFlow {
     meta: GxlMeta,
-    props: Vec<RgProp>,
+    //props: Vec<RgProp>,
     pre_flows: Vec<FlowRunner>,
     post_flows: Vec<FlowRunner>,
     blocks: Vec<BlockNode>,

@@ -3,6 +3,7 @@ use winnow::combinator::repeat;
 use super::{
     domain::{gal_block_beg, gal_block_end},
     prelude::*,
+    stc_blk::gal_block,
 };
 
 use crate::{
@@ -26,6 +27,9 @@ pub fn gal_stc_flow_body(input: &mut &str) -> ModalResult<GxlFlow> {
     let mut obj = GxlFlow::from(meta);
     multispace0.parse_next(input)?;
     if !starts_with(";", input) {
+        let block = gal_block.parse_next(input)?;
+        obj.append(block);
+        /*
         gal_block_beg.parse_next(input)?;
         let props: Vec<RgProp> = repeat(0.., gal_prop).parse_next(input)?;
         let sentens = gal_block_code
@@ -36,6 +40,7 @@ pub fn gal_stc_flow_body(input: &mut &str) -> ModalResult<GxlFlow> {
             obj.append(i);
         }
         obj.append(sentens);
+        */
     }
     let _ = opt(symbol_semicolon).parse_next(input)?;
     Ok(obj)
