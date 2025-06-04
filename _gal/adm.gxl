@@ -20,12 +20,12 @@ mod main :  {
 
   #[usage(desp="update version to crates cargo.toml ")]
   flow _ver_app: ver.use {
-    gx.echo ( cmd : " up version: ${VERSION} to cargo.toml" );
-    gx.cmd ( cmd : "cargo semver set ${VERSION}" );
+    gx.echo (  " up version: ${VERSION} to cargo.toml" );
+    gx.cmd (  "cargo semver set ${VERSION}" );
   }
   #[usage(desp="setup run depends")]
   flow setup_depends {
-    gx.cmd ( cmd : "cargo install cargo-semver --vers 1.0.0-alpha.3" );
+    gx.cmd (  "cargo install cargo-semver --vers 1.0.0-alpha.3" );
   }
 
 
