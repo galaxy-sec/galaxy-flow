@@ -180,9 +180,9 @@ pub fn take_env_var(data: &mut &str) -> ModalResult<String> {
 //eg:  ^"hello"^ , ^"hell"0"^
 pub fn gal_raw_string(data: &mut &str) -> ModalResult<String> {
     delimited(
-        "^\"",
-        take_until(0.., "\"^"),
-        "\"^".context(wn_desc("<raw-end>")),
+        "r#\"",
+        take_until(0.., "\"#"),
+        "\"#".context(wn_desc("<raw-end>")),
     )
     .context(StrContext::Label("<raw string>"))
     .parse_next(data)
@@ -288,28 +288,29 @@ mod tests {
     #[test]
     fn test_gal_raw_string() {
         // 测试普通原始字符串
-        let mut input = r#"^"hello"^"#;
+        let mut input = "r#\"hello\"#";
         assert_eq!(gal_raw_string(&mut input), Ok("hello".to_string()));
         println!("{}", input);
 
         // 测试包含特殊字符的原始字符串
-        let mut input = r#"^"hell\"0"^"#;
+        let mut input = "r#\"hell\\\"0\"#";
         let t_out = gal_raw_string(&mut input);
         println!("{}", input);
         assert_eq!(t_out, Ok(r#"hell\"0"#.to_string()));
 
         // 测试空字符串
-        let mut input = r#"^""^"#;
+        let mut input = "r#\"\"#";
         assert_eq!(gal_raw_string(&mut input), Ok("".to_string()));
 
         // 测试无效输入（缺少结尾标记）
-        let mut input = r#"^"hello"#;
+        let mut input = r#"r#"hello"#;
         assert!(gal_raw_string(&mut input).is_err());
         // 测试无效输入（缺少开头标记）
-        let mut input = r#""hello"^"#;
+        let mut input = r#""hello"\#"#;
         assert!(gal_raw_string(&mut input).is_err());
 
-        let mut input = r#"^"{"branchs" : [{ "name": "develop" }, { "name" : "release/1"}]} "^;"#;
+        let mut input =
+            "r#\"{\"branchs\" : [{ \"name\": \"develop\" }, { \"name\" : \"release/1\"}]} \"#;";
         assert!(gal_raw_string(&mut input).is_ok());
     }
 

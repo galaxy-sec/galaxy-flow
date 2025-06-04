@@ -378,7 +378,7 @@ mod tests {
     #[test]
     fn test_assign() {
         let mut data =
-            r#"data= ^"{"branchs" : [{ "name": "develop" }, { "name" : "release/1"}]}"^;"#;
+            "data= r#\"{\"branchs\" : [{ \"name\": \"develop\" }, { \"name\" : \"release/1\"}]}\"#;";
         let (key, val) = run_gxl(gal_var_assign, &mut data).assert();
         assert_eq!(key, "data".to_string());
         assert_eq!(

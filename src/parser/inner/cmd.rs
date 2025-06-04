@@ -104,13 +104,13 @@ mod tests {
 
     #[test]
     fn cmd_test3() {
-        let mut data = r#"
+        let mut data = "
             conf.tpl (
-              tpl : "${MAIN_CONF}/tpls/test.sh"  ,
-              dst : "${MAIN_CONF}/options/test.sh" ,
-              data : ^"hello"^,
+              tpl : \"${MAIN_CONF}/tpls/test.sh\"  ,
+              dst : \"${MAIN_CONF}/options/test.sh\" ,
+              data : r#\"hello\"#,
             );
-            "#;
+            ";
         let _obj = run_gxl(gal_call, &mut data).assert();
         assert_eq!(data, "");
     }

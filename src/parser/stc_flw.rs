@@ -150,7 +150,7 @@ mod tests {
             conf.tpl (
               tpl : "${MAIN_CONF}/tpls/test.sh"  ,
               dst : "${MAIN_CONF}/options/test.sh" ,
-              data : ^"hello"^ ,
+              data : "hello" ,
             );
             os.copy (
                 src  : "${MAIN_CONF}/options/nginx.conf",

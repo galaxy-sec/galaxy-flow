@@ -133,7 +133,7 @@ mod tests {
             env branch_auto {
                 gx.read_cmd (
                   name : "BRANCH_ENV",
-                  cmd  : ^"git branch --show-current |  sed -E "s/(feature|develop|ver-dev|release|master|issue)(\/.*)?/_branch_\1/g" "^ ,
+                  cmd  : "git branch --show-current",
                   log  : "debug",
                   )
             }

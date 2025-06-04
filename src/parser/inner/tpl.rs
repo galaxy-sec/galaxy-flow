@@ -69,12 +69,12 @@ mod tests {
     fn tpl_data() {
         let tpl = "${PRJ_ROOT}/conf_tpl.toml";
         let dst = "${PRJ_ROOT}/conf.toml";
-        let mut data = r#"
+        let mut data = "
                  gx.tpl (
-                 tpl : "${PRJ_ROOT}/conf_tpl.toml" ,
-                 dst : "${PRJ_ROOT}/conf.toml",
-                 data : ^"{"branchs": ["develop","issue/11"]} "^,
-                 ) ;"#;
+                 tpl : \"${PRJ_ROOT}/conf_tpl.toml\" ,
+                 dst : \"${PRJ_ROOT}/conf.toml\",
+                 data : r#\"{\"branchs\": [\"develop\",\"issue/11\"]} \"#,
+                 ) ;";
         let obj = run_gxl(gal_tpl, &mut data).assert();
         let mut dto = TplDTO::default();
         dto.tpl = tpl.to_string();
