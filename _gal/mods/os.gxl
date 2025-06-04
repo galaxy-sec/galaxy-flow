@@ -7,6 +7,7 @@ mod os {
   }
   activity path {
       dst  = "" ;
+      default_param = "dst";
       executer = "@PATH/os/path.sh  ${DST} " ;
   }
   activity ln {

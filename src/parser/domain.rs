@@ -91,15 +91,20 @@ pub fn gal_var_assign(input: &mut &str) -> ModalResult<(String, String)> {
 
 pub fn gal_var_input(input: &mut &str) -> ModalResult<(String, String)> {
     let _ = multispace0.parse_next(input)?;
-    let key = take_while(1.., ('0'..='9', 'A'..='Z', 'a'..='z', ['_', '.']))
-        .context(wn_desc("<var-name>"))
-        .parse_next(input)?;
-    symbol_colon.parse_next(input)?;
+    let key_opt = opt(
+        take_while(1.., ('0'..='9', 'A'..='Z', 'a'..='z', ['_', '.']))
+            .context(wn_desc("<var-name>")),
+    )
+    .parse_next(input)?;
+    if key_opt.is_some() {
+        symbol_colon.parse_next(input)?;
+    }
     let _ = multispace0.parse_next(input)?;
     let val = alt((take_string, gal_raw_string))
         .context(wn_desc("<var-val>"))
         .parse_next(input)?;
     multispace0(input)?;
+    let key = key_opt.unwrap_or("default");
     //(multispace0, alt((symbol_comma, symbol_semicolon))).parse_next(input)?;
     Ok((key.to_string(), val.to_string()))
 }

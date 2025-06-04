@@ -23,7 +23,7 @@ pub fn gal_read_file(input: &mut &str) -> ModalResult<GxRead> {
         let key = one.0.to_lowercase();
         if key == "name" {
             builder.name(Some(one.1));
-        } else if key == "ini" || key == "file" {
+        } else if key == "default" || key == "file" {
             builder.file(one.1);
         } else if key == "entity" {
             builder.entity(Some(one.1));
@@ -135,7 +135,7 @@ mod tests {
         assert_eq!(&ReadMode::from(dto), obj.imp());
     }
     #[test]
-    fn read_ini_test() {
+    fn read_file_test() {
         let mut dto = FileDTO::default();
         dto.file = format!("vars.ini");
 
@@ -143,6 +143,17 @@ mod tests {
                  gx.read_file (
                  file : "vars.ini"
                  ) ;"#;
+        let obj = run_gxl(gal_read_file, &mut data).assert();
+        assert_eq!(data, "");
+        assert_eq!(&ReadMode::from(dto), obj.imp());
+    }
+    #[test]
+    fn read_file_default() {
+        let mut dto = FileDTO::default();
+        dto.file = format!("vars.ini");
+
+        let mut data = r#"
+                 gx.read_file (  "vars.ini" ) ;"#;
         let obj = run_gxl(gal_read_file, &mut data).assert();
         assert_eq!(data, "");
         assert_eq!(&ReadMode::from(dto), obj.imp());

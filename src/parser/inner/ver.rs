@@ -11,7 +11,7 @@ pub fn gal_echo(input: &mut &str) -> ModalResult<GxEcho> {
     gal_keyword_alt("gx.echo", "rg.echo", input)?;
     let props = sentence_call_args.parse_next(input)?;
     for (k, v) in props {
-        if k == "value" {
+        if k == "value" || k == "default" {
             watcher.set(v.as_str());
         }
     }
@@ -67,7 +67,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn echo_test() -> ModalResult<()> {
+    fn echo_test_args() -> ModalResult<()> {
         let mut data = r#"
              gx.echo ( value : "${PRJ_ROOT}/test/main.py" ) ;"#;
         let found = run_gxl(gal_echo, &mut data)?;
@@ -77,6 +77,18 @@ mod tests {
         assert_eq!(data, "");
         Ok(())
     }
+    #[test]
+    fn echo_test_default() -> ModalResult<()> {
+        let mut data = r#"
+             gx.echo ( "${PRJ_ROOT}/test/main.py" ) ;"#;
+        let found = run_gxl(gal_echo, &mut data)?;
+        let mut expect = GxEcho::default();
+        expect.set(r#"${PRJ_ROOT}/test/main.py"#);
+        assert_eq!(found, expect);
+        assert_eq!(data, "");
+        Ok(())
+    }
+
     #[test]
     fn ver_test() {
         let mut data = r#"

@@ -92,6 +92,7 @@ pub struct ActivityDTO {
     pub name: String,
     pub executer: String,
     pub expect: ShellOption,
+    pub default_param: Option<String>,
     pub props: Vec<Property>,
 }
 
@@ -150,10 +151,23 @@ impl Activity {
         let mut task = Task::from(dto.name.as_str());
         //let mut map = def.export();
         let mut dict = vars_dict.clone();
+
+        let mut default_key = if let Some(param) = &self.dto.default_param {
+            param.clone()
+        } else {
+            "".into()
+        };
+        default_key.make_ascii_uppercase();
         for prop in &dto.props {
             let mut key = prop.key.clone();
             key.make_ascii_uppercase();
-            dict.globle_mut().set(&key, prop.val.clone());
+            if key == "DEFAULT" {
+                dict.globle_mut().set(&default_key, prop.val.clone());
+            } else if key == default_key {
+                //ignore key value
+            } else {
+                dict.globle_mut().set(&key, prop.val.clone());
+            }
         }
         let mut r_with = WithContext::want("run shell");
         r_with.with("exec", dto.executer.clone());

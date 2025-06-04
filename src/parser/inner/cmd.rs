@@ -14,7 +14,7 @@ pub fn gal_cmd(input: &mut &str) -> ModalResult<GxCmd> {
     builder.expect(ShellOption::default());
     for one in props {
         let key = one.0.to_lowercase();
-        if key == "forword" || key == "cmd" {
+        if key == "default" || key == "cmd" {
             builder.cmd(one.1);
         } else {
             shell_opt_setting(key, one.1, &mut expect);
@@ -57,15 +57,12 @@ mod tests {
 
     use orion_error::TestAssert;
 
-    use crate::parser::{
-        inner::common::{gal_call, run_gxl},
-        stc_blk::gal_block,
-    };
+    use crate::parser::{inner::common::run_gxl, stc_blk::gal_block};
 
     use super::*;
 
     #[test]
-    fn cmd_test() {
+    fn cmd_test_simple() {
         let expect = ShellOption::default();
         let mut data = r#"
              gx.cmd(
@@ -81,6 +78,22 @@ mod tests {
         assert_eq!(data, "");
         assert_eq!(obj, GxCmd::dto_new(xpt));
     }
+    #[test]
+    fn cmd_test_default() {
+        let expect = ShellOption::default();
+        let mut data = r#"
+             gx.cmd( "${PRJ_ROOT}/do.sh" ) ;"#;
+        let obj = gal_cmd(&mut data).assert();
+        //let (input, obj) = show_err(data, RgCmdParser::default().parse(ctx, data)).unwrap();
+        let xpt = GxCmdDtoBuilder::default()
+            .cmd("${PRJ_ROOT}/do.sh".into())
+            .expect(expect)
+            .build()
+            .unwrap();
+        assert_eq!(data, "");
+        assert_eq!(obj, GxCmd::dto_new(xpt));
+    }
+
     #[test]
     fn cmd_test2() {
         let mut expect = ShellOption::default();
@@ -104,16 +117,25 @@ mod tests {
 
     #[test]
     fn cmd_test3() {
-        let mut data = "
-            conf.tpl (
-              tpl : \"${MAIN_CONF}/tpls/test.sh\"  ,
-              dst : \"${MAIN_CONF}/options/test.sh\" ,
-              data : r#\"hello\"#,
-            );
-            ";
-        let _obj = run_gxl(gal_call, &mut data).assert();
+        let mut expect = ShellOption::default();
+        expect.log_lev = Some(log::Level::Info);
+        let mut data = r#"
+             gx.cmd(
+             "${PRJ_ROOT}/do.sh",
+             err : "you err",
+             log : "1",
+             ) ;"#;
+        let obj = gal_cmd(&mut data).assert();
+        expect.err = Some(String::from("you err"));
+        let xpt = GxCmdDtoBuilder::default()
+            .cmd("${PRJ_ROOT}/do.sh".into())
+            .expect(expect)
+            .build()
+            .unwrap();
         assert_eq!(data, "");
+        assert_eq!(obj, GxCmd::dto_new(xpt));
     }
+
     #[test]
     fn cmd_block_1() {
         let mut data = r#"```cmd echo ${HOME};```"#;

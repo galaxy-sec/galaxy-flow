@@ -24,6 +24,9 @@ pub fn gal_activity(input: &mut &str) -> ModalResult<Activity> {
         } else if key == "executer" {
             dto.executer = one.1;
             continue;
+        } else if key == "default_param" {
+            dto.default_param = Some(one.1);
+            continue;
         } else if key == "sudo" && one.1.to_lowercase() == "true" {
             dto.expect.sudo = true;
             continue;
@@ -67,6 +70,7 @@ mod tests {
             src = "" ;
             dst = "" ;
             log = "1";
+            default_param = "src";
             executer = "copy_act.sh" ;
         }
   "#;
@@ -74,6 +78,7 @@ mod tests {
         let mut dto = ActivityDTO::default();
         dto.name = "copy".to_string();
         dto.executer = "copy_act.sh".to_string();
+        dto.default_param = Some("src".into());
         dto.expect.log_lev = Some(log::Level::Info);
         dto.append_prop(Property {
             key: "src".into(),
