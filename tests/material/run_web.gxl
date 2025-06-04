@@ -51,30 +51,21 @@ mod main {
   name        = "%{PRJ_NAME}" ;
   flow base {
     DOMAIN_A      = "i.api.${ENV_BASE_DOMAIN}";
-    gx.echo {
-      value = "${DOMAIN_A}";
-    }
+    gx.echo (
+      value : "${DOMAIN_A}"
+    );
   }
 
   flow api : base {
     DOMAIN_A      = "a.api.${ENV_BASE_DOMAIN}";
     DOMAIN_B      = "b.api.${ENV_BASE_DOMAIN}";
-    gx.echo {
-      value = "${DOMAIN_A}";
-    }
-    gx.echo {
-      value = "${DOMAIN_B}";
-    }
+    gx.echo ( value : "${DOMAIN_A}" );
+    gx.echo ( value : "${DOMAIN_B}" );
   }
   flow api2 : base {
-    //DOMAIN_A      = "a.api.${ENV_BASE_DOMAIN}";
     DOMAIN_B      = "b.api.${ENV_BASE_DOMAIN}";
-    gx.echo {
-      value = "${MAIN_NAME}";
-    }
-    gx.echo {
-      value = "${DOMAIN_B}";
-    }
+    gx.echo ( value : "${MAIN_NAME}");
+    gx.echo ( value : "${DOMAIN_B}");
   }
 
 }

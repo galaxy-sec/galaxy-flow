@@ -25,13 +25,13 @@ mod env : base_env {
 mod main   {
   conf = "${ENV_ROOT}/conf" ;
   flow conf  {
-    os.path { dst = "${MAIN_CONF}/used"; keep = "true" ;}
-    gx.tpl {
-        tpl = "${MAIN_CONF}/tpls/"  ;
-        dst = "${MAIN_CONF}/used/" ;
-        file = "${MAIN_CONF}/value.json" ;
+    os.path ( dst : "${MAIN_CONF}/used", keep : "true" );
+    gx.tpl (
+        tpl : "${MAIN_CONF}/tpls/"  ,
+        dst : "${MAIN_CONF}/used/" ,
+        file : "${MAIN_CONF}/value.json" ,
 
-    }
+    );
     ```cmd
     echo "hello" ;
     cp  ./conf/value.json  ./conf/used/back.json ;

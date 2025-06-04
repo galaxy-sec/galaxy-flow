@@ -16,13 +16,13 @@ mod env {
 mod sub {
   name = "rg_sys" ;
   flow api1 {
-    gx.assert { value = "${SUB_NAME}";  expect = "rg_sys";}
+    gx.assert ( value : "${SUB_NAME}",  expect : "rg_sys");
   }
   flow api2 {
-    gx.assert { value = "${SUB_NAME}";  expect = "rg_sys";}
+    gx.assert ( value : "${SUB_NAME}",  expect : "rg_sys");
   }
   flow api3 {
-    gx.assert { value = "${SUB_NAME}";  expect = "rg_sys";}
+    gx.assert ( value : "${SUB_NAME}",  expect : "rg_sys");
   }
 }
 mod main {
@@ -32,22 +32,22 @@ mod main {
   flow api : sub.api2 : sub.api3 {
     key = "1" ;
     full_key = "${KEY}_1" ;
-    gx.echo { value = "will entry cond"; };
+    gx.echo ( value : "will entry cond" );
      if ${KEY} == "1" {
-            gx.echo { value = "this is if cond"; };
-            gx.assert { value = "${KEY}";  expect = "1";}
-            gx.assert { value = "${MAIN_ROOT}";  expect = "${HOME}/devspace/galaxy";}
-            gx.assert { value = "${KEY}";  expect = "1";}
-            gx.assert { value = "${FULL_KEY}";  expect = "1_1";}
-            gx.assert { value = "${KEY}";  expect = "2";  result = "false"; }
+            gx.echo ( value : "this is if cond" );
+            gx.assert ( value : "${KEY}",  expect : "1");
+            gx.assert ( value : "${MAIN_ROOT}",  expect : "${HOME}/devspace/galaxy");
+            gx.assert ( value : "${KEY}",  expect : "1");
+            gx.assert ( value : "${FULL_KEY}",  expect : "1_1");
+            gx.assert ( value : "${KEY}",  expect : "2",  result : "false");
     }
     else {
-            gx.echo { value = "this is else cond"; };
-            gx.assert { value = "${KEY}";  expect = "2";}
+            gx.echo ( value : "this is else cond" );
+            gx.assert ( value : "${KEY}",  expect : "2");
     }
   }
   flow start {
-    gx.echo { value = "${MAIN_ROOT}";}
-    gx.assert { value = "${MAIN_NAME}";  expect = "galaxy"; }
+    gx.echo ( value : "${MAIN_ROOT}");
+    gx.assert ( value : "${MAIN_NAME}",  expect : "galaxy" );
   }
 }

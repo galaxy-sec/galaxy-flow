@@ -16,16 +16,16 @@ mod main {
     dst = "${ENV_ROOT}/tests/material" ;
     rg_lib1 = "x1" ;
     rg_lib2 = "x2" ;
-    gx.tpl {
-      tpl = "${TPL}" ; dst = "${DST}/rg-lib1.toml";
-      data = ^"{"name": "rg-lib1","tag": "0.1.0" }"^ ;
-    }
-    gx.tpl {
-      tpl = "${TPL}" ; dst = "${DST}/rg-lib2.toml";
-      data = ^"{"name": "rg-lib2","tag": "0.2.0" }"^ ;
-    }
-    gx.tpl {
-      tpl = "${DST}/main.tpl" ; dst = "${DST}/main.toml";
-    }
+    gx.tpl (
+      tpl : "${TPL}" , dst : "${DST}/rg-lib1.toml",
+      data : ^"{"name": "rg-lib1","tag": "0.1.0" }"^ ,
+    )
+    gx.tpl (
+      tpl : "${TPL}" , dst : "${DST}/rg-lib2.toml",
+      data : ^"{"name": "rg-lib2","tag": "0.2.0" }"^ ,
+    )
+    gx.tpl (
+      tpl : "${DST}/main.tpl" , dst : "${DST}/main.toml",
+    )
   }
 }

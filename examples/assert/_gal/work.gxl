@@ -53,16 +53,16 @@ mod main   {
   #[usage(desp="main")]
   flow assert_main {
     one= "one";
-    gx.assert { value = "${MAIN_CONF}" ; expect = "${ENV_ROOT}/conf"; }
-    gx.assert { value = "${OTHER_VAL}" ; expect = "OTHER_DEF"; }
+    gx.assert ( value : "${MAIN_CONF}" , expect : "${ENV_ROOT}/conf" );
+    gx.assert ( value : "${OTHER_VAL}" , expect : "OTHER_DEF" );
   }
 
   flow assert_parent : base.define {
-    gx.assert { value = "${MAIN_CONF}" ; expect = "${ENV_ROOT}/conf"; }
-    gx.assert { value = "${BASE_MOD_VAL}" ; expect = "1"; }
-    gx.assert { value = "${OTHER_VAL}" ; expect = "OTHER_DEF"; }
-    gx.assert { value = "${BASE}" ; expect = "BASE"; }
-    gx.assert { value = "${BASE_BEGIN}" ; expect = "BASE_INTO"; }
+    gx.assert ( value : "${MAIN_CONF}" , expect : "${ENV_ROOT}/conf" );
+    gx.assert ( value : "${BASE_MOD_VAL}" , expect : "1" );
+    gx.assert ( value : "${OTHER_VAL}" , expect : "OTHER_DEF" );
+    gx.assert ( value : "${BASE}" , expect : "BASE" );
+    gx.assert ( value : "${BASE_BEGIN}" , expect : "BASE_INTO" );
   }
 
 }
