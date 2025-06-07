@@ -1,9 +1,0 @@
-mod ssh {
-    activity scp {
-        src = "";
-        user = "";
-        host = "";
-        dst = "";
-        executer = "@PATH/ssh/scp.sh  ${SRC} ${USER} ${HOST}  ${DST}" ;
-    }
-}

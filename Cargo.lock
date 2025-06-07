@@ -1145,6 +1145,7 @@ dependencies = [
  "duct",
  "duct_sh",
  "env_logger 0.10.2",
+ "git2",
  "handlebars",
  "http-types",
  "include_dir",
@@ -2089,8 +2090,7 @@ dependencies = [
 
 [[package]]
 name = "orion-syspec"
-version = "0.3.1"
-source = "git+https://github.com/galaxy-sec/orion-syspec.git#0369d22a2e11b32a3680dcdc91779660f40dbb8a"
+version = "0.3.3"
 dependencies = [
  "anyhow",
  "async-trait",

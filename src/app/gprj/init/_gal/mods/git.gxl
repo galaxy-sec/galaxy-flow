@@ -1,12 +1,7 @@
 mod git {
   flow tag_ver  {
-    gx.ver { file = "${ENV_ROOT}/version.txt" ;  inc : "null" ; }
-    gx.cmd { forword = "git tag ${VERSION}" ; }
-    gx.cmd { forword = "git push --tags" ; }
-  }
-  flow ci_ver {
-    gx.ver { file = "${ENV_ROOT}/version.txt" ;  inc = "null" ; }
-    gx.echo { value= "${VERSION}" ; }
-    gx.cmd { forword = "git commit -a -m 'update version to ${VERSION}' " ; }
+    gx.ver ( file : "${ENV_ROOT}/version.txt" ,  inc : "null" );
+    gx.cmd ( "git tag ${VERSION}" );
+    gx.cmd ( "git push --tags" );
   }
 }

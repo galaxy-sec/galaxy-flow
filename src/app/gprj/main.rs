@@ -8,6 +8,7 @@ extern crate clap;
 
 use std::fs;
 use std::path::Path;
+use std::path::PathBuf;
 
 use crate::args::GxAdmCmd;
 use crate::args::InitCmd;
@@ -87,9 +88,7 @@ impl GxAdm {
     fn do_prj_cmd(load: &mut GxLoader, prj_cmd: InitCmd) -> RunResult<()> {
         match prj_cmd {
             InitCmd::Local => {
-                let current_dir = std::env::current_dir().expect("Failed to get current directory");
-                write_dir_to_disk(&ASSETS_DIR, &current_dir)
-                    .expect("Failed to write directory to disk");
+                init_local(None)?;
             }
             InitCmd::Remote(args) => {
                 configure_flow_logging(args.log.clone(), args.debug);
@@ -121,6 +120,16 @@ impl GxAdm {
     }
 }
 
+fn init_local(path : Option<PathBuf> ) -> RunResult<()> {
+
+    let src_path = match path {
+        Some(path) => path,
+        None => std::env::current_dir().expect("Failed to get current directory"),
+    };
+    write_dir_to_disk(&ASSETS_DIR, &src_path).expect("Failed to write directory to disk");
+    Ok(())
+}
+
 fn write_dir_to_disk(dir: &Dir, parent_path: &Path) -> std::io::Result<()> {
     // 创建目录
     fs::create_dir_all(parent_path.join(dir.path()))?;
@@ -137,4 +146,35 @@ fn write_dir_to_disk(dir: &Dir, parent_path: &Path) -> std::io::Result<()> {
     }
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use galaxy_flow::util::path::WorkDir;
+    use orion_error::TestAssert;
+
+    use super::*;
+
+    // 调用 init_local   初始化本地项目
+    //  do_adm_cmd 函数进行测试
+    #[tokio::test]
+    async fn test_init_local() {
+        let init_local_path = PathBuf::from("./test/temp/init");
+        if init_local_path.exists() {
+            fs::remove_dir_all(&init_local_path).unwrap();
+        }
+        fs::create_dir_all(&init_local_path).unwrap();
+        let result = init_local(Some(init_local_path.clone()));
+        assert!(result.is_ok());
+        let _cur = WorkDir::change(init_local_path).assert();
+        GxAdm::do_adm_cmd(GxlCmd {
+            conf: Some("./_gal/adm.gxl".to_string()),
+            log: None,
+            debug: 0,
+            env: "default".into(),
+            flow: vec!["echo".into()],
+            cmd_print: true,
+        })
+        .await.assert();
+    }
 }

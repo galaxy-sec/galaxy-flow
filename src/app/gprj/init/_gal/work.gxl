@@ -1,5 +1,4 @@
 extern mod head { path = "./_gal/"; }
-
 mod envs  {
    env _common    {
     sudo      = "false";
@@ -16,15 +15,8 @@ mod envs  {
   env local : _common {
   }
 
-  #[usage(desp="use alpha res",color="green")]
-  env alpha   :  _common;
-
-  #[usage(desp="use beta res",color="green")]
-  env beta    :  _common ;
-
-
   #[usage(desp="default auto ")]
-  env default    : local,alpha;
+  env default    : local;
 }
 
 mod main   {
@@ -36,7 +28,6 @@ mod main   {
 
     }
     flow conf  {
-      gx.echo { value="PRJ_BINS: ${PRJ_BINS} "; }
-      os.path { dst =  "${ENV_RUN}";  }
+      gx.echo ( "PRJ_BINS: ${PRJ_BINS} ");
     }
 }
