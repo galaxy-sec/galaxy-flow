@@ -28,6 +28,7 @@ mod env  {
 
 mod main   {
       bld_bins = "target/${ENV_BUILD_NAME}" ;
+      rls_bins = "target/release" ;
       prj_bins = "${ENV_ROOT}/bin" ;
       usr_bins = "${HOME}/bin" ;
 
@@ -112,7 +113,7 @@ mod main   {
         username : "${SEC_GFLOW_LOGIN}",
         method : "PUT",
         password : "${SEC_GFLOW_PASSWORD}",
-        local_file : "./${MAIN_BLD_BINS}/${UP_TARGET}"
+        local_file : "./${MAIN_RLS_BINS}/${UP_TARGET}"
     );
   }
 
