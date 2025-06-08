@@ -103,6 +103,7 @@ mod main   {
   flow _pub_gprj: : _pub_dysec {
     UP_TARGET = "gprj";
   }
+
   flow pub_dysec  : _pub_gflow,_pub_gprj,_pub_gmod,_pub_gsys ;
   flow pub_gflow_dysec  : _pub_gflow;
 
@@ -114,6 +115,13 @@ mod main   {
         method : "PUT",
         password : "${SEC_GFLOW_PASSWORD}",
         local_file : "./${MAIN_RLS_BINS}/${UP_TARGET}"
+    );
+    gx.upload (
+        url : "https://dy-sec-generic.pkg.coding.net/galaxy-open/${DIST_REPO}/${UP_TARGET}_latest_version.txt?version=latest",
+        username : "${SEC_GFLOW_LOGIN}",
+        method : "PUT",
+        password : "${SEC_GFLOW_PASSWORD}",
+        local_file : "./version.txt"
     );
   }
 
