@@ -1,6 +1,7 @@
 use crate::{
     components::gxl_spc::GxlSpace,
     err::{RunError, RunReason, RunResult},
+    infra::DfxArgsGetter,
     GxLoader,
 };
 use clap::ArgAction;
@@ -66,4 +67,13 @@ pub struct GxlCmd {
     pub log: Option<String>,
     #[arg(short= 'q', long = "quiet" ,action = ArgAction::SetFalse , default_value = "true")]
     pub cmd_print: bool,
+}
+impl DfxArgsGetter for GxlCmd {
+    fn debug_level(&self) -> usize {
+        self.debug
+    }
+
+    fn log_setting(&self) -> Option<String> {
+        self.log.clone()
+    }
 }

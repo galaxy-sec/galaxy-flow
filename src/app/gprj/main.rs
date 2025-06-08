@@ -15,7 +15,7 @@ use crate::args::InitCmd;
 use clap::Parser;
 use galaxy_flow::err::*;
 use galaxy_flow::expect::ShellOption;
-use galaxy_flow::infra::configure_flow_logging;
+use galaxy_flow::infra::configure_run_logging;
 use galaxy_flow::runner::{GxlCmd, GxlRunner};
 use galaxy_flow::util::{GitTools, ModRepo};
 use galaxy_flow::GxLoader;
@@ -60,7 +60,7 @@ impl GxAdm {
     }
 
     async fn do_adm_cmd(mut cmd: GxlCmd) -> RunResult<()> {
-        configure_flow_logging(cmd.log.clone(), cmd.debug);
+        configure_run_logging(cmd.log.clone(), cmd.debug);
         debug!("galaxy flow running .....");
         if cmd.conf.is_none() {
             cmd.conf = Some("./_gal/adm.gxl".to_string());
@@ -91,7 +91,7 @@ impl GxAdm {
                 init_local(None)?;
             }
             InitCmd::Remote(args) => {
-                configure_flow_logging(args.log.clone(), args.debug);
+                configure_run_logging(args.log.clone(), args.debug);
                 let sh_opt = ShellOption {
                     outer_print: args.cmd_print,
                     inner_print: args.cmd_print,
@@ -101,7 +101,7 @@ impl GxAdm {
                 load.init(repo, "./", true, args.tpl.as_str(), sh_opt)?;
             }
             InitCmd::Update(args) => {
-                configure_flow_logging(args.log.clone(), args.debug);
+                configure_run_logging(args.log.clone(), args.debug);
                 let sh_opt = ShellOption {
                     outer_print: args.cmd_print,
                     inner_print: args.cmd_print,
@@ -120,8 +120,7 @@ impl GxAdm {
     }
 }
 
-fn init_local(path : Option<PathBuf> ) -> RunResult<()> {
-
+fn init_local(path: Option<PathBuf>) -> RunResult<()> {
     let src_path = match path {
         Some(path) => path,
         None => std::env::current_dir().expect("Failed to get current directory"),
@@ -175,6 +174,7 @@ mod tests {
             flow: vec!["echo".into()],
             cmd_print: true,
         })
-        .await.assert();
+        .await
+        .assert();
     }
 }

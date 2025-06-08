@@ -6,14 +6,14 @@ use clap::Parser;
 use std::path::Path;
 
 use galaxy_flow::err::*;
-use galaxy_flow::infra::configure_flow_logging;
+use galaxy_flow::infra::configure_run_logging;
 use galaxy_flow::runner::{GxlCmd, GxlRunner};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     use std::process;
     let mut cmd = GxlCmd::parse();
-    configure_flow_logging(cmd.log.clone(), cmd.debug);
+    configure_run_logging(cmd.log.clone(), cmd.debug);
     //log_init(&LogConf::alpha())?;
     debug!("galaxy flow running .....");
     if cmd.conf.is_none() {

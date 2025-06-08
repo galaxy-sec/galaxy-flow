@@ -1,9 +1,24 @@
 use once_cell::sync::OnceCell;
 use orion_infra::logging::{configure_logging, LogConf};
 
-pub fn configure_flow_logging(_log_conf: Option<String>, debug: usize) {
+pub trait DfxArgsGetter {
+    fn debug_level(&self) -> usize;
+    fn log_setting(&self) -> Option<String>;
+}
+
+pub fn configure_run_logging(_log_conf: Option<String>, debug: usize) {
     let setting = level_setting(debug);
     let conf = LogConf::new_console(setting);
+    configure_logging(&conf).unwrap();
+}
+
+pub fn configure_dfx_logging(dfx: &impl DfxArgsGetter) {
+    let setting = if let Some(log_setting) = dfx.log_setting() {
+        log_setting
+    } else {
+        level_setting(dfx.debug_level()).to_string()
+    };
+    let conf = LogConf::new_console(&setting);
     configure_logging(&conf).unwrap();
 }
 
@@ -15,10 +30,10 @@ fn level_setting(debug: usize) -> &'static str {
         return "error,exec=info";
     }
     if debug == 2 {
-        return "warn,exec=info,load=info,assemble=info,parse=info";
+        return "warn,exec=info,load=info,assemble=info,parse=info,spec=info";
     }
     if debug == 3 {
-        return "info,exec=debug,load=debug,assemble=debug,parse=debug";
+        return "info,exec=debug,load=debug,assemble=debug,parse=debug,spec=debug";
     }
     if debug == 4 {
         return "debug";

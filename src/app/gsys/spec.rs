@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 
 use galaxy_flow::err::RunResult;
+use galaxy_flow::infra::configure_dfx_logging;
 use orion_error::ErrorConv;
 use orion_syspec::addr::GitAddr;
 use orion_syspec::system::refs::SysModelSpecRef;
@@ -20,16 +21,20 @@ pub async fn do_sys_cmd(cmd: GSysCmd) -> RunResult<()> {
             let spec = make_sys_spec_new(args.name(), "https://").err_conv()?;
             spec.save_to(&PathBuf::from("./")).err_conv()?;
         }
-        GSysCmd::Load(args) => {
-            let target = args.path();
-            let spec_ref = SysModelSpecRef::from(target, GitAddr::from(args.repo()).path(target));
+        GSysCmd::Load(load_args) => {
+            configure_dfx_logging(&load_args);
+            let target = load_args.path();
+            let spec_ref =
+                SysModelSpecRef::from(target, GitAddr::from(load_args.repo()).path(target));
             spec_ref.update_local(&current_dir).await.err_conv()?;
         }
-        GSysCmd::Update => {
+        GSysCmd::Update(dfx) => {
+            configure_dfx_logging(&dfx);
             let spec = SysModelSpec::load_from(&current_dir).err_conv()?;
             spec.update_local().await.err_conv()?;
         }
-        GSysCmd::Localize => {
+        GSysCmd::Localize(dfx) => {
+            configure_dfx_logging(&dfx);
             let spec = SysModelSpec::load_from(&current_dir).err_conv()?;
             spec.localize(None).await.err_conv()?;
         }
