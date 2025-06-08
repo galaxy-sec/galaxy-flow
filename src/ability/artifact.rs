@@ -4,7 +4,7 @@ use orion_error::ErrorConv;
 use orion_syspec::{
     artifact::ArtifactPackage,
     error::ToErr,
-    types::{AsyncUpdateable, Configable},
+    types::{AsyncUpdateable, Configable, UpdateOptions},
 };
 
 use crate::ability::prelude::*;
@@ -36,7 +36,7 @@ impl AsyncRunnableTrait for GxArtifact {
         for artifact in artifact_pkg.iter() {
             artifact
                 .addr()
-                .update_rename(&dst_path, artifact.local())
+                .update_rename(&dst_path, artifact.local(), &UpdateOptions::default())
                 .await
                 .err_conv()?;
         }

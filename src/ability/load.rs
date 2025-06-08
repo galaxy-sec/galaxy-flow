@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use orion_error::ErrorConv;
-use orion_syspec::{addr::HttpAddr, error::ToErr};
+use orion_syspec::{addr::HttpAddr, error::ToErr, types::UpdateOptions};
 
 use crate::ability::prelude::*;
 
@@ -75,7 +75,9 @@ impl AsyncRunnableTrait for GxDownLoad {
         let mut task = Task::from("gx.download").with_target(&local_file);
         let local_file_path = PathBuf::from(&local_file);
         if let Some(true) = local_file_path.parent().map(|x| x.exists()) {
-            addr.download(&local_file_path).await.err_conv()?;
+            addr.download(&local_file_path, &UpdateOptions::default())
+                .await
+                .err_conv()?;
             task.finish();
             Ok((vars_dict, ExecOut::Task(task)))
         } else {
