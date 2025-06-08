@@ -58,6 +58,7 @@ impl FileDTO {
             for (k, v) in prop.iter() {
                 let str_k = k.trim().to_string();
                 let str_v = v.trim().to_string();
+                debug!(target: ctx.path() , "ini import {}:{}", str_k, str_v);
                 vars.append(RgProp::new(str_k, str_v));
             }
         }
@@ -113,7 +114,7 @@ impl FileDTO {
             ExecReason::Miss("entity".into()).err_result()
         }
     }
-    fn impl_json(&self, _ctx: ExecContext, file_path: &PathBuf) -> ExecResult<VarDict> {
+    fn impl_json(&self, ctx: ExecContext, file_path: &PathBuf) -> ExecResult<VarDict> {
         let mut err_ctx = WithContext::want("load toml exchange data");
         err_ctx.with_path("path", file_path);
         let content = std::fs::read_to_string(PathBuf::from(file_path))
@@ -130,8 +131,21 @@ impl FileDTO {
                 }
             }
             serde_json::Value::Object(map) => {
-                for (k, v) in map.iter() {
-                    dict.set(k.as_str(), v.to_string())
+                for (k, jv) in map.iter() {
+                    match jv {
+                        serde_json::Value::Null => todo!(),
+                        serde_json::Value::Bool(_) => todo!(),
+                        serde_json::Value::Number(v) => {
+                            debug!(target: ctx.path() , "json import {}:{}", k, v);
+                            dict.set(k.to_string(), v.to_string());
+                        }
+                        serde_json::Value::String(v) => {
+                            debug!(target: ctx.path() , "json import {}:{}", k, v);
+                            dict.set(k.to_string(), v.clone());
+                        }
+                        serde_json::Value::Array(_) => todo!(),
+                        serde_json::Value::Object(_) => todo!(),
+                    }
                 }
             }
             _ => {

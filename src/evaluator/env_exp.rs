@@ -160,16 +160,17 @@ mod tests {
         let data = str_map!(
         "HOME"      => "/home/galaxy",
         "USER"      => "galaxy",
-        "CUR_DIR"   => "/home",
+        "CUR_DIR"   => "${HOME}/prj",
         );
         let ex = EnvExpress::from_env_mix(VarDict::from(data));
         assert_eq!(
             ex.eval("${HOME}/bin").unwrap(),
             String::from("/home/galaxy/bin")
         );
+        println!("{}", ex.eval("${CUR_DIR}/bin").unwrap());
         assert_eq!(
             ex.eval("${CUR_DIR}/bin").unwrap(),
-            String::from("/home/bin")
+            String::from("/home/galaxy/prj/bin")
         );
     }
 }
