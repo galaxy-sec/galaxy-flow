@@ -1,6 +1,8 @@
 use std::time::{Duration, SystemTime};
 
-#[derive(Debug, Clone, Getters, PartialEq)]
+use serde::Serialize;
+
+#[derive(Debug, Clone, Getters, PartialEq, Serialize)]
 pub struct Task {
     name: String,
     target: Option<String>,

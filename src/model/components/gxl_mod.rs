@@ -208,17 +208,27 @@ impl ComponentMeta for ModRunner {
 }
 
 impl ExecLoadTrait for GxlMod {
+    // 加载环境变量
     fn load_env(&self, mut ctx: ExecContext, sequ: &mut Sequence, args: &str) -> ExecResult<()> {
+        // 将当前模块的名称添加到上下文中
         ctx.append(self.meta.name().as_str());
         //info!(target:ctx.path(),"load env:{}", obj_path);
+        // 如果环境变量中存在指定的参数
         if let Some(found) = self.envs.get(args) {
+            // 创建一个模块运行器
             let mut mr = ModRunner::from(self.meta().clone());
+            // 将当前模块添加到模块运行器中
             mr.append(AsyncComHold::from(self.clone()));
+            // 打印加载环境变量的信息
             info!( target: ctx.path(),"load env [{}.{}] suc!", self.meta.name(), args);
+            // 将找到的环境变量添加到模块运行器中
             mr.append(AsyncComHold::from(found.clone()));
+            // 将模块运行器添加到序列中
             sequ.append(AsyncComHold::from(mr));
+            // 返回成功
             return Ok(());
         }
+        // 如果没有找到指定的环境变量，返回错误
         Err(ExecError::from(ExecReason::Miss(args.into())))
     }
 

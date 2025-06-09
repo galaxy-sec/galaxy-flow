@@ -1,7 +1,8 @@
 use orion_common::friendly::AppendAble;
+use serde::Serialize;
 
 use super::{runnable::ExecOut, task::Task};
-#[derive(Debug, Clone, Default, Getters, PartialEq)]
+#[derive(Debug, Clone, Default, Getters, PartialEq, Serialize)]
 pub struct Job {
     name: String,
     tasks: Vec<Task>,
