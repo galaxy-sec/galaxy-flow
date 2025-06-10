@@ -12,14 +12,13 @@ pub fn get_task_result_url() -> Option<String> {
         return Some(url);
     }
     let task_config = TASK_RESULT_CONDIG.get();
-    if let Some(task_config) = task_config{
-        if let Some(task_url) = task_config.task_result_center.clone()   {
+    if let Some(task_config) = task_config {
+        if let Some(task_url) = task_config.task_result_center.clone() {
             return Some(task_url.url);
         }
     }
     None
 }
-
 
 // 先校验是否配置了远程任务结果中心
 pub async fn send_http_request(payload: TaskResult, url: &String) -> ExecResult<reqwest::Response> {
