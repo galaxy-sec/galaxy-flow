@@ -7,6 +7,7 @@ pub struct Task {
     name: String,
     target: Option<String>,
     begin: SystemTime,
+    pub stdout: String,
     result: std::result::Result<Duration, String>,
 }
 impl Task {
@@ -28,6 +29,7 @@ impl From<String> for Task {
             name,
             target: None,
             begin: SystemTime::now(),
+            stdout: String::new(),
             result: Err("unknow".into()),
         }
     }
@@ -38,6 +40,7 @@ impl From<&String> for Task {
             name: name.clone(),
             target: None,
             begin: SystemTime::now(),
+            stdout: String::new(),
             result: Err("unknow".into()),
         }
     }
@@ -49,6 +52,7 @@ impl From<&str> for Task {
             name: name.to_string(),
             target: None,
             begin: SystemTime::now(),
+            stdout: String::new(),
             result: Err("unknow".into()),
         }
     }

@@ -48,13 +48,22 @@ impl GxCmd {
 
         let mut expect = self.dto.expect.clone();
         expect.outer_print = *ctx.cmd_print();
-        gxl_sh!(
+        let res = gxl_sh!(
             LogicScope::Outer,
             ctx.tag_path("cmd").as_str(),
             &cmd,
             &expect,
             &exp
-        )?;
+        );
+        match res {
+            Ok(stdout) => {
+                task.stdout =
+                    String::from_utf8(stdout).map_err(|e| ExecReason::Io(e.to_string()))?;
+            }
+            Err(error) => {
+                task.stdout = error.to_string();
+            }
+        }
         task.finish();
         Ok((vars_dict, ExecOut::Task(task)))
     }

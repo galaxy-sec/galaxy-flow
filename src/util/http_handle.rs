@@ -1,10 +1,30 @@
+use std::env;
+
 use orion_error::StructError;
 
-use crate::{task_result::TaskResult, ExecReason, ExecResult};
+use crate::{
+    task_result::{TaskResult, TASK_RESULT_CONDIG},
+    ExecReason, ExecResult,
+};
 
-pub async fn send_http_request(payload: TaskResult) -> ExecResult<reqwest::Response> {
+pub fn get_task_result_url() -> Option<String> {
+    if let Ok(url) = env::var("task_result_center_url") {
+        return Some(url);
+    }
+    let task_config = TASK_RESULT_CONDIG.get();
+    if let Some(task_config) = task_config{
+        if let Some(task_url) = task_config.task_result_center.clone()   {
+            return Some(task_url.url);
+        }
+    }
+    None
+}
+
+
+// 先校验是否配置了远程任务结果中心
+pub async fn send_http_request(payload: TaskResult, url: &String) -> ExecResult<reqwest::Response> {
     reqwest::Client::new()
-        .post("http://localhost:8082/api/subtask_result")
+        .post(url)
         .json(&payload)
         .send()
         .await

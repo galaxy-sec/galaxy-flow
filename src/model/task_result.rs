@@ -1,9 +1,12 @@
 use crate::execution::VarSpace;
 use crate::ExecReason;
 use crate::{ability::prelude::ExecOut, execution::task::Task as ExecTask};
+use once_cell::sync::OnceCell;
 use serde::Serialize;
 use std::env;
 use std::sync::atomic::{AtomicU64, Ordering};
+use std::{fs, path::Path};
+use toml::from_str;
 
 pub static TASK_ORDER: AtomicU64 = AtomicU64::new(0);
 
@@ -59,8 +62,9 @@ impl TaskResult {
         };
         match result {
             Ok((_, out)) => {
-                if let ExecOut::Task(_) = out {
+                if let ExecOut::Task(task) = out {
                     task_result.status = TaskStatus::Completed;
+                    task_result.log = task.stdout.clone();
                 }
             }
             Err(e) => {
@@ -77,4 +81,40 @@ pub fn get_task_id() -> String {
         Ok(id) => id,
         Err(_) => "0".to_string(), // 如果没有设置 task_id，则返回 "0"
     }
+}
+
+use serde::Deserialize;
+
+#[derive(Deserialize)]
+pub struct TaskResultConfig {
+    pub task_result_center: Option<TaskResultUrl>,
+}
+
+#[derive(Deserialize, Clone)]
+pub struct TaskResultUrl {
+    pub url: String,
+}
+
+lazy_static! {
+    pub static ref TASK_RESULT_CONDIG: OnceCell<TaskResultConfig> = OnceCell::new();
+}
+
+pub fn load_task_config() {
+    println!("load task config");
+    let path = Path::new("src/config.toml");
+    let content = fs::read_to_string(path);
+    match content {
+        Ok(content) => {
+            let res: Result<TaskResultConfig, toml::de::Error> = from_str(&content);
+            match res {
+                Ok(config) => {
+                    let _ = TASK_RESULT_CONDIG.set(config);
+                }
+                Err(e) => println!("load task config error: {}", e.message()),
+            };
+        }
+        Err(e) => {
+            println!("load toml error: {}", e)
+        }
+    };
 }

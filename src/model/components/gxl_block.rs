@@ -19,6 +19,7 @@ use crate::calculate::cond::CondExec;
 use crate::context::ExecContext;
 use crate::execution::runnable::VTResult;
 use crate::model::task_result::TaskResult;
+use crate::util::http_handle::get_task_result_url;
 use crate::util::http_handle::send_http_request;
 
 use super::gxl_cond::GxlCond;
@@ -79,7 +80,7 @@ impl AsyncRunnableTrait for BlockAction {
             BlockAction::Echo(o) => o.async_exec(ctx, dct).await,
             BlockAction::Assert(o) => o.async_exec(ctx, dct).await,
             BlockAction::Cond(o) => o.async_exec(ctx, dct).await,
-            BlockAction::Loop(o) => o.async_exec(ctx, dct).await, // 最终会返回这里
+            BlockAction::Loop(o) => o.async_exec(ctx, dct).await,
             BlockAction::Tpl(o) => {
                 task_name = String::from("build tpl file");
                 o.async_exec(ctx, dct).await
@@ -90,9 +91,6 @@ impl AsyncRunnableTrait for BlockAction {
             }
             BlockAction::Version(o) => o.async_exec(ctx, dct).await,
             BlockAction::Read(o) => {
-                // task_name = match o {
-                //     ReadMode::
-                // };
                 task_name = match o.imp() {
                     ReadMode::CMD(_) => String::from("gx.read_cmd"),
                     ReadMode::FILE(_) => String::from("gx.read_file"),
@@ -111,11 +109,12 @@ impl AsyncRunnableTrait for BlockAction {
                 o.async_exec(ctx, dct).await
             }
         };
-        // TODO 子任务最终执行的结果需要返回
         if !task_name.is_empty() {
-            let task_result = TaskResult::from_result(task_name, &res);
-            send_http_request(task_result.clone()).await?;
-            println!("task_result:{:#?}", task_result);
+            if let Some(url) = get_task_result_url() {
+                let task_result = TaskResult::from_result(task_name, &res);
+                send_http_request(task_result.clone(), &url).await?;
+                println!("task_result:{:#?}", task_result);
+            }
         }
         res
     }
