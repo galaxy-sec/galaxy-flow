@@ -100,7 +100,6 @@ lazy_static! {
 }
 
 pub fn load_task_config() {
-    println!("load task config");
     let path = Path::new("src/config.toml");
     let content = fs::read_to_string(path);
     match content {
@@ -110,11 +109,11 @@ pub fn load_task_config() {
                 Ok(config) => {
                     let _ = TASK_RESULT_CONDIG.set(config);
                 }
-                Err(e) => println!("load task config error: {}", e.message()),
+                Err(e) => info!("load task config error: {}", e.message()),
             };
         }
         Err(e) => {
-            println!("load toml error: {}", e)
+            info!("load task_config toml error: {}", e)
         }
     };
 }
