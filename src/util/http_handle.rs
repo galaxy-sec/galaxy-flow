@@ -7,7 +7,7 @@ use crate::{
     ExecReason, ExecResult,
 };
 
-pub fn get_task_result_url() -> Option<String> {
+pub fn get_task_callback_center_url() -> Option<String> {
     if let Ok(url) = env::var("task_result_center_url") {
         return Some(url);
     }

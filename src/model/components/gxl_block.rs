@@ -19,7 +19,7 @@ use crate::calculate::cond::CondExec;
 use crate::context::ExecContext;
 use crate::execution::runnable::VTResult;
 use crate::model::task_result::TaskResult;
-use crate::util::http_handle::get_task_result_url;
+use crate::util::http_handle::get_task_callback_center_url;
 use crate::util::http_handle::send_http_request;
 
 use super::gxl_cond::GxlCond;
@@ -109,8 +109,9 @@ impl AsyncRunnableTrait for BlockAction {
                 o.async_exec(ctx, dct).await
             }
         };
-        if !task_name.is_empty() {
-            if let Some(url) = get_task_result_url() {
+        if !task_name.is_empty() {  
+            // 若环境变量或配置文件中有返回路径则进行返回
+            if let Some(url) = get_task_callback_center_url() {
                 let task_result = TaskResult::from_result(task_name, &res);
                 send_http_request(task_result.clone(), &url).await?;
                 println!("task_result:{:#?}", task_result);
