@@ -2,12 +2,10 @@ use super::prelude::*;
 use crate::execution::sequence::Sequence;
 use crate::menu::*;
 use crate::traits::Setter;
-use crate::util::traits::*;
+use crate::util::{task_report::task_local_report, traits::*};
 use colored::*;
 use orion_error::ErrorConv;
 use std::collections::HashMap;
-use std::fs::File as FsFile;
-use std::io::Write;
 
 use super::code_spc::CodeSpace;
 use super::GxlMod;
@@ -181,12 +179,7 @@ impl GxlSpace {
                 .execute(exec_ctx, var_space.clone())
                 .await
                 .err_conv()?;
-            if let Ok(mut res_json) = FsFile::create("result.json") {
-                let res_str = serde_json::to_string(&out).unwrap();
-                res_json.write_all(res_str.as_bytes()).unwrap(); // 替换原write()
-            } else {
-                info!("创建result.json失败");
-            }
+            task_local_report(out);
         }
         Ok(())
     }
