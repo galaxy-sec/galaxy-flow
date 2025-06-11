@@ -3,6 +3,7 @@ extern crate log;
 extern crate clap;
 
 use clap::Parser;
+use galaxy_flow::task_result::load_task_config;
 use std::path::Path;
 
 use galaxy_flow::err::*;
@@ -12,6 +13,8 @@ use galaxy_flow::runner::{GxlCmd, GxlRunner};
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     use std::process;
+    // 加载task配置
+    load_task_config();
     let mut cmd = GxlCmd::parse();
     configure_run_logging(cmd.log.clone(), cmd.debug);
     //log_init(&LogConf::alpha())?;

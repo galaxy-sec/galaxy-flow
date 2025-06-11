@@ -1,4 +1,5 @@
 mod git;
+pub mod http_handle;
 mod init_cmd;
 pub(crate) mod macs;
 pub mod path;

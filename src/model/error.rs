@@ -44,6 +44,8 @@ pub enum ExecReason {
     Miss(String),
     #[error("{0}")]
     Uvs(UvsReason),
+    #[error("{0}")]
+    NetWork(String),
 }
 impl From<UvsReason> for ExecReason {
     fn from(value: UvsReason) -> Self {
@@ -53,6 +55,12 @@ impl From<UvsReason> for ExecReason {
 impl ErrorCode for ExecReason {
     fn error_code(&self) -> i32 {
         510
+    }
+}
+
+impl From<reqwest::Error> for ExecReason {
+    fn from(value: reqwest::Error) -> Self {
+        ExecReason::NetWork(value.to_string())
     }
 }
 
