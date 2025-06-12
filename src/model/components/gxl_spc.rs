@@ -2,7 +2,7 @@ use super::prelude::*;
 use crate::execution::sequence::Sequence;
 use crate::menu::*;
 use crate::traits::Setter;
-use crate::util::traits::*;
+use crate::util::{task_report::task_local_report, traits::*};
 use colored::*;
 use orion_error::ErrorConv;
 use std::collections::HashMap;
@@ -101,6 +101,7 @@ impl TryFrom<CodeSpace> for GxlSpace {
 impl ExecLoadTrait for GxlSpace {
     fn load_env(&self, ctx: ExecContext, sequ: &mut Sequence, obj_path: &str) -> ExecResult<()> {
         //info!(target:ctx.path(),"load env:{}", obj_path);
+
         let v: Vec<&str> = obj_path.split('.').collect();
         if v.len() >= 2 {
             let mod_name = v[0];
@@ -146,13 +147,14 @@ impl GxlSpace {
         let main_ctx = ExecContext::new(out);
         let mut var_space = VarSpace::default();
         var_space.load_secfile()?;
-        let l_envs: Vec<String> = envs.into();
-        let l_flws: Vec<String> = flow_names.into();
+        let l_envs: Vec<String> = envs.into(); // default
+        let l_flws: Vec<String> = flow_names.into(); // conf
         info!(target:main_ctx.path(),"galaxy flow execute envs: {:?},flow:  {:?}", l_envs,l_flws);
         let mut ctx = main_ctx.clone();
 
         ctx.append("load");
         for f_name in l_flws {
+            println!("init flow:{}", f_name);
             let f_name = if !f_name.contains('.') {
                 format!("main.{}", f_name)
             } else {
@@ -173,10 +175,11 @@ impl GxlSpace {
                 .err_conv()?;
             let mut exec_ctx = ExecContext::new(out);
             exec_ctx.append("exec");
-            let _ = exec_sequ
+            let (_varspave, out) = exec_sequ
                 .execute(exec_ctx, var_space.clone())
                 .await
                 .err_conv()?;
+            task_local_report(out);
         }
         Ok(())
     }
