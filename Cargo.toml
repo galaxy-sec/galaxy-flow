@@ -44,8 +44,8 @@ orion_parse = { path = "crates/orion_parse" }
 orion_infra = { path = "crates/orion_infra" }
 derive-getters = "0.5"
 derive_builder = "0.20"
-duct = "0.13"
-duct_sh = "0.13"
+duct = "1.0.0"
+duct_sh = "1.0.0"
 thiserror = "2.0"
 handlebars = "6.3"
 http-types = "2.12"
@@ -79,6 +79,7 @@ derive_more = { workspace = true }
 async-trait = { workspace = true }
 tokio-util = { version = "0.7", features = ["codec"] }
 reqwest = { version = "0.12.11", features = ["json"] }
+time = { version = "0.3.41", features = ["formatting"]  }
 
 [features]
 res_depend_test = []
