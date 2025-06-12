@@ -10,7 +10,6 @@ use crate::ability::prelude::ExecOut;
 
 // 任务直接结果本地化
 pub fn task_local_report(out: ExecOut) {
-
     let datetime = OffsetDateTime::now_utc();
     let format = format_description::parse("[year]-[month]-[day] [hour]:[minute]:[second]");
     let now = datetime.format(&format.unwrap()).unwrap();

@@ -1,4 +1,4 @@
-use std::time::{Duration, SystemTime};
+use std::time::SystemTime;
 
 use serde::ser::Serializer;
 use serde::Serialize;
@@ -11,7 +11,12 @@ pub struct Task {
     #[serde(serialize_with = "serialize_fmt")]
     begin: SystemTime,
     pub stdout: String,
-    result: std::result::Result<Duration, String>,
+    result: std::result::Result<RunningTime, String>,
+}
+
+#[derive(Debug, Clone, Serialize, PartialEq)]
+pub struct RunningTime {
+    running_time: u64,
 }
 
 // 序列化进行时间格式化
@@ -20,9 +25,7 @@ where
     S: Serializer,
 {
     let datetime = OffsetDateTime::from(*value);
-    // let format = format_description::parse(
-    //     "[year]-[month]-[day] [hour]:[minute]:[second] [offset_hoursign:mandatory]:[offset_minute]:[offset_second]",
-    //     );
+
     datetime
         .format(&time::format_description::well_known::Rfc3339)
         .unwrap()
@@ -31,7 +34,11 @@ where
 
 impl Task {
     pub fn finish(&mut self) {
-        self.result = Ok(self.begin.elapsed().unwrap());
+        let end = SystemTime::now();
+        let duration = end.duration_since(self.begin).unwrap();
+        self.result = Ok(RunningTime {
+            running_time: duration.as_micros() as u64,
+        });
     }
     pub fn err(&mut self, msg: String) {
         self.result = Err(msg);
