@@ -14,13 +14,6 @@ path = "src/app/gflow/main.rs"
 name = "gprj"
 path = "src/app/gprj/main.rs"
 
-[[bin]]
-name = "gsys"
-path = "src/app/gsys/main.rs"
-
-[[bin]]
-name = "gmod"
-path = "src/app/gmod/main.rs"
 
 [workspace]
 members = [
