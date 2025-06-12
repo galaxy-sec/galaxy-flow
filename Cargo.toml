@@ -3,16 +3,16 @@
 authors = ["wukong<sec-wukong@outlook.com>"]
 edition = "2021"
 name = "galaxy_flow"
-version = "0.5.0"
+version = "0.5.1"
 
 
 [[bin]]
 name = "gflow"
-path = "src/app/gflow/main.rs"
+path = "app/gflow/main.rs"
 
 [[bin]]
 name = "gprj"
-path = "src/app/gprj/main.rs"
+path = "app/gprj/main.rs"
 
 
 [workspace]
@@ -33,7 +33,7 @@ winnow = "0.6"
 orion-error = "~0.3"
 #orion-error = { path = "../orion-error" }
 #orion-syspec = { path = "../orion-syspec" }
-orion-syspec = { git = "https://github.com/galaxy-sec/orion-syspec.git", tag = "0.4.1" }
+orion-syspec = { git = "https://github.com/galaxy-sec/orion-syspec.git", tag = "0.6.1" }
 tokio = { version = "1.45", features = ["full"] }
 derive_more = { version = "2.0", features = ["full"] }
 async-trait = "0.1"
@@ -79,7 +79,7 @@ derive_more = { workspace = true }
 async-trait = { workspace = true }
 tokio-util = { version = "0.7", features = ["codec"] }
 reqwest = { version = "0.12.11", features = ["json"] }
-time = { version = "0.3.41", features = ["formatting"]  }
+time = { version = "0.3.41", features = ["formatting"] }
 
 [features]
 res_depend_test = []

@@ -6,7 +6,7 @@ use crate::meta::GxlMeta;
 use crate::ExecResult;
 
 use super::job::Job;
-use super::task::Task;
+use super::task::{Action, Task};
 use super::VarSpace;
 pub type PipeSender = std::sync::mpsc::Sender<String>;
 pub type PipeReceiver = std::sync::mpsc::Receiver<String>;
@@ -14,6 +14,7 @@ pub type Pipe = (PipeReceiver, PipeSender);
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
 pub enum ExecOut {
+    Action(Action),
     Task(Task),
     Job(Job),
     Ignore,

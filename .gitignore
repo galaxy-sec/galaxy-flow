@@ -3,3 +3,6 @@ bin
 .run*
 .vscode
 **/result.json
+report
+_gal/report
+.*

@@ -109,7 +109,7 @@ impl AsyncRunnableTrait for BlockAction {
                 o.async_exec(ctx, dct).await
             }
         };
-        if !task_name.is_empty() {  
+        if !task_name.is_empty() {
             // 若环境变量或配置文件中有返回路径则进行返回
             if let Some(url) = get_task_callback_center_url() {
                 let task_result = TaskResult::from_result(task_name, &res);

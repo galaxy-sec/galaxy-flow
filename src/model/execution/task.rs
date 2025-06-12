@@ -14,6 +14,16 @@ pub struct Task {
     result: std::result::Result<RunningTime, String>,
 }
 
+#[derive(Debug, Clone, Getters, PartialEq, Serialize)]
+pub struct Action {
+    name: String,
+    target: Option<String>,
+    #[serde(serialize_with = "serialize_fmt")]
+    begin: SystemTime,
+    pub stdout: String,
+    result: std::result::Result<RunningTime, String>,
+}
+
 #[derive(Debug, Clone, Serialize, PartialEq)]
 pub struct RunningTime {
     running_time: u64,

@@ -13,7 +13,7 @@ pub fn task_local_report(out: ExecOut) {
     let datetime = OffsetDateTime::now_utc();
     let format = format_description::parse("[year]-[month]-[day] [hour]:[minute]:[second]");
     let now = datetime.format(&format.unwrap()).unwrap();
-    let dir_path = "report";
+    let dir_path = "_gal/.report";
     let path = Path::new(dir_path);
 
     // report目录不存在则创建

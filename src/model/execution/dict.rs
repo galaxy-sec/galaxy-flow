@@ -74,14 +74,21 @@ mod tests {
     use crate::{execution::dict::sec_value_default_path, traits::Getter};
 
     use super::VarSpace;
-    use std::{fs::File, io::Write};
-    use tempfile::tempdir;
+    use orion_error::TestAssertWithMsg;
+    use std::{
+        fs::File,
+        io::Write,
+        path::PathBuf,
+    };
 
     #[test]
     fn test_load_secfile_with_values() {
         // 创建临时目录和文件
-        let dir = tempdir().unwrap();
-        let file_path = dir.path().join("sec_value.yml");
+        let dir = PathBuf::from("./temp");
+        let file_path = dir.join("sec_value.yml");
+        if file_path.exists() {
+            std::fs::remove_file(&file_path).assert("remove file");
+        }
 
         // 写入测试内容
         let mut file = File::create(&file_path).unwrap();
@@ -94,8 +101,7 @@ mod tests {
         let original_path = sec_value_default_path();
         std::env::set_var("GAL_SEC_FILE_PATH", file_path.to_str().unwrap());
 
-        let result = var_space.load_secfile();
-        assert!(result.is_ok());
+        let _ = var_space.load_secfile().assert("load secfile");
 
         // 验证全局变量
         let globle = var_space.globle();
