@@ -18,6 +18,7 @@ use crate::ability::RgVersion;
 use crate::calculate::cond::CondExec;
 use crate::context::ExecContext;
 use crate::execution::runnable::VTResult;
+use crate::execution::task::Task;
 use crate::model::task_result::TaskResult;
 use crate::util::http_handle::get_task_callback_center_url;
 use crate::util::http_handle::send_http_request;
@@ -109,7 +110,7 @@ impl AsyncRunnableTrait for BlockAction {
                 o.async_exec(ctx, dct).await
             }
         };
-        if !task_name.is_empty() {  
+        if !task_name.is_empty() {
             // 若环境变量或配置文件中有返回路径则进行返回
             if let Some(url) = get_task_callback_center_url() {
                 let task_result = TaskResult::from_result(task_name, &res);
@@ -125,16 +126,17 @@ impl AsyncRunnableTrait for BlockAction {
 impl AsyncRunnableTrait for BlockNode {
     async fn async_exec(&self, ctx: ExecContext, var_dict: VarSpace) -> VTResult {
         //ctx.append("block");
-        let mut job = Job::from("block");
+        let mut task = Task::from("block");
         let mut cur_var_dict = var_dict;
         self.export_props(ctx.clone(), cur_var_dict.globle_mut(), "")?;
 
         for item in &self.items {
-            let (tmp_var_dict, task) = item.async_exec(ctx.clone(), cur_var_dict).await?;
+            let (tmp_var_dict, out) = item.async_exec(ctx.clone(), cur_var_dict).await?;
             cur_var_dict = tmp_var_dict;
-            job.append(task);
+            task.append(out);
         }
-        Ok((cur_var_dict, ExecOut::Job(job)))
+        task.finish();
+        Ok((cur_var_dict, ExecOut::Task(task)))
     }
 }
 impl DependTrait<&GxlSpace> for BlockNode {

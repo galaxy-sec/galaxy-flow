@@ -39,13 +39,13 @@ impl AsyncRunnableTrait for GxUpLoad {
             addr = addr.with_credentials(username, password);
         }
         let local_file = ex.eval(self.local_file())?;
-        let mut task = Task::from("gx.upload").with_target(&local_file);
+        let mut action = Action::from("gx.upload").with_target(&local_file);
         let local_file_path = PathBuf::from(&local_file);
         let method = ex.eval(self.method())?.to_uppercase();
         if local_file_path.exists() {
             addr.upload(&local_file_path, &method).await.err_conv()?;
-            task.finish();
-            Ok((vars_dict, ExecOut::Task(task)))
+            action.finish();
+            Ok((vars_dict, ExecOut::Action(action)))
         } else {
             return ExecReason::Miss("local_file".into())
                 .err_result()
@@ -72,14 +72,14 @@ impl AsyncRunnableTrait for GxDownLoad {
             addr = addr.with_credentials(username, password);
         }
         let local_file = ex.eval(self.local_file())?;
-        let mut task = Task::from("gx.download").with_target(&local_file);
+        let mut action = Action::from("gx.download").with_target(&local_file);
         let local_file_path = PathBuf::from(&local_file);
         if let Some(true) = local_file_path.parent().map(|x| x.exists()) {
             addr.download(&local_file_path, &UpdateOptions::default())
                 .await
                 .err_conv()?;
-            task.finish();
-            Ok((vars_dict, ExecOut::Task(task)))
+            action.finish();
+            Ok((vars_dict, ExecOut::Action(action)))
         } else {
             return ExecReason::Miss("local_file_parent".into())
                 .err_result()

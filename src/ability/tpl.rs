@@ -1,5 +1,5 @@
 use crate::ability::prelude::*;
-use crate::execution::task::Task;
+use crate::execution::action::Action;
 use handlebars::{to_json, Handlebars};
 use orion_error::WithContext;
 use serde::Serialize;
@@ -223,10 +223,10 @@ impl GxTpl {
 #[async_trait]
 impl AsyncRunnableTrait for GxTpl {
     async fn async_exec(&self, ctx: ExecContext, vars_dict: VarSpace) -> VTResult {
-        let mut task = Task::from("build tpl file");
+        let mut action = Action::from("build tpl file");
         self.render_path(ctx, &self.dto, vars_dict.clone())?;
-        task.finish();
-        Ok((vars_dict, ExecOut::Task(task)))
+        action.finish();
+        Ok((vars_dict, ExecOut::Action(action)))
     }
 }
 

@@ -2,11 +2,12 @@ use async_trait::async_trait;
 use serde::Serialize;
 
 use crate::context::ExecContext;
+use crate::execution::task::Task;
 use crate::meta::GxlMeta;
 use crate::ExecResult;
 
+use super::action::Action;
 use super::job::Job;
-use super::task::Task;
 use super::VarSpace;
 pub type PipeSender = std::sync::mpsc::Sender<String>;
 pub type PipeReceiver = std::sync::mpsc::Receiver<String>;
@@ -15,6 +16,7 @@ pub type Pipe = (PipeReceiver, PipeSender);
 #[derive(Debug, Clone, PartialEq, Serialize)]
 pub enum ExecOut {
     Task(Task),
+    Action(Action),
     Job(Job),
     Ignore,
     Code(i32),
