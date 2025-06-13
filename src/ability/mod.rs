@@ -23,7 +23,7 @@ pub fn ability_env_init() -> (ExecContext, VarSpace) {
     once_init_log();
     let context = ExecContext::new(false);
     let mut def = VarSpace::default();
-    def.globle_mut()
+    def.global_mut()
         .set("GXL_PRJ_ROOT", context.cur_path().as_str());
     (context, def)
 }

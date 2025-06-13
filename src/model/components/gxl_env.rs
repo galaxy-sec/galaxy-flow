@@ -154,7 +154,7 @@ impl AsyncRunnableTrait for GxlEnv {
         ctx.append(env_name);
 
         debug!(target: ctx.path(),"env {} setting", env_name );
-        self.export_props(ctx.clone(), def.globle_mut(), "ENV")?;
+        self.export_props(ctx.clone(), def.global_mut(), "ENV")?;
         for item in &self.items {
             (def, _) = item.async_exec(ctx.clone(), def).await?
         }

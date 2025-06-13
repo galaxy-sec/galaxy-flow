@@ -162,11 +162,11 @@ impl Activity {
             let mut key = prop.key.clone();
             key.make_ascii_uppercase();
             if key == "DEFAULT" {
-                dict.globle_mut().set(&default_key, prop.val.clone());
+                dict.global_mut().set(&default_key, prop.val.clone());
             } else if key == default_key {
                 //ignore key value
             } else {
-                dict.globle_mut().set(&key, prop.val.clone());
+                dict.global_mut().set(&key, prop.val.clone());
             }
         }
         let mut r_with = WithContext::want("run shell");

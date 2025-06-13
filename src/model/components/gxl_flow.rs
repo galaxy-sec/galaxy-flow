@@ -119,10 +119,9 @@ impl GxlFlow {
         };
         self.meta.set_anns(ann_vec);
     }
-    pub fn load_ins(name: String) -> Self {
-        debug!("load RgFlow: {} ", name);
+    pub fn load_ins<S: Into<String>>(name: S) -> Self {
         Self {
-            meta: GxlMeta::build_flow(name),
+            meta: GxlMeta::build_flow(name.into()),
             pre_flows: Vec::new(),
             post_flows: Vec::new(),
             blocks: Vec::new(),

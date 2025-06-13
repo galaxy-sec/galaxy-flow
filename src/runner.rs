@@ -28,11 +28,12 @@ impl GxlRunner {
                 spc.show().err_conv()?;
                 return Ok(());
             } else {
-                let envs: Vec<&str> = cmd.env.split(',').collect();
-                let flws: Vec<&str> = if cmd.flow.len() == 1 {
-                    cmd.flow[0].split(',').collect()
+                let envs: Vec<String> = cmd.env.split(',').map(String::from).collect();
+                let flws: Vec<String> = if cmd.flow.len() == 1 {
+                    cmd.flow[0].split(',').map(String::from).collect()
                 } else {
-                    cmd.flow.iter().map(|x| x.as_str()).collect()
+                    cmd.flow.clone()
+                    //cmd.flow.iter().collect()
                 };
                 spc.exec(envs, flws, cmd.cmd_print).await?;
                 println!("\ngod job!");

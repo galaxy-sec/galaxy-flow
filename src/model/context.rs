@@ -29,6 +29,11 @@ impl ExecContext {
     pub fn tag_path(&self, tag: &str) -> String {
         format!("{}:{}", tag, self.abs_path)
     }
+
+    pub fn with_subcontext(mut self, arg: &str) -> Self {
+        self.append(arg);
+        self
+    }
 }
 impl AppendAble<&str> for ExecContext {
     fn append(&mut self, now: &str) {

@@ -30,7 +30,7 @@ impl AsyncRunnableTrait for GxlLoop {
             let mut cur_dict = dict.clone();
             for (_k, v) in named_dict.maps().iter() {
                 cur_dict
-                    .globle_mut()
+                    .global_mut()
                     .set(self.cur_name().as_str(), v.clone());
                 let (dict, task) = self.body.async_exec(ctx.clone(), cur_dict).await?;
                 cur_dict = dict;

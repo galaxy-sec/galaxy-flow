@@ -255,7 +255,7 @@ impl ExecLoadTrait for GxlMod {
 }
 impl GxlMod {
     fn exec_self(&self, ctx: ExecContext, mut def: VarSpace) -> VTResult {
-        self.export_props(ctx, def.globle_mut(), self.meta.name().as_str())?;
+        self.export_props(ctx, def.global_mut(), self.meta.name().as_str())?;
         Ok((def, ExecOut::Ignore))
     }
 }

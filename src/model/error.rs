@@ -28,6 +28,8 @@ pub enum ExecReason {
     OsCmd(String, i32, String),
     #[error("io err : {0}")]
     Io(String),
+    #[error("invalid path: {0}")]
+    InvalidPath(String),
     #[error("check err : {0}")]
     Check(String),
     #[error("args err : {0}")]

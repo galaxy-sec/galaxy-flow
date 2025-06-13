@@ -21,7 +21,8 @@ async fn conf_base_test() -> AnyResult<()> {
     let spc =
         GxlSpace::try_from(loader.parse_file("./tests/material/ability.gxl", false, expect)?)
             .assert();
-    spc.exec(vec!["default"], vec!["test"], false).await?;
+    spc.exec(vec!["default".into()], vec!["test".into()], false)
+        .await?;
     Ok(())
 }
 
@@ -39,7 +40,7 @@ async fn conf_web_test() {
             .unwrap(),
     )
     .assert();
-    spc.exec(vec!["dev"], vec!["api", "api2"], false)
+    spc.exec(vec!["dev".into()], vec!["api".into(), "api2".into()], false)
         .await
         .unwrap();
 }

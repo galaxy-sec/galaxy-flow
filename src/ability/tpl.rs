@@ -275,9 +275,9 @@ mod tests {
         );
         let conf_tpl = GxTpl::new(tpl.clone(), dst.clone());
         context.append("RG");
-        def.globle_mut().set("GXL_PRJ_ROOT", "/home/galaxy");
-        def.globle_mut().set("DOMAIN", "www.galaxy-sec.org");
-        def.globle_mut().set("SOCK_FILE", "galaxy.socket");
+        def.global_mut().set("GXL_PRJ_ROOT", "/home/galaxy");
+        def.global_mut().set("DOMAIN", "www.galaxy-sec.org");
+        def.global_mut().set("SOCK_FILE", "galaxy.socket");
         conf_tpl.async_exec(context.clone(), def).await.unwrap();
 
         let ngx_dst = format!(
@@ -322,8 +322,8 @@ mod tests {
         let source = "hello {{world}} {{PRJ_HOME}}!";
         assert!(handlebars.register_template_string("t1", source).is_ok());
         let mut def = VarSpace::default();
-        def.globle_mut().set("world", "世界!".to_string());
-        def.globle_mut().set("PRJ_HOME", "home".to_string());
+        def.global_mut().set("world", "世界!".to_string());
+        def.global_mut().set("PRJ_HOME", "home".to_string());
         let data = def.globle().export();
         assert_eq!(handlebars.render("t1", &data).unwrap(), "hello 世界! home!");
 

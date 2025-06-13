@@ -20,6 +20,11 @@ async fn gxl_normal_test() -> AnyResult<()> {
         GxlSpace::try_from(loader.parse_file("./tests/material/case_normal.gxl", false, expect)?)
             .assert();
     info!("------------------");
-    spc.exec(vec!["dev"], vec!["api", "start"], false).await?;
+    spc.exec(
+        vec!["dev".into()],
+        vec!["api".into(), "start".into()],
+        false,
+    )
+    .await?;
     Ok(())
 }

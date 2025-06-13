@@ -76,7 +76,7 @@ impl PropsTrait for RgVars {
 impl AsyncRunnableTrait for RgVars {
     async fn async_exec(&self, ctx: ExecContext, mut def: VarSpace) -> VTResult {
         let task = Task::from("rg vars setting");
-        self.export_props(ctx, def.globle_mut(), "")?;
+        self.export_props(ctx, def.global_mut(), "")?;
         Ok((def, ExecOut::Task(task)))
     }
 }

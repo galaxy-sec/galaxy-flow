@@ -127,7 +127,7 @@ impl AsyncRunnableTrait for BlockNode {
         //ctx.append("block");
         let mut job = Job::from("block");
         let mut cur_var_dict = var_dict;
-        self.export_props(ctx.clone(), cur_var_dict.globle_mut(), "")?;
+        self.export_props(ctx.clone(), cur_var_dict.global_mut(), "")?;
 
         for item in &self.items {
             let (tmp_var_dict, task) = item.async_exec(ctx.clone(), cur_var_dict).await?;

@@ -43,7 +43,8 @@ mod tests {
         let mut loader = GxLoader::new();
         let spc =
             GxlSpace::try_from(loader.parse_file("./_gal/work.gxl", false, test_opt())?).assert();
-        spc.exec(vec!["default"], vec!["conf"], false).await?;
+        spc.exec(vec!["default".into()], vec!["conf".into()], false)
+            .await?;
         Ok(())
     }
 
@@ -54,7 +55,7 @@ mod tests {
         let mut loader = GxLoader::new();
         let spc =
             GxlSpace::try_from(loader.parse_file("./_gal/work.gxl", false, test_opt())?).assert();
-        spc.exec(vec!["default"], vec!["assert_main"], false)
+        spc.exec(vec!["default".into()], vec!["assert_main".into()], false)
             .await?;
         Ok(())
     }
@@ -65,7 +66,8 @@ mod tests {
         let mut loader = GxLoader::new();
         let spc =
             GxlSpace::try_from(loader.parse_file("./_gal/work.gxl", false, test_opt())?).assert();
-        spc.exec(vec!["default"], vec!["conf"], false).await?;
+        spc.exec(vec!["default".into()], vec!["conf".into()], false)
+            .await?;
         Ok(())
     }
 }

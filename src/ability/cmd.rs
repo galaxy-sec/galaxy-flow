@@ -77,7 +77,7 @@ mod tests {
     #[tokio::test]
     async fn cmd_test() {
         let (context, mut def) = ability_env_init();
-        def.globle_mut()
+        def.global_mut()
             .set("CONF_ROOT", "${GXL_PRJ_ROOT}/example/conf");
         let res = GxCmd::new(
           "cd ${CONF_ROOT}/used ; if test ! -L  ./link2.txt ; then ln -s ${CONF_ROOT}/options/link.txt  ./link2.txt ; fi ".into()

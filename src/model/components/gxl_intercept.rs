@@ -26,7 +26,7 @@ impl RgIntercept {
 impl AsyncRunnableTrait for RgIntercept {
     async fn async_exec(&self, ctx: ExecContext, mut var_dict: VarSpace) -> VTResult {
         let mut job = Job::from("intercept");
-        self.export_props(ctx.clone(), var_dict.globle_mut(), self.m_name())?;
+        self.export_props(ctx.clone(), var_dict.global_mut(), self.m_name())?;
         for flow in &self.flows {
             let (cur_dict, task) = flow.async_exec(ctx.clone(), var_dict).await?;
             var_dict = cur_dict;

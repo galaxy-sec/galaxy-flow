@@ -43,7 +43,7 @@ mod tests {
         let ctx = ExecContext::default();
         let mut def = VarSpace::default();
         watcher.async_exec(ctx.clone(), def.clone()).await.unwrap();
-        def.globle_mut().set("HOME", "/root");
+        def.global_mut().set("HOME", "/root");
         watcher.async_exec(ctx.clone(), def).await.unwrap();
     }
 }

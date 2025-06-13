@@ -29,7 +29,7 @@ pub fn galaxy_dot_path() -> PathBuf {
 }
 
 impl VarSpace {
-    pub fn globle_mut(&mut self) -> &mut VarDict {
+    pub fn global_mut(&mut self) -> &mut VarDict {
         &mut self.globle
     }
 
@@ -75,11 +75,7 @@ mod tests {
 
     use super::VarSpace;
     use orion_error::TestAssertWithMsg;
-    use std::{
-        fs::File,
-        io::Write,
-        path::PathBuf,
-    };
+    use std::{fs::File, io::Write, path::PathBuf};
 
     #[test]
     fn test_load_secfile_with_values() {

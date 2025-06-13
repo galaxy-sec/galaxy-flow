@@ -122,7 +122,7 @@ impl AsyncRunnableTrait for RgVersion {
         if let Ok((a, b, c, d)) = take_version(&mut data.as_str()) {
             let mut ver = Version::new(a, b, c, d);
             ver.auto(&self.verinc);
-            dict.globle_mut()
+            dict.global_mut()
                 .set(&self.export.to_uppercase(), format!("{}", &ver));
             let mut file = File::create(file_path.as_str()).owe_res()?;
             file.write_all(ver.to_string().as_bytes()).owe_res()?;

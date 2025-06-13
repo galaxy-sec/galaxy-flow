@@ -85,7 +85,7 @@ impl FileDTO {
             cur_dict.set_name(name);
             vars_dict.nameds_mut().insert(name.clone(), cur_dict);
         } else {
-            vars_dict.globle_mut().merge_dict(cur_dict);
+            vars_dict.global_mut().merge_dict(cur_dict);
         }
         Ok((vars_dict, ExecOut::Ignore))
     }
@@ -167,7 +167,7 @@ mod tests {
     #[tokio::test]
     async fn read_ini_test() {
         let (context, mut def) = ability_env_init();
-        def.globle_mut()
+        def.global_mut()
             .set("CONF_ROOT", "${GXL_PRJ_ROOT}/examples/read");
         let mut dto = FileDTO::default();
         dto.file = String::from("${CONF_ROOT}/var.ini");

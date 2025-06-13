@@ -24,7 +24,7 @@ impl StdinDTO {
         stdin.read_line(&mut buffer).owe_data()?;
         let mut vars = RgVars::default();
         vars.append(RgProp::new(name, buffer.trim().to_string()));
-        vars.export_props(ctx, vars_dict.globle_mut(), "")?;
+        vars.export_props(ctx, vars_dict.global_mut(), "")?;
         Ok((vars_dict, ExecOut::Ignore))
     }
 }
@@ -39,7 +39,7 @@ mod tests {
     #[tokio::test]
     async fn read_stdin_test() {
         let (context, mut def) = ability_env_init();
-        def.globle_mut()
+        def.global_mut()
             .set("CONF_ROOT", "${GXL_PRJ_ROOT}/example/conf");
         let mut dto = StdinDTO::default();
         dto.prompt = String::from("please input you name");
