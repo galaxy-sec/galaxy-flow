@@ -3,7 +3,7 @@ use serde::Serialize;
 use std::path::Path;
 
 // 确保目录存在，如果不存在则创建
-fn ensure_directory_exists(path: &Path) -> anyhow::Result<()> {
+pub fn ensure_directory_exists(path: &Path) -> anyhow::Result<()> {
     if let Some(parent) = path.parent() {
         std::fs::create_dir_all(parent)
             .with_context(|| format!("create path: {}", parent.to_string_lossy()))?;
