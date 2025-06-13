@@ -56,9 +56,10 @@ impl GxCmd {
             &exp
         );
         match res {
-            Ok(stdout) => {
-                action.stdout =
-                    String::from_utf8(stdout).map_err(|e| ExecReason::Io(e.to_string()))?;
+            Ok((stdout, stderr)) => {
+                let out = String::from_utf8(stdout).map_err(|e| ExecReason::Io(e.to_string()))?;
+                let err = String::from_utf8(stderr).map_err(|e| ExecReason::Io(e.to_string()))?;
+                action.stdout = format!("{}\n{}", out, err);
             }
             Err(error) => {
                 action.stdout = error.to_string();
