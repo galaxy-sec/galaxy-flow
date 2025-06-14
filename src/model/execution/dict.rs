@@ -70,12 +70,13 @@ mod tests {
     };
 
     use orion_error::TestAssertWithMsg;
-    use std::{fs::File, io::Write, path::PathBuf};
+    use std::{env::temp_dir, fs::File, io::Write};
 
     #[test]
     fn test_load_secfile_with_values() {
         // 创建临时目录和文件
-        let dir = PathBuf::from("./temp");
+        //let dir = PathBuf::from("./temp");
+        let dir = temp_dir();
         let file_path = dir.join("sec_value.yml");
         if file_path.exists() {
             std::fs::remove_file(&file_path).assert("remove file");
