@@ -4,5 +4,6 @@ bin
 .vscode
 **/result.json
 report
-_gal/report
+_gal/.report
 .*
+temp

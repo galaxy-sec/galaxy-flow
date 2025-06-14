@@ -160,7 +160,7 @@ mod tests {
     //  do_adm_cmd 函数进行测试
     #[tokio::test]
     async fn test_init_local() {
-        let init_local_path = PathBuf::from("./test/temp/init");
+        let init_local_path = PathBuf::from("./tests/temp/init");
         if init_local_path.exists() {
             fs::remove_dir_all(&init_local_path).unwrap();
         }
