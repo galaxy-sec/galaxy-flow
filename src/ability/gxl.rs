@@ -48,7 +48,7 @@ impl AsyncRunnableTrait for GxRun {
             conf: Some(exp.eval(&self.gxl_path)?),
             log: None,
             cmd_print: true,
-            cmd_args: String::new(),
+            cmd_arg: String::new(),
         };
         let run_path = exp.eval(&self.run_path)?;
         let _g = WorkDir::change(run_path)

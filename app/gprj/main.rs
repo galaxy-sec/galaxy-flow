@@ -177,7 +177,7 @@ mod tests {
             env: "default".into(),
             flow: vec!["echo".into()],
             cmd_print: true,
-            cmd_args: String::new(),
+            cmd_arg: String::new(),
         })
         .await
         .assert();

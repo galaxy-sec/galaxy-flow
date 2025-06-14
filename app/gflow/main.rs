@@ -6,7 +6,6 @@ use clap::Parser;
 use galaxy_flow::execution::VarSpace;
 use galaxy_flow::task_result::load_task_config;
 use galaxy_flow::traits::Setter;
-use std::path::Path;
 
 use galaxy_flow::err::*;
 use galaxy_flow::infra::configure_run_logging;
@@ -22,15 +21,12 @@ async fn main() -> anyhow::Result<()> {
     debug!("galaxy flow running .....");
     if cmd.conf.is_none() {
         let main_conf = "./_gal/work.gxl";
-        if Path::new(main_conf).exists() {
-            cmd.conf = Some(main_conf.to_string());
-        }
-        //println!("warning: please use work.gxl !");
+        cmd.conf = Some(main_conf.to_string());
     }
     let mut var_space = VarSpace::sys_init()?;
     var_space
         .global_mut()
-        .set("GXL_CMD_ARGS", cmd.cmd_args.clone());
+        .set("GXL_CMD_ARG", cmd.cmd_arg.clone());
     match GxlRunner::run(cmd, var_space).await {
         Err(e) => report_gxl_error(e),
         Ok(_) => {

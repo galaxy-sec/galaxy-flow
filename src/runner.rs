@@ -1,22 +1,21 @@
 use crate::{
     components::gxl_spc::GxlSpace,
-    err::{RunError, RunReason, RunResult},
+    err::{RunError, RunResult},
     execution::VarSpace,
     infra::DfxArgsGetter,
     GxLoader,
 };
 use clap::ArgAction;
-use orion_error::{ErrorConv, ErrorWith, StructError, UvsConfFrom, UvsReason};
+use orion_error::{ErrorConv, ErrorWith, StructError, UvsConfFrom};
 use std::path::Path;
 
 pub struct GxlRunner {}
 impl GxlRunner {
-    #[allow(clippy::result_large_err)]
     pub async fn run(cmd: GxlCmd, vars: VarSpace) -> RunResult<()> {
         let mut loader = GxLoader::new();
         if let Some(conf) = cmd.conf {
             if !Path::new(conf.as_str()).exists() {
-                return Err(StructError::from_conf("conf not exists".to_string()))
+                return Err(StructError::from_conf("gflow conf not exists".to_string()))
                     .with(("conf", conf));
             }
             let expect = ShellOption {
@@ -41,9 +40,7 @@ impl GxlRunner {
             }
             Ok(())
         } else {
-            Err(RunError::from(RunReason::from(UvsReason::core_conf(
-                "conf is empty".to_string(),
-            ))))
+            Err(RunError::from_conf("gflow conf is empty".to_string()))
         }
     }
 }
@@ -74,7 +71,7 @@ pub struct GxlCmd {
         value_name = "cmd_args",
         default_value = ""
     )]
-    pub cmd_args: String,
+    pub cmd_arg: String,
 }
 impl DfxArgsGetter for GxlCmd {
     fn debug_level(&self) -> usize {
