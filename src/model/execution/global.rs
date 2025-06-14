@@ -19,6 +19,8 @@ pub fn setup_start_vars(vars_dict: &mut VarDict) -> ExecResult<()> {
 
     let start_root = current_dir().owe_sys().want("get current dir")?;
     vars_dict.set("GXL_START_ROOT", start_root.display().to_string());
+    let prj_root = find_project_define().unwrap_or(PathBuf::from("UNDEFIN"));
+    vars_dict.set("GXL_PRJ_ROOT", format!("{}", prj_root.display()));
     Ok(())
 }
 
@@ -72,4 +74,80 @@ pub fn load_secfile(vars_dict: &mut VarDict) -> ExecResult<()> {
         default.save_conf(&path).err_conv()?;
     }
     Ok(())
+}
+
+/// 从当前目录开始向上查找 _gal/project.toml 文件
+/// 如果找到则返回其绝对路径的PathBuf，未找到则返回None
+pub fn find_project_define() -> Option<PathBuf> {
+    let mut current_dir = std::env::current_dir().expect("Failed to get current directory");
+
+    loop {
+        let project_file = current_dir.join("_gal").join("project.toml");
+        if project_file.exists() {
+            //let project_root = current_dir.clone();
+            return Some(current_dir);
+        }
+
+        match current_dir.parent() {
+            Some(parent) => current_dir = parent.to_path_buf(),
+            None => break, // 已到达根目录
+        }
+    }
+
+    None
+}
+
+#[cfg(test)]
+mod tests {
+
+    use std::env;
+
+    use crate::execution::global::find_project_define;
+    use tempfile::TempDir;
+
+    #[test]
+    fn test_find_project_define_in_current_dir() {
+        // 创建临时目录
+        let temp_dir = TempDir::new().expect("Failed to create temp dir");
+        let gal_dir = temp_dir.path().join("_gal");
+        std::fs::create_dir(&gal_dir).expect("Failed to create _gal dir");
+        let project_file = gal_dir.join("project.toml");
+        std::fs::write(&project_file, "").expect("Failed to create project.toml");
+
+        // 设置当前工作目录为临时目录
+        env::set_current_dir(temp_dir.path()).expect("Failed to set current dir");
+
+        // 调用函数并断言结果
+        assert_eq!(find_project_define().is_some(), true)
+    }
+
+    #[test]
+    fn test_find_project_define_in_parent_dir() {
+        // 创建临时目录结构: temp_dir/child/_gal/project.toml
+        let temp_dir = TempDir::new().expect("Failed to create temp dir");
+        let child_dir = temp_dir.path().join("child");
+        std::fs::create_dir(&child_dir).expect("Failed to create child dir");
+        let gal_dir = temp_dir.path().join("_gal");
+        std::fs::create_dir(&gal_dir).expect("Failed to create _gal dir");
+        let project_file = gal_dir.join("project.toml");
+        std::fs::write(&project_file, "").expect("Failed to create project.toml");
+
+        // 设置当前工作目录为child_dir
+        env::set_current_dir(&child_dir).expect("Failed to set current dir");
+
+        // 调用函数应找到父目录中的文件
+        assert_eq!(find_project_define().is_some(), true);
+    }
+
+    #[test]
+    fn test_find_project_define_not_found() {
+        // 创建临时目录，不创建_gal/project.toml
+        let temp_dir = TempDir::new().expect("Failed to create temp dir");
+
+        // 设置当前工作目录为临时目录
+        env::set_current_dir(temp_dir.path()).expect("Failed to set current dir");
+
+        // 调用函数应返回None
+        assert_eq!(find_project_define(), None);
+    }
 }

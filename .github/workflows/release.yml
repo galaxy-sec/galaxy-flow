@@ -2,9 +2,10 @@ name: Release
 
 on:
   push:
-    # 保留标签触发
-    tags: ["v*.*.*"]
-    # 增加分支触发
+    # 标签触发
+    tags:
+      - 'v*.*.*'
+    # 分支触发
     branches:
       - main
       - 'release/**'

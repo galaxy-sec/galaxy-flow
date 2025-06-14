@@ -10,7 +10,6 @@ use crate::ExecResult;
 use orion_error::ErrorOwe;
 use orion_error::ErrorWith;
 use orion_error::WithContext;
-use std::fs;
 use std::fs::read_to_string;
 use winnow::ascii::line_ending;
 use winnow::ascii::till_line_ending;
@@ -58,23 +57,11 @@ impl ExternLocal {
         let ee = EnvExpress::from_env();
         let gxl_full_path = format!("{}/{}.gxl", self.path, name);
         let gxl_full_path = crate::evaluator::Parser::eval(&ee, &gxl_full_path)?;
-        let rgl_full_path = format!("{}/{}.rgl", self.path, name);
-        let rgl_full_path = crate::evaluator::Parser::eval(&ee, &rgl_full_path)?;
         ctx.with("gxl", gxl_full_path.as_str());
-        if fs::exists(gxl_full_path.as_str()).owe_rule()? {
-            let code = read_to_string(gxl_full_path.as_str())
-                .owe_rule()
-                .with(&ctx)?;
-
-            Ok(code)
-        } else {
-            ctx.with("rgl", rgl_full_path.as_str());
-            let code = read_to_string(rgl_full_path.as_str())
-                .owe_rule()
-                .with(&ctx)?;
-
-            Ok(code)
-        }
+        let code = read_to_string(gxl_full_path.as_str())
+            .owe_rule()
+            .with(&ctx)?;
+        Ok(code)
     }
 }
 

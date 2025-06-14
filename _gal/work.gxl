@@ -53,6 +53,7 @@ mod main   {
       gx.echo ( "USR_BIN : ${MAIN_USR_BINS} " );
       gx.echo ( "GXL_OS_SYS: ${GXL_OS_SYS} " );
       gx.echo ( "GXL_START_ROOT: ${GXL_START_ROOT} " );
+      gx.echo ( "GXL_PRJ_ROOT: ${GXL_PRJ_ROOT} " );
       gx.echo ( "GXL_CMD_ARG: ${GXL_CMD_ARG} " );
 
       gx.echo (  "ENV_BUILD_FLAG :  ${ENV_BUILD_FLAG}  " );
