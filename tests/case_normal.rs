@@ -12,14 +12,19 @@ use orion_error::TestAssert;
 #[tokio::test]
 async fn gxl_normal_test() -> AnyResult<()> {
     once_init_log();
+    let vars = VarSpace::sys_init().assert();
     let mut loader = GxLoader::new();
     let expect = ShellOption {
         outer_print: false,
         ..Default::default()
     };
-    let spc =
-        GxlSpace::try_from(loader.parse_file("./tests/material/case_normal.gxl", false, expect)?)
-            .assert();
+    let spc = GxlSpace::try_from(loader.parse_file(
+        "./tests/material/case_normal.gxl",
+        false,
+        expect,
+        &vars,
+    )?)
+    .assert();
     info!("------------------");
     spc.exec(
         vec!["dev".into()],

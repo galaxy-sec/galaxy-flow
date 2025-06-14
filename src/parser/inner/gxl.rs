@@ -49,7 +49,7 @@ mod tests {
     fn cmd_test() {
         once_init_log();
         let mut data = r#"
-             gx.run ( local : "${PRJ_ROOT}", env : "dev" , flow : "conf,test" ) ;"#;
+             gx.run ( local : "${PRJ_ROOT}", env : "dev" , flow : "conf,test" , isolate : "true" ) ;"#;
         let obj = gal_run(&mut data).assert();
         assert_eq!(obj.env_conf(), "dev");
         assert_eq!(obj.env_conf(), "dev");

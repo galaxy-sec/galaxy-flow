@@ -109,12 +109,13 @@ impl GxAdm {
                     inner_print: args.cmd_print,
                     ..Default::default()
                 };
+                let vars = VarSpace::sys_init().err_conv()?;
 
                 if std::path::Path::new(args.conf_work.as_str()).exists() {
-                    load.parse_file(args.conf_work.as_str(), true, sh_opt.clone())?;
+                    load.parse_file(args.conf_work.as_str(), true, sh_opt.clone(), &vars)?;
                 }
                 if std::path::Path::new(args.conf_adm.as_str()).exists() {
-                    load.parse_file(args.conf_adm.as_str(), true, sh_opt)?;
+                    load.parse_file(args.conf_adm.as_str(), true, sh_opt, &vars)?;
                 }
             }
         }
@@ -176,6 +177,7 @@ mod tests {
             env: "default".into(),
             flow: vec!["echo".into()],
             cmd_print: true,
+            cmd_args: String::new(),
         })
         .await
         .assert();

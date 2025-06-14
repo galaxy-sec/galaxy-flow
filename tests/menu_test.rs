@@ -1,5 +1,6 @@
 extern crate galaxy_flow;
 use galaxy_flow::components::gxl_spc::GxlSpace;
+use galaxy_flow::execution::VarSpace;
 use galaxy_flow::expect::ShellOption;
 use galaxy_flow::infra::once_init_log;
 use galaxy_flow::menu::*;
@@ -15,9 +16,10 @@ fn menu_normal() {
         outer_print: false,
         ..Default::default()
     };
+    let vars = VarSpace::sys_init().assert();
     let spc = GxlSpace::try_from(
         loader
-            .parse_file("./tests/material/menu.gxl", false, expect)
+            .parse_file("./tests/material/menu.gxl", false, expect, &vars)
             .unwrap(),
     )
     .assert();
@@ -51,9 +53,10 @@ fn menu_simple() {
         outer_print: false,
         ..Default::default()
     };
+    let vars = VarSpace::sys_init().assert();
     let spc = GxlSpace::try_from(
         loader
-            .parse_file("./tests/material/simple_menu.gxl", false, expect)
+            .parse_file("./tests/material/simple_menu.gxl", false, expect, &vars)
             .unwrap(),
     )
     .assert();

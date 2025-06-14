@@ -1,6 +1,7 @@
 use super::prelude::*;
 use crate::components::gxl_extend::ModAddr;
 use crate::evaluator::EnvExpress;
+use crate::execution::VarSpace;
 use crate::model::expect::ShellOption;
 use crate::parser::domain::gal_extern_mod;
 use crate::parser::domain::gal_git_path;
@@ -119,17 +120,19 @@ impl ExternParser {
         cur: &mut &str,
         git: &GitTools,
         shell_opt: &ShellOption,
+        vars_space: &VarSpace,
     ) -> ExecResult<(String, DslStatus)> {
+        use crate::evaluator::Parser;
         let extern_mods = gal_extern_mod
             .context(wn_desc("<extern-mod>"))
             .parse_next(cur)
             .owe_rule()?;
-        //let mut props = StrMap::new();
+        let exp = EnvExpress::from_env_mix(vars_space.global().clone());
         let mut git_builder = ExternGitBuilder::default();
         git_builder.tag("".into());
         let local = match extern_mods.addr() {
             ModAddr::Git(git_addr) => {
-                let git_url = git_addr.remote();
+                let git_url = exp.eval(git_addr.remote())?;
                 let cl_git_url = git_url.clone();
                 let (_, repo_name) = gal_git_path(&mut git_url.as_str()).owe_rule()?;
                 debug!("git url: {}", cl_git_url);
@@ -147,7 +150,7 @@ impl ExternParser {
                     .unwrap()
             }
             ModAddr::Loc(loc_addr) => ExternLocalBuilder::default()
-                .path(loc_addr.path().clone())
+                .path(exp.eval(loc_addr.path())?)
                 .build()
                 .unwrap(),
         };
@@ -166,6 +169,7 @@ impl ExternParser {
         git: &GitTools,
         shell_opt: &ShellOption,
         input: &mut &str,
+        vars_space: &VarSpace,
     ) -> ExecResult<(String, bool)> {
         let mut status = DslStatus::Code;
         let mut out = String::new();
@@ -182,7 +186,8 @@ impl ExternParser {
                     continue;
                 }
                 DslStatus::Extern => {
-                    let (code, cur_status) = Self::parse_extend_mod(input, git, shell_opt)?;
+                    let (code, cur_status) =
+                        Self::parse_extend_mod(input, git, shell_opt, vars_space)?;
                     out += code.as_str();
                     status = cur_status;
                     have_extern = true;
@@ -206,8 +211,11 @@ mod tests {
         let git_t = GitTools::new(false).expect("git tool init fail!");
         let sh_opt = ShellOption::default();
         let parser = ExternParser::new();
+        let vars = VarSpace::sys_init().assert();
         let mut data = r#"extern mod ssh { path = "./_gal/mods";}"#;
-        let (codes, _have_ext) = parser.extern_parse(&git_t, &sh_opt, &mut data).assert();
+        let (codes, _have_ext) = parser
+            .extern_parse(&git_t, &sh_opt, &mut data, &vars)
+            .assert();
 
         let mut expect = read_to_string("./_gal/mods/ssh.gxl").unwrap();
         expect = expect.replace("@PATH", "./_gal/mods");
@@ -215,11 +223,14 @@ mod tests {
     }
     #[test]
     fn test_extern_muti() {
+        let vars = VarSpace::sys_init().assert();
         let git_t = GitTools::new(false).expect("git tool init fail!");
         let sh_opt = ShellOption::default();
         let parser = ExternParser::new();
         let mut data = r#"extern mod os,ssh { path = "./_gal/mods";}"#;
-        let (codes, _have_ext) = parser.extern_parse(&git_t, &sh_opt, &mut data).assert();
+        let (codes, _have_ext) = parser
+            .extern_parse(&git_t, &sh_opt, &mut data, &vars)
+            .assert();
         let mut expect = read_to_string("./_gal/tests/_all.gxl").assert();
         expect = expect.replace("@PATH", "./_gal/mods");
         println!("{}", codes);

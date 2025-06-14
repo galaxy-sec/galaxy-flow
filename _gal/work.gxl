@@ -1,4 +1,4 @@
-extern mod head { path = "./_gal/"; }
+extern mod head { path = "${GXL_START_ROOT}/_gal/"; }
 
 mod env  {
    env _common  : rust_env.init   {
@@ -53,6 +53,7 @@ mod main   {
       gx.echo ( "USR_BIN : ${MAIN_USR_BINS} " );
       gx.echo ( "GXL_OS_SYS: ${GXL_OS_SYS} " );
       gx.echo ( "GXL_START_ROOT: ${GXL_START_ROOT} " );
+      gx.echo ( "GXL_CMD_ARGS: ${GXL_CMD_ARGS} " );
 
       gx.echo (  "ENV_BUILD_FLAG :  ${ENV_BUILD_FLAG}  " );
       gx.echo (  "ENV_TARGET_FLAG : ${ENV_TARGET_FLAG} " );
@@ -80,6 +81,10 @@ mod main   {
     gx.cmd ( "cargo test --test sys_tests  --all-features  ${ENV_BUILD_FLAG}", log : "1" , out:"true"  );
   }
 
+  flow debug_ut:  {
+    gx.cmd ( "RUST_LOG=debug cargo test ${GXL_CMD_ARGS} -- --nocapture ", log : "1" , out:"true"  );
+  }
+
   flow pub_local   {
 
     AP = "${ENV_AFT_PREFIX}";
@@ -88,8 +93,6 @@ mod main   {
     gx.cmd  (  "rm -f ${MAIN_PRJ_BINS}/r*"  );
     gx.cmd (  "cp ${MAIN_BLD_BINS}/gflow ${MAIN_PRJ_BINS}/${AP}flow"  );
     gx.cmd (  "cp ${MAIN_BLD_BINS}/gprj ${MAIN_PRJ_BINS}/${AP}prj"  );
-    gx.cmd (  "cp ${MAIN_BLD_BINS}/gmod ${MAIN_PRJ_BINS}/${AP}mod"  );
-    gx.cmd (  "cp ${MAIN_BLD_BINS}/gsys ${MAIN_PRJ_BINS}/${AP}sys"  );
     gx.cmd (  "cp ${MAIN_PRJ_BINS}/${AP}* ${MAIN_USR_BINS}/"  );
   }
   flow _pub_gsys: : _pub_dysec {

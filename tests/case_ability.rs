@@ -14,13 +14,18 @@ use std::fs::remove_dir_all;
 async fn conf_base_test() -> AnyResult<()> {
     once_init_log();
     let mut loader = GxLoader::new();
+    let vars = VarSpace::sys_init().assert();
     let expect = ShellOption {
         outer_print: false,
         ..Default::default()
     };
-    let spc =
-        GxlSpace::try_from(loader.parse_file("./tests/material/ability.gxl", false, expect)?)
-            .assert();
+    let spc = GxlSpace::try_from(loader.parse_file(
+        "./tests/material/ability.gxl",
+        false,
+        expect,
+        &vars,
+    )?)
+    .assert();
     spc.exec(
         vec!["default".into()],
         vec!["test".into()],
@@ -34,6 +39,7 @@ async fn conf_base_test() -> AnyResult<()> {
 #[tokio::test]
 async fn conf_web_test() {
     once_init_log();
+    let vars = VarSpace::sys_init().assert();
     let mut loader = GxLoader::new();
     let sh_opt = ShellOption {
         outer_print: false,
@@ -41,7 +47,7 @@ async fn conf_web_test() {
     };
     let spc = GxlSpace::try_from(
         loader
-            .parse_file("./tests/material/run_web.gxl", false, sh_opt)
+            .parse_file("./tests/material/run_web.gxl", false, sh_opt, &vars)
             .unwrap(),
     )
     .assert();
@@ -59,6 +65,7 @@ async fn conf_web_test() {
 #[test]
 fn prj_init_test() -> RunResult<()> {
     once_init_log();
+    let vars = VarSpace::sys_init().assert();
     let sh_opt = ShellOption {
         outer_print: true,
         ..Default::default()
@@ -72,7 +79,7 @@ fn prj_init_test() -> RunResult<()> {
     }
     gx.init(repo, rg_root, true, "open_pages", sh_opt.clone())?;
     let rg_conf = format!("{}/_rg/work.gxl", rg_root);
-    gx.parse_file(rg_conf.as_str(), false, sh_opt.clone())?;
+    gx.parse_file(rg_conf.as_str(), false, sh_opt.clone(), &vars)?;
 
     Ok(())
 }

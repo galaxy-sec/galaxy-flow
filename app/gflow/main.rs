@@ -5,6 +5,7 @@ extern crate clap;
 use clap::Parser;
 use galaxy_flow::execution::VarSpace;
 use galaxy_flow::task_result::load_task_config;
+use galaxy_flow::traits::Setter;
 use std::path::Path;
 
 use galaxy_flow::err::*;
@@ -18,19 +19,18 @@ async fn main() -> anyhow::Result<()> {
     load_task_config();
     let mut cmd = GxlCmd::parse();
     configure_run_logging(cmd.log.clone(), cmd.debug);
-    //log_init(&LogConf::alpha())?;
     debug!("galaxy flow running .....");
     if cmd.conf.is_none() {
-        let v1_conf = "./_gal/prj.gxl";
-        let v2_conf = "./_gal/work.gxl";
-        if Path::new(v2_conf).exists() {
-            cmd.conf = Some(v2_conf.to_string());
-        } else if Path::new(v1_conf).exists() {
-            cmd.conf = Some(v1_conf.to_string());
-            println!("warning: please use work.gxl !");
+        let main_conf = "./_gal/work.gxl";
+        if Path::new(main_conf).exists() {
+            cmd.conf = Some(main_conf.to_string());
         }
+        //println!("warning: please use work.gxl !");
     }
-    let var_space = VarSpace::sys_init()?;
+    let mut var_space = VarSpace::sys_init()?;
+    var_space
+        .global_mut()
+        .set("GXL_CMD_ARGS", cmd.cmd_args.clone());
     match GxlRunner::run(cmd, var_space).await {
         Err(e) => report_gxl_error(e),
         Ok(_) => {

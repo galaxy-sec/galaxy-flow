@@ -23,8 +23,8 @@ impl GxlRunner {
                 outer_print: cmd.cmd_print,
                 ..Default::default()
             };
-            let spc =
-                GxlSpace::try_from(loader.parse_file(conf.as_str(), false, expect)?).err_conv()?;
+            let spc = GxlSpace::try_from(loader.parse_file(conf.as_str(), false, expect, &vars)?)
+                .err_conv()?;
             if cmd.flow.is_empty() {
                 spc.show().err_conv()?;
                 return Ok(());
@@ -69,6 +69,12 @@ pub struct GxlCmd {
     pub log: Option<String>,
     #[arg(short= 'q', long = "quiet" ,action = ArgAction::SetFalse , default_value = "true")]
     pub cmd_print: bool,
+    #[arg( allow_hyphen_values = true,  // 关键设置：允许值以 - 开头
+        last = true,                 // 关键设置：捕获所有剩余参数
+        value_name = "cmd_args",
+        default_value = ""
+    )]
+    pub cmd_args: String,
 }
 impl DfxArgsGetter for GxlCmd {
     fn debug_level(&self) -> usize {

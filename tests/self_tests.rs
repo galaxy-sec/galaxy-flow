@@ -16,7 +16,9 @@ async fn prj_conf() -> AnyResult<()> {
         outer_print: false,
         ..Default::default()
     };
-    let spc = GxlSpace::try_from(loader.parse_file("./_gal/work.gxl", false, expect)?).assert();
+    let vars = VarSpace::sys_init().assert();
+    let spc =
+        GxlSpace::try_from(loader.parse_file("./_gal/work.gxl", false, expect, &vars)?).assert();
     spc.exec(
         vec!["default".into()],
         vec!["conf".into()],

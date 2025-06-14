@@ -41,9 +41,11 @@ mod tests {
     async fn example_read() -> RunResult<()> {
         once_init_log();
         let _dir = ScopedRunDir::new("./examples/read");
+        let vars = VarSpace::sys_init().assert();
         let mut loader = GxLoader::new();
         let spc =
-            GxlSpace::try_from(loader.parse_file("./_gal/work.gxl", false, test_opt())?).assert();
+            GxlSpace::try_from(loader.parse_file("./_gal/work.gxl", false, test_opt(), &vars)?)
+                .assert();
         spc.exec(
             vec!["default".into()],
             vec!["conf".into()],
@@ -58,9 +60,11 @@ mod tests {
     async fn example_assert() -> RunResult<()> {
         once_init_log();
         let _dir = WorkDir::change("./examples/assert");
+        let vars = VarSpace::sys_init().assert();
         let mut loader = GxLoader::new();
         let spc =
-            GxlSpace::try_from(loader.parse_file("./_gal/work.gxl", false, test_opt())?).assert();
+            GxlSpace::try_from(loader.parse_file("./_gal/work.gxl", false, test_opt(), &vars)?)
+                .assert();
         spc.exec(
             vec!["default".into()],
             vec!["assert_main".into()],
@@ -75,8 +79,10 @@ mod tests {
         once_init_log();
         let _dir = WorkDir::change("./examples/template");
         let mut loader = GxLoader::new();
+        let vars = VarSpace::sys_init().assert();
         let spc =
-            GxlSpace::try_from(loader.parse_file("./_gal/work.gxl", false, test_opt())?).assert();
+            GxlSpace::try_from(loader.parse_file("./_gal/work.gxl", false, test_opt(), &vars)?)
+                .assert();
         spc.exec(
             vec!["default".into()],
             vec!["conf".into()],

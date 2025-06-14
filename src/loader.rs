@@ -1,5 +1,6 @@
 use crate::components::code_spc::CodeSpace;
 
+use crate::execution::VarSpace;
 use crate::parser::comment::ignore_comment;
 use crate::parser::externs::ExternParser;
 use crate::parser::stc_spc::gal_stc_spc;
@@ -48,19 +49,21 @@ impl GxLoader {
         conf: &str,
         update: bool,
         sh_opt: ShellOption,
+        vars_space: &VarSpace,
     ) -> RunResult<CodeSpace> {
         info!(target:"parse", "parse file: {}", conf);
         let mut wc = WithContext::want("parse gxl file");
         wc.with("conf", conf);
         let code = read_to_string(conf).owe_conf().with(&wc)?;
         //let loader = Arc::new(PluginLoader::default());
-        self.parse_code(&code, update, sh_opt)
+        self.parse_code(&code, update, sh_opt, vars_space)
     }
     pub fn parse_code(
         &self,
         code: &str,
         update: bool,
         sh_opt: ShellOption,
+        vars_space: &VarSpace,
     ) -> RunResult<CodeSpace> {
         let e_parser = ExternParser::new();
         let git_tools = GitTools::new(update).unwrap();
@@ -69,8 +72,7 @@ impl GxLoader {
         loop {
             let mut target_code_str = target_code.as_str();
             let (code, have) = e_parser
-                .extern_parse(&git_tools, &sh_opt, &mut target_code_str)
-                //.owe(RunReason::Gxl("extern parse fail!".into()))
+                .extern_parse(&git_tools, &sh_opt, &mut target_code_str, vars_space)
                 .with(("code", err_code_prompt(target_code_str)))
                 .err_conv()?;
 
@@ -131,13 +133,14 @@ mod tests {
     async fn test_parse_file() -> AnyResult<()> {
         //log_init(&LogConf::alpha()).assert();
         once_init_log();
-        let mut rg = GxLoader::default();
+        let mut loader = GxLoader::default();
         let conf = "./_gal/work.gxl";
         let sh_opt = ShellOption {
             outer_print: true,
             ..Default::default()
         };
-        let spc = GxlSpace::try_from(rg.parse_file(conf, false, sh_opt)?).assert();
+        let vars = VarSpace::sys_init()?;
+        let spc = GxlSpace::try_from(loader.parse_file(conf, false, sh_opt, &vars)?).assert();
         info!("test begin");
         spc.show()?;
         println!("mods:{}", spc.len());
