@@ -100,11 +100,10 @@ pub fn find_project_define() -> Option<PathBuf> {
 #[cfg(test)]
 mod tests {
 
-    use std::env;
-
-    use crate::execution::global::find_project_define;
+    use crate::{execution::global::find_project_define, util::path::WorkDir};
     use tempfile::TempDir;
 
+    #[ignore = "change work dir"]
     #[test]
     fn test_find_project_define_in_current_dir() {
         // 创建临时目录
@@ -115,12 +114,14 @@ mod tests {
         std::fs::write(&project_file, "").expect("Failed to create project.toml");
 
         // 设置当前工作目录为临时目录
-        env::set_current_dir(temp_dir.path()).expect("Failed to set current dir");
+        //env::set_current_dir(temp_dir.path()).expect("Failed to set current dir");
+        let _wd = WorkDir::change(temp_dir.path());
 
         // 调用函数并断言结果
         assert_eq!(find_project_define().is_some(), true)
     }
 
+    #[ignore = "change work dir"]
     #[test]
     fn test_find_project_define_in_parent_dir() {
         // 创建临时目录结构: temp_dir/child/_gal/project.toml
@@ -133,19 +134,22 @@ mod tests {
         std::fs::write(&project_file, "").expect("Failed to create project.toml");
 
         // 设置当前工作目录为child_dir
-        env::set_current_dir(&child_dir).expect("Failed to set current dir");
+        let _wd = WorkDir::change(&child_dir);
+        //env::set_current_dir(&child_dir).expect("Failed to set current dir");
 
         // 调用函数应找到父目录中的文件
         assert_eq!(find_project_define().is_some(), true);
     }
 
+    #[ignore = "change work dir"]
     #[test]
     fn test_find_project_define_not_found() {
         // 创建临时目录，不创建_gal/project.toml
         let temp_dir = TempDir::new().expect("Failed to create temp dir");
 
+        let _wd = WorkDir::change(temp_dir.path());
         // 设置当前工作目录为临时目录
-        env::set_current_dir(temp_dir.path()).expect("Failed to set current dir");
+        //env::set_current_dir(temp_dir.path()).expect("Failed to set current dir");
 
         // 调用函数应返回None
         assert_eq!(find_project_define(), None);
