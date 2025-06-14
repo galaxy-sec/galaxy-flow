@@ -2,7 +2,12 @@ name: Release
 
 on:
   push:
+    # 保留标签触发
     tags: ["v*.*.*"]
+    # 增加分支触发
+    branches:
+      - main
+      - 'release/**'
 
 env:
   REGISTRY: ghcr.io
@@ -70,7 +75,8 @@ jobs:
     runs-on: ubuntu-22.04
     permissions:
       contents: write
-
+    # 仅在标签或特定分支时创建Release
+    if: ${{ github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/')) }}
     steps:
       - name: Ensure artifacts dir exists
         run: mkdir -p artifacts
@@ -98,5 +104,12 @@ jobs:
             gh attestation verify --owner ${{ github.repository_owner }} <my-artifact>
             ```
           token: ${{ secrets.GITHUB_TOKEN }}
-          prerelease: ${{ contains(github.ref, '-pre') }}
+          # 判断是否为预发布:
+          # 1. release/* 分支 -> prerelease
+          # 2. main 分支 -> 正式发布
+          # 3. 带-pre的标签 -> prerelease
+          prerelease: ${{
+            startsWith(github.ref, 'refs/heads/release/') ||
+            (startsWith(github.ref, 'refs/tags/') && contains(github.ref, '-pre'))
+          }}
           files: artifacts/*
