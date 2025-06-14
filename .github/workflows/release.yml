@@ -3,9 +3,6 @@ name: Release
 on:
   push:
     tags: ["v*.*.*"]
-    branches:
-      - main
-      - "release/*" # 支持所有 release 分支
 
 env:
   REGISTRY: ghcr.io
@@ -35,8 +32,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0 # 获取完整提交历史
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
@@ -54,10 +49,7 @@ jobs:
           mkdir -p artifacts
           cp -av target/${{ matrix.target }}/release/gflow artifacts/
           cp -av target/${{ matrix.target }}/release/gprj artifacts/
-
-          # 统一使用分支名和短SHA命名制品
-          SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-8)
-          tar -czf ${{ github.event.repository.name }}-${{ github.ref_name }}-${{ matrix.target }}-${SHORT_SHA}.tar.gz artifacts
+          tar -czf ${{ github.event.repository.name }}-${{ github.ref_name }}-${{ matrix.target }}.tar.gz  artifacts
         if: ${{ ! startsWith(matrix.os, 'windows') }}
 
       - name: Attest Build Provenance
@@ -68,14 +60,12 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: artifacts-${{ matrix.target }}
+          name: ${{ github.event.repository.name }}-${{ github.ref_name }}-${{ matrix.target }}
           path: ${{ github.event.repository.name }}-${{ github.ref_name }}-${{ matrix.target }}.*
           if-no-files-found: error
           retention-days: 7
 
   Release:
-    # 仅在标签推送时运行发布任务
-    if: ${{ startsWith(github.ref, 'refs/tags/') }}
     needs: [Release-Build]
     runs-on: ubuntu-22.04
     permissions:
@@ -91,30 +81,15 @@ jobs:
           path: artifacts
           merge-multiple: true
 
-      - name: Setup Release Parameters
-        id: release_params
-        run: |
-          # 根据标签名判断是否为预发布
-          if [[ "${{ github.ref_name }}" == *"-pre"* ]]; then
-            echo "prerelease_flag=true" >> $GITHUB_OUTPUT
-            echo "release_name=Beta Release ${{ github.ref_name }}" >> $GITHUB_OUTPUT
-          else
-            echo "prerelease_flag=false" >> $GITHUB_OUTPUT
-            echo "release_name=Stable Release ${{ github.ref_name }}" >> $GITHUB_OUTPUT
-          fi
-
       - name: Release
         uses: softprops/action-gh-release@c062e08bd532815e2082a85e87e3ef29c3e6d191
         with:
-          name: ${{ steps.release_params.outputs.release_name }}
+          name: ${{ github.ref_name }}
           tag_name: ${{ github.ref_name }}
           generate_release_notes: true
           fail_on_unmatched_files: true
           body: |
-            ${{ steps.release_params.outputs.release_name }}
-
-            Build commit: ${{ github.sha }}
-            Build date: $(date -u +'%Y-%m-%dT%H:%M:%SZ')
+            Welcome to this new release of GalaxyFlow ${{ github.ref_name }}!
 
             All artifacts are signed with this repos identity using Sigstore.
             You can verify the signatures using the `GitHub` CLI.
@@ -123,5 +98,5 @@ jobs:
             gh attestation verify --owner ${{ github.repository_owner }} <my-artifact>
             ```
           token: ${{ secrets.GITHUB_TOKEN }}
-          prerelease: ${{ steps.release_params.outputs.prerelease_flag }}
+          prerelease: ${{ contains(github.ref, '-pre') }}
           files: artifacts/*
