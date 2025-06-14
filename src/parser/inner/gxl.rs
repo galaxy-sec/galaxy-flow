@@ -11,6 +11,7 @@ pub fn gal_run(input: &mut &str) -> ModalResult<GxRun> {
     gal_keyword("gx.run", input)?;
     let props = sentence_call_args.parse_next(input)?;
     builder.gxl_path("./_gal/work.gxl".into());
+    builder.env_isolate(false);
     for one in props {
         let key = one.0.to_lowercase();
         if key == "env" {
@@ -22,6 +23,8 @@ pub fn gal_run(input: &mut &str) -> ModalResult<GxRun> {
             builder.gxl_path(one.1);
         } else if key == "local" {
             builder.run_path(one.1);
+        } else if key == "isolate" && one.1 == "true" {
+            builder.env_isolate(true);
         }
     }
     match builder.build() {

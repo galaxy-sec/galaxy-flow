@@ -172,7 +172,7 @@ impl Activity {
         let mut r_with = WithContext::want("run shell");
         r_with.with("exec", dto.executer.clone());
         r_with.with("dto", format!("{:?}", dto.props));
-        let exp = EnvExpress::from_env_mix(dict.globle().clone());
+        let exp = EnvExpress::from_env_mix(dict.global().clone());
         let cmd = exp.eval(&dto.executer).with(&r_with)?;
         let mut opt = self.dto.expect.clone();
         opt.outer_print = *ctx.cmd_print();

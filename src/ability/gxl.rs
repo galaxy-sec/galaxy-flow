@@ -12,10 +12,17 @@ pub struct GxRun {
     run_path: String,
     gxl_path: String,
     env_conf: String,
+    env_isolate: bool,
     flow_cmd: Vec<String>,
 }
 impl GxRun {
-    pub fn new<S>(run_path: S, gxl_path: S, env_conf: S, flow_cmd: Vec<S>) -> Self
+    pub fn new<S>(
+        run_path: S,
+        gxl_path: S,
+        env_conf: S,
+        flow_cmd: Vec<S>,
+        env_isolate: bool,
+    ) -> Self
     where
         S: Into<String> + Clone,
     {
@@ -24,6 +31,7 @@ impl GxRun {
             gxl_path: gxl_path.into(),
             env_conf: env_conf.into(),
             flow_cmd: flow_cmd.iter().map(|x| x.clone().into()).collect(),
+            env_isolate,
         }
     }
 }
@@ -32,7 +40,7 @@ impl AsyncRunnableTrait for GxRun {
     async fn async_exec(&self, mut ctx: ExecContext, vars_dict: VarSpace) -> VTResult {
         ctx.append("gx.run");
         let mut task = Task::from("gx.run");
-        let exp = EnvExpress::from_env_mix(vars_dict.globle().clone());
+        let exp = EnvExpress::from_env_mix(vars_dict.global().clone());
         let cmd = GxlCmd {
             env: exp.eval(&self.env_conf)?,
             flow: self.flow_cmd.clone(),
@@ -46,7 +54,9 @@ impl AsyncRunnableTrait for GxRun {
             .owe_res()
             .with(self.run_path().clone())?;
         debug!(target:ctx.path(), "{:#?}", cmd);
-        GxlRunner::run(cmd).await.err_conv()?;
+
+        let sub_var_space = VarSpace::inherit_init(vars_dict.clone(), self.env_isolate)?;
+        GxlRunner::run(cmd, sub_var_space).await.err_conv()?;
         task.finish();
         Ok((vars_dict, ExecOut::Task(task)))
     }
@@ -71,6 +81,7 @@ mod tests {
             "_gal/work.gxl",
             "default",
             vec!["assert_main"],
+            true,
         );
         res.async_exec(context, def).await.unwrap();
     }

@@ -14,6 +14,7 @@ use crate::args::GxAdmCmd;
 use crate::args::InitCmd;
 use clap::Parser;
 use galaxy_flow::err::*;
+use galaxy_flow::execution::VarSpace;
 use galaxy_flow::expect::ShellOption;
 use galaxy_flow::infra::configure_run_logging;
 use galaxy_flow::runner::{GxlCmd, GxlRunner};
@@ -65,7 +66,8 @@ impl GxAdm {
         if cmd.conf.is_none() {
             cmd.conf = Some("./_gal/adm.gxl".to_string());
         }
-        GxlRunner::run(cmd).await?;
+        let var_space = VarSpace::sys_init().err_conv()?;
+        GxlRunner::run(cmd, var_space).await?;
         Ok(())
     }
 

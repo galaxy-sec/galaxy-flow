@@ -11,7 +11,7 @@ pub struct GxCmdDto {
 }
 impl GxCmdDto {
     pub fn update(&mut self, vars_dict: &VarSpace) -> ExecResult<()> {
-        let ee = EnvExpress::from_env_mix(vars_dict.globle().clone());
+        let ee = EnvExpress::from_env_mix(vars_dict.global().clone());
         self.cmd = ee.eval(&self.cmd)?;
         Ok(())
     }
@@ -43,7 +43,7 @@ impl GxCmd {
         ctx.append("gx.cmd");
         let mut task = Task::from("gx.cmd");
         trace!(target:ctx.path(),"cmd:{}", cmd);
-        let exp = EnvExpress::from_env_mix(vars_dict.globle().clone());
+        let exp = EnvExpress::from_env_mix(vars_dict.global().clone());
         //let exe_cmd = ee.parse(cmd)?;
 
         let mut expect = self.dto.expect.clone();

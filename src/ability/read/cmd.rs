@@ -14,7 +14,7 @@ pub struct CmdDTO {
 impl CmdDTO {
     pub fn execute(&self, mut ctx: ExecContext, mut vars_dict: VarSpace) -> VTResult {
         ctx.append("gx.read_cmd");
-        let exp = EnvExpress::from_env_mix(vars_dict.globle().clone());
+        let exp = EnvExpress::from_env_mix(vars_dict.global().clone());
         let cmd = self.cmd.clone();
         let name = self.name.clone();
         let cmd = exp.eval(&cmd)?;

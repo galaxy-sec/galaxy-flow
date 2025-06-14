@@ -1,6 +1,7 @@
 //extern crate galaxy_flow;
 //#[cfg(feature = "res_depend_test")]
 mod tests {
+    use galaxy_flow::execution::VarSpace;
     use galaxy_flow::util::path::WorkDir;
     use galaxy_flow::{
         components::gxl_spc::GxlSpace, err::RunResult, expect::ShellOption, infra::once_init_log,
@@ -43,8 +44,13 @@ mod tests {
         let mut loader = GxLoader::new();
         let spc =
             GxlSpace::try_from(loader.parse_file("./_gal/work.gxl", false, test_opt())?).assert();
-        spc.exec(vec!["default".into()], vec!["conf".into()], false)
-            .await?;
+        spc.exec(
+            vec!["default".into()],
+            vec!["conf".into()],
+            false,
+            VarSpace::default(),
+        )
+        .await?;
         Ok(())
     }
 
@@ -55,8 +61,13 @@ mod tests {
         let mut loader = GxLoader::new();
         let spc =
             GxlSpace::try_from(loader.parse_file("./_gal/work.gxl", false, test_opt())?).assert();
-        spc.exec(vec!["default".into()], vec!["assert_main".into()], false)
-            .await?;
+        spc.exec(
+            vec!["default".into()],
+            vec!["assert_main".into()],
+            false,
+            VarSpace::default(),
+        )
+        .await?;
         Ok(())
     }
     #[tokio::test(flavor = "current_thread")]
@@ -66,8 +77,13 @@ mod tests {
         let mut loader = GxLoader::new();
         let spc =
             GxlSpace::try_from(loader.parse_file("./_gal/work.gxl", false, test_opt())?).assert();
-        spc.exec(vec!["default".into()], vec!["conf".into()], false)
-            .await?;
+        spc.exec(
+            vec!["default".into()],
+            vec!["conf".into()],
+            false,
+            VarSpace::default(),
+        )
+        .await?;
         Ok(())
     }
 }

@@ -1,10 +1,8 @@
 use super::{code_spc::CodeSpace, prelude::*};
-use crate::{
-    execution::sequence::Sequence, menu::*, traits::Setter, util::task_report::task_local_report,
-};
+use crate::{execution::sequence::Sequence, menu::*, util::task_report::task_local_report};
 use colored::Colorize;
-use orion_error::{ErrorConv, ErrorOwe, ErrorWith};
-use std::{collections::HashMap, env::current_dir, fmt::Display};
+use orion_error::ErrorConv;
+use std::{collections::HashMap, fmt::Display};
 
 use super::GxlMod;
 
@@ -87,27 +85,6 @@ impl AppendAble<GxlMod> for GxlSpace {
     }
 }
 
-fn get_os_info() -> (String, String, u64) {
-    let info = os_info::get();
-    let os_type = match info.os_type() {
-        os_info::Type::Macos => "macos".to_string(),
-        _ => info.os_type().to_string().to_lowercase(),
-    };
-
-    let arch = info.architecture().unwrap_or("unknown").to_string();
-    let ver_major = match info.version() {
-        os_info::Version::Semantic(major, _, _) => *major,
-        _ => 0,
-    };
-
-    (arch, os_type, ver_major)
-}
-
-fn format_os_sys() -> String {
-    let (arch, os_type, ver_major) = get_os_info();
-    format!("{}_{}_{}", arch, os_type, ver_major)
-}
-
 impl TryFrom<CodeSpace> for GxlSpace {
     type Error = AssembleError;
 
@@ -165,45 +142,28 @@ fn parse_obj_path(obj_path: &str) -> ExecResult<(&str, &str)> {
 impl GxlSpace {
     pub async fn exec<VS: Into<Vec<String>>>(
         &self,
-        envs: VS,
-        flow_names: VS,
+        envs_name: VS,
+        flows_name: VS,
         out: bool,
+        var_space: VarSpace,
     ) -> RunResult<()> {
         info!(
             target: "execution",
             "Starting execution stack with output: {}", out
         );
 
-        let envs: Vec<String> = envs.into();
-        let flow_names: Vec<String> = flow_names.into();
+        let envs: Vec<String> = envs_name.into();
+        let flow_names: Vec<String> = flows_name.into();
 
-        info!("Executing with envs: {:?}, flows: {:?}", envs, flow_names);
+        warn!(target : "exec","Executing with envs: {:?}, flows: {:?}", envs, flow_names);
+        warn!(target : "exec","inherted vars :\n{}", var_space.inherited());
+        info!(target : "exec","inherted vars :\n{}", var_space.global());
 
         let main_ctx = ExecContext::new(out);
-        let mut var_space = VarSpace::default();
-        var_space.load_secfile()?;
-
-        // Set global variables
-        self.setup_global_vars(&mut var_space)?;
-
         for flow_name in flow_names {
-            self.execute_flow(&main_ctx, &mut var_space, &envs, &flow_name)
+            self.execute_flow(&main_ctx, &var_space, &envs, &flow_name)
                 .await?;
         }
-
-        Ok(())
-    }
-
-    fn setup_global_vars(&self, var_space: &mut VarSpace) -> RunResult<()> {
-        var_space.global_mut().set("__ENVS", "UNDEF");
-        var_space
-            .global_mut()
-            .set("GXL_OS_SYS", format_os_sys().as_str());
-
-        let start_root = current_dir().owe_sys().want("get current dir")?;
-        var_space
-            .global_mut()
-            .set("GXL_START_ROOT", start_root.display().to_string());
 
         Ok(())
     }
@@ -216,7 +176,7 @@ impl GxlSpace {
         flow_name: &str,
     ) -> RunResult<()> {
         let flow_name = self.normalize_flow_name(flow_name);
-        println!("Initializing flow: {}", flow_name);
+        println!("execute flow: {}", flow_name);
 
         let mut exec_sequ = Sequence::from("flow");
         let mut ctx = main_ctx.clone();

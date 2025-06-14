@@ -121,7 +121,8 @@ mod tests {
     use orion_error::TestAssert;
 
     use crate::{
-        components::gxl_spc::GxlSpace, expect::ShellOption, infra::once_init_log, types::AnyResult,
+        components::gxl_spc::GxlSpace, execution::VarSpace, expect::ShellOption,
+        infra::once_init_log, types::AnyResult,
     };
 
     use super::GxLoader;
@@ -141,8 +142,13 @@ mod tests {
         spc.show()?;
         println!("mods:{}", spc.len());
         assert!(spc.len() > 1);
-        spc.exec(["default".into()].to_vec(), ["conf".into()].to_vec(), true)
-            .await?;
+        spc.exec(
+            ["default".into()].to_vec(),
+            ["conf".into()].to_vec(),
+            true,
+            VarSpace::sys_init()?,
+        )
+        .await?;
         Ok(())
     }
 }

@@ -1,6 +1,7 @@
 extern crate galaxy_flow;
 
 use galaxy_flow::components::gxl_spc::GxlSpace;
+use galaxy_flow::execution::VarSpace;
 use galaxy_flow::expect::ShellOption;
 use galaxy_flow::infra::once_init_log;
 use galaxy_flow::types::AnyResult;
@@ -24,6 +25,7 @@ async fn gxl_normal_test() -> AnyResult<()> {
         vec!["dev".into()],
         vec!["api".into(), "start".into()],
         false,
+        VarSpace::default(),
     )
     .await?;
     Ok(())

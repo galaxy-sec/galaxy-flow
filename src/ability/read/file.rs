@@ -68,7 +68,7 @@ impl FileDTO {
     }
     pub fn execute(&self, mut ctx: ExecContext, mut vars_dict: VarSpace) -> VTResult {
         ctx.append("gx.read_file");
-        let exp = EnvExpress::from_env_mix(vars_dict.globle().clone());
+        let exp = EnvExpress::from_env_mix(vars_dict.global().clone());
         let file = self.file.clone();
         let file_path = PathBuf::from(exp.eval(&file)?);
         let mut cur_dict = if file_path.extension() == PathBuf::from("*.ini").extension() {

@@ -15,7 +15,7 @@ impl GxEcho {
 #[async_trait]
 impl AsyncRunnableTrait for GxEcho {
     async fn async_exec(&self, ctx: ExecContext, vars_dict: VarSpace) -> VTResult {
-        let ex = EnvExpress::from_env_mix(vars_dict.globle().clone());
+        let ex = EnvExpress::from_env_mix(vars_dict.global().clone());
         let out = ex.eval(&self.value)?;
         info!(target: ctx.path(), "{} :{}", &self.value, out);
         println!("{}", out);

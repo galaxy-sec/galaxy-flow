@@ -76,7 +76,7 @@ impl Display for TplDTO {
 impl GxTpl {
     pub fn render_path(&self, ctx: ExecContext, dto: &TplDTO, dict: VarSpace) -> ExecResult<()> {
         info!(target: ctx.path(), "gx.tpl : {}", dto);
-        let exp = EnvExpress::from_env_mix(dict.globle().clone());
+        let exp = EnvExpress::from_env_mix(dict.global().clone());
         let tpl = PathBuf::from(exp.eval(dto.tpl.as_str())?);
         let dst = PathBuf::from(exp.eval(dto.dst.as_str())?);
 
@@ -108,7 +108,7 @@ impl GxTpl {
                 .owe_data()
                 .with(&err_ctx)?
         } else {
-            to_json(dict.globle().export())
+            to_json(dict.global().export())
         };
         if tpl.is_dir() {
             self.render_dir_impl(ctx, &handlebars, &tpl, &dst, &data)
@@ -324,7 +324,7 @@ mod tests {
         let mut def = VarSpace::default();
         def.global_mut().set("world", "世界!".to_string());
         def.global_mut().set("PRJ_HOME", "home".to_string());
-        let data = def.globle().export();
+        let data = def.global().export();
         assert_eq!(handlebars.render("t1", &data).unwrap(), "hello 世界! home!");
 
         let data = r#"

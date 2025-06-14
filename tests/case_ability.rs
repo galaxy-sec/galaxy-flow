@@ -1,12 +1,12 @@
 extern crate galaxy_flow;
 
-use galaxy_flow::components::gxl_spc::GxlSpace;
 use galaxy_flow::err::RunResult;
 use galaxy_flow::expect::ShellOption;
 use galaxy_flow::infra::once_init_log;
 use galaxy_flow::types::AnyResult;
 use galaxy_flow::util::ModRepo;
 use galaxy_flow::GxLoader;
+use galaxy_flow::{components::gxl_spc::GxlSpace, execution::VarSpace};
 use orion_error::{ErrorConv, TestAssert};
 use std::fs::remove_dir_all;
 
@@ -21,8 +21,13 @@ async fn conf_base_test() -> AnyResult<()> {
     let spc =
         GxlSpace::try_from(loader.parse_file("./tests/material/ability.gxl", false, expect)?)
             .assert();
-    spc.exec(vec!["default".into()], vec!["test".into()], false)
-        .await?;
+    spc.exec(
+        vec!["default".into()],
+        vec!["test".into()],
+        false,
+        VarSpace::default(),
+    )
+    .await?;
     Ok(())
 }
 
@@ -40,9 +45,14 @@ async fn conf_web_test() {
             .unwrap(),
     )
     .assert();
-    spc.exec(vec!["dev".into()], vec!["api".into(), "api2".into()], false)
-        .await
-        .unwrap();
+    spc.exec(
+        vec!["dev".into()],
+        vec!["api".into(), "api2".into()],
+        false,
+        VarSpace::default(),
+    )
+    .await
+    .unwrap();
 }
 
 #[ignore]

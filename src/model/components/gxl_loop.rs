@@ -139,7 +139,7 @@ mod tests {
         assert!(result.is_ok());
         let (result_dict, _) = result.unwrap();
         assert_eq!(
-            result_dict.globle().get("current").unwrap().to_string(),
+            result_dict.global().get("current").unwrap().to_string(),
             "value1" // 最后一次循环设置的值
         );
     }

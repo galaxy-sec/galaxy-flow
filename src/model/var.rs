@@ -89,8 +89,12 @@ impl Debug for SecVar {
 
 impl Display for VarDict {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        for (k, v) in &self.maps {
-            writeln!(f, "{:30}: {}", k, v)?;
+        let mut keys: Vec<_> = self.maps().keys().collect();
+        keys.sort(); // 对键进行排序
+        for k in keys {
+            if let Some(v) = self.maps.get(k) {
+                writeln!(f, "{:30}: {}", k, v)?;
+            }
         }
         Ok(())
     }

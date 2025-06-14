@@ -1,6 +1,7 @@
 use crate::{
     components::gxl_spc::GxlSpace,
     err::{RunError, RunReason, RunResult},
+    execution::VarSpace,
     infra::DfxArgsGetter,
     GxLoader,
 };
@@ -11,7 +12,7 @@ use std::path::Path;
 pub struct GxlRunner {}
 impl GxlRunner {
     #[allow(clippy::result_large_err)]
-    pub async fn run(cmd: GxlCmd) -> RunResult<()> {
+    pub async fn run(cmd: GxlCmd, vars: VarSpace) -> RunResult<()> {
         let mut loader = GxLoader::new();
         if let Some(conf) = cmd.conf {
             if !Path::new(conf.as_str()).exists() {
@@ -35,7 +36,7 @@ impl GxlRunner {
                     cmd.flow.clone()
                     //cmd.flow.iter().collect()
                 };
-                spc.exec(envs, flws, cmd.cmd_print).await?;
+                spc.exec(envs, flws, cmd.cmd_print, vars).await?;
                 println!("\ngod job!");
             }
             Ok(())

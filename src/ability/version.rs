@@ -113,7 +113,7 @@ impl RgVersion {
 impl AsyncRunnableTrait for RgVersion {
     async fn async_exec(&self, mut ctx: ExecContext, mut dict: VarSpace) -> VTResult {
         ctx.append("version");
-        let exp = EnvExpress::from_env_mix(dict.globle().clone());
+        let exp = EnvExpress::from_env_mix(dict.global().clone());
         let file_path = exp.eval(&self.file)?;
         debug!(target: ctx.path(),"version file:{}", file_path);
         let data = fs::read_to_string(file_path.as_str())

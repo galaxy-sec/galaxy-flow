@@ -145,7 +145,7 @@ pub trait ValueEval<R> {
 
 impl ValueEval<u32> for VarDef<u32, EnvVarTag> {
     fn eval(&self, vars: &VarSpace) -> EvalResult<u32> {
-        let exp = EnvExpress::from_env_mix(vars.globle().clone());
+        let exp = EnvExpress::from_env_mix(vars.global().clone());
         let one = exp
             .eval_val(&self.var.to_uppercase())
             .ok_or(EvalError::VarMiss(self.var.clone()))?;
@@ -155,7 +155,7 @@ impl ValueEval<u32> for VarDef<u32, EnvVarTag> {
 impl ValueEval<String> for VarDef<String, EnvVarTag> {
     fn eval(&self, vars: &VarSpace) -> EvalResult<String> {
         //let exp = EnvExpress::from_env_mix(VarDict::from(EnvVarTag::export()));
-        let exp = EnvExpress::from_env_mix(vars.globle().clone());
+        let exp = EnvExpress::from_env_mix(vars.global().clone());
         let one = exp
             .eval_val(&self.var.to_uppercase())
             .ok_or(EvalError::VarMiss(self.var.clone()))?;

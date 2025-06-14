@@ -3,6 +3,7 @@ extern crate log;
 extern crate clap;
 
 use clap::Parser;
+use galaxy_flow::execution::VarSpace;
 use galaxy_flow::task_result::load_task_config;
 use std::path::Path;
 
@@ -29,7 +30,8 @@ async fn main() -> anyhow::Result<()> {
             println!("warning: please use work.gxl !");
         }
     }
-    match GxlRunner::run(cmd).await {
+    let var_space = VarSpace::sys_init()?;
+    match GxlRunner::run(cmd, var_space).await {
         Err(e) => report_gxl_error(e),
         Ok(_) => {
             return Ok(());

@@ -462,13 +462,13 @@ mod test {
         let vars = VarSpace::default();
         let (vars, _) = sequ.execute(ctx, vars.clone()).await.unwrap();
 
-        println!("{:?}", vars.globle().maps());
+        println!("{:?}", vars.global().maps());
         assert_eq!(
-            vars.globle().maps().get(&"ENV_KEY1".to_string()),
+            vars.global().maps().get(&"ENV_KEY1".to_string()),
             Some(&SecVar::new(VarMeta::Normal, "value1".to_string()))
         );
         assert_eq!(
-            vars.globle().maps().get(&"MOD1_KEY2".to_string()),
+            vars.global().maps().get(&"MOD1_KEY2".to_string()),
             Some(&SecVar::new(VarMeta::Normal, "value1".to_string()))
         );
         Ok(())
@@ -508,9 +508,9 @@ mod test {
         let vars = VarSpace::default();
         let (vars, _task) = sequ.execute(ctx, vars).await.unwrap();
 
-        println!("{:?}", vars.globle().maps());
+        println!("{:?}", vars.global().maps());
         assert_eq!(
-            vars.globle().maps().len(),
+            vars.global().maps().len(),
             0 //vars.maps().get(&"MOD2_K2".to_string()),
 
               //Some(&SecVar::new(VarMeta::Normal, "v2".to_string()))

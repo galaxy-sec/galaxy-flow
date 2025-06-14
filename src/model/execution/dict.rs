@@ -1,21 +1,15 @@
 use std::{collections::HashMap, env::home_dir, path::PathBuf};
 
 use derive_more::From;
-use orion_error::{ErrorConv, ErrorOwe};
-use orion_syspec::{
-    types::Configable,
-    vars::{ValueDict, ValueType},
-};
 
-use crate::{
-    err::RunResult,
-    traits::Setter,
-    var::{SecVar, VarDict},
-};
+use crate::{var::VarDict, ExecResult};
+
+use super::global::{load_secfile, setup_gxlrun_vars, setup_start_vars};
 
 #[derive(Debug, Clone, Default, PartialEq, From, Getters)]
 pub struct VarSpace {
-    globle: VarDict,
+    inherited: VarDict,
+    global: VarDict,
     nameds: HashMap<String, VarDict>,
 }
 
@@ -29,37 +23,35 @@ pub fn galaxy_dot_path() -> PathBuf {
 }
 
 impl VarSpace {
+    pub fn sys_init() -> ExecResult<VarSpace> {
+        let mut var_space = VarSpace::default();
+        load_secfile(&mut var_space.inherited)?;
+        setup_start_vars(&mut var_space.inherited)?;
+        setup_gxlrun_vars(&mut var_space.inherited)?;
+        var_space.global = var_space.inherited.clone();
+        Ok(var_space)
+    }
+    pub fn inherit_init(mut origin: VarSpace, isolate: bool) -> ExecResult<VarSpace> {
+        if isolate {
+            let mut ins = Self {
+                inherited: origin.inherited.clone(),
+                global: origin.inherited,
+                ..Default::default()
+            };
+            setup_gxlrun_vars(&mut ins.inherited)?;
+            Ok(ins)
+        } else {
+            setup_gxlrun_vars(&mut origin.inherited)?;
+            setup_gxlrun_vars(&mut origin.global)?;
+            Ok(origin)
+        }
+    }
     pub fn global_mut(&mut self) -> &mut VarDict {
-        &mut self.globle
+        &mut self.global
     }
 
     pub fn nameds_mut(&mut self) -> &mut HashMap<String, VarDict> {
         &mut self.nameds
-    }
-
-    pub(crate) fn load_secfile(&mut self) -> RunResult<()> {
-        let env_path = std::env::var("GAL_SEC_FILE_PATH").map(PathBuf::from);
-        let default = sec_value_default_path();
-        let path = env_path.unwrap_or(default);
-        if path.exists() {
-            let dict = ValueDict::from_conf(&path).err_conv()?;
-            info!(target: "exec","  load {}", path.display());
-            for (k, v) in dict.iter() {
-                self.globle.set(
-                    format!("SEC_{}", k.to_uppercase()),
-                    SecVar::sec_value(v.to_string()),
-                );
-            }
-        } else {
-            let mut default = ValueDict::new();
-            default.insert("example_key1", ValueType::from("value"));
-            let dot_path = galaxy_dot_path();
-            if !dot_path.exists() {
-                std::fs::create_dir_all(dot_path).owe_res()?;
-            }
-            default.save_conf(&path).err_conv()?;
-        }
-        Ok(())
     }
 }
 #[derive(Debug, Clone, Default, PartialEq, From)]
@@ -71,9 +63,12 @@ pub enum DictUse {
 
 #[cfg(test)]
 mod tests {
-    use crate::{execution::dict::sec_value_default_path, traits::Getter};
+    use crate::{
+        execution::{dict::sec_value_default_path, global::load_secfile},
+        traits::Getter,
+        var::VarDict,
+    };
 
-    use super::VarSpace;
     use orion_error::TestAssertWithMsg;
     use std::{fs::File, io::Write, path::PathBuf};
 
@@ -91,20 +86,19 @@ mod tests {
         writeln!(file, "key1: value1\nkey2: value2").unwrap();
 
         // 创建 VarSpace 实例并加载文件
-        let mut var_space = VarSpace::default();
+        let mut var_dict = VarDict::new("test");
 
         // 临时修改路径指向我们的测试文件
         let original_path = sec_value_default_path();
         std::env::set_var("GAL_SEC_FILE_PATH", file_path.to_str().unwrap());
 
-        let _ = var_space.load_secfile().assert("load secfile");
+        let _ = load_secfile(&mut var_dict).assert("load secfile");
 
         // 验证全局变量
-        let globle = var_space.globle();
-        assert!(globle.contains_key("SEC_KEY1"));
-        assert!(globle.contains_key("SEC_KEY2"));
+        assert!(var_dict.contains_key("SEC_KEY1"));
+        assert!(var_dict.contains_key("SEC_KEY2"));
         assert_eq!(
-            format!("{}", globle.get("SEC_KEY1").unwrap()),
+            format!("{}", var_dict.get("SEC_KEY1").unwrap()),
             "******".to_string()
         );
         // 清理
