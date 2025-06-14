@@ -30,7 +30,7 @@ async fn main() -> anyhow::Result<()> {
     let mut var_space = VarSpace::sys_init()?;
     var_space
         .global_mut()
-        .set("GXL_CMD_ARGS", cmd.cmd_args.clone());
+        .set("GXL_CMD_ARG", cmd.cmd_arg.clone());
     match GxlRunner::run(cmd, var_space).await {
         Err(e) => report_gxl_error(e),
         Ok(_) => {

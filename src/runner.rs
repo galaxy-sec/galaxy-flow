@@ -74,7 +74,7 @@ pub struct GxlCmd {
         value_name = "cmd_args",
         default_value = ""
     )]
-    pub cmd_args: String,
+    pub cmd_arg: String,
 }
 impl DfxArgsGetter for GxlCmd {
     fn debug_level(&self) -> usize {

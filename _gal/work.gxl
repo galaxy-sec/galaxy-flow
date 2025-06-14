@@ -53,7 +53,7 @@ mod main   {
       gx.echo ( "USR_BIN : ${MAIN_USR_BINS} " );
       gx.echo ( "GXL_OS_SYS: ${GXL_OS_SYS} " );
       gx.echo ( "GXL_START_ROOT: ${GXL_START_ROOT} " );
-      gx.echo ( "GXL_CMD_ARGS: ${GXL_CMD_ARGS} " );
+      gx.echo ( "GXL_CMD_ARG: ${GXL_CMD_ARG} " );
 
       gx.echo (  "ENV_BUILD_FLAG :  ${ENV_BUILD_FLAG}  " );
       gx.echo (  "ENV_TARGET_FLAG : ${ENV_TARGET_FLAG} " );
@@ -82,7 +82,7 @@ mod main   {
   }
 
   flow debug_ut:  {
-    gx.cmd ( "RUST_LOG=debug cargo test ${GXL_CMD_ARGS} -- --nocapture ", log : "1" , out:"true"  );
+    gx.cmd ( "RUST_LOG=debug cargo test ${GXL_CMD_ARG} -- --nocapture ", log : "1" , out:"true"  );
   }
 
   flow pub_local   {
