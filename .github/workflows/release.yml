@@ -74,6 +74,8 @@ jobs:
           retention-days: 7
 
   Release:
+    # 仅在标签推送时运行发布任务
+    if: ${{ startsWith(github.ref, 'refs/tags/') }}
     needs: [Release-Build]
     runs-on: ubuntu-22.04
     permissions:
@@ -92,17 +94,13 @@ jobs:
       - name: Setup Release Parameters
         id: release_params
         run: |
-          # 根据分支类型设置发布参数
-          if [[ "${{ github.ref }}" == refs/heads/release/* ]]; then
+          # 根据标签名判断是否为预发布
+          if [[ "${{ github.ref_name }}" == *"-pre"* ]]; then
             echo "prerelease_flag=true" >> $GITHUB_OUTPUT
-            echo "release_name=Beta Release (${{ github.ref_name }} - $(date +'%Y-%m-%d'))" >> $GITHUB_OUTPUT
-          elif [ "${{ github.ref}}" = "refs/heads/master" ]; then
+            echo "release_name=Beta Release ${{ github.ref_name }}" >> $GITHUB_OUTPUT
+          else
             echo "prerelease_flag=false" >> $GITHUB_OUTPUT
             echo "release_name=Stable Release ${{ github.ref_name }}" >> $GITHUB_OUTPUT
-          else
-            # 标签发布保留原有逻辑
-            echo "prerelease_flag=${{ contains(github.ref, '-pre') }}" >> $GITHUB_OUTPUT
-            echo "release_name=${{ github.ref_name }}" >> $GITHUB_OUTPUT
           fi
 
       - name: Release
