@@ -4,7 +4,7 @@ on:
   push:
     tags: ["v*.*.*"]
     branches:
-      - master
+      - main
       - "release/*" # 支持所有 release 分支
 
 env:
