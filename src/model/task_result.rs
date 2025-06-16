@@ -112,9 +112,8 @@ pub fn load_task_config() {
             match res {
                 Ok(config) => {
                     let _ = TASK_RESULT_CONDIG.set(config);
-                    println!("load task config success");
                 }
-                Err(e) => println!("load task config error: {}", e.message()),
+                Err(e) => info!("load task config error: {}", e.message()),
             };
         }
         Err(e) => {
