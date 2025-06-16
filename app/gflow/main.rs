@@ -4,7 +4,7 @@ extern crate clap;
 
 use clap::Parser;
 use galaxy_flow::execution::VarSpace;
-use galaxy_flow::task_result::load_task_config;
+use galaxy_flow::task_callback_result::load_task_config;
 use galaxy_flow::traits::Setter;
 
 use galaxy_flow::err::*;

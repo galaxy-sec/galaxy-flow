@@ -5,10 +5,14 @@ use crate::annotation::{AnnEnum, ComUsage};
 use crate::execution::task::Task;
 use crate::parser::stc_base::AnnDto;
 
+use crate::task_callback_result::{BatchTaskRequest, TaskBody, TaskCallBackResult};
 use crate::traits::DependTrait;
 
 use crate::components::gxl_block::BlockNode;
 use crate::model::annotation::FlowAnnotation;
+use crate::util::http_handle::{
+    get_task_callback_center_url, get_task_report_center_url, send_http_request,
+};
 use std::sync::Arc;
 
 use super::gxl_spc::GxlSpace;
@@ -135,8 +139,23 @@ impl GxlFlow {
     async fn exec_self(&self, ctx: ExecContext, mut var_dict: VarSpace) -> VTResult {
         let des = self.get_desan();
         let mut task = Task::from(self.meta.name());
+        let mut task_body = TaskBody::new();
         if let Some(des) = des.clone() {
             task = Task::from(des);
+            // 若环境变量或配置文件中有报告中心则进行任务上报
+            if let Some(url) = get_task_report_center_url() {
+                task_body = TaskBody {
+                    parent_id: task_body.parent_id,
+                    name: task.name().to_string(),
+                    description: task.name().to_string(),
+                    order: task_body.order,
+                };
+                task_body.set_order();
+                let batch_task = BatchTaskRequest {
+                    tasks: vec![task_body.clone()],
+                };
+                send_http_request(batch_task, &url).await?;
+            }
         }
 
         for item in &self.blocks {
@@ -145,6 +164,16 @@ impl GxlFlow {
             task.append(out);
         }
         task.finish();
+
+        // result_callback
+        // 若任务被标记为需要返回，则进行返回
+        if des.is_some(){
+            // 若环境变量或配置文件中有返回路径则进行返回
+            if let Some(url) = get_task_callback_center_url() {
+                let task_result = TaskCallBackResult::from_task_with_order(task.clone(), task_body);
+                send_http_request(task_result.clone(), &url).await?;
+            }
+        }
         if des.is_none() {
             return Ok((var_dict, ExecOut::Ignore));
         }

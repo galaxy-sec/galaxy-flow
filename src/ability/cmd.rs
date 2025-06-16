@@ -59,7 +59,12 @@ impl GxCmd {
             Ok((stdout, stderr)) => {
                 let out = String::from_utf8(stdout).map_err(|e| ExecReason::Io(e.to_string()))?;
                 let err = String::from_utf8(stderr).map_err(|e| ExecReason::Io(e.to_string()))?;
-                action.stdout = format!("{}\n{}", out, err);
+                action.stdout = out.clone();
+                if !action.stdout.is_empty() {
+                    action.stdout = format!("{}\n{}", out, err);
+                } else {
+                    action.stdout = err;
+                }
             }
             Err(error) => {
                 action.stdout = error.to_string();
