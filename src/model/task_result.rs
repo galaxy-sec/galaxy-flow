@@ -91,7 +91,7 @@ use serde::Deserialize;
 
 #[derive(Deserialize)]
 pub struct TaskResultConfig {
-    pub task_result_center: Option<TaskResultUrl>,
+    pub task_callback_center: Option<TaskResultUrl>,
 }
 
 #[derive(Deserialize, Clone)]
@@ -112,8 +112,9 @@ pub fn load_task_config() {
             match res {
                 Ok(config) => {
                     let _ = TASK_RESULT_CONDIG.set(config);
+                    println!("load task config success");
                 }
-                Err(e) => info!("load task config error: {}", e.message()),
+                Err(e) => println!("load task config error: {}", e.message()),
             };
         }
         Err(e) => {

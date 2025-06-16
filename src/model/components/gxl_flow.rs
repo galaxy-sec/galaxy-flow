@@ -1,6 +1,7 @@
 use super::gxl_intercept::FlowRunner;
 use super::prelude::*;
 
+use crate::annotation::{AnnEnum, ComUsage};
 use crate::execution::task::Task;
 use crate::parser::stc_base::AnnDto;
 
@@ -132,7 +133,11 @@ impl GxlFlow {
 
 impl GxlFlow {
     async fn exec_self(&self, ctx: ExecContext, mut var_dict: VarSpace) -> VTResult {
+        let des = self.get_desan();
         let mut task = Task::from(self.meta.name());
+        if let Some(des) = des.clone() {
+            task = Task::from(des);
+        }
 
         for item in &self.blocks {
             let (cur_dict, out) = item.async_exec(ctx.clone(), var_dict).await?;
@@ -140,13 +145,31 @@ impl GxlFlow {
             task.append(out);
         }
         task.finish();
+        if des.is_none(){
+            return Ok((var_dict, ExecOut::Ignore));
+        }
         Ok((var_dict, ExecOut::Task(task)))
+    }
+
+    // 获取注解中的描述信息
+    pub fn get_desan(&self) -> Option<String> {
+        let annotation = self.meta.annotations();
+        for ann in annotation {
+            if let AnnEnum::Flow(flowann) = ann {
+                return flowann.desp();
+            }
+        }
+        None
     }
 }
 #[async_trait]
 impl AsyncRunnableTrait for GxlFlow {
     async fn async_exec(&self, mut ctx: ExecContext, mut var_dict: VarSpace) -> VTResult {
+        let des = self.get_desan();
         let mut job = Job::from(self.meta.name());
+        if let Some(des) = des.clone() {
+            job = Job::from(&des);
+        }
         ctx.append(self.meta.name());
         for pre in self.pre_flows() {
             let (cur_dict, task) = pre.async_exec(ctx.clone(), var_dict).await?;
@@ -160,6 +183,9 @@ impl AsyncRunnableTrait for GxlFlow {
             let (cur_dict, task) = post.async_exec(ctx.clone(), var_dict).await?;
             var_dict = cur_dict;
             job.append(task);
+        }
+        if des.is_none() {
+            return Ok((var_dict, ExecOut::Ignore));
         }
         Ok((var_dict, ExecOut::Job(job)))
     }

@@ -35,7 +35,7 @@ pub fn task_local_report(out: ExecOut) {
             let path = Path::new(&file_name);
 
             // 确保目录存在
-            if let Err(e) = ensure_directory_exists(path){
+            if let Err(e) = ensure_directory_exists(path) {
                 println!("Failed to ensure directory exists: {}", e);
             };
 
@@ -43,7 +43,33 @@ pub fn task_local_report(out: ExecOut) {
             if let Err(e) = std::fs::write(path, toml).with_context(|| format!("write toml file : {}", file_name)) {
                 println!("Failed to write toml file: {}", e);
             }
+        }
+        Err(_) => {
+            println!("Failed to create file: {}", file_name);
+        }
 
+       
+    }
+    let json_file_name = format!("{}/task_{}.json", dir_path, now);
+
+    // 创建task结果存储文件
+    match File::create(&json_file_name) {
+        Ok(_) => {
+            // 将配置数据序列化为 yaml 字符串
+            let json = serde_json::to_string(&out).unwrap();
+            let path = Path::new(&json_file_name);
+
+            // 确保目录存在
+            if let Err(e) = ensure_directory_exists(path) {
+                println!("Failed to ensure directory exists: {}", e);
+            };
+
+            // 将 yaml 字符串写入文件
+            if let Err(e) = std::fs::write(path, json)
+                .with_context(|| format!("write toml file : {}", file_name))
+            {
+                println!("Failed to write toml file: {}", e);
+            }
         }
         Err(_) => {
             println!("Failed to create file: {}", file_name);

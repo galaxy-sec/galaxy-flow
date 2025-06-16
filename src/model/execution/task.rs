@@ -20,7 +20,7 @@ pub struct Task {
 
 #[derive(Debug, Clone, Serialize, PartialEq)]
 pub struct RunningTime {
-    running_time: u64,
+    running_time: String,
 }
 
 // 序列化进行时间格式化
@@ -40,8 +40,25 @@ impl Task {
     pub fn finish(&mut self) {
         let end = SystemTime::now();
         let duration = end.duration_since(self.begin).unwrap();
+        let mut total_nanos = duration.as_nanos();
+
+        let units = [
+            (1_000_000_000, "s"),
+            (1_000_000, "ms"),
+            (1_000, "μs"),
+            (1, "ns"),
+        ];
+
+        let mut formate_time = String::new();
+        for (unit, unit_name) in units {
+            let value = total_nanos / unit;
+            if value > 0 {
+                formate_time.push_str(&format!("{value}{unit_name}"));
+            }
+            total_nanos %= unit;
+        }
         self.result = Ok(RunningTime {
-            running_time: duration.as_micros() as u64,
+            running_time: formate_time,
         });
     }
     pub fn err(&mut self, msg: String) {
@@ -109,7 +126,7 @@ impl AppendAble<Action> for Task {
                     self.result = Err(task_err.clone());
                 }
                 Err(e) => {
-                    e.push_str(&task_err);
+                    e.push_str(task_err);
                 }
             }
         }
