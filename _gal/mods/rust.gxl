@@ -15,6 +15,7 @@ mod rust_flow  {
     gx.cmd (cmd : "cargo fix --allow-dirty", log : "1" , out:"true"  );
     gx.cmd (cmd : "cargo clippy -- -D warnings");
   }
+    #[usage(desp="rust build")]
    flow build {
     gx.cmd ( cmd: "cargo build  ${ENV_BUILD_FLAG} ${ENV_TARGET_FLAG} "  );
   }

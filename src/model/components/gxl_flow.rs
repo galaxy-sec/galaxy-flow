@@ -145,7 +145,7 @@ impl GxlFlow {
             task.append(out);
         }
         task.finish();
-        if des.is_none(){
+        if des.is_none() {
             return Ok((var_dict, ExecOut::Ignore));
         }
         Ok((var_dict, ExecOut::Task(task)))

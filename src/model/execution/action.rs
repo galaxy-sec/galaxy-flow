@@ -41,8 +41,6 @@ impl Action {
         let units = [
             (1_000_000_000, "s"),
             (1_000_000, "ms"),
-            (1_000, "μs"),
-            (1, "ns"),
         ];
 
         let mut formate_time = String::new();
