@@ -5,7 +5,6 @@ use super::prelude::*;
 
 use crate::ability::artifact::GxArtifact;
 use crate::ability::delegate::ActCall;
-use crate::ability::read::ReadMode;
 use crate::ability::GxAssert;
 use crate::ability::GxCmd;
 use crate::ability::GxDownLoad;
@@ -19,9 +18,6 @@ use crate::calculate::cond::CondExec;
 use crate::context::ExecContext;
 use crate::execution::runnable::VTResult;
 use crate::execution::task::Task;
-use crate::model::task_result::TaskResult;
-use crate::util::http_handle::get_task_callback_center_url;
-use crate::util::http_handle::send_http_request;
 
 use super::gxl_cond::GxlCond;
 use super::gxl_spc::GxlSpace;
@@ -68,57 +64,21 @@ impl CondExec for BlockNode {
 #[async_trait]
 impl AsyncRunnableTrait for BlockAction {
     async fn async_exec(&self, ctx: ExecContext, dct: VarSpace) -> VTResult {
-        let mut task_name = String::new();
-        let res: Result<(VarSpace, ExecOut), orion_error::StructError<ExecReason>> = match self {
-            BlockAction::Command(o) => {
-                task_name = String::from("gx.cmd");
-                o.async_exec(ctx, dct).await
-            }
-            BlockAction::GxlRun(o) => {
-                task_name = String::from("gx.run");
-                o.async_exec(ctx, dct).await
-            }
+        match self {
+            BlockAction::Command(o) => o.async_exec(ctx, dct).await,
+            BlockAction::GxlRun(o) => o.async_exec(ctx, dct).await,
             BlockAction::Echo(o) => o.async_exec(ctx, dct).await,
             BlockAction::Assert(o) => o.async_exec(ctx, dct).await,
             BlockAction::Cond(o) => o.async_exec(ctx, dct).await,
             BlockAction::Loop(o) => o.async_exec(ctx, dct).await,
-            BlockAction::Tpl(o) => {
-                task_name = String::from("build tpl file");
-                o.async_exec(ctx, dct).await
-            }
-            BlockAction::Delegate(o) => {
-                task_name = o.name.clone();
-                o.async_exec(ctx, dct).await
-            }
+            BlockAction::Tpl(o) => o.async_exec(ctx, dct).await,
+            BlockAction::Delegate(o) => o.async_exec(ctx, dct).await,
             BlockAction::Version(o) => o.async_exec(ctx, dct).await,
-            BlockAction::Read(o) => {
-                task_name = match o.imp() {
-                    ReadMode::CMD(_) => String::from("gx.read_cmd"),
-                    ReadMode::FILE(_) => String::from("gx.read_file"),
-                    ReadMode::STDIN(_) => String::from("gx.read_ini"),
-                    _ => String::from("unkown"),
-                };
-                o.async_exec(ctx, dct).await
-            }
+            BlockAction::Read(o) => o.async_exec(ctx, dct).await,
             BlockAction::Artifact(o) => o.async_exec(ctx, dct).await,
-            BlockAction::UpLoad(o) => {
-                task_name = String::from("gx.upload");
-                o.async_exec(ctx, dct).await
-            }
-            BlockAction::DownLoad(o) => {
-                task_name = String::from("gx.download");
-                o.async_exec(ctx, dct).await
-            }
-        };
-        if !task_name.is_empty() {
-            // 若环境变量或配置文件中有返回路径则进行返回
-            if let Some(url) = get_task_callback_center_url() {
-                let task_result = TaskResult::from_result(task_name, &res);
-                send_http_request(task_result.clone(), &url).await?;
-                println!("task_result:{:#?}", task_result);
-            }
+            BlockAction::UpLoad(o) => o.async_exec(ctx, dct).await,
+            BlockAction::DownLoad(o) => o.async_exec(ctx, dct).await,
         }
-        res
     }
 }
 

@@ -38,10 +38,7 @@ impl Action {
         let duration = end.duration_since(self.begin).unwrap();
         let mut total_nanos = duration.as_nanos();
 
-        let units = [
-            (1_000_000_000, "s"),
-            (1_000_000, "ms"),
-        ];
+        let units = [(1_000_000_000, "s"), (1_000_000, "ms")];
 
         let mut formate_time = String::new();
         for (unit, unit_name) in units {
