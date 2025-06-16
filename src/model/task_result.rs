@@ -10,6 +10,7 @@ use toml::from_str;
 
 pub static TASK_ORDER: AtomicU64 = AtomicU64::new(0);
 
+// 任务执行结果
 #[derive(Debug, Serialize, Clone)]
 pub struct TaskResult {
     pub parent_id: String,
@@ -20,13 +21,11 @@ pub struct TaskResult {
 }
 
 /// Task status
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, PartialEq)]
 pub enum TaskStatus {
     Pending,
-    Running,
     Completed,
     Failed,
-    Cancelled,
 }
 
 impl TaskResult {
@@ -64,7 +63,12 @@ impl TaskResult {
             Ok((_, out)) => {
                 if let ExecOut::Task(task) = out {
                     task_result.status = TaskStatus::Completed;
-                    task_result.log = task.stdout.clone();
+                    // TODO: 任务执行日志
+                    let mut stdout = String::new();
+                    for action in task.actions() {
+                        stdout.push_str(&format!("{}\n", action.stdout));
+                    }
+                    task_result.log = stdout;
                 }
             }
             Err(e) => {

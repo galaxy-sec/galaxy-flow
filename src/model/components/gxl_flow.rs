@@ -1,6 +1,7 @@
 use super::gxl_intercept::FlowRunner;
 use super::prelude::*;
 
+use crate::execution::task::Task;
 use crate::parser::stc_base::AnnDto;
 
 use crate::traits::DependTrait;
@@ -131,14 +132,15 @@ impl GxlFlow {
 
 impl GxlFlow {
     async fn exec_self(&self, ctx: ExecContext, mut var_dict: VarSpace) -> VTResult {
-        let mut job = Job::from(self.meta.name());
+        let mut task = Task::from(self.meta.name());
 
         for item in &self.blocks {
-            let (cur_dict, task) = item.async_exec(ctx.clone(), var_dict).await?;
+            let (cur_dict, out) = item.async_exec(ctx.clone(), var_dict).await?;
             var_dict = cur_dict;
-            job.append(task);
+            task.append(out);
         }
-        Ok((var_dict, ExecOut::Job(job)))
+        task.finish();
+        Ok((var_dict, ExecOut::Task(task)))
     }
 }
 #[async_trait]

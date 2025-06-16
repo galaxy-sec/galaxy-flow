@@ -1,7 +1,7 @@
 use orion_syspec::error::ToErr;
 
 use super::prelude::*;
-use crate::traits::Setter;
+use crate::{execution::task::Task, traits::Setter};
 
 use super::gxl_block::BlockNode;
 
@@ -25,18 +25,18 @@ impl GxlLoop {
 #[async_trait]
 impl AsyncRunnableTrait for GxlLoop {
     async fn async_exec(&self, ctx: ExecContext, dict: VarSpace) -> VTResult {
-        let mut job = Job::from("loop");
+        let mut task = Task::from("loop");
         if let Some(named_dict) = dict.nameds().get(self.dct_name()) {
             let mut cur_dict = dict.clone();
             for (_k, v) in named_dict.maps().iter() {
                 cur_dict
                     .global_mut()
                     .set(self.cur_name().as_str(), v.clone());
-                let (dict, task) = self.body.async_exec(ctx.clone(), cur_dict).await?;
+                let (dict, out) = self.body.async_exec(ctx.clone(), cur_dict).await?;
                 cur_dict = dict;
-                job.append(task);
+                task.append(out);
             }
-            return Ok((cur_dict, ExecOut::Job(job)));
+            return Ok((cur_dict, ExecOut::Task(task)));
         }
         ExecReason::Miss(self.dct_name().into()).err_result()
     }
@@ -85,7 +85,7 @@ mod tests {
         // 验证结果
         assert!(result.is_ok());
         let (_, exec_out) = result.unwrap();
-        if let ExecOut::Job(_job) = exec_out {
+        if let ExecOut::Task(_task) = exec_out {
             assert!(true)
             //assert_eq!(job.tasks().len(), 2); // 应该有两个任务，对应两个键值对
         } else {

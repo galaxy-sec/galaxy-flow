@@ -148,7 +148,7 @@ impl Activity {
     ) -> VTResult {
         ctx.append(format!("{}.{}", self.host, dto.name));
         debug!(target: ctx.path(),"actcall");
-        let mut task = Task::from(dto.name.as_str());
+        let mut action = Action::from(dto.name.as_str());
         //let mut map = def.export();
         let mut dict = vars_dict.clone();
 
@@ -178,8 +178,8 @@ impl Activity {
         opt.outer_print = *ctx.cmd_print();
         debug!(target: ctx.path(),"cmd: {}, opt:{:?}", cmd,opt);
         gxl_sh!(LogicScope::Outer, ctx.path(), &cmd, &opt, &exp).with(&r_with)?;
-        task.finish();
-        Ok((vars_dict, ExecOut::Task(task)))
+        action.finish();
+        Ok((vars_dict, ExecOut::Action(action)))
     }
     pub fn exec_cmd(&self, ctx: ExecContext, vars_dict: VarSpace, dto: &ActivityDTO) -> VTResult {
         self.execute_impl(ctx, vars_dict, dto)
@@ -224,8 +224,8 @@ mod tests {
         let act = Activity::dto_new(dto.clone());
         let (_, result) = act.async_exec(context.clone(), def).await.assert();
         match result {
-            ExecOut::Task(task) => {
-                assert_eq!(task.name(), "os.copy");
+            ExecOut::Action(action) => {
+                assert_eq!(action.name(), "os.copy");
             }
             _ => unreachable!(),
         }
