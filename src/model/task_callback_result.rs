@@ -16,15 +16,16 @@ pub struct TaskCallBackResult {
     pub parent_id: i64,
     pub name: String,       // 子任务名称
     pub log: String,        // 执行日志
-    pub status: TaskStatus, // 执行状态
+    pub status: SubTaskStatus, // 执行状态
     pub order: u16,         // 执行顺序
 }
 
 /// 任务状态
 #[derive(Debug, Clone, Serialize, PartialEq)]
-pub enum TaskStatus {
-    Pending,
-    Completed,
+pub enum SubTaskStatus {
+    Created,
+    Running,
+    Success,
     Failed,
 }
 
@@ -43,8 +44,8 @@ impl TaskCallBackResult {
             name: task.name().clone(),
             log: running_log,
             status: match task.result() {
-                Ok(_) => TaskStatus::Completed,
-                Err(_) => TaskStatus::Failed,
+                Ok(_) => SubTaskStatus::Success,
+                Err(_) => SubTaskStatus::Failed,
             },
             order: taskbody.order,
         }
@@ -53,8 +54,11 @@ impl TaskCallBackResult {
 
 // 获取当前任务的父id
 pub fn get_task_parent_id() -> String {
+    println!("get task id from env");
     match env::var("task_id") {
-        Ok(id) => id,
+        Ok(id) => {
+            println!("get task id from env: {}", id);
+            id},
         Err(_) => "0".to_string(), // 如果没有设置 task_id，则返回 "0"
     }
 }
@@ -126,7 +130,7 @@ lazy_static! {
 }
 
 pub fn load_task_config() {
-    let path = Path::new("./_gal/task_config.toml");
+    let path = Path::new("/Users/tangxiangyan/Documents/projects/galaxy-flow/task_config.toml");
     let content = fs::read_to_string(path);
     match content {
         Ok(content) => {
