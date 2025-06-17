@@ -54,6 +54,20 @@ impl ComUsage for FlowAnnotation {
     }
 }
 
+impl TaskMessage for FlowAnnotation {
+    fn message(&self) -> Option<String> {
+        if self.func == FlowAnnFunc::Task {
+            let res = self.get_arg("name");
+            if res.is_some() {
+                println!("message: {}", res.clone().unwrap());
+            }
+            res
+        } else {
+            None
+        }
+    }
+}
+
 impl ComUsage for EnvAnnotation {
     fn desp(&self) -> Option<String> {
         if self.func == EnvAnnFunc::Usage {
@@ -151,11 +165,17 @@ pub enum FlowAnnFunc {
     AutoLoad,
     Usage,
     UnImpl,
+    Task,
+    dryrun
 }
 #[derive(Clone, Debug, PartialEq)]
 pub enum EnvAnnFunc {
     Usage,
     UnImpl,
+}
+
+pub trait TaskMessage {
+    fn message(&self) -> Option<String>;
 }
 
 pub trait ComUsage {
@@ -173,6 +193,8 @@ impl convert::From<&str> for FlowAnnFunc {
         match s {
             "auto_load" => FlowAnnFunc::AutoLoad,
             "usage" => FlowAnnFunc::Usage,
+            "task" => FlowAnnFunc::Task,
+            "dryrun" => FlowAnnFunc::dryrun,
             _ => {
                 warn!("UnImpl FlowAnnFunc: {}", s);
                 FlowAnnFunc::UnImpl

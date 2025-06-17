@@ -1,7 +1,7 @@
 use super::gxl_intercept::FlowRunner;
 use super::prelude::*;
 
-use crate::annotation::{AnnEnum, ComUsage};
+use crate::annotation::{AnnEnum, ComUsage, TaskMessage};
 use crate::execution::task::Task;
 use crate::parser::stc_base::AnnDto;
 
@@ -137,7 +137,8 @@ impl GxlFlow {
 
 impl GxlFlow {
     async fn exec_self(&self, ctx: ExecContext, mut var_dict: VarSpace) -> VTResult {
-        let des = self.get_desan();
+        // let des = self.get_desan();
+        let des = self.get_task_message(); 
         let mut task = Task::from(self.meta.name());
         let mut task_body = TaskBody::new();
         if let Some(des) = des.clone() {
@@ -167,7 +168,7 @@ impl GxlFlow {
 
         // result_callback
         // 若任务被标记为需要返回，则进行返回
-        if des.is_some(){
+        if des.is_some() {
             // 若环境变量或配置文件中有返回路径则进行返回
             if let Some(url) = get_task_callback_center_url() {
                 let task_result = TaskCallBackResult::from_task_with_order(task.clone(), task_body);
@@ -190,11 +191,22 @@ impl GxlFlow {
         }
         None
     }
+
+    // 获取注解中的描述信息
+    pub fn get_task_message(&self) -> Option<String> {
+        let annotation = self.meta.annotations();
+        for ann in annotation {
+            if let AnnEnum::Flow(flowann) = ann {
+                return flowann.message();
+            }
+        }
+        None
+    }
 }
 #[async_trait]
 impl AsyncRunnableTrait for GxlFlow {
     async fn async_exec(&self, mut ctx: ExecContext, mut var_dict: VarSpace) -> VTResult {
-        let des = self.get_desan();
+        let des = self.get_task_message();
         let mut job = Job::from(self.meta.name());
         if let Some(des) = des.clone() {
             job = Job::from(&des);
