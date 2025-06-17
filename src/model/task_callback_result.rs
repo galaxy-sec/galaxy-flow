@@ -54,11 +54,8 @@ impl TaskCallBackResult {
 
 // 获取当前任务的父id
 pub fn get_task_parent_id() -> String {
-    println!("get task id from env");
     match env::var("task_id") {
-        Ok(id) => {
-            println!("get task id from env: {}", id);
-            id},
+        Ok(id) => id,
         Err(_) => "0".to_string(), // 如果没有设置 task_id，则返回 "0"
     }
 }
@@ -130,7 +127,7 @@ lazy_static! {
 }
 
 pub fn load_task_config() {
-    let path = Path::new("/Users/tangxiangyan/Documents/projects/galaxy-flow/task_config.toml");
+    let path = Path::new("/usr/local/bin/gflow_task_config.toml");
     let content = fs::read_to_string(path);
     match content {
         Ok(content) => {
