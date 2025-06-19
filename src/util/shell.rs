@@ -124,7 +124,7 @@ mod tests {
             ..Default::default()
         };
         let cmd = "echo ${SEC_KEY}".to_string();
-        let (stdout, stderr) = rg_sh(LogicScope::Outer, "gx.sh", &cmd, &opt, &exp).unwrap();
+        let (stdout, _stderr) = rg_sh(LogicScope::Outer, "gx.sh", &cmd, &opt, &exp).unwrap();
         assert_eq!(stdout, b"galaxy\n");
     }
 }

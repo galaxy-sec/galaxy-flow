@@ -2,11 +2,11 @@ use crate::execution::task::Task as ExecTask;
 use crate::util::http_handle::{get_create_maintask_url, send_http_request};
 use once_cell::sync::OnceCell;
 use serde::Serialize;
+use std::env;
 use std::sync::Mutex;
 use std::{fs, path::Path};
 use time::{format_description, OffsetDateTime};
 use toml::from_str;
-use std::env;
 
 lazy_static::lazy_static! {
     static ref NEXT_ORDER: Mutex<u16> = Mutex::new(0);
@@ -42,7 +42,7 @@ impl TaskCallBackResult {
             }
         }
         TaskCallBackResult {
-            parent_id: get_task_parent_id().unwrap().parse::<i64>().unwrap_or(0),
+            parent_id: get_task_parent_id().parse::<i64>().unwrap_or(0),
             name: task.name().clone(),
             log: running_log,
             status: match task.result() {
@@ -55,8 +55,11 @@ impl TaskCallBackResult {
 }
 
 // 获取当前任务的父id
-pub fn get_task_parent_id() -> Option<String> {
-    env::var("task_id").ok()
+pub fn get_task_parent_id() -> String {
+    env::var("task_id").unwrap_or("0".to_string())
+}
+pub fn task_have_parent() -> bool {
+    env::var("task_id").is_ok()
 }
 
 use serde::Deserialize;
@@ -107,7 +110,7 @@ impl TaskBody {
         self.order = next_order;
     }
     pub fn new() -> TaskBody {
-        let parent_id = get_task_parent_id().unwrap_or_default();
+        let parent_id = get_task_parent_id();
         TaskBody {
             parent_id: parent_id.parse::<i64>().unwrap_or(0),
             name: String::new(),
