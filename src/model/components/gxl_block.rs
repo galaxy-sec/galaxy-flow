@@ -61,12 +61,12 @@ impl BlockNode {
 #[async_trait]
 impl CondExec for BlockNode {
     async fn cond_exec(&self, ctx: ExecContext, def: VarSpace) -> VTResult {
-        self.async_exec(ctx, def, false).await
+        self.async_exec_with_dryrun(ctx, def, false).await
     }
 }
 #[async_trait]
 impl AsyncDryrunRunnableTrait for BlockAction {
-    async fn async_exec(&self, ctx: ExecContext, dct: VarSpace, is_dryrun: bool) -> VTResult {
+    async fn async_exec_with_dryrun(&self, ctx: ExecContext, dct: VarSpace, is_dryrun: bool) -> VTResult {
         match self {
             BlockAction::Command(o) => {
                 if *ctx.dryrun() && is_dryrun {
@@ -102,7 +102,7 @@ impl AsyncDryrunRunnableTrait for BlockAction {
 
 #[async_trait]
 impl AsyncDryrunRunnableTrait for BlockNode {
-    async fn async_exec(&self, ctx: ExecContext, var_dict: VarSpace, is_dryrun: bool) -> VTResult {
+    async fn async_exec_with_dryrun(&self, ctx: ExecContext, var_dict: VarSpace, is_dryrun: bool) -> VTResult {
         //ctx.append("block");
         let mut task = Task::from("block");
         let mut cur_var_dict = var_dict;
@@ -110,7 +110,7 @@ impl AsyncDryrunRunnableTrait for BlockNode {
 
         for item in &self.items {
             let (tmp_var_dict, out) =
-                AsyncDryrunRunnableTrait::async_exec(item, ctx.clone(), cur_var_dict, is_dryrun)
+                item.async_exec_with_dryrun(ctx.clone(), cur_var_dict, is_dryrun)
                     .await?;
             cur_var_dict = tmp_var_dict;
             task.append(out);
@@ -196,7 +196,7 @@ mod tests {
         block.append(prop);
         let ctx = ExecContext::new(false, false);
         let def = VarSpace::default();
-        let res = AsyncDryrunRunnableTrait::async_exec(&block, ctx, def, false).await;
+        let res = block.async_exec_with_dryrun(ctx, def, false).await;
         assert_eq!(res.is_ok(), true);
     }
 }

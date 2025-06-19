@@ -34,7 +34,7 @@ pub trait AsyncRunnableTrait {
 
 #[async_trait]
 pub trait AsyncDryrunRunnableTrait {
-    async fn async_exec(&self, ctx: ExecContext, dict: VarSpace, dryrun: bool) -> VTResult;
+    async fn async_exec_with_dryrun(&self, ctx: ExecContext, dict: VarSpace, dryrun: bool) -> VTResult;
 }
 
 pub trait RunnableTrait {

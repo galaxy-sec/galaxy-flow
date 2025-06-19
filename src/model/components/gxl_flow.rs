@@ -164,7 +164,7 @@ impl GxlFlow {
         }
         for item in &self.blocks {
             let (cur_dict, out) =
-                AsyncDryrunRunnableTrait::async_exec(item, ctx.clone(), var_dict, self.is_dryrun())
+                item.async_exec_with_dryrun(ctx.clone(), var_dict, self.is_dryrun())
                     .await?;
             var_dict = cur_dict;
             task.append(out);

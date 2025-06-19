@@ -36,7 +36,7 @@ impl AsyncRunnableTrait for GxlLoop {
                     .global_mut()
                     .set(self.cur_name().as_str(), v.clone());
                 let (dict, out) =
-                    AsyncDryrunRunnableTrait::async_exec(&self.body, ctx.clone(), cur_dict, false)
+                    self.body.async_exec_with_dryrun(ctx.clone(), cur_dict, false)
                         .await?;
                 cur_dict = dict;
                 task.append(out);
