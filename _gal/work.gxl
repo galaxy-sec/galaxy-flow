@@ -2,9 +2,8 @@ extern mod head { path = "${GXL_START_ROOT}/_gal/"; }
 
 mod env  {
    env _common  : rust_env.init   {
-    sudo      = "false";
     root      = ".";
-    run       = "./run";
+    run       = "./";
     target_name = "";
     prj_key   = "galaxy_flow" ;
     DIST_REPO = "unknow";
@@ -46,6 +45,7 @@ mod main   {
         }
 
     }
+    #[task(name="config")]
     flow conf  {
 
       gx.echo ( "${ENV_PRJ_KEY}" );
@@ -67,13 +67,15 @@ mod main   {
   }
   flow coverage : rust_flow.coverage ;
 
-  #[usage(desp="build system")]
+  #[task(name="build")]
   flow build: ver.use ,conf , rust_flow.build : pub_local {
       os.path (  "${MAIN_USR_BINS}" );
       os.path (  "${MAIN_PRJ_BINS}" );
   }
   #[usage(desp="lint code")]
   flow lint : rust_flow.lint {} ;
+
+  #[task(name="test")]
   flow test : build : {
     gx.cmd ( "cargo test --all ${ENV_BUILD_FLAG}", log : "1" , out:"true"  );
   }
