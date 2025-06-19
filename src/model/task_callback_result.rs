@@ -291,8 +291,6 @@ mod tests {
 
         let task_result_config = TASK_RESULT_CONDIG.get().assert();
 
-        let task_result_config = TASK_RESULT_CONDIG.get().assert();
-
         // 验证全局变量
         assert!(task_result_config.create_maintask_url.is_some());
         assert!(task_result_config.task_callback_center.is_some());
