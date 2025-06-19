@@ -145,6 +145,7 @@ impl GxlSpace {
         envs_name: VS,
         flows_name: VS,
         out: bool,
+        dryrun: bool,
         var_space: VarSpace,
     ) -> RunResult<()> {
         info!(
@@ -159,7 +160,7 @@ impl GxlSpace {
         warn!(target : "exec","inherted vars :\n{}", var_space.inherited());
         info!(target : "exec","inherted vars :\n{}", var_space.global());
 
-        let main_ctx = ExecContext::new(out);
+        let main_ctx = ExecContext::new(out, dryrun);
         for flow_name in flow_names {
             self.execute_flow(&main_ctx, &var_space, &envs, &flow_name)
                 .await?;

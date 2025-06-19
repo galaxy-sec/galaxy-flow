@@ -50,6 +50,7 @@ mod tests {
             vec!["default".into()],
             vec!["conf".into()],
             false,
+            false,
             VarSpace::default(),
         )
         .await?;
@@ -69,6 +70,7 @@ mod tests {
             vec!["default".into()],
             vec!["assert_main".into()],
             false,
+            false,
             VarSpace::default(),
         )
         .await?;
@@ -86,6 +88,7 @@ mod tests {
         spc.exec(
             vec!["default".into()],
             vec!["conf".into()],
+            false,
             false,
             VarSpace::default(),
         )

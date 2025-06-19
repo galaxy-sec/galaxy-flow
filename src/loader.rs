@@ -149,6 +149,7 @@ mod tests {
             ["default".into()].to_vec(),
             ["conf".into()].to_vec(),
             true,
+            false,
             VarSpace::sys_init()?,
         )
         .await?;

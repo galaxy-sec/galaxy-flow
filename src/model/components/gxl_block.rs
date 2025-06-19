@@ -69,7 +69,7 @@ impl AsyncDryrunRunnableTrait for BlockAction {
     async fn async_exec(&self, ctx: ExecContext, dct: VarSpace, is_dryrun: bool) -> VTResult {
         match self {
             BlockAction::Command(o) => {
-                if is_dryrun {
+                if *ctx.dryrun() && is_dryrun {
                     let mut action = Action::from("gx.cmd");
                     let buffer = format!(
                         "Warning: It is currently in a trial operation environment!\n{}: {}",
@@ -194,7 +194,7 @@ mod tests {
         let mut block = BlockNode::new();
         let prop = RgProp::new("test", "hello");
         block.append(prop);
-        let ctx = ExecContext::new(false);
+        let ctx = ExecContext::new(false, false);
         let def = VarSpace::default();
         let res = AsyncDryrunRunnableTrait::async_exec(&block, ctx, def, false).await;
         assert_eq!(res.is_ok(), true);

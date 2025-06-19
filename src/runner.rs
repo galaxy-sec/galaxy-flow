@@ -35,7 +35,7 @@ impl GxlRunner {
                     cmd.flow.clone()
                     //cmd.flow.iter().collect()
                 };
-                spc.exec(envs, flws, cmd.cmd_print, vars).await?;
+                spc.exec(envs, flws, cmd.cmd_print, cmd.dryrun, vars).await?;
                 println!("\ngod job!");
             }
             Ok(())
@@ -72,6 +72,8 @@ pub struct GxlCmd {
         default_value = ""
     )]
     pub cmd_arg: String,
+    #[arg(long = "dryrun", action = ArgAction::SetTrue, default_value = "false")]
+    pub dryrun: bool,
 }
 impl DfxArgsGetter for GxlCmd {
     fn debug_level(&self) -> usize {
