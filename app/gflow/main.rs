@@ -14,9 +14,10 @@ use galaxy_flow::runner::{GxlCmd, GxlRunner};
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     use std::process;
-    // 加载task配置
-    load_task_config();
+
     let mut cmd = GxlCmd::parse();
+    // 加载task配置
+    load_task_config(&cmd).await;
     configure_run_logging(cmd.log.clone(), cmd.debug);
     debug!("galaxy flow running .....");
     if cmd.conf.is_none() {

@@ -31,6 +31,19 @@ pub fn get_task_report_center_url() -> Option<String> {
     None
 }
 
+pub fn get_create_maintask_url() -> Option<String> {
+    if let Ok(url) = env::var("create_maintask") {
+        return Some(url);
+    }
+    let task_config = TASK_RESULT_CONDIG.get();
+    if let Some(task_config) = task_config {
+        if let Some(task_url) = task_config.create_maintask_url.clone() {
+            return Some(task_url.url);
+        }
+    }
+    None
+}
+
 // 发送http请求
 pub async fn send_http_request<T: Serialize>(
     payload: T,

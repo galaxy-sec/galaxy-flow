@@ -1,10 +1,12 @@
 use async_trait::async_trait;
+use colored::Colorize;
 
 use super::gxl_loop::GxlLoop;
 use super::prelude::*;
 
 use crate::ability::artifact::GxArtifact;
 use crate::ability::delegate::ActCall;
+use crate::ability::prelude::Action;
 use crate::ability::GxAssert;
 use crate::ability::GxCmd;
 use crate::ability::GxDownLoad;
@@ -16,6 +18,7 @@ use crate::ability::GxUpLoad;
 use crate::ability::RgVersion;
 use crate::calculate::cond::CondExec;
 use crate::context::ExecContext;
+use crate::execution::runnable::AsyncDryrunRunnableTrait;
 use crate::execution::runnable::VTResult;
 use crate::execution::task::Task;
 
@@ -58,14 +61,29 @@ impl BlockNode {
 #[async_trait]
 impl CondExec for BlockNode {
     async fn cond_exec(&self, ctx: ExecContext, def: VarSpace) -> VTResult {
-        self.async_exec(ctx, def).await
+        self.async_exec(ctx, def, false).await
     }
 }
 #[async_trait]
-impl AsyncRunnableTrait for BlockAction {
-    async fn async_exec(&self, ctx: ExecContext, dct: VarSpace) -> VTResult {
+impl AsyncDryrunRunnableTrait for BlockAction {
+    async fn async_exec(&self, ctx: ExecContext, dct: VarSpace, is_dryrun: bool) -> VTResult {
         match self {
-            BlockAction::Command(o) => o.async_exec(ctx, dct).await,
+            BlockAction::Command(o) => {
+                if is_dryrun {
+                    let mut action = Action::from("gx.cmd");
+                    let buffer = format!(
+                        "Warning: It is currently in a trial operation environment!\n{}: {}",
+                        o.dto().cmd,
+                        "执行成功"
+                    );
+                    println!("{}", buffer.yellow().bold());
+                    action.stdout = buffer;
+                    action.finish();
+                    Ok((dct, ExecOut::Action(action)))
+                } else {
+                    o.async_exec(ctx, dct).await
+                }
+            }
             BlockAction::GxlRun(o) => o.async_exec(ctx, dct).await,
             BlockAction::Echo(o) => o.async_exec(ctx, dct).await,
             BlockAction::Assert(o) => o.async_exec(ctx, dct).await,
@@ -83,15 +101,17 @@ impl AsyncRunnableTrait for BlockAction {
 }
 
 #[async_trait]
-impl AsyncRunnableTrait for BlockNode {
-    async fn async_exec(&self, ctx: ExecContext, var_dict: VarSpace) -> VTResult {
+impl AsyncDryrunRunnableTrait for BlockNode {
+    async fn async_exec(&self, ctx: ExecContext, var_dict: VarSpace, is_dryrun: bool) -> VTResult {
         //ctx.append("block");
         let mut task = Task::from("block");
         let mut cur_var_dict = var_dict;
         self.export_props(ctx.clone(), cur_var_dict.global_mut(), "")?;
 
         for item in &self.items {
-            let (tmp_var_dict, out) = item.async_exec(ctx.clone(), cur_var_dict).await?;
+            let (tmp_var_dict, out) =
+                AsyncDryrunRunnableTrait::async_exec(item, ctx.clone(), cur_var_dict, is_dryrun)
+                    .await?;
             cur_var_dict = tmp_var_dict;
             task.append(out);
         }
@@ -176,7 +196,7 @@ mod tests {
         block.append(prop);
         let ctx = ExecContext::new(false);
         let def = VarSpace::default();
-        let res = block.async_exec(ctx, def).await;
+        let res = AsyncDryrunRunnableTrait::async_exec(&block, ctx, def, false).await;
         assert_eq!(res.is_ok(), true);
     }
 }
