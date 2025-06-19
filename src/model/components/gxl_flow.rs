@@ -1,7 +1,8 @@
 use super::gxl_intercept::FlowRunner;
 use super::prelude::*;
 
-use crate::annotation::{AnnEnum, ComUsage, TaskMessage};
+use crate::annotation::{AnnEnum, ComUsage, FlowAnnFunc, TaskMessage};
+use crate::execution::runnable::{AsyncDryrunRunnableTrait, AsyncRunnableTrait};
 use crate::execution::task::Task;
 use crate::parser::stc_base::AnnDto;
 
@@ -38,7 +39,6 @@ pub struct GxlFlow {
 impl DependTrait<&GxlSpace> for GxlFlow {
     fn assemble(self, mod_name: &str, src: &GxlSpace) -> AResult<Self> {
         let mut target = GxlFlow::from(self.meta().clone());
-
         let pre_order_flows = self.meta.preorder();
         let mut buffer = Vec::new();
         let mut linked = false;
@@ -137,11 +137,12 @@ impl GxlFlow {
 
 impl GxlFlow {
     async fn exec_self(&self, ctx: ExecContext, mut var_dict: VarSpace) -> VTResult {
-        // let des = self.get_desan();
-        let des = self.get_task_message(); 
+        println!("flow {} start", self.meta.name());
+        let task_message = self.get_task_message();
         let mut task = Task::from(self.meta.name());
         let mut task_body = TaskBody::new();
-        if let Some(des) = des.clone() {
+        if let Some(des) = task_message.clone() {
+            println!("flow message {}", des);
             task = Task::from(des);
             // 若环境变量或配置文件中有报告中心则进行任务上报
             if let Some(url) = get_task_report_center_url() {
@@ -155,12 +156,16 @@ impl GxlFlow {
                 let batch_task = BatchTaskRequest {
                     tasks: vec![task_body.clone()],
                 };
-                send_http_request(batch_task, &url).await?;
+                let res = send_http_request(batch_task, &url).await;
+                if res.is_err() {
+                    println!("send task report error: {:?}", res.unwrap_err());
+                }
             }
         }
-
         for item in &self.blocks {
-            let (cur_dict, out) = item.async_exec(ctx.clone(), var_dict).await?;
+            let (cur_dict, out) =
+                AsyncDryrunRunnableTrait::async_exec(item, ctx.clone(), var_dict, self.is_dryrun())
+                    .await?;
             var_dict = cur_dict;
             task.append(out);
         }
@@ -168,14 +173,17 @@ impl GxlFlow {
 
         // result_callback
         // 若任务被标记为需要返回，则进行返回
-        if des.is_some() {
+        if task_message.is_some() {
             // 若环境变量或配置文件中有返回路径则进行返回
             if let Some(url) = get_task_callback_center_url() {
                 let task_result = TaskCallBackResult::from_task_with_order(task.clone(), task_body);
-                send_http_request(task_result.clone(), &url).await?;
+                let res = send_http_request(task_result.clone(), &url).await;
+                if res.is_err() {
+                    println!("send task callback error: {:?}", res.unwrap_err());
+                }
             }
         }
-        if des.is_none() {
+        if task_message.is_none() {
             return Ok((var_dict, ExecOut::Ignore));
         }
         Ok((var_dict, ExecOut::Task(task)))
@@ -201,6 +209,18 @@ impl GxlFlow {
             }
         }
         None
+    }
+
+    pub fn is_dryrun(&self) -> bool {
+        let annotation = self.meta.annotations();
+        for ann in annotation {
+            if let AnnEnum::Flow(flowann) = ann {
+                if flowann.func == FlowAnnFunc::Dryrun {
+                    return true;
+                }
+            }
+        }
+        false
     }
 }
 #[async_trait]

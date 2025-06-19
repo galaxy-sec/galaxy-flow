@@ -31,6 +31,12 @@ pub type VTResult = ExecResult<(VarSpace, ExecOut)>;
 pub trait AsyncRunnableTrait {
     async fn async_exec(&self, ctx: ExecContext, dict: VarSpace) -> VTResult;
 }
+
+#[async_trait]
+pub trait AsyncDryrunRunnableTrait {
+    async fn async_exec(&self, ctx: ExecContext, dict: VarSpace, dryrun: bool) -> VTResult;
+}
+
 pub trait RunnableTrait {
     fn exec(&self, ctx: ExecContext, dict: VarSpace) -> VTResult;
 }
