@@ -4,7 +4,8 @@ use orion_error::ErrorConv;
 use orion_syspec::{
     artifact::ArtifactPackage,
     error::ToErr,
-    types::{AsyncUpdateable, Configable, UpdateOptions},
+    types::{AsyncUpdateable, Configable},
+    update::UpdateOptions,
 };
 
 use crate::ability::prelude::*;

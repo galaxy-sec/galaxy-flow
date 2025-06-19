@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use orion_error::ErrorConv;
-use orion_syspec::{addr::HttpAddr, error::ToErr, types::UpdateOptions};
+use orion_syspec::{addr::HttpAddr, error::ToErr, update::UpdateOptions};
 
 use crate::ability::prelude::*;
 

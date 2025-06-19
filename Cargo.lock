@@ -1177,7 +1177,7 @@ dependencies = [
  "time 0.3.41",
  "tokio",
  "tokio-util",
- "toml 0.8.22",
+ "toml",
  "url",
  "walkdir",
  "wildmatch",
@@ -2143,8 +2143,8 @@ dependencies = [
 
 [[package]]
 name = "orion-syspec"
-version = "0.6.0"
-source = "git+https://github.com/galaxy-sec/orion-syspec.git?tag=0.6.1#2ee696c21bf8048aa47ad149d93f5b81721b850c"
+version = "0.7.4"
+source = "git+https://github.com/galaxy-sec/orion-syspec.git?tag=v0.7.4#2a38aa8997a57956cdfa7b3781e35a922a0d98a0"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2169,7 +2169,8 @@ dependencies = [
  "once_cell",
  "orion-error",
  "orion_common 0.4.1",
- "orion_infra 0.1.0 (git+https://github.com/galaxy-sec/orion-syspec.git?tag=0.6.1)",
+ "orion_infra 0.1.0 (git+https://github.com/galaxy-sec/orion-syspec.git?tag=v0.7.4)",
+ "os_info",
  "regex",
  "reqwest",
  "scopeguard",
@@ -2179,10 +2180,10 @@ dependencies = [
  "serde_json",
  "serde_yaml",
  "strfmt",
- "thiserror 1.0.69",
+ "thiserror 2.0.12",
  "tokio",
  "tokio-util",
- "toml 0.7.8",
+ "toml",
  "tracing",
  "url",
  "walkdir",
@@ -2193,14 +2194,14 @@ dependencies = [
 [[package]]
 name = "orion_common"
 version = "0.4.1"
-source = "git+https://github.com/galaxy-sec/orion-syspec.git?tag=0.6.1#2ee696c21bf8048aa47ad149d93f5b81721b850c"
+source = "git+https://github.com/galaxy-sec/orion-syspec.git?tag=v0.7.4#2a38aa8997a57956cdfa7b3781e35a922a0d98a0"
 dependencies = [
  "anyhow",
  "chrono",
  "derive-getters",
  "ipnet",
  "serde",
- "toml 0.8.22",
+ "toml",
  "wildmatch",
 ]
 
@@ -2213,7 +2214,7 @@ dependencies = [
  "derive-getters",
  "ipnet",
  "serde",
- "toml 0.8.22",
+ "toml",
  "wildmatch",
 ]
 
@@ -2229,13 +2230,13 @@ dependencies = [
  "serde_derive",
  "tempfile",
  "thiserror 2.0.12",
- "toml 0.8.22",
+ "toml",
 ]
 
 [[package]]
 name = "orion_infra"
 version = "0.1.0"
-source = "git+https://github.com/galaxy-sec/orion-syspec.git?tag=0.6.1#2ee696c21bf8048aa47ad149d93f5b81721b850c"
+source = "git+https://github.com/galaxy-sec/orion-syspec.git?tag=v0.7.4#2a38aa8997a57956cdfa7b3781e35a922a0d98a0"
 dependencies = [
  "anyhow",
  "flexi_logger",
@@ -2243,7 +2244,7 @@ dependencies = [
  "serde",
  "serde_derive",
  "thiserror 2.0.12",
- "toml 0.8.22",
+ "toml",
 ]
 
 [[package]]
@@ -2491,7 +2492,7 @@ version = "3.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "edce586971a4dfaa28950c6f18ed55e0406c1ab88bbce2c6f6293a7aaba73d35"
 dependencies = [
- "toml_edit 0.22.26",
+ "toml_edit",
 ]
 
 [[package]]
@@ -3476,18 +3477,6 @@ dependencies = [
 
 [[package]]
 name = "toml"
-version = "0.7.8"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dd79e69d3b627db300ff956027cc6c3798cef26d22526befdfcd12feeb6d2257"
-dependencies = [
- "serde",
- "serde_spanned",
- "toml_datetime",
- "toml_edit 0.19.15",
-]
-
-[[package]]
-name = "toml"
 version = "0.8.22"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "05ae329d1f08c4d17a59bed7ff5b5a769d062e64a62d34a3261b219e62cd5aae"
@@ -3495,7 +3484,7 @@ dependencies = [
  "serde",
  "serde_spanned",
  "toml_datetime",
- "toml_edit 0.22.26",
+ "toml_edit",
 ]
 
 [[package]]
@@ -3505,19 +3494,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3da5db5a963e24bc68be8b17b6fa82814bb22ee8660f192bb182771d498f09a3"
 dependencies = [
  "serde",
-]
-
-[[package]]
-name = "toml_edit"
-version = "0.19.15"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1b5bb770da30e5cbfde35a2d7b9b8a2c4b8ef89548a7a6aeab5c9a576e3e7421"
-dependencies = [
- "indexmap",
- "serde",
- "serde_spanned",
- "toml_datetime",
- "winnow 0.5.40",
 ]
 
 [[package]]
@@ -4138,15 +4114,6 @@ name = "windows_x86_64_msvc"
 version = "0.53.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "271414315aff87387382ec3d271b52d7ae78726f5d44ac98b4f4030c91880486"
-
-[[package]]
-name = "winnow"
-version = "0.5.40"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f593a95398737aeed53e489c785df13f3618e41dbcd6718c6addbf1395aa6876"
-dependencies = [
- "memchr",
-]
 
 [[package]]
 name = "winnow"
