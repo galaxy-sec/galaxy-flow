@@ -21,7 +21,7 @@ impl ExecContext {
             cur_path: String::from(cur_path),
             env_vars: HashMap::new(),
             cmd_print: out,
-            dryrun: dryrun
+            dryrun
         }
     }
 

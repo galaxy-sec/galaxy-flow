@@ -35,7 +35,8 @@ impl GxlRunner {
                     cmd.flow.clone()
                     //cmd.flow.iter().collect()
                 };
-                spc.exec(envs, flws, cmd.cmd_print, cmd.dryrun, vars).await?;
+                spc.exec(envs, flws, cmd.cmd_print, cmd.dryrun, vars)
+                    .await?;
                 println!("\ngod job!");
             }
             Ok(())
