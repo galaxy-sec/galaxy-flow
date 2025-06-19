@@ -28,6 +28,7 @@ async fn conf_simple_test() -> AnyResult<()> {
         vec!["dev".into()],
         vec!["api".into()],
         false,
+        false,
         VarSpace::default(),
     )
     .await?;
@@ -54,6 +55,7 @@ async fn conf_cond_test() -> RunResult<()> {
     spc.exec(
         vec!["dev".into()],
         vec!["api".into(), "start".into()],
+        false,
         false,
         VarSpace::default(),
     )

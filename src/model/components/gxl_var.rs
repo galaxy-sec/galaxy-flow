@@ -1,8 +1,8 @@
 use orion_common::friendly::New2;
 
 use super::prelude::*;
+use crate::execution::action::Action;
 use crate::execution::runnable::ComponentMeta;
-use crate::execution::task::Task;
 use crate::expect::StrMap;
 
 use std::sync::Arc;
@@ -75,9 +75,9 @@ impl PropsTrait for RgVars {
 #[async_trait]
 impl AsyncRunnableTrait for RgVars {
     async fn async_exec(&self, ctx: ExecContext, mut def: VarSpace) -> VTResult {
-        let task = Task::from("rg vars setting");
+        let action = Action::from("rg vars setting");
         self.export_props(ctx, def.global_mut(), "")?;
-        Ok((def, ExecOut::Task(task)))
+        Ok((def, ExecOut::Action(action)))
     }
 }
 impl ComponentMeta for RgVars {

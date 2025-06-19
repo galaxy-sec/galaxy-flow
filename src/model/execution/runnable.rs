@@ -2,11 +2,12 @@ use async_trait::async_trait;
 use serde::Serialize;
 
 use crate::context::ExecContext;
+use crate::execution::task::Task;
 use crate::meta::GxlMeta;
 use crate::ExecResult;
 
+use super::action::Action;
 use super::job::Job;
-use super::task::{Action, Task};
 use super::VarSpace;
 pub type PipeSender = std::sync::mpsc::Sender<String>;
 pub type PipeReceiver = std::sync::mpsc::Receiver<String>;
@@ -30,6 +31,17 @@ pub type VTResult = ExecResult<(VarSpace, ExecOut)>;
 pub trait AsyncRunnableTrait {
     async fn async_exec(&self, ctx: ExecContext, dict: VarSpace) -> VTResult;
 }
+
+#[async_trait]
+pub trait AsyncDryrunRunnableTrait {
+    async fn async_exec_with_dryrun(
+        &self,
+        ctx: ExecContext,
+        dict: VarSpace,
+        dryrun: bool,
+    ) -> VTResult;
+}
+
 pub trait RunnableTrait {
     fn exec(&self, ctx: ExecContext, dict: VarSpace) -> VTResult;
 }

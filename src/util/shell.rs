@@ -14,7 +14,7 @@ pub fn rg_sh(
     cmd: &str,
     opt: &ShellOption,
     exp: &EnvExpress,
-) -> ExecResult<Vec<u8>> {
+) -> ExecResult<(Vec<u8>, Vec<u8>)> {
     let sec_cmd = exp.sec_eval(cmd)?;
     //let ee = EnvExpress::from_env();
     if !opt.secrecy {
@@ -73,7 +73,7 @@ pub fn rg_sh(
                     }
                 }
                 return if is_ok {
-                    Ok(out.stdout)
+                    Ok((out.stdout, out.stderr))
                 } else {
                     Err(ExecReason::OsCmd(fail_msg, code, err_msg).into())
                 };
@@ -124,7 +124,7 @@ mod tests {
             ..Default::default()
         };
         let cmd = "echo ${SEC_KEY}".to_string();
-        let out = rg_sh(LogicScope::Outer, "gx.sh", &cmd, &opt, &exp).unwrap();
-        assert_eq!(out, b"galaxy\n");
+        let (stdout, stderr) = rg_sh(LogicScope::Outer, "gx.sh", &cmd, &opt, &exp).unwrap();
+        assert_eq!(stdout, b"galaxy\n");
     }
 }

@@ -178,6 +178,7 @@ mod tests {
             flow: vec!["echo".into()],
             cmd_print: true,
             cmd_arg: String::new(),
+            dryrun: false,
         })
         .await
         .assert();

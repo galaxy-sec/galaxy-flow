@@ -30,6 +30,7 @@ async fn gxl_normal_test() -> AnyResult<()> {
         vec!["dev".into()],
         vec!["api".into(), "start".into()],
         false,
+        false,
         VarSpace::default(),
     )
     .await?;

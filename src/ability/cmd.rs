@@ -41,7 +41,7 @@ impl GxCmd {
     }
     fn execute_impl(&self, cmd: &String, mut ctx: ExecContext, vars_dict: VarSpace) -> VTResult {
         ctx.append("gx.cmd");
-        let mut task = Task::from("gx.cmd");
+        let mut action = Action::from("gx.cmd");
         trace!(target:ctx.path(),"cmd:{}", cmd);
         let exp = EnvExpress::from_env_mix(vars_dict.global().clone());
         //let exe_cmd = ee.parse(cmd)?;
@@ -56,16 +56,22 @@ impl GxCmd {
             &exp
         );
         match res {
-            Ok(stdout) => {
-                task.stdout =
-                    String::from_utf8(stdout).map_err(|e| ExecReason::Io(e.to_string()))?;
+            Ok((stdout, stderr)) => {
+                let out = String::from_utf8(stdout).map_err(|e| ExecReason::Io(e.to_string()))?;
+                let err = String::from_utf8(stderr).map_err(|e| ExecReason::Io(e.to_string()))?;
+                action.stdout = out.clone();
+                if !action.stdout.is_empty() {
+                    action.stdout = format!("{}\n{}", out, err);
+                } else {
+                    action.stdout = err;
+                }
             }
             Err(error) => {
-                task.stdout = error.to_string();
+                action.stdout = error.to_string();
             }
         }
-        task.finish();
-        Ok((vars_dict, ExecOut::Task(task)))
+        action.finish();
+        Ok((vars_dict, ExecOut::Action(action)))
     }
 }
 

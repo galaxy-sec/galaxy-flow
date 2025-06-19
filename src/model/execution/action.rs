@@ -1,21 +1,17 @@
 use std::time::SystemTime;
 
-use orion_common::friendly::AppendAble;
 use serde::ser::Serializer;
 use serde::Serialize;
 use time::OffsetDateTime;
 
-use crate::ability::prelude::ExecOut;
-use crate::execution::action::Action;
-
 #[derive(Debug, Clone, Getters, PartialEq, Serialize)]
-pub struct Task {
+pub struct Action {
     name: String,
+    target: Option<String>,
     #[serde(serialize_with = "serialize_fmt")]
     begin: SystemTime,
     pub stdout: String,
     result: std::result::Result<RunningTime, String>,
-    actions: Vec<Action>,
 }
 
 #[derive(Debug, Clone, Serialize, PartialEq)]
@@ -36,7 +32,7 @@ where
         .serialize(serializer)
 }
 
-impl Task {
+impl Action {
     pub fn finish(&mut self) {
         let end = SystemTime::now();
         let duration = end.duration_since(self.begin).unwrap();
@@ -59,89 +55,51 @@ impl Task {
     pub fn err(&mut self, msg: String) {
         self.result = Err(msg);
     }
+    pub fn with_target<S: Into<String>>(mut self, target: S) -> Self {
+        self.target = Some(target.into());
+        self
+    }
 }
 
-impl From<String> for Task {
+impl From<String> for Action {
     fn from(name: String) -> Self {
         Self {
             name,
+            target: None,
             begin: SystemTime::now(),
             stdout: String::new(),
             result: Err("unknow".into()),
-            actions: vec![],
         }
     }
 }
-impl From<&String> for Task {
+impl From<&String> for Action {
     fn from(name: &String) -> Self {
         Self {
             name: name.clone(),
+            target: None,
             begin: SystemTime::now(),
             stdout: String::new(),
             result: Err("unknow".into()),
-            actions: vec![],
         }
     }
 }
 
-impl From<&str> for Task {
+impl From<&str> for Action {
     fn from(name: &str) -> Self {
         Self {
             name: name.to_string(),
+            target: None,
             begin: SystemTime::now(),
             stdout: String::new(),
             result: Err("unknow".into()),
-            actions: vec![],
-        }
-    }
-}
-
-impl AppendAble<Task> for Task {
-    fn append(&mut self, task: Task) {
-        // 将子任务的执行状态合并到该任务中
-        if let Err(task_err) = task.result {
-            match &mut self.result {
-                Ok(_) => {
-                    self.result = Err(task_err);
-                }
-                Err(e) => {
-                    e.push_str(&task_err);
-                }
-            }
-        }
-        self.actions.extend(task.actions);
-    }
-}
-impl AppendAble<Action> for Task {
-    fn append(&mut self, action: Action) {
-        // 将子任务的执行状态合并到该任务中
-        if let Err(task_err) = action.result() {
-            match &mut self.result {
-                Ok(_) => {
-                    self.result = Err(task_err.clone());
-                }
-                Err(e) => {
-                    e.push_str(task_err);
-                }
-            }
-        }
-        self.actions.push(action);
-    }
-}
-impl AppendAble<ExecOut> for Task {
-    fn append(&mut self, ro: ExecOut) {
-        match ro {
-            ExecOut::Task(t) => self.append(t),
-            ExecOut::Action(j) => self.append(j),
-            _ => {}
         }
     }
 }
 
 #[test]
 fn build_action() {
-    let mut task1 = Task::from("test.name");
-    task1.finish();
-    let mut task2 = Task::from("test.name");
-    task2.err("bad".into());
+    let mut action1 = Action::from("test.name");
+    action1.finish();
+    let mut action2 = Action::from("test.name");
+    action2.err("bad".into());
 }
