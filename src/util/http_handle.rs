@@ -1,14 +1,12 @@
 use std::env;
 
 use orion_error::StructError;
+use serde::Serialize;
 
-use crate::{
-    task_result::{TaskResult, TASK_RESULT_CONDIG},
-    ExecReason, ExecResult,
-};
+use crate::{task_callback_result::TASK_RESULT_CONDIG, ExecReason, ExecResult};
 
 pub fn get_task_callback_center_url() -> Option<String> {
-    if let Ok(url) = env::var("task_result_center_url") {
+    if let Ok(url) = env::var("task_result") {
         return Some(url);
     }
     let task_config = TASK_RESULT_CONDIG.get();
@@ -20,8 +18,37 @@ pub fn get_task_callback_center_url() -> Option<String> {
     None
 }
 
-// 先校验是否配置了远程任务结果中心
-pub async fn send_http_request(payload: TaskResult, url: &String) -> ExecResult<reqwest::Response> {
+pub fn get_task_report_center_url() -> Option<String> {
+    if let Ok(url) = env::var("task_report") {
+        return Some(url);
+    }
+    let task_config = TASK_RESULT_CONDIG.get();
+    if let Some(task_config) = task_config {
+        if let Some(task_url) = task_config.task_reporting_center.clone() {
+            return Some(task_url.url);
+        }
+    }
+    None
+}
+
+pub fn get_create_maintask_url() -> Option<String> {
+    if let Ok(url) = env::var("create_maintask") {
+        return Some(url);
+    }
+    let task_config = TASK_RESULT_CONDIG.get();
+    if let Some(task_config) = task_config {
+        if let Some(task_url) = task_config.create_maintask_url.clone() {
+            return Some(task_url.url);
+        }
+    }
+    None
+}
+
+// 发送http请求
+pub async fn send_http_request<T: Serialize>(
+    payload: T,
+    url: &String,
+) -> ExecResult<reqwest::Response> {
     reqwest::Client::new()
         .post(url)
         .json(&payload)

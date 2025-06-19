@@ -23,6 +23,7 @@ async fn prj_conf() -> AnyResult<()> {
         vec!["default".into()],
         vec!["conf".into()],
         false,
+        false,
         VarSpace::sys_init()?,
     )
     .await?;

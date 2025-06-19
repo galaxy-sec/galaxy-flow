@@ -1,14 +1,19 @@
 use super::gxl_intercept::FlowRunner;
 use super::prelude::*;
 
-use crate::annotation::{AnnEnum, ComUsage};
+use crate::annotation::{AnnEnum, ComUsage, FlowAnnFunc, TaskMessage};
+use crate::execution::runnable::{AsyncDryrunRunnableTrait, AsyncRunnableTrait};
 use crate::execution::task::Task;
 use crate::parser::stc_base::AnnDto;
 
+use crate::task_callback_result::{BatchTaskRequest, TaskBody, TaskCallBackResult};
 use crate::traits::DependTrait;
 
 use crate::components::gxl_block::BlockNode;
 use crate::model::annotation::FlowAnnotation;
+use crate::util::http_handle::{
+    get_task_callback_center_url, get_task_report_center_url, send_http_request,
+};
 use std::sync::Arc;
 
 use super::gxl_spc::GxlSpace;
@@ -34,7 +39,6 @@ pub struct GxlFlow {
 impl DependTrait<&GxlSpace> for GxlFlow {
     fn assemble(self, mod_name: &str, src: &GxlSpace) -> AResult<Self> {
         let mut target = GxlFlow::from(self.meta().clone());
-
         let pre_order_flows = self.meta.preorder();
         let mut buffer = Vec::new();
         let mut linked = false;
@@ -133,19 +137,53 @@ impl GxlFlow {
 
 impl GxlFlow {
     async fn exec_self(&self, ctx: ExecContext, mut var_dict: VarSpace) -> VTResult {
-        let des = self.get_desan();
+        println!("flow {} start", self.meta.name());
+        let task_message = self.get_task_message();
         let mut task = Task::from(self.meta.name());
-        if let Some(des) = des.clone() {
+        let mut task_body = TaskBody::new();
+        if let Some(des) = task_message.clone() {
+            println!("flow message {}", des);
             task = Task::from(des);
+            // 若环境变量或配置文件中有报告中心则进行任务上报
+            if let Some(url) = get_task_report_center_url() {
+                task_body = TaskBody {
+                    parent_id: task_body.parent_id,
+                    name: task.name().to_string(),
+                    description: task.name().to_string(),
+                    order: task_body.order,
+                };
+                task_body.set_order();
+                let batch_task = BatchTaskRequest {
+                    tasks: vec![task_body.clone()],
+                };
+                let res = send_http_request(batch_task, &url).await;
+                if res.is_err() {
+                    println!("send task report error: {:?}", res.unwrap_err());
+                }
+            }
         }
-
         for item in &self.blocks {
-            let (cur_dict, out) = item.async_exec(ctx.clone(), var_dict).await?;
+            let (cur_dict, out) = item
+                .async_exec_with_dryrun(ctx.clone(), var_dict, self.is_dryrun())
+                .await?;
             var_dict = cur_dict;
             task.append(out);
         }
         task.finish();
-        if des.is_none() {
+
+        // result_callback
+        // 若任务被标记为需要返回，则进行返回
+        if task_message.is_some() {
+            // 若环境变量或配置文件中有返回路径则进行返回
+            if let Some(url) = get_task_callback_center_url() {
+                let task_result = TaskCallBackResult::from_task_with_order(task.clone(), task_body);
+                let res = send_http_request(task_result.clone(), &url).await;
+                if res.is_err() {
+                    println!("send task callback error: {:?}", res.unwrap_err());
+                }
+            }
+        }
+        if task_message.is_none() {
             return Ok((var_dict, ExecOut::Ignore));
         }
         Ok((var_dict, ExecOut::Task(task)))
@@ -161,11 +199,34 @@ impl GxlFlow {
         }
         None
     }
+
+    // 获取注解中的描述信息
+    pub fn get_task_message(&self) -> Option<String> {
+        let annotation = self.meta.annotations();
+        for ann in annotation {
+            if let AnnEnum::Flow(flowann) = ann {
+                return flowann.message();
+            }
+        }
+        None
+    }
+
+    pub fn is_dryrun(&self) -> bool {
+        let annotation = self.meta.annotations();
+        for ann in annotation {
+            if let AnnEnum::Flow(flowann) = ann {
+                if flowann.func == FlowAnnFunc::Dryrun {
+                    return true;
+                }
+            }
+        }
+        false
+    }
 }
 #[async_trait]
 impl AsyncRunnableTrait for GxlFlow {
     async fn async_exec(&self, mut ctx: ExecContext, mut var_dict: VarSpace) -> VTResult {
-        let des = self.get_desan();
+        let des = self.get_task_message();
         let mut job = Job::from(self.meta.name());
         if let Some(des) = des.clone() {
             job = Job::from(&des);

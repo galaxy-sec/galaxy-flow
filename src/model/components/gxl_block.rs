@@ -1,11 +1,12 @@
 use async_trait::async_trait;
+use colored::Colorize;
 
 use super::gxl_loop::GxlLoop;
 use super::prelude::*;
 
 use crate::ability::artifact::GxArtifact;
 use crate::ability::delegate::ActCall;
-use crate::ability::read::ReadMode;
+use crate::ability::prelude::Action;
 use crate::ability::GxAssert;
 use crate::ability::GxCmd;
 use crate::ability::GxDownLoad;
@@ -17,11 +18,9 @@ use crate::ability::GxUpLoad;
 use crate::ability::RgVersion;
 use crate::calculate::cond::CondExec;
 use crate::context::ExecContext;
+use crate::execution::runnable::AsyncDryrunRunnableTrait;
 use crate::execution::runnable::VTResult;
 use crate::execution::task::Task;
-use crate::model::task_result::TaskResult;
-use crate::util::http_handle::get_task_callback_center_url;
-use crate::util::http_handle::send_http_request;
 
 use super::gxl_cond::GxlCond;
 use super::gxl_spc::GxlSpace;
@@ -62,76 +61,67 @@ impl BlockNode {
 #[async_trait]
 impl CondExec for BlockNode {
     async fn cond_exec(&self, ctx: ExecContext, def: VarSpace) -> VTResult {
-        self.async_exec(ctx, def).await
+        self.async_exec_with_dryrun(ctx, def, false).await
     }
 }
 #[async_trait]
-impl AsyncRunnableTrait for BlockAction {
-    async fn async_exec(&self, ctx: ExecContext, dct: VarSpace) -> VTResult {
-        let mut task_name = String::new();
-        let res: Result<(VarSpace, ExecOut), orion_error::StructError<ExecReason>> = match self {
+impl AsyncDryrunRunnableTrait for BlockAction {
+    async fn async_exec_with_dryrun(
+        &self,
+        ctx: ExecContext,
+        dct: VarSpace,
+        is_dryrun: bool,
+    ) -> VTResult {
+        match self {
             BlockAction::Command(o) => {
-                task_name = String::from("gx.cmd");
-                o.async_exec(ctx, dct).await
+                if *ctx.dryrun() && is_dryrun {
+                    let mut action = Action::from("gx.cmd");
+                    let buffer = format!(
+                        "Warning: It is currently in a trial operation environment!\n{}: {}",
+                        o.dto().cmd,
+                        "执行成功"
+                    );
+                    println!("{}", buffer.yellow().bold());
+                    action.stdout = buffer;
+                    action.finish();
+                    Ok((dct, ExecOut::Action(action)))
+                } else {
+                    o.async_exec(ctx, dct).await
+                }
             }
-            BlockAction::GxlRun(o) => {
-                task_name = String::from("gx.run");
-                o.async_exec(ctx, dct).await
-            }
+            BlockAction::GxlRun(o) => o.async_exec(ctx, dct).await,
             BlockAction::Echo(o) => o.async_exec(ctx, dct).await,
             BlockAction::Assert(o) => o.async_exec(ctx, dct).await,
             BlockAction::Cond(o) => o.async_exec(ctx, dct).await,
             BlockAction::Loop(o) => o.async_exec(ctx, dct).await,
-            BlockAction::Tpl(o) => {
-                task_name = String::from("build tpl file");
-                o.async_exec(ctx, dct).await
-            }
-            BlockAction::Delegate(o) => {
-                task_name = o.name.clone();
-                o.async_exec(ctx, dct).await
-            }
+            BlockAction::Tpl(o) => o.async_exec(ctx, dct).await,
+            BlockAction::Delegate(o) => o.async_exec(ctx, dct).await,
             BlockAction::Version(o) => o.async_exec(ctx, dct).await,
-            BlockAction::Read(o) => {
-                task_name = match o.imp() {
-                    ReadMode::CMD(_) => String::from("gx.read_cmd"),
-                    ReadMode::FILE(_) => String::from("gx.read_file"),
-                    ReadMode::STDIN(_) => String::from("gx.read_ini"),
-                    _ => String::from("unkown"),
-                };
-                o.async_exec(ctx, dct).await
-            }
+            BlockAction::Read(o) => o.async_exec(ctx, dct).await,
             BlockAction::Artifact(o) => o.async_exec(ctx, dct).await,
-            BlockAction::UpLoad(o) => {
-                task_name = String::from("gx.upload");
-                o.async_exec(ctx, dct).await
-            }
-            BlockAction::DownLoad(o) => {
-                task_name = String::from("gx.download");
-                o.async_exec(ctx, dct).await
-            }
-        };
-        if !task_name.is_empty() {
-            // 若环境变量或配置文件中有返回路径则进行返回
-            if let Some(url) = get_task_callback_center_url() {
-                let task_result = TaskResult::from_result(task_name, &res);
-                send_http_request(task_result.clone(), &url).await?;
-                println!("task_result:{:#?}", task_result);
-            }
+            BlockAction::UpLoad(o) => o.async_exec(ctx, dct).await,
+            BlockAction::DownLoad(o) => o.async_exec(ctx, dct).await,
         }
-        res
     }
 }
 
 #[async_trait]
-impl AsyncRunnableTrait for BlockNode {
-    async fn async_exec(&self, ctx: ExecContext, var_dict: VarSpace) -> VTResult {
+impl AsyncDryrunRunnableTrait for BlockNode {
+    async fn async_exec_with_dryrun(
+        &self,
+        ctx: ExecContext,
+        var_dict: VarSpace,
+        is_dryrun: bool,
+    ) -> VTResult {
         //ctx.append("block");
         let mut task = Task::from("block");
         let mut cur_var_dict = var_dict;
         self.export_props(ctx.clone(), cur_var_dict.global_mut(), "")?;
 
         for item in &self.items {
-            let (tmp_var_dict, out) = item.async_exec(ctx.clone(), cur_var_dict).await?;
+            let (tmp_var_dict, out) = item
+                .async_exec_with_dryrun(ctx.clone(), cur_var_dict, is_dryrun)
+                .await?;
             cur_var_dict = tmp_var_dict;
             task.append(out);
         }
@@ -214,9 +204,9 @@ mod tests {
         let mut block = BlockNode::new();
         let prop = RgProp::new("test", "hello");
         block.append(prop);
-        let ctx = ExecContext::new(false);
+        let ctx = ExecContext::new(false, false);
         let def = VarSpace::default();
-        let res = block.async_exec(ctx, def).await;
+        let res = block.async_exec_with_dryrun(ctx, def, false).await;
         assert_eq!(res.is_ok(), true);
     }
 }
