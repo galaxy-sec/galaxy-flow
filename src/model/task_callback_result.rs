@@ -2,14 +2,11 @@ use crate::execution::task::Task as ExecTask;
 use crate::util::http_handle::{get_create_maintask_url, send_http_request};
 use once_cell::sync::OnceCell;
 use serde::Serialize;
-use std::env::{self, temp_dir};
-use std::fs::File;
-use std::io::Write;
-use std::path::PathBuf;
 use std::sync::Mutex;
 use std::{fs, path::Path};
 use time::{format_description, OffsetDateTime};
 use toml::from_str;
+use std::env;
 
 lazy_static::lazy_static! {
     static ref NEXT_ORDER: Mutex<u16> = Mutex::new(0);
@@ -150,55 +147,8 @@ pub async fn load_task_config() {
         }
         Err(e) => {
             info!("load task_config toml error: {}", e);
-            // 创建默认配置文件
-            let config_path = create_task_config_file().await;
-            // 重试一次
-            let content = fs::read_to_string(&config_path);
-            if let Ok(content) = content {
-                if let Ok(config) = from_str::<TaskResultConfig>(&content) {
-                    let _ = TASK_RESULT_CONDIG.set(config);
-                }
-            }
-            // 重试后删除环境变量,以及临时文件
-            let _ = std::fs::remove_file(config_path);
         }
     };
-}
-
-// 创建配置文件,并返回文件路径以便恢复原样
-pub async fn create_task_config_file() -> PathBuf {
-    // 创建配置临时文件目录和文件
-    let dir = temp_dir();
-    let file_path = dir.join("gflow_task_config.toml");
-    if !file_path.exists() {
-        match File::create(&file_path) {
-            Ok(mut file) => {
-                let config_content = r#"[task_callback_center]
-                        url = "http://127.0.0.1:8080/task/update_subtask_info/"
-
-                        [task_reporting_center]
-                        url = "http://127.0.0.1:8080/task/create_batch_subtask/"
-
-                        [create_maintask_url]
-                        url = "http://127.0.0.1:8080/task/create_main_task/"
-                        "#;
-                match writeln!(file, "{}", config_content) {
-                    Ok(_) => {
-                        println!("create task config file success");
-                    }
-                    Err(e) => {
-                        println!("create task config file error: {}", e);
-                    }
-                };
-                println!(
-                    "create task config file success, path: {}",
-                    file_path.to_str().unwrap_or_default()
-                )
-            }
-            Err(e) => println!("create task config file error: {}", e),
-        }
-    }
-    file_path
 }
 
 pub async fn create_main_task(task_name: String) {
