@@ -107,8 +107,9 @@ impl TaskBody {
         self.order = next_order;
     }
     pub fn new() -> TaskBody {
+        let parent_id = get_task_parent_id().unwrap_or_default();
         TaskBody {
-            parent_id: get_task_parent_id().unwrap().parse::<i64>().unwrap_or(0),
+            parent_id: parent_id.parse::<i64>().unwrap_or(0),
             name: String::new(),
             description: String::new(),
             order: 0,
@@ -198,7 +199,7 @@ mod tests {
 
     // 加载任务配置测试
     #[tokio::test]
-    async fn test_load_secfile_with_values() {
+    async fn test_load_task_config() {
         // 创建临时目录和文件
         //let dir = PathBuf::from("./temp");
         let dir = temp_dir();
