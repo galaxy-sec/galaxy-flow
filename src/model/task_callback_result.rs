@@ -187,8 +187,12 @@ pub async fn create_main_task(task_name: String) {
 
 #[cfg(test)]
 mod tests {
-    use orion_error::TestAssertWithMsg;
-    use std::{env::{temp_dir, remove_var, set_var}, fs::File, io::Write};
+    use orion_error::{TestAssert, TestAssertWithMsg};
+    use std::{
+        env::{remove_var, set_var, temp_dir},
+        fs::File,
+        io::Write,
+    };
 
     use crate::task_callback_result::{load_task_config, TASK_RESULT_CONDIG};
 
@@ -209,7 +213,7 @@ mod tests {
                 load_task_config().await;
             }
             Err(_) => {
-                 // 写入测试内容
+                // 写入测试内容
                 let mut file = File::create(&file_path).unwrap();
                 let config_content = r#"[task_callback_center]
                     url = "http://127.0.0.1:8080/task/update_subtask_info/"
@@ -221,7 +225,6 @@ mod tests {
                     url = "http://127.0.0.1:8080/task/create_main_task/"
                     "#;
                 writeln!(file, "{}", config_content).unwrap();
-            
 
                 // 临时修改路径指向我们的测试文件
                 set_var("TASK_CONFIG_PATH", file_path.to_str().unwrap());
@@ -230,9 +233,8 @@ mod tests {
                 remove_var("TASK_CONFIG_PATH");
             }
         }
-       
 
-        let task_result_config = TASK_RESULT_CONDIG.get().unwrap();
+        let task_result_config = TASK_RESULT_CONDIG.get().assert();
 
         // 验证全局变量
         assert!(task_result_config.create_maintask_url.is_some());

@@ -97,8 +97,6 @@ pub fn find_project_define() -> Option<PathBuf> {
     None
 }
 
-use std::env;
-
 #[cfg(test)]
 mod tests {
 
