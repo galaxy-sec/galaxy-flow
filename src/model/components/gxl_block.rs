@@ -74,6 +74,8 @@ impl AsyncDryrunRunnableTrait for BlockAction {
     ) -> VTResult {
         match self {
             BlockAction::Command(o) => {
+                //TODO: 要把这段代码，放到GxCmd中，这里调用：
+                // o.async_exec_with_dryrun(ctx, dct, is_dryrun).await
                 if *ctx.dryrun() && is_dryrun {
                     let mut action = Action::from("gx.cmd");
                     let buffer = format!(
