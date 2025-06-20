@@ -1,8 +1,9 @@
-use crate::execution::task::Task as ExecTask;
-use crate::util::http_handle::{get_create_maintask_url, send_http_request};
+use crate::execution::task::Task as FlowTask;
+use crate::util::http_handle::{get_main_task_create_url, send_http_request};
 use once_cell::sync::OnceCell;
 use serde::Serialize;
-use std::env;
+use std::env::{self, home_dir};
+use std::path::PathBuf;
 use std::sync::Mutex;
 use std::{fs, path::Path};
 use time::{format_description, OffsetDateTime};
@@ -12,9 +13,9 @@ lazy_static::lazy_static! {
     static ref NEXT_ORDER: Mutex<u16> = Mutex::new(0);
 }
 
-// 任务执行结果
+// 返回至任务报告中心任务执行结果
 #[derive(Debug, Serialize, Clone)]
-pub struct TaskCallBackResult {
+pub struct TaskReport {
     pub parent_id: i64,
     pub name: String,          // 子任务名称
     pub log: String,           // 执行日志
@@ -31,9 +32,9 @@ pub enum SubTaskStatus {
     Failed,
 }
 
-impl TaskCallBackResult {
+impl TaskReport {
     // 转化成任务中心的返回结果
-    pub fn from_task_with_order(task: ExecTask, taskbody: TaskBody) -> TaskCallBackResult {
+    pub fn from_task_with_order(task: FlowTask, taskbody: TaskNotice) -> TaskReport {
         let mut running_log = String::new();
         for action in task.actions() {
             let stdout = action.stdout();
@@ -41,8 +42,11 @@ impl TaskCallBackResult {
                 running_log.push_str(&format!("{}\n", stdout));
             }
         }
-        TaskCallBackResult {
-            parent_id: get_task_parent_id().parse::<i64>().unwrap_or(0),
+        TaskReport {
+            parent_id: get_task_parent_id()
+                .unwrap_or_default()
+                .parse::<i64>()
+                .unwrap_or(0),
             name: task.name().clone(),
             log: running_log,
             status: match task.result() {
@@ -55,45 +59,43 @@ impl TaskCallBackResult {
 }
 
 // 获取当前任务的父id
-pub fn get_task_parent_id() -> String {
-    env::var("task_id").unwrap_or("0".to_string())
-}
-pub fn task_have_parent() -> bool {
-    env::var("task_id").is_ok()
+pub fn get_task_parent_id() -> Option<String> {
+    env::var("task_id").ok()
 }
 
 use serde::Deserialize;
 
 // 任务结果配置
-#[derive(Deserialize)]
-pub struct TaskResultConfig {
+#[derive(Deserialize, Debug)]
+pub struct TaskRCAPIConfig {
     pub task_callback_center: Option<HttpUrl>,
     pub task_reporting_center: Option<HttpUrl>,
-    pub create_maintask_url: Option<HttpUrl>,
+    pub main_task_create_center: Option<HttpUrl>,
 }
 
 // 任务结果上报路径
-#[derive(Deserialize, Clone)]
+#[derive(Deserialize, Clone, Debug)]
 pub struct HttpUrl {
     pub url: String,
 }
 
 // 批量任务上报结构体
 #[derive(Debug, Deserialize, Serialize, Clone, Default)]
-pub struct BatchTaskRequest {
-    pub tasks: Vec<TaskBody>,
+pub struct TaskRecord {
+    pub tasks: Vec<TaskNotice>,
 }
 
 // 子任务结构体
 #[derive(Debug, Deserialize, Serialize, Clone, Default)]
-pub struct TaskBody {
+pub struct TaskNotice {
     pub parent_id: i64,
     pub name: String,        // 子任务名称
     pub description: String, // 子任务描述
     pub order: u16,          // 执行顺序
 }
 
-impl TaskBody {
+impl TaskNotice {
+    // 为任务设置执行顺序
     pub fn set_order(&mut self) {
         let next_order = match NEXT_ORDER.lock() {
             // 如果锁获取成功，则返回下一个order
@@ -109,9 +111,9 @@ impl TaskBody {
         };
         self.order = next_order;
     }
-    pub fn new() -> TaskBody {
-        let parent_id = get_task_parent_id();
-        TaskBody {
+    pub fn new() -> TaskNotice {
+        let parent_id = get_task_parent_id().unwrap_or_default();
+        TaskNotice {
             parent_id: parent_id.parse::<i64>().unwrap_or(0),
             name: String::new(),
             description: String::new(),
@@ -121,7 +123,7 @@ impl TaskBody {
 }
 
 lazy_static! {
-    pub static ref TASK_RESULT_CONDIG: OnceCell<TaskResultConfig> = OnceCell::new();
+    pub static ref TASK_REPORT_CENTER: OnceCell<TaskRCAPIConfig> = OnceCell::new();
 }
 
 #[derive(Debug, Serialize, Clone)]
@@ -134,16 +136,23 @@ pub struct MainTask {
 }
 // 加载任务配置,优先从环境变量中获取，如果没有则从默认路径中获取
 pub async fn load_task_config() {
-    let task_config_path = std::env::var("TASK_CONFIG_PATH")
-        .unwrap_or("/usr/local/bin/gflow_task_config.toml".to_string());
+    let galaxy_path = home_dir()
+        .map(|x| x.join(".galaxy"))
+        .unwrap_or(PathBuf::from("./"));
+    println!("load task config from: {}", galaxy_path.display());
+    let task_config_path = std::env::var("TASK_RC_API_CONFIG_PATH").unwrap_or(format!(
+        "{}/gflow_task_config.toml",
+        galaxy_path.display()
+    ));
     let path = Path::new(&task_config_path);
     let content = fs::read_to_string(path);
     match content {
         Ok(content) => {
-            let res: Result<TaskResultConfig, toml::de::Error> = from_str(&content);
+            let res: Result<TaskRCAPIConfig, toml::de::Error> = from_str(&content);
             match res {
                 Ok(config) => {
-                    let _ = TASK_RESULT_CONDIG.set(config);
+                    println!("load task config success:{:#?}", config);
+                    let _ = TASK_REPORT_CENTER.set(config);
                 }
                 Err(e) => info!("load task config error: {}", e.message()),
             };
@@ -177,7 +186,7 @@ pub async fn create_main_task(task_name: String) {
     // 设置环境变量中的父id
     std::env::set_var("task_id", parent_id.to_string());
     // 创建主任务
-    if let Some(url) = get_create_maintask_url() {
+    if let Some(url) = get_main_task_create_url() {
         match send_http_request(main_task, &url).await {
             Ok(response) => {
                 if response.status().is_success() {
@@ -202,7 +211,7 @@ mod tests {
         io::Write,
     };
 
-    use crate::task_callback_result::{load_task_config, TASK_RESULT_CONDIG};
+    use crate::report_center::{load_task_config, TASK_REPORT_CENTER};
 
     // 加载任务配置测试
     #[tokio::test]
@@ -215,7 +224,7 @@ mod tests {
             std::fs::remove_file(&file_path).assert();
         }
 
-        let original_path = std::env::var("TASK_CONFIG_PATH");
+        let original_path = std::env::var("TASK_RC_API_CONFIG_PATH");
         match original_path {
             Ok(_) => {
                 load_task_config().await;
@@ -229,23 +238,23 @@ mod tests {
                     [task_reporting_center]
                     url = "http://127.0.0.1:8080/task/create_batch_subtask/"
 
-                    [create_maintask_url]
+                    [main_task_create_center]
                     url = "http://127.0.0.1:8080/task/create_main_task/"
                     "#;
                 writeln!(file, "{}", config_content).assert();
 
                 // 临时修改路径指向我们的测试文件
-                set_var("TASK_CONFIG_PATH", file_path.to_str().assert());
+                set_var("TASK_RC_API_CONFIG_PATH", file_path.to_str().assert());
 
                 load_task_config().await;
-                remove_var("TASK_CONFIG_PATH");
+                remove_var("TASK_RC_API_CONFIG_PATH");
             }
         }
 
-        let task_result_config = TASK_RESULT_CONDIG.get().assert();
+        let task_result_config = TASK_REPORT_CENTER.get().assert();
 
         // 验证全局变量
-        assert!(task_result_config.create_maintask_url.is_some());
+        assert!(task_result_config.main_task_create_center.is_some());
         assert!(task_result_config.task_callback_center.is_some());
         assert!(task_result_config.task_reporting_center.is_some());
     }
