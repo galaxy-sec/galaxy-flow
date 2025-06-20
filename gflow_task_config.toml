@@ -1,0 +1,6 @@
+[task_callback_center]
+url = "http://127.0.0.1:8080/task/update_subtask_info/"
+[task_reporting_center]
+url = "http://127.0.0.1:8080/task/create_batch_subtask/"
+[main_task_create_center]
+url = "http://127.0.0.1:8080/task/create_main_task/"

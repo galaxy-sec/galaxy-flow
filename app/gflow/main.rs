@@ -4,7 +4,7 @@ extern crate clap;
 
 use clap::Parser;
 use galaxy_flow::execution::VarSpace;
-use galaxy_flow::task_callback_result::{create_main_task, load_task_config, task_have_parent};
+use galaxy_flow::report_center::{create_main_task, get_task_parent_id, load_task_config};
 use galaxy_flow::traits::Setter;
 
 use galaxy_flow::err::*;
@@ -19,7 +19,8 @@ async fn main() -> anyhow::Result<()> {
     let mut cmd = GxlCmd::parse();
     // 加载task配置
     load_task_config().await;
-    if task_have_parent() {
+
+    if get_task_parent_id().is_none() {
         let task_name = cmd.flow.concat();
         create_main_task(task_name).await;
     }

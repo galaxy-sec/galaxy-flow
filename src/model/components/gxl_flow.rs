@@ -6,7 +6,7 @@ use crate::execution::runnable::{AsyncDryrunRunnableTrait, AsyncRunnableTrait};
 use crate::execution::task::Task;
 use crate::parser::stc_base::AnnDto;
 
-use crate::task_callback_result::{BatchTaskRequest, TaskBody, TaskCallBackResult};
+use crate::report_center::{TaskNotice, TaskRecord, TaskReport};
 use crate::traits::DependTrait;
 
 use crate::components::gxl_block::BlockNode;
@@ -137,23 +137,21 @@ impl GxlFlow {
 
 impl GxlFlow {
     async fn exec_self(&self, ctx: ExecContext, mut var_dict: VarSpace) -> VTResult {
-        println!("flow {} start", self.meta.name());
         let task_message = self.get_task_message();
         let mut task = Task::from(self.meta.name());
-        let mut task_body = TaskBody::new();
+        let mut task_body = TaskNotice::new();
         if let Some(des) = task_message.clone() {
-            println!("flow message {}", des);
             task = Task::from(des);
             // 若环境变量或配置文件中有报告中心则进行任务上报
             if let Some(url) = get_task_report_center_url() {
-                task_body = TaskBody {
+                task_body = TaskNotice {
                     parent_id: task_body.parent_id,
                     name: task.name().to_string(),
                     description: task.name().to_string(),
                     order: task_body.order,
                 };
                 task_body.set_order();
-                let batch_task = BatchTaskRequest {
+                let batch_task = TaskRecord {
                     tasks: vec![task_body.clone()],
                 };
                 let res = send_http_request(batch_task, &url).await;
@@ -176,7 +174,7 @@ impl GxlFlow {
         if task_message.is_some() {
             // 若环境变量或配置文件中有返回路径则进行返回
             if let Some(url) = get_task_callback_center_url() {
-                let task_result = TaskCallBackResult::from_task_with_order(task.clone(), task_body);
+                let task_result = TaskReport::from_task_with_order(task.clone(), task_body);
                 let res = send_http_request(task_result.clone(), &url).await;
                 if res.is_err() {
                     println!("send task callback error: {:?}", res.unwrap_err());

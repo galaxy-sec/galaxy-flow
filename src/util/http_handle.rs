@@ -3,13 +3,13 @@ use std::env;
 use orion_error::StructError;
 use serde::Serialize;
 
-use crate::{task_callback_result::TASK_RESULT_CONDIG, ExecReason, ExecResult};
+use crate::{report_center::TASK_REPORT_CENTER, ExecReason, ExecResult};
 
 pub fn get_task_callback_center_url() -> Option<String> {
-    if let Ok(url) = env::var("task_result") {
+    if let Ok(url) = env::var("task_result_center") {
         return Some(url);
     }
-    let task_config = TASK_RESULT_CONDIG.get();
+    let task_config = TASK_REPORT_CENTER.get();
     if let Some(task_config) = task_config {
         if let Some(task_url) = task_config.task_callback_center.clone() {
             return Some(task_url.url);
@@ -19,10 +19,10 @@ pub fn get_task_callback_center_url() -> Option<String> {
 }
 
 pub fn get_task_report_center_url() -> Option<String> {
-    if let Ok(url) = env::var("task_report") {
+    if let Ok(url) = env::var("task_report_center") {
         return Some(url);
     }
-    let task_config = TASK_RESULT_CONDIG.get();
+    let task_config = TASK_REPORT_CENTER.get();
     if let Some(task_config) = task_config {
         if let Some(task_url) = task_config.task_reporting_center.clone() {
             return Some(task_url.url);
@@ -31,13 +31,13 @@ pub fn get_task_report_center_url() -> Option<String> {
     None
 }
 
-pub fn get_create_maintask_url() -> Option<String> {
-    if let Ok(url) = env::var("create_maintask") {
+pub fn get_main_task_create_url() -> Option<String> {
+    if let Ok(url) = env::var("main_task_create_url") {
         return Some(url);
     }
-    let task_config = TASK_RESULT_CONDIG.get();
+    let task_config = TASK_REPORT_CENTER.get();
     if let Some(task_config) = task_config {
-        if let Some(task_url) = task_config.create_maintask_url.clone() {
+        if let Some(task_url) = task_config.main_task_create_center.clone() {
             return Some(task_url.url);
         }
     }
