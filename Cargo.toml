@@ -72,6 +72,7 @@ anyhow = "1.0.82"
 include_dir = "0.7"
 walkdir = "2.5"
 wildmatch = "~2.4"
+dirs = "3.0"
 orion-error = { workspace = true }
 orion-syspec = { workspace = true }
 tokio = { workspace = true }

@@ -33,9 +33,10 @@ extern crate url;
 pub mod err;
 #[macro_use]
 pub mod model;
-
 pub mod ability;
 pub mod calculate;
+pub mod conf;
+pub mod const_val;
 pub mod debug;
 mod evaluator;
 mod loader;

@@ -11,37 +11,9 @@ pub enum GxAdmCmd {
     #[command(subcommand)]
     Init(InitCmd),
     Adm(GxlCmd),
+    #[command(subcommand)]
+    Conf(ConfCmd),
     Check,
-}
-
-#[derive(Debug, Subcommand)]
-pub enum ModSpecCmd {
-    Example,
-    Create(SpecArgs),
-    Check,
-}
-#[derive(Debug, Subcommand)]
-pub enum SysSpecCmd {
-    Example,
-    Create,
-    Update,
-    Check,
-}
-
-#[derive(Debug, Subcommand)]
-pub enum ModInsCmd {
-    Example,
-    Create(SpecArgs),
-    Update,
-    Local,
-}
-
-#[derive(Debug, Subcommand)]
-pub enum SysInsCmd {
-    Example,
-    Create(SysInsArgs),
-    Update,
-    Local,
 }
 
 #[derive(Debug, Subcommand)]
@@ -49,6 +21,11 @@ pub enum InitCmd {
     Local,
     Remote(InitArgs),
     Update(PrjArgs),
+}
+
+#[derive(Debug, Subcommand)]
+pub enum ConfCmd {
+    Init(ConfInitArgs),
 }
 
 #[derive(Debug, Args, Getters)]
@@ -88,6 +65,12 @@ pub struct InitArgs {
     pub log: Option<String>,
     #[arg(short= 'p', long = "cmd_print" ,action = ArgAction::SetTrue, default_value = "false")]
     pub cmd_print: bool,
+}
+
+#[derive(Debug, Args, Getters)]
+pub struct ConfInitArgs {
+    #[arg(short = 'r', long = "remote", default_value = "false")]
+    pub remote: bool,
 }
 
 #[derive(Debug, Args)]
