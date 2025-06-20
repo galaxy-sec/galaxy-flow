@@ -1,4 +1,8 @@
-use crate::{ability::prelude::*, expect::LogicScope};
+use colored::Colorize;
+
+use crate::{
+    ability::prelude::*, execution::runnable::AsyncDryrunRunnableTrait, expect::LogicScope,
+};
 
 #[derive(Clone, Debug, Default, Builder, PartialEq, Getters)]
 pub struct GxCmd {
@@ -17,9 +21,27 @@ impl GxCmdDto {
     }
 }
 #[async_trait]
-impl AsyncRunnableTrait for GxCmd {
-    async fn async_exec(&self, ctx: ExecContext, vars_dict: VarSpace) -> VTResult {
-        self.execute_impl(&self.dto.cmd, ctx, vars_dict)
+impl AsyncDryrunRunnableTrait for GxCmd {
+    async fn async_exec_with_dryrun(
+        &self,
+        ctx: ExecContext,
+        vars_dict: VarSpace,
+        is_dryrun: bool,
+    ) -> VTResult {
+        if *ctx.dryrun() && is_dryrun {
+            let mut action = Action::from("gx.cmd");
+            let buffer = format!(
+                "Warning: It is currently in a trial operation environment!\n{}: {}",
+                self.dto().cmd,
+                "执行成功"
+            );
+            println!("{}", buffer.yellow().bold());
+            action.stdout = buffer;
+            action.finish();
+            Ok((vars_dict, ExecOut::Action(action)))
+        } else {
+            self.execute_impl(&self.dto.cmd, ctx, vars_dict)
+        }
     }
 }
 impl ComponentMeta for GxCmd {
@@ -88,6 +110,8 @@ mod tests {
         let res = GxCmd::new(
           "if test ! -L  ${CONF_ROOT}/used/link2.txt ; then ln -s ${CONF_ROOT}/options/link.txt  ${CONF_ROOT}/used/link2.txt ; fi ".into()
           ) ;
-        res.async_exec(context, def).await.unwrap();
+        res.async_exec_with_dryrun(context, def, false)
+            .await
+            .unwrap();
     }
 }
