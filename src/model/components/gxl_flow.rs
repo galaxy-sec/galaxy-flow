@@ -5,14 +5,14 @@ use crate::annotation::{AnnEnum, ComUsage, FlowAnnFunc, TaskMessage};
 use crate::execution::runnable::{AsyncDryrunRunnableTrait, AsyncRunnableTrait};
 use crate::execution::task::Task;
 use crate::parser::stc_base::AnnDto;
-use crate::report_center::task_notification::{TaskNotice, TaskRecord};
-use crate::report_center::task_report::TaskReport;
+use crate::task_report::task_notification::{TaskNotice, TaskOutline};
+use crate::task_report::task_result_report::TaskReport;
 use crate::traits::DependTrait;
 
 use crate::components::gxl_block::BlockNode;
 use crate::model::annotation::FlowAnnotation;
 use crate::util::http_handle::{
-    get_task_callback_center_url, get_task_report_center_url, send_http_request,
+    get_task_notice_center_url, get_task_report_center_url, send_http_request,
 };
 use std::sync::Arc;
 
@@ -143,7 +143,7 @@ impl GxlFlow {
         if let Some(des) = task_message.clone() {
             task = Task::from(des);
             // 若环境变量或配置文件中有报告中心则进行任务上报
-            if let Some(url) = get_task_report_center_url() {
+            if let Some(url) = get_task_notice_center_url() {
                 task_body = TaskNotice {
                     parent_id: task_body.parent_id,
                     name: task.name().to_string(),
@@ -151,13 +151,10 @@ impl GxlFlow {
                     order: task_body.order,
                 };
                 task_body.set_order();
-                let batch_task = TaskRecord {
+                let batch_task = TaskOutline {
                     tasks: vec![task_body.clone()],
                 };
-                let res = send_http_request(batch_task, &url).await;
-                if res.is_err() {
-                    println!("send task report error: {:?}", res.unwrap_err());
-                }
+                send_http_request(batch_task, &url).await;
             }
         }
         for item in &self.blocks {
@@ -173,12 +170,9 @@ impl GxlFlow {
         // 若任务被标记为需要返回，则进行返回
         if task_message.is_some() {
             // 若环境变量或配置文件中有返回路径则进行返回
-            if let Some(url) = get_task_callback_center_url() {
+            if let Some(url) = get_task_report_center_url() {
                 let task_result = TaskReport::from_flowtask_and_notice(task.clone(), task_body);
-                let res = send_http_request(task_result.clone(), &url).await;
-                if res.is_err() {
-                    println!("send task callback error: {:?}", res.unwrap_err());
-                }
+                send_http_request(task_result.clone(), &url).await;
             }
         }
         if task_message.is_none() {

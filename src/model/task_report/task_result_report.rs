@@ -1,6 +1,6 @@
 use crate::execution::task::Task as FlowTask;
-use crate::report_center::main_task::get_task_parent_id;
-use crate::report_center::task_notification::TaskNotice;
+use crate::task_report::main_task::get_task_parent_id;
+use crate::task_report::task_notification::TaskNotice;
 use serde::Serialize;
 
 // 返回至任务报告中心任务执行结果

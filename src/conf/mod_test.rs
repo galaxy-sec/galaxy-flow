@@ -8,7 +8,10 @@ mod tests {
 
     #[test]
     fn test_gxl_conf_serialization() {
-        let conf = GxlConf::new(ReportCenterConf::new("example.com", 8080), true);
+        let conf = GxlConf::new(
+            ReportCenterConf::new("example.com", 8080, "galaxy", "galaxy", "galaxy"),
+            true,
+        );
         let path = PathBuf::from("./temp/conf");
         make_clean_path(&path).assert("clean path");
         let file = path.join("conf.toml");

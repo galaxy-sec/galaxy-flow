@@ -25,17 +25,42 @@ impl GxlConf {
 pub struct ReportCenterConf {
     domain: String,
     port: u16,
+    pub task_notice_center: String,
+    pub task_report_center: String,
+    pub main_task_create_center: String,
 }
 impl ReportCenterConf {
-    fn new<S: Into<String>>(domain: S, port: u16) -> Self {
+    fn new<S: Into<String>>(
+        domain: S,
+        port: u16,
+        task_notice_center: S,
+        task_report_center: S,
+        main_task_create_center: S,
+    ) -> Self {
         Self {
             domain: domain.into(),
             port,
+            task_notice_center: task_notice_center.into(),
+            task_report_center: task_report_center.into(),
+            main_task_create_center: main_task_create_center.into(),
         }
     }
 
+    // 定义一个名为local的函数，返回Self类型
     fn local() -> Self {
-        Self::new("127.0.0.1", 8066)
+        // 调用Self的new方法，传入参数
+        Self::new(
+            // 传入IP地址
+            "127.0.0.1",
+            // 传入端口号
+            8066,
+            // 传入创建批处理子任务的路径
+            "/task/create_batch_subtask/",
+            // 传入更新子任务信息的路径
+            "/task/update_subtask_info/",
+            // 传入创建主任务的路径
+            "/task/create_main_task/",
+        )
     }
 }
 pub fn conf_path() -> Option<PathBuf> {
