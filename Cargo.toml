@@ -80,7 +80,7 @@ derive_more = { workspace = true }
 async-trait = { workspace = true }
 tokio-util = { version = "0.7", features = ["codec"] }
 reqwest = { version = "0.12.11", features = ["json"] }
-time = { version = "0.3.41", features = ["formatting"] }
+time = { version = "0.3.41", features = ["formatting", "local-offset"] }
 serde_yaml = "0.9"
 
 [features]

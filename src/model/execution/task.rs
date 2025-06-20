@@ -1,7 +1,5 @@
-use std::time::SystemTime;
-
+use crate::util::serialize_time_format::serialize_time_format;
 use orion_common::friendly::AppendAble;
-use serde::ser::Serializer;
 use serde::Serialize;
 use time::OffsetDateTime;
 
@@ -11,8 +9,8 @@ use crate::execution::action::Action;
 #[derive(Debug, Clone, Getters, PartialEq, Serialize)]
 pub struct Task {
     name: String,
-    #[serde(serialize_with = "serialize_fmt")]
-    begin: SystemTime,
+    #[serde(serialize_with = "serialize_time_format")]
+    begin: OffsetDateTime,
     pub stdout: String,
     result: std::result::Result<RunningTime, String>,
     actions: Vec<Action>,
@@ -23,24 +21,10 @@ pub struct RunningTime {
     running_time: String,
 }
 
-// 序列化进行时间格式化
-fn serialize_fmt<S>(value: &SystemTime, serializer: S) -> Result<S::Ok, S::Error>
-where
-    S: Serializer,
-{
-    let datetime = OffsetDateTime::from(*value);
-
-    datetime
-        .format(&time::format_description::well_known::Rfc3339)
-        .unwrap()
-        .serialize(serializer)
-}
-
 impl Task {
     pub fn finish(&mut self) {
-        let end = SystemTime::now();
-        let duration = end.duration_since(self.begin).unwrap();
-        let mut total_nanos = duration.as_nanos();
+        let end = OffsetDateTime::now_local().unwrap_or_else(|_| OffsetDateTime::now_utc());
+        let mut total_nanos = (end - self.begin).whole_nanoseconds();
 
         let units = [(1_000_000_000, "s"), (1_000_000, "ms")];
 
@@ -65,7 +49,7 @@ impl From<String> for Task {
     fn from(name: String) -> Self {
         Self {
             name,
-            begin: SystemTime::now(),
+            begin: OffsetDateTime::now_local().unwrap_or_else(|_| OffsetDateTime::now_utc()),
             stdout: String::new(),
             result: Err("unknow".into()),
             actions: vec![],
@@ -76,7 +60,7 @@ impl From<&String> for Task {
     fn from(name: &String) -> Self {
         Self {
             name: name.clone(),
-            begin: SystemTime::now(),
+            begin: OffsetDateTime::now_local().unwrap_or_else(|_| OffsetDateTime::now_utc()),
             stdout: String::new(),
             result: Err("unknow".into()),
             actions: vec![],
@@ -88,7 +72,7 @@ impl From<&str> for Task {
     fn from(name: &str) -> Self {
         Self {
             name: name.to_string(),
-            begin: SystemTime::now(),
+            begin: OffsetDateTime::now_local().unwrap_or_else(|_| OffsetDateTime::now_utc()),
             stdout: String::new(),
             result: Err("unknow".into()),
             actions: vec![],
