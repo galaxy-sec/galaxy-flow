@@ -12,25 +12,26 @@ lazy_static! {
 // 任务结果配置
 #[derive(Deserialize, Debug)]
 pub struct TaskRCAPIConfig {
-    pub task_callback_center: Option<HttpUrl>,
-    pub task_reporting_center: Option<HttpUrl>,
-    pub main_task_create_center: Option<HttpUrl>,
+    pub report_enable: bool,
+    pub report_svr: ReportSVR,
 }
 
-// 任务结果上报路径
-#[derive(Deserialize, Clone, Debug)]
-pub struct HttpUrl {
-    pub url: String,
+#[derive(Deserialize, Debug, Clone)]
+pub struct ReportSVR {
+    pub domain: String,
+    pub port: u16,
+    // 任务回调中心
+    pub task_notice_center: String,
+    pub task_report_center: String,
+    pub main_task_create_center: String,
 }
-
 // 加载任务配置,优先从环境变量中获取，如果没有则从默认路径中获取
 pub async fn load_task_config() {
     let galaxy_path = home_dir()
         .map(|x| x.join(".galaxy"))
         .unwrap_or(PathBuf::from("./"));
-    println!("load task config from: {}", galaxy_path.display());
     let task_config_path = std::env::var("TASK_RC_API_CONFIG_PATH")
-        .unwrap_or(format!("{}/gflow_task_config.toml", galaxy_path.display()));
+        .unwrap_or(format!("{}/conf.toml", galaxy_path.display()));
     let path = Path::new(&task_config_path);
     let content = fs::read_to_string(path);
     match content {
@@ -38,14 +39,13 @@ pub async fn load_task_config() {
             let res: Result<TaskRCAPIConfig, toml::de::Error> = from_str(&content);
             match res {
                 Ok(config) => {
-                    println!("load task config success:{:#?}", config);
                     let _ = TASK_REPORT_CENTER.set(config);
                 }
-                Err(e) => info!("load task config error: {}", e.message()),
+                Err(e) => println!("load task config error: {}", e.message()),
             };
         }
         Err(e) => {
-            info!("load task_config toml error: {}", e);
+            println!("load task_config toml error: {}", e);
         }
     };
 }
@@ -59,7 +59,7 @@ mod tests {
         io::Write,
     };
 
-    use crate::report_center::task_rc_config::TASK_REPORT_CENTER;
+    use crate::task_report::task_rc_config::TASK_REPORT_CENTER;
 
     use super::load_task_config;
 
@@ -82,14 +82,14 @@ mod tests {
             Err(_) => {
                 // 写入测试内容
                 let mut file = File::create(&file_path).assert();
-                let config_content = r#"[task_callback_center]
-                    url = "http://127.0.0.1:8080/task/update_subtask_info/"
-
-                    [task_reporting_center]
-                    url = "http://127.0.0.1:8080/task/create_batch_subtask/"
-
-                    [main_task_create_center]
-                    url = "http://127.0.0.1:8080/task/create_main_task/"
+                let config_content = r#"
+                    report_enable = true
+                    [report_svr]
+                    domain = "127.0.0.1"
+                    port = 8080
+                    task_notice_center = "/task/create_batch_subtask/"
+                    task_report_center = "/task/update_subtask_info/"
+                    main_task_create_center = "/task/create_main_task/"
                     "#;
                 writeln!(file, "{}", config_content).assert();
 
@@ -101,11 +101,7 @@ mod tests {
             }
         }
 
-        let task_result_config = TASK_REPORT_CENTER.get().assert();
-
-        // 验证全局变量
-        assert!(task_result_config.main_task_create_center.is_some());
-        assert!(task_result_config.task_callback_center.is_some());
-        assert!(task_result_config.task_reporting_center.is_some());
+        let task_result_config = TASK_REPORT_CENTER.get();
+        assert!(task_result_config.is_some());
     }
 }

@@ -1,4 +1,4 @@
-use crate::report_center::main_task::get_task_parent_id;
+use crate::task_report::main_task::get_task_parent_id;
 use serde::Deserialize;
 use serde::Serialize;
 use std::sync::Mutex;
@@ -10,7 +10,7 @@ lazy_static::lazy_static! {
 
 // 批量任务上报结构体
 #[derive(Debug, Deserialize, Serialize, Clone, Default)]
-pub struct TaskRecord {
+pub struct TaskOutline {
     pub tasks: Vec<TaskNotice>,
 }
 
@@ -18,7 +18,7 @@ pub struct TaskRecord {
 #[derive(Debug, Deserialize, Serialize, Clone, Default)]
 pub struct TaskNotice {
     pub parent_id: i64,
-    pub name: String,        // 子任务名称
+    pub name: String,        // 子任务名称s
     pub description: String, // 子任务描述
     pub order: u16,          // 执行顺序
 }
@@ -52,13 +52,11 @@ impl TaskNotice {
     }
 }
 
-
-
 #[cfg(test)]
 mod tests {
     use crate::execution::task::Task as FlowTask;
-    use crate::report_center::task_notification::TaskNotice;
-    use crate::report_center::task_report::TaskReport;
+    use crate::task_report::task_notification::TaskNotice;
+    use crate::task_report::task_result_report::TaskReport;
 
     #[test]
     fn test_set_order() {
@@ -83,10 +81,8 @@ mod tests {
         task_notice2.set_order(); // Set order for the task notice
         flow_task2.finish(); // Simulate finishing the task
         let task_report2 = TaskReport::from_flowtask_and_notice(flow_task2, task_notice2);
-        
+
         assert_eq!(task_report1.order, 1);
         assert_eq!(task_report2.order, 2);
     }
 }
-
-

@@ -4,8 +4,8 @@ extern crate clap;
 
 use clap::Parser;
 use galaxy_flow::execution::VarSpace;
-use galaxy_flow::report_center::main_task::{create_main_task, get_task_parent_id};
-use galaxy_flow::report_center::task_rc_config::load_task_config;
+use galaxy_flow::task_report::main_task::{create_main_task, get_task_parent_id};
+use galaxy_flow::task_report::task_rc_config::{load_task_config, TASK_REPORT_CENTER};
 use galaxy_flow::traits::Setter;
 
 use galaxy_flow::err::*;
@@ -23,8 +23,12 @@ async fn main() -> anyhow::Result<()> {
 
     // 若环境变量中没有设置父id，则将本次任务设置为父任务
     if get_task_parent_id().is_none() {
-        let task_name = cmd.flow.concat();
-        create_main_task(task_name).await;
+        if let Some(task_report_center_config) = TASK_REPORT_CENTER.get() {
+            if task_report_center_config.report_enable {
+                let task_name = cmd.flow.concat();
+                create_main_task(task_name).await;
+            }
+        }
     }
     configure_run_logging(cmd.log.clone(), cmd.debug);
     debug!("galaxy flow running .....");

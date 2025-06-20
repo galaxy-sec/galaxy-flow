@@ -22,7 +22,7 @@ pub async fn create_main_task(task_name: String) {
     let mut now = String::new();
     match format {
         Ok(fmt) => now = datetime.format(&fmt).unwrap_or_default(),
-        Err(e) => println!("create main task time format error: {}", e),
+        Err(e) => info!("create main task time format error: {}", e),
     }
     let parent_id = datetime.unix_timestamp();
     let main_task = MainTask {
@@ -36,18 +36,7 @@ pub async fn create_main_task(task_name: String) {
     std::env::set_var("task_id", parent_id.to_string());
     // 创建主任务
     if let Some(url) = get_main_task_create_url() {
-        match send_http_request(main_task, &url).await {
-            Ok(response) => {
-                if response.status().is_success() {
-                    println!("create maintask success");
-                } else {
-                    println!("create maintask error: {:?}", response.text().await);
-                }
-            }
-            Err(e) => {
-                println!("create maintask error: {}", e);
-            }
-        }
+        send_http_request(main_task, &url).await;
     }
 }
 
@@ -81,4 +70,3 @@ mod tests {
         assert!(parent_id.parse::<i64>().is_ok());
     }
 }
-
