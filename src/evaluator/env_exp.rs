@@ -94,18 +94,26 @@ impl Parser<&str> for EnvExpress {
         }
         Ok(target)
     }
+    // 对传入的content进行正则表达式匹配和替换操作，返回替换后的字符串
     fn sec_eval(&self, content: &str) -> ExecResult<String> {
+        // 定义一个闭包，用于替换匹配到的字符串
         let fun = |caps: &Captures| self.sec_eval_val(&caps[2]);
+        // 将content转换为字符串
         let mut target = content.to_string();
+        // 循环进行正则表达式匹配和替换操作
         loop {
+            // 如果没有匹配到正则表达式，则跳出循环
             if self.regex.find(target.as_str()).is_none() {
                 break;
             }
+            // 使用闭包进行替换操作
             target = self.regex.replace_all(target.as_str(), &fun).to_string();
         }
+        // 如果替换后的字符串中包含"__NO"，则返回错误
         if target.contains("__NO") {
             return Err(ExecReason::NoVal(target).into());
         }
+        // 返回替换后的字符串
         Ok(target)
     }
 }

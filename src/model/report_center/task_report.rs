@@ -1,0 +1,49 @@
+use crate::execution::task::Task as FlowTask;
+use crate::report_center::main_task::get_task_parent_id;
+use crate::report_center::task_notification::TaskNotice;
+use serde::Serialize;
+
+// 返回至任务报告中心任务执行结果
+#[derive(Debug, Serialize, Clone)]
+pub struct TaskReport {
+    pub parent_id: i64,
+    pub name: String,          // 子任务名称
+    pub log: String,           // 执行日志
+    pub status: SubTaskStatus, // 执行状态
+    pub order: u16,            // 执行顺序
+}
+
+/// 任务状态
+#[derive(Debug, Clone, Serialize, PartialEq)]
+pub enum SubTaskStatus {
+    Created,
+    Running,
+    Success,
+    Failed,
+}
+
+impl TaskReport {
+    // 转化报告中心的返回结果
+    pub fn from_flowtask_and_notice(task: FlowTask, taskbody: TaskNotice) -> TaskReport {
+        let mut running_log = String::new();
+        for action in task.actions() {
+            let stdout = action.stdout();
+            if !stdout.is_empty() {
+                running_log.push_str(&format!("{}\n", stdout));
+            }
+        }
+        TaskReport {
+            parent_id: get_task_parent_id()
+                .unwrap_or_default()
+                .parse::<i64>()
+                .unwrap_or(0),
+            name: task.name().clone(),
+            log: running_log,
+            status: match task.result() {
+                Ok(_) => SubTaskStatus::Success,
+                Err(_) => SubTaskStatus::Failed,
+            },
+            order: taskbody.order,
+        }
+    }
+}

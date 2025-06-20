@@ -5,8 +5,8 @@ use crate::annotation::{AnnEnum, ComUsage, FlowAnnFunc, TaskMessage};
 use crate::execution::runnable::{AsyncDryrunRunnableTrait, AsyncRunnableTrait};
 use crate::execution::task::Task;
 use crate::parser::stc_base::AnnDto;
-
-use crate::report_center::{TaskNotice, TaskRecord, TaskReport};
+use crate::report_center::task_notification::{TaskNotice, TaskRecord};
+use crate::report_center::task_report::TaskReport;
 use crate::traits::DependTrait;
 
 use crate::components::gxl_block::BlockNode;
@@ -174,7 +174,7 @@ impl GxlFlow {
         if task_message.is_some() {
             // 若环境变量或配置文件中有返回路径则进行返回
             if let Some(url) = get_task_callback_center_url() {
-                let task_result = TaskReport::from_task_with_order(task.clone(), task_body);
+                let task_result = TaskReport::from_flowtask_and_notice(task.clone(), task_body);
                 let res = send_http_request(task_result.clone(), &url).await;
                 if res.is_err() {
                     println!("send task callback error: {:?}", res.unwrap_err());

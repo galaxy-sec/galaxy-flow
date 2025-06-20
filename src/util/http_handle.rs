@@ -3,7 +3,7 @@ use std::env;
 use orion_error::StructError;
 use serde::Serialize;
 
-use crate::{report_center::TASK_REPORT_CENTER, ExecReason, ExecResult};
+use crate::{report_center::task_rc_config::TASK_REPORT_CENTER, ExecReason, ExecResult};
 
 pub fn get_task_callback_center_url() -> Option<String> {
     if let Ok(url) = env::var("task_result_center") {
