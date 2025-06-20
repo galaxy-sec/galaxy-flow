@@ -14,7 +14,7 @@ pub struct MainTask {
 
 pub async fn create_main_task(task_name: String) {
     // 创建主任务
-    let datetime = OffsetDateTime::now_utc();
+    let datetime = OffsetDateTime::now_local().unwrap_or_else(|_| OffsetDateTime::now_utc());
     let format: Result<
         Vec<format_description::BorrowedFormatItem<'_>>,
         time::error::InvalidFormatDescription,

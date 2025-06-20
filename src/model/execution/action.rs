@@ -1,6 +1,4 @@
-use std::time::SystemTime;
-
-use serde::ser::Serializer;
+use crate::util::serialize_time_format::serialize_time_format;
 use serde::Serialize;
 use time::OffsetDateTime;
 
@@ -8,8 +6,8 @@ use time::OffsetDateTime;
 pub struct Action {
     name: String,
     target: Option<String>,
-    #[serde(serialize_with = "serialize_fmt")]
-    begin: SystemTime,
+    #[serde(serialize_with = "serialize_time_format")]
+    begin: OffsetDateTime,
     pub stdout: String,
     result: std::result::Result<RunningTime, String>,
 }
@@ -19,24 +17,10 @@ pub struct RunningTime {
     running_time: String,
 }
 
-// 序列化进行时间格式化
-fn serialize_fmt<S>(value: &SystemTime, serializer: S) -> Result<S::Ok, S::Error>
-where
-    S: Serializer,
-{
-    let datetime = OffsetDateTime::from(*value);
-
-    datetime
-        .format(&time::format_description::well_known::Rfc3339)
-        .unwrap()
-        .serialize(serializer)
-}
-
 impl Action {
     pub fn finish(&mut self) {
-        let end = SystemTime::now();
-        let duration = end.duration_since(self.begin).unwrap();
-        let mut total_nanos = duration.as_nanos();
+        let end = OffsetDateTime::now_local().unwrap_or_else(|_| OffsetDateTime::now_utc());
+        let mut total_nanos = (end - self.begin).whole_nanoseconds();
 
         let units = [(1_000_000_000, "s"), (1_000_000, "ms")];
 
@@ -66,7 +50,7 @@ impl From<String> for Action {
         Self {
             name,
             target: None,
-            begin: SystemTime::now(),
+            begin: OffsetDateTime::now_local().unwrap_or_else(|_| OffsetDateTime::now_utc()),
             stdout: String::new(),
             result: Err("unknow".into()),
         }
@@ -77,7 +61,7 @@ impl From<&String> for Action {
         Self {
             name: name.clone(),
             target: None,
-            begin: SystemTime::now(),
+            begin: OffsetDateTime::now_local().unwrap_or_else(|_| OffsetDateTime::now_utc()),
             stdout: String::new(),
             result: Err("unknow".into()),
         }
@@ -89,7 +73,7 @@ impl From<&str> for Action {
         Self {
             name: name.to_string(),
             target: None,
-            begin: SystemTime::now(),
+            begin: OffsetDateTime::now_local().unwrap_or_else(|_| OffsetDateTime::now_utc()),
             stdout: String::new(),
             result: Err("unknow".into()),
         }
