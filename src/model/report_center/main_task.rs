@@ -58,6 +58,8 @@ pub fn get_task_parent_id() -> Option<String> {
 
 #[cfg(test)]
 mod tests {
+    use orion_error::TestAssert;
+
     use super::*;
     use std::env;
 
@@ -66,7 +68,7 @@ mod tests {
         let parent_id = 123;
         env::set_var("task_id", parent_id.to_string());
 
-        let retrieved_id = get_task_parent_id().unwrap();
+        let retrieved_id = get_task_parent_id().assert();
         assert_eq!(retrieved_id, parent_id.to_string());
     }
 
@@ -75,7 +77,7 @@ mod tests {
         let task_name = String::from("Test Task");
         create_main_task(task_name.clone()).await;
 
-        let parent_id = env::var("task_id").unwrap();
+        let parent_id = env::var("task_id").assert();
         assert!(parent_id.parse::<i64>().is_ok());
     }
 }
