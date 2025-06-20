@@ -32,7 +32,7 @@ pub fn task_local_report(out: ExecOut) {
     match File::create(&file_name) {
         Ok(_) => {
             // 将配置数据序列化为 yaml 字符串
-            let toml = serde_yml::to_string(&out).unwrap();
+            let toml = serde_yaml::to_string(&out).unwrap();
             let path = Path::new(&file_name);
 
             // 确保目录存在
