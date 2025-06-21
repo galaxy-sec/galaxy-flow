@@ -1,11 +1,11 @@
-use crate::parser::atom::spaced_desc;
-use crate::parser::atom::take_var_ref_fmt;
+use crate::parser::atom::{spaced_desc, take_var_ref_fmt};
 use crate::parser::prelude::*;
-
 use orion_parse::atom::take_var_name;
-use winnow::ascii::multispace0;
-use winnow::combinator::preceded;
-use winnow::combinator::separated;
+use winnow::{
+    ascii::multispace0,
+    combinator::{preceded, separated},
+    Parser,
+};
 
 #[derive(Default, Debug, Clone, Getters)]
 pub struct FlowHeadDto {
@@ -16,81 +16,119 @@ pub struct FlowHeadDto {
     pub args: Vec<(String, String)>,
 }
 
+/// 解析流头部声明
 pub fn galaxy_flow_head(input: &mut &str) -> ModalResult<FlowHeadDto> {
-    // Parse the keyword (e.g., "flow")
     spaced_desc("flow", "<keyword:flow>").parse_next(input)?;
-    let mut have_parse_syntax_new = true;
-    // Parse the first part (e.g., "chatbot")
 
-    let mut before: Vec<String> = separated(
+    // 解析初始管道分隔列表
+    let mut initial_list = parse_initial_list(input)?;
+    multispace0(input)?;
+
+    // 解析流程名称并确定语法类型
+    let (flow_name, syntax_type) = parse_flow_name(input, &mut initial_list)?;
+
+    // 根据语法类型解析后续部分
+    match syntax_type {
+        SyntaxType::New => parse_new_syntax(input, flow_name, initial_list),
+        SyntaxType::Old => parse_old_syntax(input, flow_name),
+        SyntaxType::Implicit => Ok(build_dto(flow_name, Vec::new(), initial_list)),
+    }
+}
+
+// 语法类型枚举
+enum SyntaxType {
+    New,      // 新语法（管道分隔）
+    Old,      // 旧语法（冒号分隔）
+    Implicit, // 隐式语法（无分隔符）
+}
+
+/// 解析初始的管道分隔列表
+fn parse_initial_list(input: &mut &str) -> ModalResult<Vec<String>> {
+    separated(
         0..,
         alt((take_var_path, take_var_ref_fmt)),
         (multispace0, '|', multispace0),
     )
     .context(wn_desc("<pre-flow>"))
-    .parse_next(input)?;
-    multispace0(input)?;
-    let (_, flow_name) = if starts_with("@", input) {
-        spaced_desc(("@", take_var_name), "<flow-name>").parse_next(input)?
+    .parse_next(input)
+}
+
+/// 解析流程名称并确定语法类型
+fn parse_flow_name(
+    input: &mut &str,
+    initial_list: &mut Vec<String>,
+) -> ModalResult<(String, SyntaxType)> {
+    Ok(if starts_with("@", input) {
+        let (_, name) = spaced_desc(("@", take_var_name), "<flow-name>").parse_next(input)?;
+        (name, SyntaxType::New)
     } else if starts_with("|", input) {
         spaced_desc("|", "|").parse_next(input)?;
-        spaced_desc(("@", take_var_name), "<flow-name>").parse_next(input)?
+        let (_, name) = spaced_desc(("@", take_var_name), "<flow-name>").parse_next(input)?;
+        (name, SyntaxType::New)
     } else if starts_with(":", input) {
-        let name = if !before.is_empty() {
-            before.remove(0)
-        } else {
-            String::new()
-        };
-        ("", name)
+        let name = pop_first_or_fail(initial_list, "<flow-name>")?;
+        (name, SyntaxType::Old)
     } else {
-        if !before.is_empty() {
-            let flow_name = before.remove(0);
-            return Ok(FlowHeadDto {
-                keyword: "flow".to_string(),
-                first: flow_name,
-                before: Vec::new(),
-                after: before,
-                args: Vec::new(),
-            });
-        } else {
-            fail.context(wn_desc("<flow-name>")).parse_next(input)?;
-        }
-        ("", String::new())
-    };
+        let name = pop_first_or_fail(initial_list, "<flow-name>")?;
+        (name, SyntaxType::Implicit)
+    })
+}
 
+/// 从列表中安全取出第一个元素或返回错误
+fn pop_first_or_fail(list: &mut Vec<String>, context: &'static str) -> ModalResult<String> {
+    if !list.is_empty() {
+        return Ok(list.remove(0));
+    }
+    fail.context(wn_desc(context)).parse_next(&mut "")?;
+    Ok(String::new())
+}
+
+/// 解析新语法（管道分隔）的后续部分
+fn parse_new_syntax(
+    input: &mut &str,
+    flow_name: String,
+    before: Vec<String>,
+) -> ModalResult<FlowHeadDto> {
     multispace0(input)?;
-    let after: Vec<String> = if starts_with("|", input) {
+    let after = parse_pipe_separated_list(input, "<next-flow>")?;
+    Ok(build_dto(flow_name, before, after))
+}
+
+/// 解析旧语法（冒号分隔）的后续部分
+fn parse_old_syntax(input: &mut &str, flow_name: String) -> ModalResult<FlowHeadDto> {
+    let before = parse_colon_separated_list(input, "<pre-flow>")?;
+    multispace0(input)?;
+    let after = parse_colon_separated_list(input, "<next-flow>")?;
+    Ok(build_dto(flow_name, before, after))
+}
+
+/// 解析管道分隔的列表
+fn parse_pipe_separated_list<'a>(
+    input: &mut &'a str,
+    context: &'static str,
+) -> ModalResult<Vec<String>> {
+    if starts_with("|", input) {
         preceded(
             ('|', multispace0),
-            // Parse the after flows (e.g., "a-flow1,a-flow2")
             separated(
                 0..,
-                //take_while(1.., |c: char| c.is_alphanumeric() || c == '_'),
                 alt((take_var_path, take_var_ref_fmt)),
                 (multispace0, '|', multispace0),
             ),
         )
-        .context(wn_desc("<next-flow>"))
-        .parse_next(input)?
+        .context(wn_desc(context))
+        .parse_next(input)
     } else {
-        Vec::new()
-    };
-    if before.is_empty() && after.is_empty() {
-        have_parse_syntax_new = false;
+        Ok(Vec::new())
     }
-    if have_parse_syntax_new {
-        return Ok(FlowHeadDto {
-            keyword: "flow".to_string(),
-            first: flow_name.to_string(),
-            before,
-            after,
-            args: Vec::new(),
-        });
-    }
+}
 
-    //兼容 : <before>: <after>
-    let before: Vec<String> = if starts_with(":", input) {
-        // Parse the before flows (e.g., "b-flow1,b-flow2")
+/// 解析冒号分隔的列表
+fn parse_colon_separated_list<'a>(
+    input: &mut &'a str,
+    context: &'static str,
+) -> ModalResult<Vec<String>> {
+    if starts_with(":", input) {
         preceded(
             (multispace0, ':', multispace0),
             separated(
@@ -98,40 +136,23 @@ pub fn galaxy_flow_head(input: &mut &str) -> ModalResult<FlowHeadDto> {
                 alt((take_var_path, take_var_ref_fmt)),
                 (multispace0, ',', multispace0),
             ),
-            //(multispace0, alt((':', ';')), multispace0),
         )
-        .context(wn_desc("<pre-flow>"))
-        .parse_next(input)?
+        .context(wn_desc(context))
+        .parse_next(input)
     } else {
-        Vec::new()
-    };
+        Ok(Vec::new())
+    }
+}
 
-    multispace0(input)?;
-    let after: Vec<String> = if starts_with(":", input) {
-        preceded(
-            (':', multispace0),
-            // Parse the after flows (e.g., "a-flow1,a-flow2")
-            separated(
-                0..,
-                //take_while(1.., |c: char| c.is_alphanumeric() || c == '_'),
-                alt((take_var_path, take_var_ref_fmt)),
-                (multispace0, ',', multispace0),
-            ),
-        )
-        .context(wn_desc("<next-flow>"))
-        .parse_next(input)?
-    } else {
-        Vec::new()
-    };
-
-    // Return the parsed flow head
-    Ok(FlowHeadDto {
+/// 构建DTO对象
+fn build_dto(flow_name: String, before: Vec<String>, after: Vec<String>) -> FlowHeadDto {
+    FlowHeadDto {
         keyword: "flow".to_string(),
-        first: flow_name.to_string(),
+        first: flow_name,
         before,
         after,
         args: Vec::new(),
-    })
+    }
 }
 
 #[cfg(test)]
