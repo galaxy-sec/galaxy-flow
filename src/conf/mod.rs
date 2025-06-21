@@ -34,8 +34,15 @@ impl ReportCenterConf {
         }
     }
 
+    // 定义一个名为local的函数，返回Self类型
     fn local() -> Self {
-        Self::new("127.0.0.1", 8066)
+        // 调用Self的new方法，传入参数
+        Self::new(
+            // 传入IP地址
+            "127.0.0.1",
+            // 传入端口号
+            8066,
+        )
     }
 }
 pub fn conf_path() -> Option<PathBuf> {
