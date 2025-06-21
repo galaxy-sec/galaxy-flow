@@ -1,12 +1,10 @@
 use async_trait::async_trait;
-use colored::Colorize;
 
 use super::gxl_loop::GxlLoop;
 use super::prelude::*;
 
 use crate::ability::artifact::GxArtifact;
 use crate::ability::delegate::ActCall;
-use crate::ability::prelude::Action;
 use crate::ability::GxAssert;
 use crate::ability::GxCmd;
 use crate::ability::GxDownLoad;
@@ -73,24 +71,7 @@ impl AsyncDryrunRunnableTrait for BlockAction {
         is_dryrun: bool,
     ) -> VTResult {
         match self {
-            BlockAction::Command(o) => {
-                //TODO: 要把这段代码，放到GxCmd中，这里调用：
-                // o.async_exec_with_dryrun(ctx, dct, is_dryrun).await
-                if *ctx.dryrun() && is_dryrun {
-                    let mut action = Action::from("gx.cmd");
-                    let buffer = format!(
-                        "Warning: It is currently in a trial operation environment!\n{}: {}",
-                        o.dto().cmd,
-                        "执行成功"
-                    );
-                    println!("{}", buffer.yellow().bold());
-                    action.stdout = buffer;
-                    action.finish();
-                    Ok((dct, ExecOut::Action(action)))
-                } else {
-                    o.async_exec(ctx, dct).await
-                }
-            }
+            BlockAction::Command(o) => o.async_exec_with_dryrun(ctx, dct, is_dryrun).await,
             BlockAction::GxlRun(o) => o.async_exec(ctx, dct).await,
             BlockAction::Echo(o) => o.async_exec(ctx, dct).await,
             BlockAction::Assert(o) => o.async_exec(ctx, dct).await,
