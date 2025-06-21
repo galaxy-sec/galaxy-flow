@@ -103,10 +103,7 @@ fn parse_old_syntax(input: &mut &str, flow_name: String) -> ModalResult<FlowHead
 }
 
 /// 解析管道分隔的列表
-fn parse_pipe_separated_list<'a>(
-    input: &mut &'a str,
-    context: &'static str,
-) -> ModalResult<Vec<String>> {
+fn parse_pipe_separated_list(input: &mut &str, context: &'static str) -> ModalResult<Vec<String>> {
     if starts_with("|", input) {
         preceded(
             ('|', multispace0),
@@ -124,10 +121,7 @@ fn parse_pipe_separated_list<'a>(
 }
 
 /// 解析冒号分隔的列表
-fn parse_colon_separated_list<'a>(
-    input: &mut &'a str,
-    context: &'static str,
-) -> ModalResult<Vec<String>> {
+fn parse_colon_separated_list(input: &mut &str, context: &'static str) -> ModalResult<Vec<String>> {
     if starts_with(":", input) {
         preceded(
             (multispace0, ':', multispace0),

@@ -62,7 +62,6 @@ mod main   {
   #[task(name="build")]
   flow build: ver.use ,conf , rust_flow.build : pub_local {
       os.path (  "${MAIN_HOME_BIN}" );
-      os.path (  "${MAIN_PRJ_BINS}" );
   }
   #[usage(desp="lint code")]
   flow lint | rust_flow.lint {} ;
