@@ -10,7 +10,7 @@ pub struct TaskReport {
     pub name: String,          // 子任务名称
     pub log: String,           // 执行日志
     pub status: SubTaskStatus, // 执行状态
-    pub order: u16,            // 执行顺序
+    pub order: u32,            // 执行顺序
 }
 
 /// 任务状态

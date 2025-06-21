@@ -16,8 +16,8 @@ pub fn get_task_notice_center_url() -> Option<String> {
         }
         let report_svr = task_config.report_svr.clone();
         return Some(format!(
-            "http://{}:{}{}",
-            report_svr.domain, report_svr.port, report_svr.task_notice_center
+            "http://{}:{}/task/create_batch_subtask/",
+            report_svr.domain, report_svr.port,
         ));
     }
     None
@@ -34,8 +34,8 @@ pub fn get_task_report_center_url() -> Option<String> {
         }
         let report_svr = task_config.report_svr.clone();
         return Some(format!(
-            "http://{}:{}{}",
-            report_svr.domain, report_svr.port, report_svr.task_report_center
+            "http://{}:{}/task/update_subtask_info/",
+            report_svr.domain, report_svr.port
         ));
     }
     None
@@ -52,8 +52,8 @@ pub fn get_main_task_create_url() -> Option<String> {
         }
         let report_svr = task_config.report_svr.clone();
         return Some(format!(
-            "http://{}:{}{}",
-            report_svr.domain, report_svr.port, report_svr.main_task_create_center
+            "http://{}:{}/task/create_main_task/",
+            report_svr.domain, report_svr.port
         ));
     }
     None

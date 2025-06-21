@@ -142,7 +142,6 @@ impl GxlFlow {
                     description: task.name().to_string(),
                     order: task_body.order,
                 };
-                task_body.set_order();
                 let batch_task = TaskOutline {
                     tasks: vec![task_body.clone()],
                 };

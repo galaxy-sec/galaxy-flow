@@ -6,12 +6,12 @@ use std::{fs, path::Path};
 use toml::from_str;
 
 lazy_static! {
-    pub static ref TASK_REPORT_CENTER: OnceCell<TaskRCAPIConfig> = OnceCell::new();
+    pub static ref TASK_REPORT_CENTER: OnceCell<TaskCenterAPI> = OnceCell::new();
 }
 
 // 任务结果配置
 #[derive(Deserialize, Debug)]
-pub struct TaskRCAPIConfig {
+pub struct TaskCenterAPI {
     pub report_enable: bool,
     pub report_svr: ReportSVR,
 }
@@ -20,23 +20,19 @@ pub struct TaskRCAPIConfig {
 pub struct ReportSVR {
     pub domain: String,
     pub port: u16,
-    // 任务回调中心
-    pub task_notice_center: String,
-    pub task_report_center: String,
-    pub main_task_create_center: String,
 }
 // 加载任务配置,优先从环境变量中获取，如果没有则从默认路径中获取
 pub async fn load_task_config() {
     let galaxy_path = home_dir()
         .map(|x| x.join(".galaxy"))
         .unwrap_or(PathBuf::from("./"));
-    let task_config_path = std::env::var("TASK_RC_API_CONFIG_PATH")
-        .unwrap_or(format!("{}/conf.toml", galaxy_path.display()));
+    let task_config_path =
+        std::env::var("CONF_PATH").unwrap_or(format!("{}/conf.toml", galaxy_path.display()));
     let path = Path::new(&task_config_path);
     let content = fs::read_to_string(path);
     match content {
         Ok(content) => {
-            let res: Result<TaskRCAPIConfig, toml::de::Error> = from_str(&content);
+            let res: Result<TaskCenterAPI, toml::de::Error> = from_str(&content);
             match res {
                 Ok(config) => {
                     let _ = TASK_REPORT_CENTER.set(config);
@@ -69,12 +65,12 @@ mod tests {
         // 创建临时目录和文件
         //let dir = PathBuf::from("./temp");
         let dir = temp_dir();
-        let file_path = dir.join("gflow_task_config.toml");
+        let file_path = dir.join("conf.toml");
         if file_path.exists() {
             std::fs::remove_file(&file_path).assert();
         }
 
-        let original_path = std::env::var("TASK_RC_API_CONFIG_PATH");
+        let original_path = std::env::var("CONF_PATH");
         match original_path {
             Ok(_) => {
                 load_task_config().await;
@@ -87,17 +83,14 @@ mod tests {
                     [report_svr]
                     domain = "127.0.0.1"
                     port = 8080
-                    task_notice_center = "/task/create_batch_subtask/"
-                    task_report_center = "/task/update_subtask_info/"
-                    main_task_create_center = "/task/create_main_task/"
                     "#;
                 writeln!(file, "{}", config_content).assert();
 
                 // 临时修改路径指向我们的测试文件
-                set_var("TASK_RC_API_CONFIG_PATH", file_path.to_str().assert());
+                set_var("CONF_PATH", file_path.to_str().assert());
 
                 load_task_config().await;
-                remove_var("TASK_RC_API_CONFIG_PATH");
+                remove_var("CONF_PATH");
             }
         }
 

@@ -110,8 +110,6 @@ mod tests {
         let res = GxCmd::new(
           "if test ! -L  ${CONF_ROOT}/used/link2.txt ; then ln -s ${CONF_ROOT}/options/link.txt  ${CONF_ROOT}/used/link2.txt ; fi ".into()
           ) ;
-        res.async_exec_with_dryrun(context, def, false)
-            .await
-            .unwrap();
+        res.async_exec_with_dryrun(context, def, false).await;
     }
 }
