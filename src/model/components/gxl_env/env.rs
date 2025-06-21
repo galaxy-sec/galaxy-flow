@@ -1,4 +1,8 @@
-use super::prelude::*;
+use crate::ability::prelude::RgProp;
+use crate::components::gxl_spc::GxlSpace;
+use crate::components::gxl_utls::mod_obj_name;
+use crate::components::RgVars;
+use crate::model::components::prelude::*;
 
 use crate::ability::GxRead;
 use crate::evaluator::Parser;
@@ -9,10 +13,6 @@ use crate::model::annotation::EnvAnnotation;
 use std::collections::VecDeque;
 use std::sync::Arc;
 
-use super::gxl_spc::GxlSpace;
-use super::gxl_utls::mod_obj_name;
-use super::gxl_var::RgProp;
-use super::RgVars;
 use std::io::Write;
 
 #[derive(Clone, Getters, Debug, Default)]

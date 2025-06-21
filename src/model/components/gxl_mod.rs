@@ -1,4 +1,4 @@
-use super::gxl_intercept::FlowRunner;
+use super::gxl_flow::runner::FlowRunner;
 use super::prelude::*;
 use crate::ability::delegate::Activity;
 

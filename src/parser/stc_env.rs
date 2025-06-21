@@ -8,7 +8,7 @@ use orion_parse::{
     symbol::wn_desc,
 };
 
-use crate::components::{gxl_env::EnvItem, gxl_var::RgProp, GxlEnv};
+use crate::components::{gxl_env::env::EnvItem, gxl_var::RgProp, GxlEnv};
 
 use super::{
     inner::{gal_prop, gal_vars},

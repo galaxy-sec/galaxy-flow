@@ -1,5 +1,6 @@
-use super::gxl_intercept::FlowRunner;
-use super::prelude::*;
+use crate::components::gxl_spc::GxlSpace;
+use crate::components::gxl_utls::mod_obj_name;
+use crate::model::components::prelude::*;
 
 use crate::annotation::{AnnEnum, ComUsage, FlowAnnFunc, TaskMessage};
 use crate::execution::runnable::{AsyncDryrunRunnableTrait, AsyncRunnableTrait};
@@ -16,16 +17,11 @@ use crate::util::http_handle::{
 };
 use std::sync::Arc;
 
-use super::gxl_spc::GxlSpace;
-use super::gxl_utls::mod_obj_name;
-use super::gxl_var::RgProp;
 use std::io::Write;
 
-#[derive(Clone, Getters, Debug)]
-pub struct RgIntercept {
-    props: Vec<RgProp>,
-    flow: GxlFlow,
-}
+use derive_getters::Getters;
+
+use super::runner::FlowRunner;
 
 #[derive(Clone, Getters, Debug)]
 pub struct GxlFlow {
@@ -133,6 +129,10 @@ impl GxlFlow {
             blocks: Vec::new(),
         }
     }
+
+    //pub fn post_flows(&self) -> &[FlowRunner] {
+    //    &self.post_flows
+    //}
 }
 
 impl GxlFlow {
