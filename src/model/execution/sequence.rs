@@ -1,6 +1,10 @@
+use std::collections::VecDeque;
+
 use async_trait::async_trait;
 use orion_common::friendly::AppendAble;
 
+use crate::annotation::FlowHold;
+use crate::annotation::Transaction;
 use crate::context::ExecContext;
 use crate::execution::hold::AsyncComHold;
 use crate::execution::job::Job;
@@ -40,13 +44,42 @@ impl Sequence {
     }
 
     async fn forword(&self, ctx: ExecContext, mut def: VarSpace) -> VTResult {
+        let mut undo_items: VecDeque<(FlowHold, VarSpace)> = VecDeque::new();
         let mut job = Job::from(&self.name);
         warn!(target: ctx.path() ,"sequ size:{} ", self.run_items().len());
+        let mut do_error = None;
         for obj in &self.run_items {
             debug!(target: ctx.path() ,"sequ exec runner :{} ",obj.com_meta().name());
-            let (cur_dict, out) = obj.async_exec(ctx.clone(), def).await?;
-            def = cur_dict;
-            job.append(out);
+            if obj.is_transaction() {
+                if let Some(undo) = obj.undo_flow() {
+                    undo_items.push_back((undo, def.clone()));
+                }
+            }
+
+            match obj.async_exec(ctx.clone(), def.clone()).await {
+                Ok((cur_dict, out)) => {
+                    def = cur_dict;
+                    job.append(out);
+                }
+                Err(e) => {
+                    do_error = Some(e);
+                    break;
+                }
+            }
+        }
+        if let Some(e) = do_error {
+            while let Some((undo, dict)) = undo_items.pop_back() {
+                match undo.async_exec(ctx.clone(), dict).await {
+                    Ok(_) => {
+                        warn!("undo :{} success!", undo.m_name());
+                    }
+                    Err(e) => {
+                        error!("undo :{} fail \n{}!", undo.m_name(), e);
+                    }
+                }
+            }
+            //TODO: report;
+            return Err(e);
         }
         Ok((def, ExecOut::Job(job)))
     }
@@ -66,11 +99,31 @@ impl AppendAble<IsolationHold> for Sequence {
 #[derive(Clone)]
 pub struct RunStub {
     name: String,
+    is_trans: bool,
+    undo_item: Option<FlowHold>,
+}
+impl RunStub {
+    pub fn with_transaction(mut self, is_trans: bool, undo: Option<FlowHold>) -> Self {
+        self.is_trans = is_trans;
+        self.undo_item = undo;
+        self
+    }
+}
+impl Transaction for RunStub {
+    fn is_transaction(&self) -> bool {
+        self.is_trans
+    }
+
+    fn undo_flow(&self) -> Option<FlowHold> {
+        self.undo_item.clone()
+    }
 }
 impl From<&str> for RunStub {
     fn from(name: &str) -> Self {
         Self {
             name: name.to_string(),
+            is_trans: false,
+            undo_item: None,
         }
     }
 }

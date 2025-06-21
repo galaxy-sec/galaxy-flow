@@ -3,7 +3,7 @@ use crate::components::gxl_spc::GxlSpace;
 use crate::components::gxl_utls::mod_obj_name;
 use crate::model::components::prelude::*;
 
-use crate::annotation::{ComUsage, TaskMessage};
+use crate::annotation::{ComUsage, FlowHold, TaskMessage, Transaction};
 use crate::execution::runnable::{AsyncDryrunRunnableTrait, AsyncRunnableTrait};
 use crate::execution::task::Task;
 use crate::parser::stc_base::AnnDto;
@@ -15,7 +15,6 @@ use crate::components::gxl_block::BlockNode;
 use crate::util::http_handle::{
     get_task_callback_center_url, get_task_report_center_url, send_http_request,
 };
-use std::sync::Arc;
 
 use std::io::Write;
 
@@ -30,6 +29,7 @@ pub struct GxlFlow {
     meta: FlowMeta,
     pre_flows: Vec<FlowRunner>,
     post_flows: Vec<FlowRunner>,
+    undo_flow_item: Option<FlowHold>,
     blocks: Vec<BlockNode>,
 }
 
@@ -61,9 +61,10 @@ impl DependTrait<&GxlSpace> for GxlFlow {
                 String::from_utf8(buffer).unwrap()
             );
         }
-        //for prop in self.props() {
-        //    target.append(prop.clone());
-        //}
+        if let Some(undo_name) = self.meta().undo() {
+            let undo_flow = assemble_undo(mod_name, undo_name, src)?;
+            target.undo_flow_item = Some(FlowHold::new(undo_flow));
+        }
         for block in self.blocks {
             let full_block = block.assemble(mod_name, src)?;
             target.append(full_block);
@@ -90,6 +91,19 @@ fn assemble_pipe(
     ))))
 }
 
+fn assemble_undo(m_name: &str, flow: &str, src: &GxlSpace) -> AResult<FlowRunner> {
+    let (t_mod, flow_name) = mod_obj_name(m_name, flow);
+    if let Some(flow) = src.get(&t_mod).and_then(|m| m.load_scope_flow(&flow_name)) {
+        let undo_flow = flow.assemble(m_name, src)?;
+
+        return Ok(undo_flow);
+    }
+    Err(AssembleError::from(AssembleReason::Miss(format!(
+        "{}.{}",
+        m_name, flow
+    ))))
+}
+
 impl From<FlowMeta> for GxlFlow {
     fn from(meta: FlowMeta) -> Self {
         Self {
@@ -97,6 +111,7 @@ impl From<FlowMeta> for GxlFlow {
             pre_flows: Vec::new(),
             post_flows: Vec::new(),
             blocks: Vec::new(),
+            undo_flow_item: None,
         }
     }
 }
@@ -109,6 +124,7 @@ impl From<&str> for GxlFlow {
             pre_flows: Vec::new(),
             post_flows: Vec::new(),
             blocks: Vec::new(),
+            undo_flow_item: None,
         }
     }
 }
@@ -123,10 +139,23 @@ impl GxlFlow {
             pre_flows: Vec::new(),
             post_flows: Vec::new(),
             blocks: Vec::new(),
+            undo_flow_item: None,
         }
     }
 }
 
+impl Transaction for GxlFlow {
+    fn is_transaction(&self) -> bool {
+        for ann in self.meta().annotations() {
+            return ann.func == FlowAnnFunc::Transaction;
+        }
+        false
+    }
+
+    fn undo_flow(&self) -> Option<FlowHold> {
+        self.undo_flow_item.clone()
+    }
+}
 impl GxlFlow {
     async fn exec_self(&self, ctx: ExecContext, mut var_dict: VarSpace) -> VTResult {
         println!("flow {} start", self.meta.name());
@@ -252,8 +281,6 @@ impl AppendAble<BlockNode> for GxlFlow {
         self.blocks.push(block);
     }
 }
-
-pub type FlowHold = Arc<GxlFlow>;
 
 #[cfg(test)]
 mod tests {

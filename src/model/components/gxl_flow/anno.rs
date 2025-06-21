@@ -14,6 +14,8 @@ pub enum FlowAnnFunc {
     UnImpl,
     Task,
     Dryrun,
+    Transaction,
+    Undo,
 }
 
 impl From<&str> for FlowAnnFunc {
@@ -23,6 +25,8 @@ impl From<&str> for FlowAnnFunc {
             "usage" => FlowAnnFunc::Usage,
             "task" => FlowAnnFunc::Task,
             "dryrun" => FlowAnnFunc::Dryrun,
+            "transaction" => FlowAnnFunc::Transaction,
+            "undo" => FlowAnnFunc::Undo,
             _ => {
                 warn!("UnImpl FlowAnnFunc: {}", s);
                 FlowAnnFunc::UnImpl

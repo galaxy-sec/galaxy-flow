@@ -189,13 +189,21 @@ impl GxlSpace {
             .err_conv()?;
 
         let exec_ctx = main_ctx.clone().with_subcontext("exec");
-        let (_, output) = exec_sequ
+
+        match exec_sequ
             .execute(exec_ctx, var_space.clone())
             .await
-            .err_conv()?;
-
-        task_local_report(output);
-        Ok(())
+            .err_conv()
+        {
+            Ok((_, output)) => {
+                task_local_report(output);
+                return Ok(());
+            }
+            Err(do_err) => {
+                //todo report;
+                return Err(do_err);
+            }
+        }
     }
 
     fn normalize_flow_name(&self, name: &str) -> String {

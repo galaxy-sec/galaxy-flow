@@ -11,6 +11,7 @@ pub struct FlowMeta {
     annotations: Vec<FlowAnnotation>,
     preorder: Vec<String>,
     postorder: Vec<String>,
+    undo: Option<String>,
 }
 
 impl Debug for FlowMeta {
@@ -62,6 +63,7 @@ impl MultiNew2<GxlType, String> for FlowMeta {
             annotations: Vec::new(),
             preorder: Vec::new(),
             postorder: Vec::new(),
+            undo: None,
         }
     }
 }
@@ -73,6 +75,7 @@ impl MultiNew2<GxlType, &str> for FlowMeta {
             annotations: Vec::new(),
             preorder: Vec::new(),
             postorder: Vec::new(),
+            undo: None,
         }
     }
 }

@@ -14,7 +14,7 @@ pub mod prelude;
 
 pub use crate::model::components::{
     gxl_env::env::{GxlEnv, GxlEnvHold},
-    gxl_flow::{flow::FlowHold, flow::GxlFlow},
+    gxl_flow::flow::GxlFlow,
     gxl_mod::{GxlMod, ModHold},
     gxl_var::{RgVars, VarsHold},
 };

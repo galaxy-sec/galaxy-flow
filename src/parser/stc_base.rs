@@ -10,8 +10,6 @@ use winnow::combinator::separated;
 use winnow::combinator::delimited;
 use winnow::token::take_while;
 
-use crate::model::annotation::AnnEnum;
-
 use super::atom::spaced_desc;
 use super::atom::take_var_ref_fmt;
 
@@ -76,18 +74,6 @@ impl FunDto {
 #[derive(Default, Debug, Clone, PartialEq)]
 pub struct AnnDto {
     pub funs: Vec<FunDto>,
-}
-impl AnnDto {
-    pub fn convert<T>(&self) -> Vec<AnnEnum>
-    where
-        T: From<FunDto>,
-        AnnEnum: From<T>,
-    {
-        self.funs
-            .iter()
-            .map(|f| AnnEnum::from(T::from(f.clone())))
-            .collect()
-    }
 }
 #[derive(Default, Debug, Clone)]
 pub struct HeadDto {

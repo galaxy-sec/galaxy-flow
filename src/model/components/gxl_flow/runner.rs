@@ -1,5 +1,6 @@
 use crate::{
     ability::prelude::RgProp,
+    annotation::{FlowHold, Transaction},
     components::{gxl_intercept::RgIntercept, gxl_spc::GxlSpace},
     model::components::prelude::*,
 };
@@ -13,6 +14,7 @@ pub struct FlowRunner {
     before: RgIntercept,
     after: RgIntercept,
 }
+//pub type FlowHold = Rc<FlowRunner>;
 impl FlowRunner {
     pub(crate) fn new(
         m_name: String,
@@ -38,6 +40,15 @@ impl DependTrait<&GxlSpace> for FlowRunner {
             flow: self.flow.assemble(mod_name, src)?,
             after: self.after.assemble(mod_name, src)?,
         })
+    }
+}
+
+impl Transaction for FlowRunner {
+    fn is_transaction(&self) -> bool {
+        self.flow.is_transaction()
+    }
+    fn undo_flow(&self) -> Option<FlowHold> {
+        self.flow.undo_flow()
     }
 }
 

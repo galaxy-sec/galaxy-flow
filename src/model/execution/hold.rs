@@ -2,6 +2,7 @@ use async_trait::async_trait;
 use derive_more::From;
 
 use crate::ability::GxRead;
+use crate::annotation::Transaction;
 use crate::components::gxl_flow::runner::FlowRunner;
 use crate::components::gxl_mod::body::ModRunner;
 use crate::components::{GxlEnv, GxlFlow, GxlMod};
@@ -21,6 +22,31 @@ pub enum AsyncComHold {
     Env(GxlEnv),
     Mox(GxlMod),
 }
+impl Transaction for AsyncComHold {
+    fn is_transaction(&self) -> bool {
+        match self {
+            AsyncComHold::Flow(h) => h.is_transaction(),
+            AsyncComHold::FlwRunner(h) => h.is_transaction(),
+            AsyncComHold::Stub(h) => h.is_transaction(),
+            AsyncComHold::EnvRunner(_)
+            | AsyncComHold::Read(_)
+            | AsyncComHold::Env(_)
+            | AsyncComHold::Mox(_) => false,
+        }
+    }
+
+    fn undo_flow(&self) -> Option<crate::annotation::FlowHold> {
+        match self {
+            AsyncComHold::Flow(h) => h.undo_flow(),
+            AsyncComHold::FlwRunner(h) => h.undo_flow(),
+            AsyncComHold::Stub(h) => h.undo_flow(),
+            AsyncComHold::EnvRunner(_)
+            | AsyncComHold::Read(_)
+            | AsyncComHold::Env(_)
+            | AsyncComHold::Mox(_) => None,
+        }
+    }
+}
 #[derive(Clone, From)]
 pub struct IsolationHold {
     hold: AsyncComHold,
@@ -30,6 +56,30 @@ pub struct IsolationHold {
 pub enum ComHold {
     Conduction(AsyncComHold),
     Isolation(IsolationHold),
+}
+impl Transaction for ComHold {
+    fn is_transaction(&self) -> bool {
+        match self {
+            ComHold::Conduction(h) => h.is_transaction(),
+            ComHold::Isolation(h) => h.is_transaction(),
+        }
+    }
+
+    fn undo_flow(&self) -> Option<crate::annotation::FlowHold> {
+        match self {
+            ComHold::Conduction(h) => h.undo_flow(),
+            ComHold::Isolation(h) => h.undo_flow(),
+        }
+    }
+}
+impl Transaction for IsolationHold {
+    fn is_transaction(&self) -> bool {
+        self.hold.is_transaction()
+    }
+
+    fn undo_flow(&self) -> Option<crate::annotation::FlowHold> {
+        self.hold.undo_flow()
+    }
 }
 
 #[async_trait]

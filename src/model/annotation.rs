@@ -1,9 +1,8 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::Arc};
 
-use super::components::{
-    gxl_env::anno::EnvAnnotation,
-    gxl_flow::anno::{FlowAnnFunc, FlowAnnotation},
-    gxl_mod::anno::ModAnnotation,
+use super::components::gxl_flow::{
+    anno::{FlowAnnFunc, FlowAnnotation},
+    runner::FlowRunner,
 };
 
 #[derive(Clone, Default, Debug, PartialEq)]
@@ -34,12 +33,6 @@ pub enum AnnTypeEnum {
     #[default]
     Func,
 }
-#[derive(Clone, Debug, PartialEq)]
-pub enum AnnEnum {
-    Flow(FlowAnnotation),
-    Mod(ModAnnotation),
-    Env(EnvAnnotation),
-}
 
 pub trait Autoload {
     fn is_autoload(&self) -> (bool, Vec<ModAop>);
@@ -48,58 +41,6 @@ pub trait Autoload {
 pub enum ModAop {
     Entry,
     Exit,
-}
-impl Autoload for Vec<AnnEnum> {
-    fn is_autoload(&self) -> (bool, Vec<ModAop>) {
-        let mut aop = Vec::new();
-        let mut auto = false;
-        for ann in self {
-            let (a, mut b) = ann.is_autoload();
-            auto = auto || a;
-            aop.append(&mut b);
-        }
-        (auto, aop)
-    }
-}
-impl Autoload for AnnEnum {
-    fn is_autoload(&self) -> (bool, Vec<ModAop>) {
-        let mut aop = Vec::new();
-        let auto = match self {
-            AnnEnum::Flow(f) => {
-                if f.func == FlowAnnFunc::AutoLoad {
-                    for k in f.args.keys() {
-                        match k.as_str() {
-                            "entry" => aop.push(ModAop::Entry),
-                            "exit" => aop.push(ModAop::Exit),
-                            _ => {}
-                        }
-                    }
-                    true
-                } else {
-                    false
-                }
-            }
-            AnnEnum::Mod(_) => false,
-            AnnEnum::Env(_) => false,
-        };
-        (auto, aop)
-    }
-}
-
-impl From<FlowAnnotation> for AnnEnum {
-    fn from(f: FlowAnnotation) -> Self {
-        AnnEnum::Flow(f)
-    }
-}
-impl From<ModAnnotation> for AnnEnum {
-    fn from(f: ModAnnotation) -> Self {
-        AnnEnum::Mod(f)
-    }
-}
-impl From<EnvAnnotation> for AnnEnum {
-    fn from(f: EnvAnnotation) -> Self {
-        AnnEnum::Env(f)
-    }
 }
 
 pub trait TaskMessage {
@@ -110,3 +51,11 @@ pub trait ComUsage {
     fn desp(&self) -> Option<String>;
     fn color(&self) -> Option<String>;
 }
+pub trait Transaction {
+    fn is_transaction(&self) -> bool;
+    fn undo_flow(&self) -> Option<FlowHold>;
+}
+
+pub trait Undoable {}
+
+pub type FlowHold = Arc<FlowRunner>;
