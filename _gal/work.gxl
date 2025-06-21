@@ -65,17 +65,17 @@ mod main   {
       os.path (  "${MAIN_PRJ_BINS}" );
   }
   #[usage(desp="lint code")]
-  flow lint : rust_flow.lint {} ;
+  flow lint | rust_flow.lint {} ;
 
   #[task(name="test")]
-  flow test : build : {
+  flow build |  @test  {
     gx.cmd ( "cargo test --all ${ENV_BUILD_FLAG}", log : "1" , out:"true"  );
   }
-  flow sys_test : main.build : {
+  flow  main.build | @sys_test {
     gx.cmd ( "cargo test --test sys_tests  --all-features  ${ENV_BUILD_FLAG}", log : "1" , out:"true"  );
   }
 
-  flow debug_ut:  {
+  flow debug_ut  {
     gx.cmd ( "RUST_LOG=debug cargo test ${GXL_CMD_ARG} -- --nocapture ", log : "1" , out:"true"  );
   }
 
@@ -86,17 +86,16 @@ mod main   {
     gx.cmd (  "cp ${MAIN_BLD_BINS}/gflow ${MAIN_HOME_BIN}/${AP}flow"  );
     gx.cmd (  "cp ${MAIN_BLD_BINS}/gprj ${MAIN_HOME_BIN}/${AP}prj"  );
   }
-  flow _pub_gflow: : _pub_dysec {
+  flow _pub_gflow | _pub_dysec {
     UP_TARGET = "gflow";
   }
-  flow _pub_gprj: : _pub_dysec {
+  flow _pub_gprj | _pub_dysec {
     UP_TARGET = "gprj";
   }
 
-  flow pub_dysec  : _pub_gflow,_pub_gprj ;
-  flow pub_gflow_dysec  : _pub_gflow;
+  flow pub_dysec  | _pub_gflow | _pub_gprj ;
 
-  flow _pub_dysec :ver.use {
+  flow ver.use | @_pub_dysec {
     gx.echo (  "pub ${UP_TARGET} to dysec " );
     gx.upload (
         url : "https://dy-sec-generic.pkg.coding.net/galaxy-open/${DIST_REPO}/${UP_TARGET}?version=${VERSION}",
@@ -113,5 +112,4 @@ mod main   {
         local_file : "./version.txt"
     );
   }
-
 }

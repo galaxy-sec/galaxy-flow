@@ -220,4 +220,21 @@ mod tests {
             }
         };
     }
+    #[test]
+    fn test_take_flow_head_v2_3() {
+        let main_key: &str = "flow";
+        let mut input: &str = r#"flow lint | rust_flow.lint "#;
+
+        match galaxy_flow_head(&mut input) {
+            Ok(dto) => {
+                assert_eq!(dto.keyword, main_key);
+                assert_eq!(dto.first, "lint");
+                assert_eq!(dto.after, ["rust_flow.lint"]);
+            }
+            Err(err) => {
+                println!("Error: {:?}", err);
+                assert!(false);
+            }
+        };
+    }
 }
