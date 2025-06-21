@@ -1,8 +1,10 @@
-use super::{prelude::*, stc_blk::gal_block};
+use crate::parser::prelude::*;
 
+use crate::parser::stc_base::gal_ann;
+use crate::parser::stc_blk::gal_block;
 use crate::{components::GxlFlow, meta::GxlMeta};
 
-use super::stc_base::{gal_ann, galaxy_flow_head};
+use super::head::galaxy_flow_head;
 
 pub fn gal_stc_flow_body(input: &mut &str) -> ModalResult<GxlFlow> {
     let head = galaxy_flow_head
@@ -16,18 +18,6 @@ pub fn gal_stc_flow_body(input: &mut &str) -> ModalResult<GxlFlow> {
     if !starts_with(";", input) {
         let block = gal_block.parse_next(input)?;
         obj.append(block);
-        /*
-        gal_block_beg.parse_next(input)?;
-        let props: Vec<RgProp> = repeat(0.., gal_prop).parse_next(input)?;
-        let sentens = gal_block_code
-            .context(wn_desc("<flow-body>"))
-            .parse_next(input)?;
-        gal_block_end.parse_next(input)?;
-        for i in props {
-            obj.append(i);
-        }
-        obj.append(sentens);
-        */
     }
     let _ = opt(symbol_semicolon).parse_next(input)?;
     Ok(obj)
@@ -47,7 +37,7 @@ mod tests {
 
     use crate::{
         annotation::{AnnEnum, FlowAnnFunc, FlowAnnotation},
-        parser::{inner::run_gxl, stc_flw::gal_stc_flow},
+        parser::{inner::run_gxl, stc_flow::body::gal_stc_flow},
     };
 
     #[test]

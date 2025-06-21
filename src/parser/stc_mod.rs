@@ -6,8 +6,8 @@ use super::prelude::*;
 use crate::{
     annotation::ModAnnotation,
     components::{gxl_mod::ModItem, gxl_var::RgProp, GxlMod},
-    meta::GxlMeta,
-    meta::GxlType,
+    meta::{GxlMeta, GxlType},
+    parser::stc_flow::body::gal_stc_flow_body,
 };
 
 use super::{
@@ -16,7 +16,6 @@ use super::{
     stc_act::gal_activity,
     stc_base::{gal_ann, gal_mod_head},
     stc_env::gal_stc_env_body,
-    stc_flw::gal_stc_flow_body,
 };
 pub fn gal_stc_mod_item(input: &mut &str) -> ModalResult<ModItem> {
     skip_spaces_block.parse_next(input)?;
