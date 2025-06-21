@@ -25,7 +25,7 @@ impl AsyncRunnableTrait for GxEcho {
 
 impl ComponentMeta for GxEcho {
     fn com_meta(&self) -> GxlMeta {
-        GxlMeta::build_ability("gx.echo")
+        GxlMeta::from("gx.echo")
     }
 }
 

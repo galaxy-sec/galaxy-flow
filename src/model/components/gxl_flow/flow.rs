@@ -1,8 +1,9 @@
+use crate::components::gxl_env::env::anns_from_option_dto;
 use crate::components::gxl_spc::GxlSpace;
 use crate::components::gxl_utls::mod_obj_name;
 use crate::model::components::prelude::*;
 
-use crate::annotation::{AnnEnum, ComUsage, FlowAnnFunc, TaskMessage};
+use crate::annotation::{ComUsage, TaskMessage};
 use crate::execution::runnable::{AsyncDryrunRunnableTrait, AsyncRunnableTrait};
 use crate::execution::task::Task;
 use crate::parser::stc_base::AnnDto;
@@ -11,7 +12,6 @@ use crate::task_callback_result::{BatchTaskRequest, TaskBody, TaskCallBackResult
 use crate::traits::DependTrait;
 
 use crate::components::gxl_block::BlockNode;
-use crate::model::annotation::FlowAnnotation;
 use crate::util::http_handle::{
     get_task_callback_center_url, get_task_report_center_url, send_http_request,
 };
@@ -21,12 +21,13 @@ use std::io::Write;
 
 use derive_getters::Getters;
 
+use super::anno::FlowAnnFunc;
+use super::meta::FlowMeta;
 use super::runner::FlowRunner;
 
 #[derive(Clone, Getters, Debug)]
 pub struct GxlFlow {
-    meta: GxlMeta,
-    //props: Vec<RgProp>,
+    meta: FlowMeta,
     pre_flows: Vec<FlowRunner>,
     post_flows: Vec<FlowRunner>,
     blocks: Vec<BlockNode>,
@@ -89,8 +90,8 @@ fn assemble_pipe(
     ))))
 }
 
-impl From<GxlMeta> for GxlFlow {
-    fn from(meta: GxlMeta) -> Self {
+impl From<FlowMeta> for GxlFlow {
+    fn from(meta: FlowMeta) -> Self {
         Self {
             meta,
             pre_flows: Vec::new(),
@@ -102,7 +103,7 @@ impl From<GxlMeta> for GxlFlow {
 
 impl From<&str> for GxlFlow {
     fn from(name: &str) -> Self {
-        let meta = GxlMeta::build_flow(name);
+        let meta = FlowMeta::build_flow(name);
         Self {
             meta,
             pre_flows: Vec::new(),
@@ -114,25 +115,16 @@ impl From<&str> for GxlFlow {
 
 impl GxlFlow {
     pub fn set_anns(&mut self, dto: Option<AnnDto>) {
-        let ann_vec = if let Some(have) = dto {
-            have.convert::<FlowAnnotation>()
-        } else {
-            Vec::new()
-        };
-        self.meta.set_anns(ann_vec);
+        self.meta.set_annotates(anns_from_option_dto(dto));
     }
     pub fn load_ins<S: Into<String>>(name: S) -> Self {
         Self {
-            meta: GxlMeta::build_flow(name.into()),
+            meta: FlowMeta::build_flow(name.into()),
             pre_flows: Vec::new(),
             post_flows: Vec::new(),
             blocks: Vec::new(),
         }
     }
-
-    //pub fn post_flows(&self) -> &[FlowRunner] {
-    //    &self.post_flows
-    //}
 }
 
 impl GxlFlow {
@@ -193,8 +185,8 @@ impl GxlFlow {
     pub fn get_desan(&self) -> Option<String> {
         let annotation = self.meta.annotations();
         for ann in annotation {
-            if let AnnEnum::Flow(flowann) = ann {
-                return flowann.desp();
+            if ann.desp().is_some() {
+                return ann.desp();
             }
         }
         None
@@ -204,8 +196,8 @@ impl GxlFlow {
     pub fn get_task_message(&self) -> Option<String> {
         let annotation = self.meta.annotations();
         for ann in annotation {
-            if let AnnEnum::Flow(flowann) = ann {
-                return flowann.message();
+            if ann.message().is_some() {
+                return ann.message();
             }
         }
         None
@@ -214,10 +206,8 @@ impl GxlFlow {
     pub fn is_dryrun(&self) -> bool {
         let annotation = self.meta.annotations();
         for ann in annotation {
-            if let AnnEnum::Flow(flowann) = ann {
-                if flowann.func == FlowAnnFunc::Dryrun {
-                    return true;
-                }
+            if ann.func == FlowAnnFunc::Dryrun {
+                return true;
             }
         }
         false
@@ -253,7 +243,7 @@ impl AsyncRunnableTrait for GxlFlow {
 }
 impl ComponentMeta for GxlFlow {
     fn com_meta(&self) -> GxlMeta {
-        self.meta.clone()
+        GxlMeta::Flow(self.meta.clone())
     }
 }
 
@@ -324,9 +314,9 @@ mod tests {
         let mut gxl_mod = GxlMod::from("test_mod");
 
         // 创建一些 RgFlow 实例
-        let flow1 = GxlFlow::from(GxlMeta::build_env("flow1".to_string()));
-        let flow2 = GxlFlow::from(GxlMeta::build_env("flow2".to_string()));
-        let flow3 = GxlFlow::from(GxlMeta::build_env("flow3".to_string()));
+        let flow1 = GxlFlow::from(FlowMeta::build_flow("flow1".to_string()));
+        let flow2 = GxlFlow::from(FlowMeta::build_flow("flow2".to_string()));
+        let flow3 = GxlFlow::from(FlowMeta::build_flow("flow3".to_string()));
 
         // 将这些 RgFlow 实例添加到 RgMod 中
         gxl_mod.append(flow1);

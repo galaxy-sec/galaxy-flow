@@ -1,8 +1,9 @@
+use crate::components::gxl_flow::meta::FlowMeta;
 use crate::parser::prelude::*;
 
+use crate::components::GxlFlow;
 use crate::parser::stc_base::gal_ann;
 use crate::parser::stc_blk::gal_block;
-use crate::{components::GxlFlow, meta::GxlMeta};
 
 use super::head::galaxy_flow_head;
 
@@ -10,7 +11,7 @@ pub fn gal_stc_flow_body(input: &mut &str) -> ModalResult<GxlFlow> {
     let head = galaxy_flow_head
         .context(wn_desc("<flow-head>"))
         .parse_next(input)?;
-    let mut meta = GxlMeta::build_flow(head.first);
+    let mut meta = FlowMeta::build_flow(head.first);
     meta.set_preorder(head.before);
     meta.set_postorder(head.after);
     let mut obj = GxlFlow::from(meta);
@@ -36,7 +37,7 @@ mod tests {
     use orion_error::TestAssert;
 
     use crate::{
-        annotation::{AnnEnum, FlowAnnFunc, FlowAnnotation},
+        components::gxl_flow::anno::{FlowAnnFunc, FlowAnnotation},
         parser::{inner::run_gxl, stc_flow::body::gal_stc_flow},
     };
 
@@ -126,11 +127,11 @@ mod tests {
         assert_eq!(flow.meta().name(), "test");
         assert_eq!(
             *flow.meta().annotations(),
-            vec![AnnEnum::Flow(FlowAnnotation::new(
+            vec![FlowAnnotation::new(
                 FlowAnnFunc::AutoLoad,
                 "auto_load",
                 vec![("_1", "entry")]
-            )),]
+            ),]
         );
     }
     #[test]

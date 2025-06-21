@@ -3,7 +3,7 @@ use derive_more::From;
 
 use crate::ability::GxRead;
 use crate::components::gxl_flow::runner::FlowRunner;
-use crate::components::gxl_mod::ModRunner;
+use crate::components::gxl_mod::body::ModRunner;
 use crate::components::{GxlEnv, GxlFlow, GxlMod};
 use crate::context::ExecContext;
 use crate::meta::GxlMeta;

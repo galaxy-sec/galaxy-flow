@@ -7,17 +7,18 @@ use crate::model::components::prelude::*;
 use crate::ability::GxRead;
 use crate::evaluator::Parser;
 use crate::execution::runnable::ComponentMeta;
-use crate::parser::stc_base::AnnDto;
+use crate::parser::stc_base::{AnnDto, FunDto};
 
-use crate::model::annotation::EnvAnnotation;
 use std::collections::VecDeque;
 use std::sync::Arc;
 
 use std::io::Write;
 
+use super::meta::EnvMeta;
+
 #[derive(Clone, Getters, Debug, Default)]
 pub struct GxlEnv {
-    meta: GxlMeta,
+    meta: EnvMeta,
     props: Vec<RgProp>,
     items: Vec<EnvItem>,
 }
@@ -81,14 +82,14 @@ impl DependTrait<&GxlSpace> for GxlEnv {
 impl From<&str> for GxlEnv {
     fn from(name: &str) -> Self {
         Self {
-            meta: GxlMeta::build_env(name.to_string()),
+            meta: EnvMeta::build_env(name.to_string()),
             props: Vec::new(),
             items: Vec::new(),
         }
     }
 }
-impl From<GxlMeta> for GxlEnv {
-    fn from(meta: GxlMeta) -> Self {
+impl From<EnvMeta> for GxlEnv {
+    fn from(meta: EnvMeta) -> Self {
         Self {
             meta,
             ..Default::default()
@@ -99,7 +100,7 @@ impl From<GxlMeta> for GxlEnv {
 impl From<String> for GxlEnv {
     fn from(name: String) -> Self {
         Self {
-            meta: GxlMeta::build_env(name),
+            meta: EnvMeta::build_env(name),
             props: Vec::new(),
             items: Vec::new(),
         }
@@ -108,7 +109,7 @@ impl From<String> for GxlEnv {
 
 impl From<(String, Vec<String>)> for GxlEnv {
     fn from(value: (String, Vec<String>)) -> Self {
-        let mut meta = GxlMeta::build_env(value.0);
+        let mut meta = EnvMeta::build_env(value.0);
         meta.set_mix(value.1);
         Self {
             meta,
@@ -118,16 +119,16 @@ impl From<(String, Vec<String>)> for GxlEnv {
     }
 }
 
+pub fn anns_from_option_dto<T: From<FunDto>>(value: Option<AnnDto>) -> Vec<T> {
+    value.map_or_else(Vec::new, |have| {
+        have.funs.into_iter().map(T::from).collect()
+    })
+}
 impl GxlEnv {
     pub fn set_anns(&mut self, dto: Option<AnnDto>) {
-        let ann_vec = if let Some(have) = dto {
-            have.convert::<EnvAnnotation>()
-        } else {
-            Vec::new()
-        };
-        self.meta.set_anns(ann_vec);
+        self.meta.set_annotates(anns_from_option_dto(dto));
     }
-    pub fn meta_mut(&mut self) -> &mut GxlMeta {
+    pub fn meta_mut(&mut self) -> &mut EnvMeta {
         &mut self.meta
     }
     pub fn merge(&mut self, other: &Self) {
@@ -173,7 +174,7 @@ impl AsyncRunnableTrait for EnvItem {
 }
 impl ComponentMeta for GxlEnv {
     fn com_meta(&self) -> GxlMeta {
-        self.meta.clone()
+        GxlMeta::Env(self.meta.clone())
     }
 }
 

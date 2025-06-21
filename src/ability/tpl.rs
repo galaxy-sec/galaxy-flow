@@ -232,7 +232,7 @@ impl AsyncRunnableTrait for GxTpl {
 
 impl ComponentMeta for GxTpl {
     fn com_meta(&self) -> GxlMeta {
-        GxlMeta::build_ability("gx.tpl")
+        GxlMeta::from("gx.tpl")
     }
 }
 

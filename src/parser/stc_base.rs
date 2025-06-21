@@ -7,14 +7,10 @@ use winnow::ascii::multispace0;
 use winnow::combinator::preceded;
 use winnow::combinator::separated;
 
-use crate::annotation::AnnTypeEnum;
-use crate::annotation::FlowAnnFunc;
-use crate::annotation::FlowAnnotation;
-
 use winnow::combinator::delimited;
 use winnow::token::take_while;
 
-use crate::model::annotation::{AnnEnum, EnvAnnFunc, EnvAnnotation, ModAnnFunc, ModAnnotation};
+use crate::model::annotation::AnnEnum;
 
 use super::atom::spaced_desc;
 use super::atom::take_var_ref_fmt;
@@ -73,40 +69,6 @@ impl FunDto {
                 .iter()
                 .map(|(k, v)| (k.to_string(), v.to_string()))
                 .collect(),
-        }
-    }
-}
-impl From<FunDto> for FlowAnnotation {
-    fn from(dto: FunDto) -> FlowAnnotation {
-        let name = FlowAnnFunc::from(dto.keyword.as_str());
-        FlowAnnotation {
-            name: dto.keyword.clone(),
-            ann_type: AnnTypeEnum::Func,
-            func: name,
-            args: dto.args,
-        }
-    }
-}
-impl From<FunDto> for ModAnnotation {
-    fn from(dto: FunDto) -> ModAnnotation {
-        let name = ModAnnFunc::from(dto.keyword.as_str());
-        ModAnnotation {
-            name: dto.keyword.clone(),
-            ann_type: AnnTypeEnum::Func,
-            func: name,
-            args: dto.args,
-        }
-    }
-}
-
-impl From<FunDto> for EnvAnnotation {
-    fn from(dto: FunDto) -> EnvAnnotation {
-        let name = EnvAnnFunc::from(dto.keyword.as_str());
-        EnvAnnotation {
-            name: dto.keyword.clone(),
-            ann_type: AnnTypeEnum::Func,
-            func: name,
-            args: dto.args,
         }
     }
 }

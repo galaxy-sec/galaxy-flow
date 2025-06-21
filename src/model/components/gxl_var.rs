@@ -82,6 +82,6 @@ impl AsyncRunnableTrait for RgVars {
 }
 impl ComponentMeta for RgVars {
     fn com_meta(&self) -> GxlMeta {
-        GxlMeta::build_var("vars")
+        GxlMeta::from("vars")
     }
 }

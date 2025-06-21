@@ -70,6 +70,6 @@ impl AsyncRunnableTrait for FlowRunner {
 }
 impl ComponentMeta for FlowRunner {
     fn com_meta(&self) -> GxlMeta {
-        self.flow().meta().clone()
+        self.flow().com_meta()
     }
 }

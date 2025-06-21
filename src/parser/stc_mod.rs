@@ -1,12 +1,16 @@
-use orion_common::friendly::MultiNew3;
+use orion_common::friendly::MultiNew2;
 use orion_parse::atom::peek_line;
 
 use super::prelude::*;
 
 use crate::{
-    annotation::ModAnnotation,
-    components::{gxl_mod::ModItem, gxl_var::RgProp, GxlMod},
-    meta::{GxlMeta, GxlType},
+    components::{
+        gxl_env::env::anns_from_option_dto,
+        gxl_mod::{meta::ModMeta, ModItem},
+        gxl_var::RgProp,
+        GxlMod,
+    },
+    meta::GxlType,
     parser::stc_flow::body::gal_stc_flow_body,
 };
 
@@ -47,16 +51,12 @@ pub fn gal_stc_mod_item(input: &mut &str) -> ModalResult<ModItem> {
 
 pub fn gal_stc_mod(input: &mut &str) -> ModalResult<GxlMod> {
     skip_spaces_block(input)?;
-    let ann = opt(gal_ann).parse_next(input)?;
-    let ann_vec = if let Some(have) = ann {
-        have.convert::<ModAnnotation>()
-    } else {
-        Vec::new()
-    };
+    let ann_dto = opt(gal_ann).parse_next(input)?;
+    let anns = anns_from_option_dto(ann_dto);
     let head = gal_mod_head
         .context(wn_desc("<flow-head>"))
         .parse_next(input)?;
-    let mut meta = GxlMeta::new3(GxlType::Mod, head.name().clone(), ann_vec);
+    let mut meta = ModMeta::new2(GxlType::Mod, head.name().clone()).with_annotates(anns);
     meta.set_mix(head.mix().clone());
     let mut obj = GxlMod::from(meta);
     gal_block_beg.parse_next(input)?;
