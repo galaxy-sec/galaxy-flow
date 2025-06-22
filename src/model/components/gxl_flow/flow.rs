@@ -153,7 +153,7 @@ impl Transaction for GxlFlow {
         false
     }
 
-    fn undo_flow(&self) -> Option<TransableHold> {
+    fn undo_hold(&self) -> Option<TransableHold> {
         self.undo_flow_item.clone()
     }
 }

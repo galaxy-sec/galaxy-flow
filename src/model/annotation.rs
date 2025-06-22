@@ -48,9 +48,7 @@ pub trait ComUsage {
 
 pub trait Transaction {
     fn is_transaction(&self) -> bool;
-    fn undo_flow(&self) -> Option<TransableHold>;
+    fn undo_hold(&self) -> Option<TransableHold>;
 }
-
-pub trait Undoable {}
 
 pub type FlowHold = Arc<FlowRunner>;

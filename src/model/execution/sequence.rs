@@ -55,7 +55,7 @@ impl Sequence {
                 transaction_begin = true;
             }
             if transaction_begin {
-                if let Some(undo) = item.undo_flow() {
+                if let Some(undo) = item.undo_hold() {
                     undo_stack.push_back((undo, def.clone()));
                 }
             }
@@ -147,7 +147,7 @@ impl Transaction for RunStub {
         self.trans_begin
     }
 
-    fn undo_flow(&self) -> Option<TransableHold> {
+    fn undo_hold(&self) -> Option<TransableHold> {
         self.undo_item.clone()
     }
 }

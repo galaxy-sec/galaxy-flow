@@ -45,11 +45,11 @@ impl Transaction for AsyncComHold {
         }
     }
 
-    fn undo_flow(&self) -> Option<TransableHold> {
+    fn undo_hold(&self) -> Option<TransableHold> {
         match self {
-            AsyncComHold::Flow(h) => h.undo_flow(),
-            AsyncComHold::FlwRunner(h) => h.undo_flow(),
-            AsyncComHold::Stub(h) => h.undo_flow(),
+            AsyncComHold::Flow(h) => h.undo_hold(),
+            AsyncComHold::FlwRunner(h) => h.undo_hold(),
+            AsyncComHold::Stub(h) => h.undo_hold(),
             AsyncComHold::EnvRunner(_)
             | AsyncComHold::Read(_)
             | AsyncComHold::Env(_)
@@ -75,10 +75,10 @@ impl Transaction for ComHold {
         }
     }
 
-    fn undo_flow(&self) -> Option<TransableHold> {
+    fn undo_hold(&self) -> Option<TransableHold> {
         match self {
-            ComHold::Conduction(h) => h.undo_flow(),
-            ComHold::Isolation(h) => h.undo_flow(),
+            ComHold::Conduction(h) => h.undo_hold(),
+            ComHold::Isolation(h) => h.undo_hold(),
         }
     }
 }
@@ -87,8 +87,8 @@ impl Transaction for IsolationHold {
         self.hold.is_transaction()
     }
 
-    fn undo_flow(&self) -> Option<TransableHold> {
-        self.hold.undo_flow()
+    fn undo_hold(&self) -> Option<TransableHold> {
+        self.hold.undo_hold()
     }
 }
 

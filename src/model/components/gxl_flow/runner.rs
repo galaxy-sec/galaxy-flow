@@ -48,8 +48,8 @@ impl Transaction for FlowRunner {
     fn is_transaction(&self) -> bool {
         self.flow.is_transaction()
     }
-    fn undo_flow(&self) -> Option<TransableHold> {
-        self.flow.undo_flow()
+    fn undo_hold(&self) -> Option<TransableHold> {
+        self.flow.undo_hold()
     }
 }
 
