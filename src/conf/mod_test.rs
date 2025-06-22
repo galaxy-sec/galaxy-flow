@@ -4,7 +4,7 @@ mod tests {
     use orion_syspec::{tools::make_clean_path, types::Tomlable};
     use std::path::PathBuf;
 
-    use crate::conf::{GxlConf, ReportCenterConf};
+    use crate::conf::gxlconf::{GxlConf, ReportCenterConf};
 
     #[test]
     fn test_gxl_conf_serialization() {
