@@ -239,7 +239,15 @@ impl ExecLoadTrait for GxlMod {
     fn load_flow(&self, mut ctx: ExecContext, sequ: &mut Sequence, args: &str) -> ExecResult<()> {
         ctx.append(self.meta.name().as_str());
         if let Some(found) = self.load_scope_flow(args) {
+            let pre_flows = found.flow().pre_flows().clone();
+            let post_flows = found.flow().post_flows().clone();
+            for flow in pre_flows.into_iter() {
+                sequ.append(IsolationHold::from(AsyncComHold::from(flow)));
+            }
             sequ.append(IsolationHold::from(AsyncComHold::from(found)));
+            for flow in post_flows.into_iter() {
+                sequ.append(IsolationHold::from(AsyncComHold::from(flow)));
+            }
         }
         Ok(())
     }

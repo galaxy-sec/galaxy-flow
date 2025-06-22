@@ -1,7 +1,7 @@
 use orion_common::friendly::New3;
 
 use crate::{
-    annotation::{AnnTypeEnum, Annotation, ComUsage, GetArgValue, TaskMessage},
+    annotation::{AnnTypeEnum, Annotation, ComUsage, GetArgValue, TaskMessage, FST_ARG_TAG},
     data::FunDto,
     types::PairVec,
 };
@@ -52,6 +52,20 @@ impl ComUsage for FlowAnnotation {
 }
 
 pub type FlowAnnotation = Annotation<FlowAnnFunc>;
+
+pub trait TransLable {
+    fn undo_flow_name(&self) -> Option<String>;
+}
+
+impl TransLable for FlowAnnotation {
+    fn undo_flow_name(&self) -> Option<String> {
+        if self.func == FlowAnnFunc::Undo {
+            self.get_arg(FST_ARG_TAG)
+        } else {
+            None
+        }
+    }
+}
 
 impl TaskMessage for FlowAnnotation {
     fn message(&self) -> Option<String> {

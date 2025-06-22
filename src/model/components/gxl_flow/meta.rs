@@ -3,7 +3,7 @@ use orion_common::friendly::MultiNew2;
 use crate::{annotation::ComUsage, meta::GxlType};
 use std::fmt::Debug;
 
-use super::anno::FlowAnnotation;
+use super::anno::{FlowAnnotation, TransLable};
 #[derive(Clone, Getters, Default)]
 pub struct FlowMeta {
     class: GxlType,
@@ -11,7 +11,6 @@ pub struct FlowMeta {
     annotations: Vec<FlowAnnotation>,
     preorder: Vec<String>,
     postorder: Vec<String>,
-    undo: Option<String>,
 }
 
 impl Debug for FlowMeta {
@@ -54,6 +53,14 @@ impl FlowMeta {
         }
         None
     }
+    pub fn undo_flow_name(&self) -> Option<String> {
+        for ann in &self.annotations {
+            if ann.undo_flow_name().is_some() {
+                return ann.undo_flow_name();
+            }
+        }
+        None
+    }
 }
 impl MultiNew2<GxlType, String> for FlowMeta {
     fn new2(cls: GxlType, name: String) -> Self {
@@ -63,7 +70,6 @@ impl MultiNew2<GxlType, String> for FlowMeta {
             annotations: Vec::new(),
             preorder: Vec::new(),
             postorder: Vec::new(),
-            undo: None,
         }
     }
 }
@@ -75,7 +81,6 @@ impl MultiNew2<GxlType, &str> for FlowMeta {
             annotations: Vec::new(),
             preorder: Vec::new(),
             postorder: Vec::new(),
-            undo: None,
         }
     }
 }

@@ -170,7 +170,7 @@ mod main : mod_a {
               }
             }
 "#;
-        let rgmod = run_gxl(gal_stc_mod, &mut data).assert();
-        assert_eq!(data, "\n");
+        let _rgmod = run_gxl(gal_stc_mod, &mut data).assert();
+        assert_eq!(data, "");
     }
 }

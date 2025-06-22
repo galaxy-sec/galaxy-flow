@@ -43,7 +43,8 @@ impl Transaction for AsyncComHold {
             | AsyncComHold::Env(_)
             | AsyncComHold::Mox(_) => false,
         };
-        debug!("{} is transaction :{}", self.com_meta().name(), trans);
+        info!(target:"trans",
+            "{} is transaction :{}", self.com_meta().name(), trans);
         return trans;
     }
 

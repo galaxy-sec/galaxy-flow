@@ -69,6 +69,7 @@ impl Sequence {
                 }
                 Err(e) => {
                     warn!("Sequence aborted at step {}: {}", index, e);
+                    warn!("will execute undo :{}", undo_stack.len());
                     self.undo_transactions(ctx.clone(), undo_stack).await;
                     return Err(e);
                 }
@@ -110,7 +111,7 @@ pub struct RunStub {
     trans_begin: bool,
     undo_item: Option<TransableHold>,
     should_fail: bool,
-    effect: Option<Arc<dyn Fn() + Send + Sync>>, // 合并 EffectStub 的功能
+    effect: Option<Arc<dyn Fn() + Send + Sync>>,
 }
 
 impl RunStub {

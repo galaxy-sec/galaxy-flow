@@ -1,6 +1,7 @@
-use std::{collections::HashMap, env::home_dir, path::PathBuf};
+use std::{collections::HashMap, path::PathBuf};
 
 use derive_more::From;
+use dirs::home_dir;
 
 use crate::{var::VarDict, ExecResult};
 

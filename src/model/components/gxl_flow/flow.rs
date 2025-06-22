@@ -8,7 +8,6 @@ use crate::model::components::prelude::*;
 use crate::annotation::{ComUsage, FlowHold, TaskMessage, Transaction};
 use crate::execution::runnable::{AsyncDryrunRunnableTrait, AsyncRunnableTrait};
 use crate::execution::task::Task;
-
 use crate::task_report::task_notification::{TaskNotice, TaskOutline};
 use crate::task_report::task_result_report::TaskReport;
 use crate::traits::DependTrait;
@@ -63,8 +62,9 @@ impl DependTrait<&GxlSpace> for GxlFlow {
                 String::from_utf8(buffer).unwrap()
             );
         }
-        if let Some(undo_name) = self.meta().undo() {
-            let undo_flow = assemble_undo(mod_name, undo_name, src)?;
+        if let Some(undo_name) = self.meta().undo_flow_name() {
+            info!( target: "assemble", "undo flow {} ", undo_name );
+            let undo_flow = assemble_undo(mod_name, undo_name.as_str(), src)?;
             target.undo_flow_item = Some(TransableHold::from(FlowHold::new(undo_flow)));
         }
         for block in self.blocks {
@@ -248,19 +248,24 @@ impl AsyncRunnableTrait for GxlFlow {
             job = Job::from(&des);
         }
         ctx.append(self.meta.name());
+        //pre_flows,post_flows run in main sequence
+        /*
         for pre in self.pre_flows() {
             let (cur_dict, task) = pre.async_exec(ctx.clone(), var_dict).await?;
             var_dict = cur_dict;
             job.append(task);
         }
+        */
         let (cur_dict, task) = self.exec_self(ctx.clone(), var_dict).await?;
         var_dict = cur_dict;
         job.append(task);
+        /*
         for post in self.post_flows() {
             let (cur_dict, task) = post.async_exec(ctx.clone(), var_dict).await?;
             var_dict = cur_dict;
             job.append(task);
         }
+        */
         if des.is_none() {
             return Ok((var_dict, ExecOut::Ignore));
         }
