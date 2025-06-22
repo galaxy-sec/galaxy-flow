@@ -99,6 +99,8 @@ impl GxCmd {
 
 #[cfg(test)]
 mod tests {
+    use orion_error::TestAssertWithMsg;
+
     use super::*;
     use crate::{ability::*, traits::Setter};
 
@@ -110,6 +112,8 @@ mod tests {
         let res = GxCmd::new(
           "if test ! -L  ${CONF_ROOT}/used/link2.txt ; then ln -s ${CONF_ROOT}/options/link.txt  ${CONF_ROOT}/used/link2.txt ; fi ".into()
           ) ;
-        res.async_exec_with_dryrun(context, def, false).await;
+        res.async_exec_with_dryrun(context, def, false)
+            .await
+            .assert("dryrun");
     }
 }

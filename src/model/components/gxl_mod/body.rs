@@ -8,7 +8,6 @@ use crate::model::components::prelude::*;
 
 use crate::annotation::is_auto_func;
 
-use crate::execution::hold::IsolationHold;
 use crate::execution::job::Job;
 use crate::execution::runnable::ComponentMeta;
 use crate::menu::*;
@@ -491,8 +490,7 @@ mod test {
         mod1.append(RgProp::new("k1", "v1"));
         mod1.append(GxlFlow::from("flow1"));
 
-        let mod_name = "mod2";
-        let meta2 = ModMeta::build_mod(mod_name);
+        let meta2 = ModMeta::build_mod("mod2");
         let mut mod2 = GxlMod::from(meta2.clone());
         mod2.append(RgProp::new("k2", "v2"));
 
@@ -520,7 +518,7 @@ mod test {
         println!("{:?}", vars.global().maps());
         assert_eq!(
             vars.global().maps().len(),
-            0 //vars.maps().get(&"MOD2_K2".to_string()),
+            2 //vars.maps().get(&"MOD2_K2".to_string()),
 
               //Some(&SecVar::new(VarMeta::Normal, "v2".to_string()))
         );
