@@ -9,12 +9,13 @@ use crate::annotation::{ComUsage, FlowHold, TaskMessage, Transaction};
 use crate::execution::runnable::{AsyncDryrunRunnableTrait, AsyncRunnableTrait};
 use crate::execution::task::Task;
 
-use crate::task_callback_result::{BatchTaskRequest, TaskBody, TaskCallBackResult};
+use crate::task_report::task_notification::{TaskNotice, TaskOutline};
+use crate::task_report::task_result_report::TaskReport;
 use crate::traits::DependTrait;
 
 use crate::components::gxl_block::BlockNode;
 use crate::util::http_handle::{
-    get_task_callback_center_url, get_task_report_center_url, send_http_request,
+    get_task_notice_center_url, get_task_report_center_url, send_http_request,
 };
 
 use std::io::Write;
@@ -163,29 +164,23 @@ impl Transaction for GxlFlow {
 }
 impl GxlFlow {
     async fn exec_self(&self, ctx: ExecContext, mut var_dict: VarSpace) -> VTResult {
-        println!("flow {} start", self.meta.name());
         let task_message = self.get_task_message();
         let mut task = Task::from(self.meta.name());
-        let mut task_body = TaskBody::new();
+        let mut task_body = TaskNotice::new();
         if let Some(des) = task_message.clone() {
-            println!("flow message {}", des);
             task = Task::from(des);
             // 若环境变量或配置文件中有报告中心则进行任务上报
-            if let Some(url) = get_task_report_center_url() {
-                task_body = TaskBody {
+            if let Some(url) = get_task_notice_center_url() {
+                task_body = TaskNotice {
                     parent_id: task_body.parent_id,
                     name: task.name().to_string(),
                     description: task.name().to_string(),
                     order: task_body.order,
                 };
-                task_body.set_order();
-                let batch_task = BatchTaskRequest {
+                let batch_task = TaskOutline {
                     tasks: vec![task_body.clone()],
                 };
-                let res = send_http_request(batch_task, &url).await;
-                if res.is_err() {
-                    println!("send task report error: {:?}", res.unwrap_err());
-                }
+                send_http_request(batch_task, &url).await;
             }
         }
         for item in &self.blocks {
@@ -201,12 +196,9 @@ impl GxlFlow {
         // 若任务被标记为需要返回，则进行返回
         if task_message.is_some() {
             // 若环境变量或配置文件中有返回路径则进行返回
-            if let Some(url) = get_task_callback_center_url() {
-                let task_result = TaskCallBackResult::from_task_with_order(task.clone(), task_body);
-                let res = send_http_request(task_result.clone(), &url).await;
-                if res.is_err() {
-                    println!("send task callback error: {:?}", res.unwrap_err());
-                }
+            if let Some(url) = get_task_report_center_url() {
+                let task_result = TaskReport::from_flowtask_and_notice(task.clone(), task_body);
+                send_http_request(task_result.clone(), &url).await;
             }
         }
         if task_message.is_none() {
