@@ -2,12 +2,12 @@ use crate::ability::prelude::RgProp;
 use crate::components::gxl_spc::GxlSpace;
 use crate::components::gxl_utls::mod_obj_name;
 use crate::components::RgVars;
+use crate::data::{AnnDto, FunDto};
 use crate::model::components::prelude::*;
 
 use crate::ability::GxRead;
 use crate::evaluator::Parser;
 use crate::execution::runnable::ComponentMeta;
-use crate::parser::stc_base::{AnnDto, FunDto};
 
 use std::collections::VecDeque;
 use std::sync::Arc;

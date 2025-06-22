@@ -18,7 +18,8 @@ use super::{
     domain::{gal_block_beg, gal_block_end},
     inner::gal_prop,
     stc_act::gal_activity,
-    stc_base::{gal_ann, gal_mod_head},
+    stc_ann::gal_ann,
+    stc_base::gal_mod_head,
     stc_env::gal_stc_env_body,
 };
 pub fn gal_stc_mod_item(input: &mut &str) -> ModalResult<ModItem> {

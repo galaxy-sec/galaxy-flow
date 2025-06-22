@@ -2,7 +2,7 @@ use crate::components::gxl_flow::meta::FlowMeta;
 use crate::parser::prelude::*;
 
 use crate::components::GxlFlow;
-use crate::parser::stc_base::gal_ann;
+use crate::parser::stc_ann::gal_ann;
 use crate::parser::stc_blk::gal_block;
 
 use super::head::galaxy_flow_head;

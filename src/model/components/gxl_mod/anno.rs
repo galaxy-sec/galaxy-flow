@@ -1,6 +1,6 @@
 use crate::{
     annotation::{AnnTypeEnum, Annotation},
-    parser::stc_base::FunDto,
+    data::FunDto,
 };
 
 #[derive(Clone, Debug, PartialEq)]

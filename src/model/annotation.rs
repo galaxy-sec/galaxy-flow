@@ -34,15 +34,6 @@ pub enum AnnTypeEnum {
     Func,
 }
 
-pub trait Autoload {
-    fn is_autoload(&self) -> (bool, Vec<ModAop>);
-}
-
-pub enum ModAop {
-    Entry,
-    Exit,
-}
-
 pub trait TaskMessage {
     fn message(&self) -> Option<String>;
 }

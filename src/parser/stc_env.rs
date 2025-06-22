@@ -12,7 +12,8 @@ use crate::components::{gxl_env::env::EnvItem, gxl_var::RgProp, GxlEnv};
 
 use super::{
     inner::{gal_prop, gal_vars},
-    stc_base::{gal_ann, gal_env_head},
+    stc_ann::gal_ann,
+    stc_base::gal_env_head,
 };
 
 pub fn gal_env_item(input: &mut &str) -> ModalResult<EnvItem> {

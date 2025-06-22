@@ -1,12 +1,12 @@
 use crate::components::gxl_env::env::anns_from_option_dto;
 use crate::components::gxl_spc::GxlSpace;
 use crate::components::gxl_utls::mod_obj_name;
+use crate::data::AnnDto;
 use crate::model::components::prelude::*;
 
 use crate::annotation::{ComUsage, FlowHold, TaskMessage, Transaction};
 use crate::execution::runnable::{AsyncDryrunRunnableTrait, AsyncRunnableTrait};
 use crate::execution::task::Task;
-use crate::parser::stc_base::AnnDto;
 
 use crate::task_callback_result::{BatchTaskRequest, TaskBody, TaskCallBackResult};
 use crate::traits::DependTrait;

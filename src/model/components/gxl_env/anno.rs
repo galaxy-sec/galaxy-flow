@@ -2,7 +2,7 @@ use orion_common::friendly::New3;
 
 use crate::{
     annotation::{AnnTypeEnum, Annotation, ComUsage, GetArgValue},
-    parser::stc_base::FunDto,
+    data::FunDto,
 };
 
 #[derive(Clone, Debug, PartialEq)]
