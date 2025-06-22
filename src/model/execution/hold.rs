@@ -34,7 +34,7 @@ pub enum TransableHold {
 
 impl Transaction for AsyncComHold {
     fn is_transaction(&self) -> bool {
-        match self {
+        let trans = match self {
             AsyncComHold::Flow(h) => h.is_transaction(),
             AsyncComHold::FlwRunner(h) => h.is_transaction(),
             AsyncComHold::Stub(h) => h.is_transaction(),
@@ -42,7 +42,9 @@ impl Transaction for AsyncComHold {
             | AsyncComHold::Read(_)
             | AsyncComHold::Env(_)
             | AsyncComHold::Mox(_) => false,
-        }
+        };
+        debug!("{} is transaction :{}", self.com_meta().name(), trans);
+        return trans;
     }
 
     fn undo_hold(&self) -> Option<TransableHold> {

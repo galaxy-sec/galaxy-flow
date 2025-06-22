@@ -148,7 +148,11 @@ impl GxlFlow {
 impl Transaction for GxlFlow {
     fn is_transaction(&self) -> bool {
         for ann in self.meta().annotations() {
-            return ann.func == FlowAnnFunc::Transaction;
+            trace!("flow ann : {:?}", ann);
+            if ann.func == FlowAnnFunc::Transaction {
+                debug!("flow have transaction lable");
+                return true;
+            }
         }
         false
     }

@@ -53,9 +53,11 @@ impl Sequence {
             debug!(target: ctx.path(), "executing item {}: {}", index, item.com_meta().name());
             if item.is_transaction() {
                 transaction_begin = true;
+                warn!(target: ctx.path(), "transaction begin")
             }
             if transaction_begin {
                 if let Some(undo) = item.undo_hold() {
+                    info!(target: ctx.path(), "regist undo {}", undo.com_meta().name());
                     undo_stack.push_back((undo, def.clone()));
                 }
             }

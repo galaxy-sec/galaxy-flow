@@ -30,9 +30,11 @@ pub fn gal_fun_arg_item(input: &mut &str) -> ModalResult<(Option<String>, String
             .parse_next(input)?
     } else {
         // Parse a number or unquoted string
-        take_while(1.., |c: char| c.is_alphanumeric() || c == '.' || c == '-')
-            .context(wn_desc("<arg>"))
-            .parse_next(input)?
+        take_while(1.., |c: char| {
+            c.is_alphanumeric() || c == '.' || c == '-' || c == '_'
+        })
+        .context(wn_desc("<arg>"))
+        .parse_next(input)?
     };
 
     // Extract the key if it exists
@@ -177,6 +179,16 @@ mod tests {
 
         assert_eq!(input, "");
         assert_eq!(output, expected);
+
+        let mut input = r#"( _step1,_step2)"#;
+        let expected = str_map!(
+            String::from(FST_ARG_TAG) => String::from("_step1"),
+            String::from(SEC_ARG_TAG) => String::from("_step2"),
+        );
+        let output = run_gxl(gal_fun_args_map, &mut input).unwrap();
+
+        assert_eq!(input, "");
+        assert_eq!(output, expected);
     }
 
     #[test]
@@ -186,6 +198,26 @@ mod tests {
             funs: [FunDto::new(
                 "load",
                 [(FST_ARG_TAG, "a"), (SEC_ARG_TAG, "b")].to_vec(),
+            )]
+            .to_vec(),
+        };
+        assert_ext_ann(&mut input, expected);
+
+        let mut input = r#"#[undo(step1,step2)]"#;
+        let expected = AnnDto {
+            funs: [FunDto::new(
+                "undo",
+                [(FST_ARG_TAG, "step1"), (SEC_ARG_TAG, "step2")].to_vec(),
+            )]
+            .to_vec(),
+        };
+        assert_ext_ann(&mut input, expected);
+
+        let mut input = r#"#[undo(_step1,_step2)]"#;
+        let expected = AnnDto {
+            funs: [FunDto::new(
+                "undo",
+                [(FST_ARG_TAG, "_step1"), (SEC_ARG_TAG, "_step2")].to_vec(),
             )]
             .to_vec(),
         };

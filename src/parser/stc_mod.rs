@@ -126,4 +126,51 @@ mod main : mod_a {
         assert_eq!(data, "\n");
         assert_eq!(rgmod.props().len(), 2);
     }
+
+    #[test]
+    fn test_mod_transaction() {
+        let mut data = r#"
+
+            mod main   {
+              conf = "${ENV_ROOT}/conf" ;
+
+              #[auto_load(entry)]
+              flow __into   {
+                gx.echo (" auto into");
+              }
+              #[auto_load(exit)]
+              flow __exit   {
+                gx.echo (" auto exit ");
+              }
+
+              flow trans | step1 | step2 | step3 ;
+
+              #[undo(_undo_step1)]
+              flow step1 {
+                gx.echo (" step1 ");
+              }
+              #[undo(_undo_step2)]
+              flow step2 {
+                gx.echo (" step2 ");
+              }
+              #[undo(_undo_step3)]
+              flow step3 {
+                gx.echo (" step3 ");
+                gx.assert ( value : "true" , expect : "false" );
+              }
+
+              flow _undo_step1 {
+                gx.echo (" undo step1 ");
+              }
+              flow _undo_step2 {
+                gx.echo (" undo step2 ");
+              }
+              flow _undo_step3 {
+                gx.echo (" undo step3 ");
+              }
+            }
+"#;
+        let rgmod = run_gxl(gal_stc_mod, &mut data).assert();
+        assert_eq!(data, "\n");
+    }
 }
