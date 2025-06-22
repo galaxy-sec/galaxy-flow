@@ -28,7 +28,7 @@ pub enum ModItem {
     Actv(Activity),
 }
 
-#[derive(Clone, Getters, Default, Debug)]
+#[derive(Clone, Getters, Default)]
 pub struct GxlMod {
     meta: ModMeta,
     props: Vec<RgProp>,

@@ -2,6 +2,7 @@ use crate::components::gxl_env::env::anns_from_option_dto;
 use crate::components::gxl_spc::GxlSpace;
 use crate::components::gxl_utls::mod_obj_name;
 use crate::data::AnnDto;
+use crate::execution::hold::TransableHold;
 use crate::model::components::prelude::*;
 
 use crate::annotation::{ComUsage, FlowHold, TaskMessage, Transaction};
@@ -24,12 +25,12 @@ use super::anno::FlowAnnFunc;
 use super::meta::FlowMeta;
 use super::runner::FlowRunner;
 
-#[derive(Clone, Getters, Debug)]
+#[derive(Clone, Getters)]
 pub struct GxlFlow {
     meta: FlowMeta,
     pre_flows: Vec<FlowRunner>,
     post_flows: Vec<FlowRunner>,
-    undo_flow_item: Option<FlowHold>,
+    undo_flow_item: Option<TransableHold>,
     blocks: Vec<BlockNode>,
 }
 
@@ -63,7 +64,7 @@ impl DependTrait<&GxlSpace> for GxlFlow {
         }
         if let Some(undo_name) = self.meta().undo() {
             let undo_flow = assemble_undo(mod_name, undo_name, src)?;
-            target.undo_flow_item = Some(FlowHold::new(undo_flow));
+            target.undo_flow_item = Some(TransableHold::from(FlowHold::new(undo_flow)));
         }
         for block in self.blocks {
             let full_block = block.assemble(mod_name, src)?;
@@ -152,7 +153,7 @@ impl Transaction for GxlFlow {
         false
     }
 
-    fn undo_flow(&self) -> Option<FlowHold> {
+    fn undo_flow(&self) -> Option<TransableHold> {
         self.undo_flow_item.clone()
     }
 }

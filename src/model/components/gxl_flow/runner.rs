@@ -1,18 +1,19 @@
 use crate::{
     ability::prelude::RgProp,
-    annotation::{FlowHold, Transaction},
-    components::{gxl_intercept::RgIntercept, gxl_spc::GxlSpace},
+    annotation::Transaction,
+    components::{gxl_intercept::GxlIntercept, gxl_spc::GxlSpace},
+    execution::hold::TransableHold,
     model::components::prelude::*,
 };
 
 use super::flow::GxlFlow;
 
-#[derive(Clone, Getters, Debug)]
+#[derive(Clone, Getters)]
 pub struct FlowRunner {
     m_name: String,
     flow: GxlFlow,
-    before: RgIntercept,
-    after: RgIntercept,
+    before: GxlIntercept,
+    after: GxlIntercept,
 }
 //pub type FlowHold = Rc<FlowRunner>;
 impl FlowRunner {
@@ -24,9 +25,9 @@ impl FlowRunner {
         afters: Vec<GxlFlow>,
     ) -> Self {
         Self {
-            before: RgIntercept::new(m_name.clone(), props, befores),
+            before: GxlIntercept::new(m_name.clone(), props, befores),
             flow,
-            after: RgIntercept::new(m_name.clone(), Vec::new(), afters),
+            after: GxlIntercept::new(m_name.clone(), Vec::new(), afters),
             m_name,
         }
     }
@@ -47,7 +48,7 @@ impl Transaction for FlowRunner {
     fn is_transaction(&self) -> bool {
         self.flow.is_transaction()
     }
-    fn undo_flow(&self) -> Option<FlowHold> {
+    fn undo_flow(&self) -> Option<TransableHold> {
         self.flow.undo_flow()
     }
 }

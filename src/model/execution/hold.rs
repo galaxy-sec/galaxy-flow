@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use async_trait::async_trait;
 use derive_more::From;
 
@@ -22,6 +24,14 @@ pub enum AsyncComHold {
     Env(GxlEnv),
     Mox(GxlMod),
 }
+
+#[derive(Clone, From)]
+pub enum TransableHold {
+    Flow(Arc<GxlFlow>),
+    Stub(Arc<RunStub>),
+    FlwRunner(Arc<FlowRunner>),
+}
+
 impl Transaction for AsyncComHold {
     fn is_transaction(&self) -> bool {
         match self {
@@ -35,7 +45,7 @@ impl Transaction for AsyncComHold {
         }
     }
 
-    fn undo_flow(&self) -> Option<crate::annotation::FlowHold> {
+    fn undo_flow(&self) -> Option<TransableHold> {
         match self {
             AsyncComHold::Flow(h) => h.undo_flow(),
             AsyncComHold::FlwRunner(h) => h.undo_flow(),
@@ -65,7 +75,7 @@ impl Transaction for ComHold {
         }
     }
 
-    fn undo_flow(&self) -> Option<crate::annotation::FlowHold> {
+    fn undo_flow(&self) -> Option<TransableHold> {
         match self {
             ComHold::Conduction(h) => h.undo_flow(),
             ComHold::Isolation(h) => h.undo_flow(),
@@ -77,7 +87,7 @@ impl Transaction for IsolationHold {
         self.hold.is_transaction()
     }
 
-    fn undo_flow(&self) -> Option<crate::annotation::FlowHold> {
+    fn undo_flow(&self) -> Option<TransableHold> {
         self.hold.undo_flow()
     }
 }
@@ -93,6 +103,27 @@ impl AsyncRunnableTrait for AsyncComHold {
             Self::Read(obj) => obj.async_exec(ctx, dct).await,
             Self::Env(obj) => obj.async_exec(ctx, dct).await,
             Self::Mox(obj) => obj.async_exec(ctx, dct).await,
+        }
+    }
+}
+
+#[async_trait]
+impl AsyncRunnableTrait for TransableHold {
+    async fn async_exec(&self, ctx: ExecContext, dct: VarSpace) -> VTResult {
+        match self {
+            Self::Flow(obj) => obj.async_exec(ctx, dct).await,
+            Self::Stub(obj) => obj.async_exec(ctx, dct).await,
+            Self::FlwRunner(obj) => obj.async_exec(ctx, dct).await,
+        }
+    }
+}
+
+impl ComponentMeta for TransableHold {
+    fn com_meta(&self) -> GxlMeta {
+        match self {
+            TransableHold::Flow(h) => h.com_meta(),
+            TransableHold::Stub(h) => h.com_meta(),
+            TransableHold::FlwRunner(h) => h.flow().com_meta(),
         }
     }
 }

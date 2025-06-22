@@ -3,18 +3,21 @@ use std::sync::Arc;
 
 use async_trait::async_trait;
 use orion_common::friendly::AppendAble;
+use orion_error::UvsSysFrom;
 
-use crate::annotation::FlowHold;
 use crate::annotation::Transaction;
 use crate::context::ExecContext;
 use crate::execution::hold::AsyncComHold;
 use crate::execution::hold::{ComHold, IsolationHold};
 use crate::execution::job::Job;
 use crate::execution::runnable::ComponentMeta;
-use crate::execution::runnable::{AsyncRunnableTrait, ExecOut, RunnableTrait, VTResult};
+use crate::execution::runnable::{AsyncRunnableTrait, ExecOut, VTResult};
 use crate::execution::task::Task;
 use crate::execution::VarSpace;
 use crate::meta::GxlMeta;
+use crate::ExecError;
+
+use super::hold::TransableHold;
 
 #[derive(Clone, Getters)]
 pub struct Sequence {
@@ -45,20 +48,22 @@ impl Sequence {
         let mut undo_stack = VecDeque::new();
         warn!(target: ctx.path(), "sequence size: {}", self.run_items().len());
 
+        let mut transaction_begin = false;
         for (index, item) in self.run_items.iter().enumerate() {
             debug!(target: ctx.path(), "executing item {}: {}", index, item.com_meta().name());
+            if item.is_transaction() {
+                transaction_begin = true;
+            }
+            if transaction_begin {
+                if let Some(undo) = item.undo_flow() {
+                    undo_stack.push_back((undo, def.clone()));
+                }
+            }
 
             match item.async_exec(ctx.clone(), def.clone()).await {
                 Ok((new_def, out)) => {
                     def = new_def;
                     job.append(out);
-
-                    // Record successful transaction for potential undo
-                    if item.is_transaction() {
-                        if let Some(undo) = item.undo_flow() {
-                            undo_stack.push_back((undo, def.clone()));
-                        }
-                    }
                 }
                 Err(e) => {
                     warn!("Sequence aborted at step {}: {}", index, e);
@@ -74,12 +79,12 @@ impl Sequence {
     async fn undo_transactions(
         &self,
         ctx: ExecContext,
-        mut undo_stack: VecDeque<(FlowHold, VarSpace)>,
+        mut undo_stack: VecDeque<(TransableHold, VarSpace)>,
     ) {
         while let Some((undo, dict)) = undo_stack.pop_back() {
             match undo.async_exec(ctx.clone(), dict).await {
-                Ok(_) => warn!("Undo successful for {}", undo.m_name()),
-                Err(e) => error!("Undo failed for {}: {}", undo.m_name(), e),
+                Ok(_) => warn!("Undo successful for {}", undo.com_meta().name()),
+                Err(e) => error!("Undo failed for {}: {}", undo.com_meta().name(), e),
             }
         }
     }
@@ -100,52 +105,50 @@ impl AppendAble<IsolationHold> for Sequence {
 #[derive(Clone)]
 pub struct RunStub {
     name: String,
-    is_trans: bool,
-    undo_item: Option<FlowHold>,
+    trans_begin: bool,
+    undo_item: Option<TransableHold>,
+    should_fail: bool,
+    effect: Option<Arc<dyn Fn() + Send + Sync>>, // 合并 EffectStub 的功能
 }
 
 impl RunStub {
-    pub fn with_transaction(mut self, is_trans: bool, undo: Option<FlowHold>) -> Self {
-        self.is_trans = is_trans;
+    pub fn new<S: Into<String>>(name: S) -> Self {
+        Self {
+            name: name.into(),
+            trans_begin: false,
+            undo_item: None,
+            should_fail: false,
+            effect: None,
+        }
+    }
+    pub fn with_transaction(mut self, trans_begin: bool, undo: Option<TransableHold>) -> Self {
+        self.trans_begin = trans_begin;
         self.undo_item = undo;
+        self
+    }
+
+    pub fn with_should_fail(mut self, should_fail: bool) -> Self {
+        self.should_fail = should_fail;
+        self
+    }
+
+    // 直接添加副作用到 RunStub
+    pub fn with_effect<F>(mut self, effect: F) -> Self
+    where
+        F: Fn() + Send + Sync + 'static,
+    {
+        self.effect = Some(Arc::new(effect));
         self
     }
 }
 
 impl Transaction for RunStub {
     fn is_transaction(&self) -> bool {
-        self.is_trans
+        self.trans_begin
     }
 
-    fn undo_flow(&self) -> Option<FlowHold> {
+    fn undo_flow(&self) -> Option<TransableHold> {
         self.undo_item.clone()
-    }
-}
-
-impl From<&str> for RunStub {
-    fn from(name: &str) -> Self {
-        Self {
-            name: name.to_string(),
-            is_trans: false,
-            undo_item: None,
-        }
-    }
-}
-
-#[async_trait]
-impl AsyncRunnableTrait for RunStub {
-    async fn async_exec(&self, ctx: ExecContext, def: VarSpace) -> VTResult {
-        debug!(target: ctx.path(), "executing stub: {}", self.name);
-        let task = Task::from(&self.name);
-        Ok((def, ExecOut::Task(task)))
-    }
-}
-
-impl RunnableTrait for RunStub {
-    fn exec(&self, ctx: ExecContext, def: VarSpace) -> VTResult {
-        debug!(target: ctx.path(), "executing stub: {}", self.name);
-        let task = Task::from(&self.name);
-        Ok((def, ExecOut::Task(task)))
     }
 }
 
@@ -154,50 +157,36 @@ impl ComponentMeta for RunStub {
         GxlMeta::from("stub")
     }
 }
-/*
-impl RunStub {
-    fn with_custom_effect<F>(mut self, effect: F) -> Self
-    where
-        F: Fn() + Send + Sync + 'static,
-    {
-        // Store effect in a type-erased form
-        self.undo_item = Some(FlowHold::from(AsyncComHold::from(EffectStub {
-            name: self.name.clone(),
-            effect: Arc::new(effect),
-        })));
-        self
-    }
-}
-
-// Helper struct for custom effects
-struct EffectStub {
-    name: String,
-    effect: Arc<dyn Fn() + Send + Sync>,
-}
 
 #[async_trait]
-impl AsyncRunnableTrait for EffectStub {
+impl AsyncRunnableTrait for RunStub {
     async fn async_exec(&self, ctx: ExecContext, def: VarSpace) -> VTResult {
-        debug!(target: ctx.path(), "executing effect: {}", self.name);
-        (self.effect)();
-        Ok((def, ExecOut::Task(Task::from(&self.name))))
-    }
-}
+        // 先执行可能的副作用
+        if let Some(effect) = &self.effect {
+            effect();
+        }
 
-impl ComponentMeta for EffectStub {
-    fn com_meta(&self) -> GxlMeta {
-        GxlMeta::from("effect_stub")
+        // 然后处理正常执行逻辑
+        if self.should_fail {
+            //return Err(anyhow::anyhow!("Intentional failure in {}", self.name));
+            return Err(ExecError::from_sys("intentional failure".into()));
+        }
+
+        debug!(target: ctx.path(), "executing stub: {}", self.name);
+        let task = Task::from(&self.name);
+        Ok((def, ExecOut::Task(task)))
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use std::sync::Mutex;
+
     use super::*;
     use crate::execution::exec_init_env;
-    use std::sync::{Arc, Mutex};
 
     fn stub_node(name: &str) -> RunStub {
-        RunStub::from(name)
+        RunStub::new(name)
     }
 
     #[tokio::test]
@@ -220,64 +209,41 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn transaction_rollback_on_failure() {
-        let (ctx, def) = exec_init_env();
-        let mut flow = Sequence::from("transaction.flow");
-
-        // Step 1: Successful transaction
-        let step1 =
-            stub_node("step1").with_transaction(true, Some(FlowHold::new(stub_node("undo_step1"))));
-
-        // Step 2: Transaction that will fail
-        let step2 = stub_node("step2")
-            .with_transaction(true, Some(FlowHold::new(stub_node("undo_step2"))))
-            .with_should_fail(true);
-
-        // Step 3: Should never execute
-        let step3 = stub_node("step3");
-
-        flow.append(AsyncComHold::from(step1));
-        flow.append(AsyncComHold::from(step2));
-        flow.append(AsyncComHold::from(step3));
-
-        let result = flow.execute(ctx, def).await;
-        assert!(result.is_err(), "Execution should fail");
-    }
-
-    #[tokio::test]
     async fn verify_undo_execution() {
         let (ctx, def) = exec_init_env();
         let mut flow = Sequence::from("verify_undo.flow");
 
-        // Create undo stubs with execution trackers
+        // 创建执行追踪器
         let undo1_executed = Arc::new(Mutex::new(false));
         let undo2_executed = Arc::new(Mutex::new(false));
 
-        let undo1 = {
+        // 直接为 RunStub 添加 effect
+        let step1_undo = stub_node("undo_step1").with_effect({
             let flag = undo1_executed.clone();
-            stub_node("undo_step1").with_custom_effect(move || *flag.lock().unwrap() = true)
-        };
+            move || *flag.lock().unwrap() = true
+        });
 
-        let undo2 = {
+        let step2_undo = stub_node("undo_step2").with_effect({
             let flag = undo2_executed.clone();
-            stub_node("undo_step2").with_custom_effect(move || *flag.lock().unwrap() = true)
-        };
+            move || *flag.lock().unwrap() = true
+        });
 
-        // Successful transaction
-        let step1 = stub_node("step1").with_transaction(true, Some(FlowHold::from(undo1)));
+        // 配置事务
+        let step1 = stub_node("step1")
+            .with_transaction(true, Some(TransableHold::from(Arc::new(step1_undo))));
 
-        // Failing transaction
         let step2 = stub_node("step2")
-            .with_transaction(true, Some(FlowHold::from(undo2)))
-            .with_should_fail(true);
+            .with_transaction(false, Some(TransableHold::from(Arc::new(step2_undo))))
+            .with_should_fail(true); // 使第二步失败
 
         flow.append(AsyncComHold::from(step1));
         flow.append(AsyncComHold::from(step2));
 
+        // 执行并验证
         let result = flow.execute(ctx, def).await;
         assert!(result.is_err(), "Execution should fail");
 
-        // Verify undo operations executed in reverse order
+        // 检查 undo 是否执行
         assert!(
             *undo2_executed.lock().unwrap(),
             "undo_step2 should be executed"
@@ -288,4 +254,3 @@ mod tests {
         );
     }
 }
-*/

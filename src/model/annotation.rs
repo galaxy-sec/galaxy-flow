@@ -1,8 +1,11 @@
 use std::{collections::HashMap, sync::Arc};
 
-use super::components::gxl_flow::{
-    anno::{FlowAnnFunc, FlowAnnotation},
-    runner::FlowRunner,
+use super::{
+    components::gxl_flow::{
+        anno::{FlowAnnFunc, FlowAnnotation},
+        runner::FlowRunner,
+    },
+    execution::hold::TransableHold,
 };
 
 #[derive(Clone, Default, Debug, PartialEq)]
@@ -42,9 +45,10 @@ pub trait ComUsage {
     fn desp(&self) -> Option<String>;
     fn color(&self) -> Option<String>;
 }
+
 pub trait Transaction {
     fn is_transaction(&self) -> bool;
-    fn undo_flow(&self) -> Option<FlowHold>;
+    fn undo_flow(&self) -> Option<TransableHold>;
 }
 
 pub trait Undoable {}
