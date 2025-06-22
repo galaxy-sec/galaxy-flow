@@ -242,11 +242,11 @@ impl ExecLoadTrait for GxlMod {
             let pre_flows = found.flow().pre_flows().clone();
             let post_flows = found.flow().post_flows().clone();
             for flow in pre_flows.into_iter() {
-                sequ.append(IsolationHold::from(AsyncComHold::from(flow)));
+                sequ.append(AsyncComHold::from(flow));
             }
-            sequ.append(IsolationHold::from(AsyncComHold::from(found)));
+            sequ.append(AsyncComHold::from(found));
             for flow in post_flows.into_iter() {
-                sequ.append(IsolationHold::from(AsyncComHold::from(flow)));
+                sequ.append(AsyncComHold::from(flow));
             }
         }
         Ok(())

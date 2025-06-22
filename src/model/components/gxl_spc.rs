@@ -12,21 +12,21 @@ const ENVS_MOD: &str = "envs";
 
 #[derive(Clone, Default)]
 pub struct GxlSpace {
-    mods: Vec<String>,
-    store: HashMap<String, GxlMod>,
+    mods_name: Vec<String>,
+    mods_store: HashMap<String, GxlMod>,
 }
 
 impl GxlSpace {
     pub fn get(&self, key: &str) -> Option<&GxlMod> {
-        self.store.get(key)
+        self.mods_store.get(key)
     }
 
     pub fn len(&self) -> usize {
-        self.store.len()
+        self.mods_store.len()
     }
 
     pub fn is_empty(&self) -> bool {
-        self.store.is_empty()
+        self.mods_store.is_empty()
     }
 
     pub fn main(&self) -> ExecResult<&GxlMod> {
@@ -66,7 +66,7 @@ impl GxlSpace {
     pub(crate) fn assemble_depend(&mut self) -> AResult<Self> {
         let mut spc = Self::default();
 
-        for mod_name in &self.mods {
+        for mod_name in &self.mods_name {
             if let Some(module) = self.get(mod_name) {
                 let updated = module.clone().assemble(mod_name, self)?;
                 spc.append(updated);
@@ -80,8 +80,8 @@ impl GxlSpace {
 impl AppendAble<GxlMod> for GxlSpace {
     fn append(&mut self, module: GxlMod) {
         let name = module.of_name();
-        self.mods.push(name.clone());
-        self.store.insert(name, module);
+        self.mods_name.push(name.clone());
+        self.mods_store.insert(name, module);
     }
 }
 
@@ -97,7 +97,7 @@ impl ExecLoadTrait for GxlSpace {
     fn load_env(&self, ctx: ExecContext, sequ: &mut Sequence, obj_path: &str) -> ExecResult<()> {
         let (mod_name, item_name) = parse_obj_path(obj_path)?;
 
-        self.store
+        self.mods_store
             .get(mod_name)
             .ok_or(ExecReason::Miss(mod_name.to_string()))?
             .load_env(ctx, sequ, item_name)
@@ -106,7 +106,7 @@ impl ExecLoadTrait for GxlSpace {
     fn load_flow(&self, ctx: ExecContext, sequ: &mut Sequence, obj_path: &str) -> ExecResult<()> {
         let (mod_name, item_name) = parse_obj_path(obj_path)?;
 
-        self.store
+        self.mods_store
             .get(mod_name)
             .ok_or(ExecReason::Miss(mod_name.to_string()))?
             .load_flow(ctx, sequ, item_name)

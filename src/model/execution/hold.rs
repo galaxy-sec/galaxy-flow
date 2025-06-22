@@ -133,6 +133,7 @@ impl ComponentMeta for TransableHold {
 
 #[async_trait]
 impl AsyncRunnableTrait for IsolationHold {
+    ///varspace isolation
     async fn async_exec(&self, ctx: ExecContext, dict: VarSpace) -> VTResult {
         let origin = dict.clone();
         let (_, task) = self.hold.async_exec(ctx, dict).await?;
