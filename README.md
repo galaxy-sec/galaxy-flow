@@ -2,6 +2,9 @@
 
 Galaxy Flow is a DevSecOps domain-specific language designed for automating security process orchestration and management. It provides a declarative approach to defining workflows through .gxl files that specify environments, flows, and execution sequences for security automation tasks.
 
+[![GitHub Actions](https://github.com/galaxy-sec/galaxy-flow/workflows/check/badge.svg)](https://github.com/galaxy-sec/galaxy-flow/actions?query=workflow%3Acheck)
+[![Download](https://img.shields.io/crates/d/galaxy-flow)](https://crates.io/crates/galaxy-flow)
+[![Coverage Status](https://coveralls.io/repos/github/galaxy-sec/galaxy-flow/badge.svg)](https://coveralls.io/github/galaxy-sec/galaxy-flow)
 
 Galaxy Flow 是基于环境和工作流组织的DevSecOps领域专用语言，专注于自动化安全流程的编排与管理。
 ## docs
