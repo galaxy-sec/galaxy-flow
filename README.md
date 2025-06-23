@@ -26,3 +26,5 @@ gprj
 
 #### gprj
 对项目定义的管理流（ adm.gxl） 运行
+
+![](./images/command-line.jpg)
