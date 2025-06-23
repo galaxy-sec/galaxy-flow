@@ -1,5 +1,5 @@
 use crate::{
-    ability::prelude::RgProp,
+    ability::prelude::GxlProp,
     components::{gxl_intercept::RgIntercept, gxl_spc::GxlSpace},
     model::components::prelude::*,
 };
@@ -16,7 +16,7 @@ pub struct FlowRunner {
 impl FlowRunner {
     pub(crate) fn new(
         m_name: String,
-        props: Vec<RgProp>,
+        props: Vec<GxlProp>,
         flow: GxlFlow,
         befores: Vec<GxlFlow>,
         afters: Vec<GxlFlow>,

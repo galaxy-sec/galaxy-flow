@@ -1,5 +1,5 @@
 use crate::ability::delegate::Activity;
-use crate::ability::prelude::RgProp;
+use crate::ability::prelude::GxlProp;
 use crate::components::gxl_flow::runner::FlowRunner;
 use crate::components::gxl_spc::GxlSpace;
 use crate::components::GxlEnv;
@@ -31,7 +31,7 @@ pub enum ModItem {
 #[derive(Clone, Getters, Default, Debug)]
 pub struct GxlMod {
     meta: ModMeta,
-    props: Vec<RgProp>,
+    props: Vec<GxlProp>,
     env_names: Vec<MenuItem>,
     flow_names: Vec<MenuItem>,
     envs: HashMap<String, GxlEnv>,
@@ -83,7 +83,7 @@ impl DependTrait<&GxlSpace> for GxlMod {
     }
 }
 impl PropsTrait for GxlMod {
-    fn fetch_props(&self) -> &Vec<RgProp> {
+    fn fetch_props(&self) -> &Vec<GxlProp> {
         &self.props
     }
 }
@@ -276,13 +276,13 @@ impl ComponentMeta for GxlMod {
     }
 }
 
-impl AppendAble<RgProp> for GxlMod {
-    fn append(&mut self, prop: RgProp) {
+impl AppendAble<GxlProp> for GxlMod {
+    fn append(&mut self, prop: GxlProp) {
         self.props.push(prop);
     }
 }
-impl AppendAble<Vec<RgProp>> for GxlMod {
-    fn append(&mut self, prop_vec: Vec<RgProp>) {
+impl AppendAble<Vec<GxlProp>> for GxlMod {
+    fn append(&mut self, prop_vec: Vec<GxlProp>) {
         for prop in prop_vec {
             self.props.push(prop);
         }
@@ -337,8 +337,8 @@ mod test {
 
     use crate::{
         components::{
-            gxl_env::meta::EnvMeta, gxl_flow::meta::FlowMeta, gxl_spc::GxlSpace, gxl_var::RgProp,
-            GxlEnv, GxlFlow, GxlMod, RgVars,
+            gxl_env::meta::EnvMeta, gxl_flow::meta::FlowMeta, gxl_spc::GxlSpace, gxl_var::GxlProp,
+            GxlEnv, GxlFlow, GxlMod, GxlVars,
         },
         context::ExecContext,
         execution::sequence::Sequence,
@@ -367,11 +367,11 @@ mod test {
     fn test_merge_to_head_multiple() {
         let meta1 = ModMeta::build_mod("mod1");
         let mut mod1 = GxlMod::from(meta1.clone());
-        mod1.props.push(RgProp::new("k1", "v1"));
+        mod1.props.push(GxlProp::new("k1", "v1"));
 
         let meta2 = ModMeta::new2(GxlType::Mod, "mod2".to_string());
         let mut mod2 = GxlMod::from(meta2);
-        mod2.props.push(RgProp::new("k2", "v2"));
+        mod2.props.push(GxlProp::new("k2", "v2"));
 
         let mixs: Vec<GxlMod> = vec![mod1, mod2];
 
@@ -408,7 +408,7 @@ mod test {
         let meta_mod1 = ModMeta::build_mod(mod_name);
         let mut mod1 = GxlMod::from(meta_mod1.clone());
         let mut env1 = GxlEnv::from("env1");
-        env1.append(RgProp::new("key1", "value1"));
+        env1.append(GxlProp::new("key1", "value1"));
         mod1.append(ModItem::Env(env1));
 
         // 创建 mod2 并引用 mod1 的环境变量
@@ -418,7 +418,7 @@ mod test {
 
         // 假设 mod2 添加了一个依赖于 mod1 的环境变量
         let mut env2 = GxlEnv::from(EnvMeta::build_env_mix("env2", vec!["mod1.env1"]));
-        env2.append(RgProp::new("key2", "value2"));
+        env2.append(GxlProp::new("key2", "value2"));
         mod2.append(ModItem::Env(env2));
 
         let mut spc = GxlSpace::default();
@@ -446,12 +446,12 @@ mod test {
 
         // 添加一个环境变量
         let mut env1 = GxlEnv::from("env1");
-        env1.append(RgProp::new("key1", "value1"));
-        let mut var = RgVars::default();
+        env1.append(GxlProp::new("key1", "value1"));
+        let mut var = GxlVars::default();
         var.insert("key3", "value1");
         env1.append(var);
         mod1.append(env1);
-        mod1.append(RgProp::new("key2", "value1"));
+        mod1.append(GxlProp::new("key2", "value1"));
 
         let ctx = ExecContext::default();
         let mut sequ = Sequence::from("exec");
@@ -480,13 +480,13 @@ mod test {
         once_init_log();
         let meta1 = ModMeta::build_mod("mod1");
         let mut mod1 = GxlMod::from(meta1);
-        mod1.append(RgProp::new("k1", "v1"));
+        mod1.append(GxlProp::new("k1", "v1"));
         mod1.append(GxlFlow::from("flow1"));
 
         let mod_name = "mod2";
         let meta2 = ModMeta::build_mod(mod_name);
         let mut mod2 = GxlMod::from(meta2.clone());
-        mod2.append(RgProp::new("k2", "v2"));
+        mod2.append(GxlProp::new("k2", "v2"));
 
         // 添加一个流程
         let flow1 = GxlFlow::from(FlowMeta::build_flow_pre("flow2", "mod1.flow1"));
