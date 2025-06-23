@@ -287,6 +287,10 @@ mod tests {
 
     #[test]
     fn test_gal_raw_string() {
+        let mut input = "r#\"git branch --show-current |  sed -E \"s/(feature|develop|ver-dev|release|master|issue)(\\/.*)?/_branch_\\1/g\" \"#" ;
+        let exepct = r#"git branch --show-current |  sed -E "s/(feature|develop|ver-dev|release|master|issue)(\/.*)?/_branch_\1/g" "#;
+        assert_eq!(gal_raw_string(&mut input), Ok(exepct.to_string()));
+        println!("{}", input);
         // 测试普通原始字符串
         let mut input = "r#\"hello\"#";
         assert_eq!(gal_raw_string(&mut input), Ok("hello".to_string()));
