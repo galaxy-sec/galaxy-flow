@@ -62,11 +62,11 @@ mod tests {
     use orion_common::friendly::New2;
     use orion_error::TestAssert;
 
+    use crate::components::gxl_mod::meta::ModMeta;
     use crate::components::gxl_var::RgProp;
     use crate::components::{GxlEnv, GxlFlow, GxlMod, RgVars};
     use crate::execution::exec_init_env;
     use crate::execution::sequence::Sequence;
-    use crate::meta::GxlMeta;
     use crate::types::AnyResult;
 
     use super::*;
@@ -75,7 +75,7 @@ mod tests {
     async fn execute_forword() -> AnyResult<()> {
         let (ctx, def) = exec_init_env();
 
-        let meta = GxlMeta::build_mod("main");
+        let meta = ModMeta::build_mod("main");
         let mut gxl_mod = GxlMod::from(meta);
         gxl_mod.append(RgProp::new("key1", "val1"));
 
@@ -84,7 +84,7 @@ mod tests {
         let mut gxl_vars = RgVars::default();
         gxl_vars.append(RgProp::new("key1", "val1"));
 
-        let meta = GxlMeta::build_mod("env");
+        let meta = ModMeta::build_mod("env");
         let mut gxl_mod_env = GxlMod::from(meta);
         gxl_mod.append(RgProp::new("key1", "val1"));
 

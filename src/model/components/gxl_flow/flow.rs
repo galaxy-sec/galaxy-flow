@@ -1,36 +1,33 @@
-use super::gxl_intercept::FlowRunner;
-use super::prelude::*;
+use crate::components::gxl_env::env::anns_from_option_dto;
+use crate::components::gxl_spc::GxlSpace;
+use crate::components::gxl_utls::mod_obj_name;
+use crate::model::components::prelude::*;
 
-use crate::annotation::{AnnEnum, ComUsage, FlowAnnFunc, TaskMessage};
+use crate::annotation::{ComUsage, TaskMessage};
 use crate::execution::runnable::{AsyncDryrunRunnableTrait, AsyncRunnableTrait};
 use crate::execution::task::Task;
 use crate::parser::stc_base::AnnDto;
-
-use crate::task_callback_result::{BatchTaskRequest, TaskBody, TaskCallBackResult};
+use crate::task_report::task_notification::{TaskNotice, TaskOutline};
+use crate::task_report::task_result_report::TaskReport;
 use crate::traits::DependTrait;
 
 use crate::components::gxl_block::BlockNode;
-use crate::model::annotation::FlowAnnotation;
 use crate::util::http_handle::{
-    get_task_callback_center_url, get_task_report_center_url, send_http_request,
+    get_task_notice_center_url, get_task_report_center_url, send_http_request,
 };
 use std::sync::Arc;
 
-use super::gxl_spc::GxlSpace;
-use super::gxl_utls::mod_obj_name;
-use super::gxl_var::RgProp;
 use std::io::Write;
 
-#[derive(Clone, Getters, Debug)]
-pub struct RgIntercept {
-    props: Vec<RgProp>,
-    flow: GxlFlow,
-}
+use derive_getters::Getters;
+
+use super::anno::FlowAnnFunc;
+use super::meta::FlowMeta;
+use super::runner::FlowRunner;
 
 #[derive(Clone, Getters, Debug)]
 pub struct GxlFlow {
-    meta: GxlMeta,
-    //props: Vec<RgProp>,
+    meta: FlowMeta,
     pre_flows: Vec<FlowRunner>,
     post_flows: Vec<FlowRunner>,
     blocks: Vec<BlockNode>,
@@ -93,8 +90,8 @@ fn assemble_pipe(
     ))))
 }
 
-impl From<GxlMeta> for GxlFlow {
-    fn from(meta: GxlMeta) -> Self {
+impl From<FlowMeta> for GxlFlow {
+    fn from(meta: FlowMeta) -> Self {
         Self {
             meta,
             pre_flows: Vec::new(),
@@ -106,7 +103,7 @@ impl From<GxlMeta> for GxlFlow {
 
 impl From<&str> for GxlFlow {
     fn from(name: &str) -> Self {
-        let meta = GxlMeta::build_flow(name);
+        let meta = FlowMeta::build_flow(name);
         Self {
             meta,
             pre_flows: Vec::new(),
@@ -118,16 +115,11 @@ impl From<&str> for GxlFlow {
 
 impl GxlFlow {
     pub fn set_anns(&mut self, dto: Option<AnnDto>) {
-        let ann_vec = if let Some(have) = dto {
-            have.convert::<FlowAnnotation>()
-        } else {
-            Vec::new()
-        };
-        self.meta.set_anns(ann_vec);
+        self.meta.set_annotates(anns_from_option_dto(dto));
     }
     pub fn load_ins<S: Into<String>>(name: S) -> Self {
         Self {
-            meta: GxlMeta::build_flow(name.into()),
+            meta: FlowMeta::build_flow(name.into()),
             pre_flows: Vec::new(),
             post_flows: Vec::new(),
             blocks: Vec::new(),
@@ -137,29 +129,23 @@ impl GxlFlow {
 
 impl GxlFlow {
     async fn exec_self(&self, ctx: ExecContext, mut var_dict: VarSpace) -> VTResult {
-        println!("flow {} start", self.meta.name());
         let task_message = self.get_task_message();
         let mut task = Task::from(self.meta.name());
-        let mut task_body = TaskBody::new();
+        let mut task_body = TaskNotice::new();
         if let Some(des) = task_message.clone() {
-            println!("flow message {}", des);
             task = Task::from(des);
             // 若环境变量或配置文件中有报告中心则进行任务上报
-            if let Some(url) = get_task_report_center_url() {
-                task_body = TaskBody {
+            if let Some(url) = get_task_notice_center_url() {
+                task_body = TaskNotice {
                     parent_id: task_body.parent_id,
                     name: task.name().to_string(),
                     description: task.name().to_string(),
                     order: task_body.order,
                 };
-                task_body.set_order();
-                let batch_task = BatchTaskRequest {
+                let batch_task = TaskOutline {
                     tasks: vec![task_body.clone()],
                 };
-                let res = send_http_request(batch_task, &url).await;
-                if res.is_err() {
-                    println!("send task report error: {:?}", res.unwrap_err());
-                }
+                send_http_request(batch_task, &url).await;
             }
         }
         for item in &self.blocks {
@@ -175,12 +161,9 @@ impl GxlFlow {
         // 若任务被标记为需要返回，则进行返回
         if task_message.is_some() {
             // 若环境变量或配置文件中有返回路径则进行返回
-            if let Some(url) = get_task_callback_center_url() {
-                let task_result = TaskCallBackResult::from_task_with_order(task.clone(), task_body);
-                let res = send_http_request(task_result.clone(), &url).await;
-                if res.is_err() {
-                    println!("send task callback error: {:?}", res.unwrap_err());
-                }
+            if let Some(url) = get_task_report_center_url() {
+                let task_result = TaskReport::from_flowtask_and_notice(task.clone(), task_body);
+                send_http_request(task_result.clone(), &url).await;
             }
         }
         if task_message.is_none() {
@@ -193,8 +176,8 @@ impl GxlFlow {
     pub fn get_desan(&self) -> Option<String> {
         let annotation = self.meta.annotations();
         for ann in annotation {
-            if let AnnEnum::Flow(flowann) = ann {
-                return flowann.desp();
+            if ann.desp().is_some() {
+                return ann.desp();
             }
         }
         None
@@ -204,8 +187,8 @@ impl GxlFlow {
     pub fn get_task_message(&self) -> Option<String> {
         let annotation = self.meta.annotations();
         for ann in annotation {
-            if let AnnEnum::Flow(flowann) = ann {
-                return flowann.message();
+            if ann.message().is_some() {
+                return ann.message();
             }
         }
         None
@@ -214,10 +197,8 @@ impl GxlFlow {
     pub fn is_dryrun(&self) -> bool {
         let annotation = self.meta.annotations();
         for ann in annotation {
-            if let AnnEnum::Flow(flowann) = ann {
-                if flowann.func == FlowAnnFunc::Dryrun {
-                    return true;
-                }
+            if ann.func == FlowAnnFunc::Dryrun {
+                return true;
             }
         }
         false
@@ -253,7 +234,7 @@ impl AsyncRunnableTrait for GxlFlow {
 }
 impl ComponentMeta for GxlFlow {
     fn com_meta(&self) -> GxlMeta {
-        self.meta.clone()
+        GxlMeta::Flow(self.meta.clone())
     }
 }
 
@@ -324,9 +305,9 @@ mod tests {
         let mut gxl_mod = GxlMod::from("test_mod");
 
         // 创建一些 RgFlow 实例
-        let flow1 = GxlFlow::from(GxlMeta::build_env("flow1".to_string()));
-        let flow2 = GxlFlow::from(GxlMeta::build_env("flow2".to_string()));
-        let flow3 = GxlFlow::from(GxlMeta::build_env("flow3".to_string()));
+        let flow1 = GxlFlow::from(FlowMeta::build_flow("flow1".to_string()));
+        let flow2 = GxlFlow::from(FlowMeta::build_flow("flow2".to_string()));
+        let flow3 = GxlFlow::from(FlowMeta::build_flow("flow3".to_string()));
 
         // 将这些 RgFlow 实例添加到 RgMod 中
         gxl_mod.append(flow1);

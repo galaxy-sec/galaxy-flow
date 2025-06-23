@@ -795,6 +795,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "dirs"
+version = "3.0.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "30baa043103c9d0c2a57cf537cc2f35623889dc0d405e6c3cccfadbc81c71309"
+dependencies = [
+ "dirs-sys",
+]
+
+[[package]]
+name = "dirs-sys"
+version = "0.3.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1b1d1d91c932ef41c0f2663aa8b0ca0342d444d842c06914aa0a7e352d0bada6"
+dependencies = [
+ "libc",
+ "redox_users",
+ "winapi",
+]
+
+[[package]]
 name = "discard"
 version = "1.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1136,7 +1156,7 @@ dependencies = [
 
 [[package]]
 name = "galaxy_flow"
-version = "0.5.3"
+version = "0.6.0"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1145,6 +1165,7 @@ dependencies = [
  "derive-getters",
  "derive_builder",
  "derive_more",
+ "dirs",
  "duct",
  "duct_sh",
  "env_logger 0.10.2",
@@ -1170,14 +1191,14 @@ dependencies = [
  "serde",
  "serde_derive",
  "serde_json",
- "serde_yml",
+ "serde_yaml",
  "shells",
  "tempfile",
  "thiserror 2.0.12",
  "time 0.3.41",
  "tokio",
  "tokio-util",
- "toml 0.8.22",
+ "toml",
  "url",
  "walkdir",
  "wildmatch",
@@ -1846,6 +1867,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "libredox"
+version = "0.1.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c0ff37bd590ca25063e35af745c343cb7a0271906fb7b37e4813e8f79f00268d"
+dependencies = [
+ "bitflags",
+ "libc",
+]
+
+[[package]]
 name = "libssh2-sys"
 version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1857,16 +1888,6 @@ dependencies = [
  "openssl-sys",
  "pkg-config",
  "vcpkg",
-]
-
-[[package]]
-name = "libyml"
-version = "0.0.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3302702afa434ffa30847a83305f0a69d6abd74293b6554c18ec85c7ef30c980"
-dependencies = [
- "anyhow",
- "version_check",
 ]
 
 [[package]]
@@ -2043,6 +2064,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "num_threads"
+version = "0.1.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5c7398b9c8b70908f6371f47ed36737907c87c52af34c268fed0bf0ceb92ead9"
+dependencies = [
+ "libc",
+]
+
+[[package]]
 name = "number_prefix"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2143,8 +2173,8 @@ dependencies = [
 
 [[package]]
 name = "orion-syspec"
-version = "0.6.0"
-source = "git+https://github.com/galaxy-sec/orion-syspec.git?tag=0.6.1#2ee696c21bf8048aa47ad149d93f5b81721b850c"
+version = "0.7.4"
+source = "git+https://github.com/galaxy-sec/orion-syspec.git?tag=v0.7.4#2a38aa8997a57956cdfa7b3781e35a922a0d98a0"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2169,7 +2199,8 @@ dependencies = [
  "once_cell",
  "orion-error",
  "orion_common 0.4.1",
- "orion_infra 0.1.0 (git+https://github.com/galaxy-sec/orion-syspec.git?tag=0.6.1)",
+ "orion_infra 0.1.0 (git+https://github.com/galaxy-sec/orion-syspec.git?tag=v0.7.4)",
+ "os_info",
  "regex",
  "reqwest",
  "scopeguard",
@@ -2179,10 +2210,10 @@ dependencies = [
  "serde_json",
  "serde_yaml",
  "strfmt",
- "thiserror 1.0.69",
+ "thiserror 2.0.12",
  "tokio",
  "tokio-util",
- "toml 0.7.8",
+ "toml",
  "tracing",
  "url",
  "walkdir",
@@ -2193,14 +2224,14 @@ dependencies = [
 [[package]]
 name = "orion_common"
 version = "0.4.1"
-source = "git+https://github.com/galaxy-sec/orion-syspec.git?tag=0.6.1#2ee696c21bf8048aa47ad149d93f5b81721b850c"
+source = "git+https://github.com/galaxy-sec/orion-syspec.git?tag=v0.7.4#2a38aa8997a57956cdfa7b3781e35a922a0d98a0"
 dependencies = [
  "anyhow",
  "chrono",
  "derive-getters",
  "ipnet",
  "serde",
- "toml 0.8.22",
+ "toml",
  "wildmatch",
 ]
 
@@ -2213,7 +2244,7 @@ dependencies = [
  "derive-getters",
  "ipnet",
  "serde",
- "toml 0.8.22",
+ "toml",
  "wildmatch",
 ]
 
@@ -2229,13 +2260,13 @@ dependencies = [
  "serde_derive",
  "tempfile",
  "thiserror 2.0.12",
- "toml 0.8.22",
+ "toml",
 ]
 
 [[package]]
 name = "orion_infra"
 version = "0.1.0"
-source = "git+https://github.com/galaxy-sec/orion-syspec.git?tag=0.6.1#2ee696c21bf8048aa47ad149d93f5b81721b850c"
+source = "git+https://github.com/galaxy-sec/orion-syspec.git?tag=v0.7.4#2a38aa8997a57956cdfa7b3781e35a922a0d98a0"
 dependencies = [
  "anyhow",
  "flexi_logger",
@@ -2243,7 +2274,7 @@ dependencies = [
  "serde",
  "serde_derive",
  "thiserror 2.0.12",
- "toml 0.8.22",
+ "toml",
 ]
 
 [[package]]
@@ -2491,7 +2522,7 @@ version = "3.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "edce586971a4dfaa28950c6f18ed55e0406c1ab88bbce2c6f6293a7aaba73d35"
 dependencies = [
- "toml_edit 0.22.26",
+ "toml_edit",
 ]
 
 [[package]]
@@ -2602,6 +2633,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "928fca9cf2aa042393a8325b9ead81d2f0df4cb12e1e24cef072922ccd99c5af"
 dependencies = [
  "bitflags",
+]
+
+[[package]]
+name = "redox_users"
+version = "0.4.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ba009ff324d1fc1b900bd1fdb31564febe58a8ccc8a6fdbb93b543d33b13ca43"
+dependencies = [
+ "getrandom 0.2.16",
+ "libredox",
+ "thiserror 1.0.69",
 ]
 
 [[package]]
@@ -2996,21 +3038,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "serde_yml"
-version = "0.0.12"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "59e2dd588bf1597a252c3b920e0143eb99b0f76e4e082f4c92ce34fbc9e71ddd"
-dependencies = [
- "indexmap",
- "itoa",
- "libyml",
- "memchr",
- "ryu",
- "serde",
- "version_check",
-]
-
-[[package]]
 name = "sha1"
 version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3347,7 +3374,9 @@ checksum = "8a7619e19bc266e0f9c5e6686659d394bc57973859340060a69221e57dbc0c40"
 dependencies = [
  "deranged",
  "itoa",
+ "libc",
  "num-conv",
+ "num_threads",
  "powerfmt",
  "serde",
  "time-core",
@@ -3476,18 +3505,6 @@ dependencies = [
 
 [[package]]
 name = "toml"
-version = "0.7.8"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dd79e69d3b627db300ff956027cc6c3798cef26d22526befdfcd12feeb6d2257"
-dependencies = [
- "serde",
- "serde_spanned",
- "toml_datetime",
- "toml_edit 0.19.15",
-]
-
-[[package]]
-name = "toml"
 version = "0.8.22"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "05ae329d1f08c4d17a59bed7ff5b5a769d062e64a62d34a3261b219e62cd5aae"
@@ -3495,7 +3512,7 @@ dependencies = [
  "serde",
  "serde_spanned",
  "toml_datetime",
- "toml_edit 0.22.26",
+ "toml_edit",
 ]
 
 [[package]]
@@ -3505,19 +3522,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3da5db5a963e24bc68be8b17b6fa82814bb22ee8660f192bb182771d498f09a3"
 dependencies = [
  "serde",
-]
-
-[[package]]
-name = "toml_edit"
-version = "0.19.15"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1b5bb770da30e5cbfde35a2d7b9b8a2c4b8ef89548a7a6aeab5c9a576e3e7421"
-dependencies = [
- "indexmap",
- "serde",
- "serde_spanned",
- "toml_datetime",
- "winnow 0.5.40",
 ]
 
 [[package]]
@@ -4138,15 +4142,6 @@ name = "windows_x86_64_msvc"
 version = "0.53.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "271414315aff87387382ec3d271b52d7ae78726f5d44ac98b4f4030c91880486"
-
-[[package]]
-name = "winnow"
-version = "0.5.40"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f593a95398737aeed53e489c785df13f3618e41dbcd6718c6addbf1395aa6876"
-dependencies = [
- "memchr",
-]
 
 [[package]]
 name = "winnow"

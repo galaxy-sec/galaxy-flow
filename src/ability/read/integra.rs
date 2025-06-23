@@ -32,7 +32,7 @@ impl AsyncRunnableTrait for GxRead {
 
 impl ComponentMeta for GxRead {
     fn com_meta(&self) -> GxlMeta {
-        GxlMeta::build_ability("gx.read")
+        GxlMeta::from("gx.read")
     }
 }
 impl GxRead {

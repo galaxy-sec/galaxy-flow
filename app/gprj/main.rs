@@ -12,7 +12,11 @@ use std::path::PathBuf;
 
 use crate::args::GxAdmCmd;
 use crate::args::InitCmd;
+use args::ConfCmd;
 use clap::Parser;
+use galaxy_flow::conf::conf_init;
+use galaxy_flow::conf::conf_path;
+use galaxy_flow::const_val::CONFIG_FILE;
 use galaxy_flow::err::*;
 use galaxy_flow::execution::VarSpace;
 use galaxy_flow::expect::ShellOption;
@@ -49,6 +53,9 @@ impl GxAdm {
             GxAdmCmd::Adm(cmd) => {
                 Self::do_adm_cmd(cmd).await?;
             }
+            GxAdmCmd::Conf(cmd) => {
+                Self::do_conf_cmd(cmd).await?;
+            }
             GxAdmCmd::Check => {
                 Self::do_check_cmd()?;
             } //GxAdmCmd::Vault(cmd) => vault_main(cmd).owe_data()?,
@@ -68,6 +75,20 @@ impl GxAdm {
         }
         let var_space = VarSpace::sys_init().err_conv()?;
         GxlRunner::run(cmd, var_space).await?;
+        Ok(())
+    }
+
+    async fn do_conf_cmd(cmd: ConfCmd) -> RunResult<()> {
+        match cmd {
+            ConfCmd::Init(_init_args) => {
+                if conf_path().is_none() {
+                    conf_init()?;
+                    println!("init {}  success!", CONFIG_FILE);
+                } else {
+                    println!("{} exists!", CONFIG_FILE);
+                }
+            }
+        }
         Ok(())
     }
 

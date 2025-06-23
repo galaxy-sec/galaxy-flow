@@ -5,13 +5,14 @@ use std::{
 
 use anyhow::Context;
 use orion_common::conf::ensure_directory_exists;
+//use orion_common::conf::ensure_directory_exists;
 use time::{format_description, OffsetDateTime};
 
 use crate::ability::prelude::ExecOut;
 
 // 任务直接结果本地化
 pub fn task_local_report(out: ExecOut) {
-    let datetime = OffsetDateTime::now_utc();
+    let datetime = OffsetDateTime::now_local().unwrap_or_else(|_| OffsetDateTime::now_utc());
     let format = format_description::parse("[year]-[month]-[day] [hour]:[minute]:[second]");
     let now = datetime.format(&format.unwrap()).unwrap();
     let dir_path = "_gal/.report";
@@ -31,7 +32,7 @@ pub fn task_local_report(out: ExecOut) {
     match File::create(&file_name) {
         Ok(_) => {
             // 将配置数据序列化为 yaml 字符串
-            let toml = serde_yml::to_string(&out).unwrap();
+            let toml = serde_yaml::to_string(&out).unwrap();
             let path = Path::new(&file_name);
 
             // 确保目录存在

@@ -3,8 +3,10 @@ extern crate log;
 extern crate clap;
 
 use clap::Parser;
+use galaxy_flow::conf::load_gxl_config;
 use galaxy_flow::execution::VarSpace;
-use galaxy_flow::task_callback_result::{create_main_task, get_task_parent_id, load_task_config};
+use galaxy_flow::task_report::main_task::{create_main_task, get_task_parent_id};
+use galaxy_flow::task_report::task_rc_config::TASK_REPORT_CENTER;
 use galaxy_flow::traits::Setter;
 
 use galaxy_flow::err::*;
@@ -15,12 +17,19 @@ use galaxy_flow::runner::{GxlCmd, GxlRunner};
 async fn main() -> anyhow::Result<()> {
     use std::process;
 
+    let mut var_space = VarSpace::sys_init()?;
     let mut cmd = GxlCmd::parse();
     // 加载task配置
-    load_task_config().await;
+    load_gxl_config();
+
+    // 若环境变量中没有设置父id，则将本次任务设置为父任务
     if get_task_parent_id().is_none() {
-        let task_name = cmd.flow.concat();
-        create_main_task(task_name).await;
+        if let Some(task_report_center_config) = TASK_REPORT_CENTER.get() {
+            if task_report_center_config.report_enable {
+                let task_name = cmd.flow.concat();
+                create_main_task(task_name).await;
+            }
+        }
     }
     configure_run_logging(cmd.log.clone(), cmd.debug);
     debug!("galaxy flow running .....");
@@ -28,7 +37,6 @@ async fn main() -> anyhow::Result<()> {
         let main_conf = "./_gal/work.gxl";
         cmd.conf = Some(main_conf.to_string());
     }
-    let mut var_space = VarSpace::sys_init()?;
     var_space
         .global_mut()
         .set("GXL_CMD_ARG", cmd.cmd_arg.clone());

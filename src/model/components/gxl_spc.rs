@@ -242,9 +242,8 @@ mod tests {
     use super::*;
     use crate::{
         ability::prelude::RgProp,
-        components::{GxlEnv, GxlFlow, GxlMod, RgVars},
+        components::{gxl_mod::meta::ModMeta, GxlEnv, GxlFlow, GxlMod, RgVars},
         execution::exec_init_env,
-        meta::GxlMeta,
         types::AnyResult,
     };
     use orion_common::friendly::New2;
@@ -255,14 +254,14 @@ mod tests {
         let (ctx, def) = exec_init_env();
 
         // Create main module
-        let mut main_mod = GxlMod::from(GxlMeta::build_mod(MAIN_MOD));
+        let mut main_mod = GxlMod::from(ModMeta::build_mod(MAIN_MOD));
         main_mod.append(RgProp::new("key1", "val1"));
 
         let flow = GxlFlow::load_ins("flow1");
         main_mod.append(flow);
 
         // Create environment module
-        let mut env_mod = GxlMod::from(GxlMeta::build_mod(ENV_MOD));
+        let mut env_mod = GxlMod::from(ModMeta::build_mod(ENV_MOD));
 
         let mut env = GxlEnv::from("env1");
         env.append(RgProp::new("key1", "val1"));

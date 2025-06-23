@@ -4,7 +4,8 @@ use orion_error::ErrorConv;
 use orion_syspec::{
     artifact::ArtifactPackage,
     error::ToErr,
-    types::{AsyncUpdateable, Configable, UpdateOptions},
+    types::{AsyncUpdateable, Configable},
+    update::UpdateOptions,
 };
 
 use crate::ability::prelude::*;
@@ -47,7 +48,7 @@ impl AsyncRunnableTrait for GxArtifact {
 
 impl ComponentMeta for GxArtifact {
     fn com_meta(&self) -> GxlMeta {
-        GxlMeta::build_ability("gx.echo")
+        GxlMeta::from("gx.artifact")
     }
 }
 
