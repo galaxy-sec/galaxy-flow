@@ -8,6 +8,7 @@ use crate::execution::runnable::{AsyncDryrunRunnableTrait, AsyncRunnableTrait};
 use crate::execution::task::Task;
 use crate::parser::stc_base::AnnDto;
 use crate::task_report::task_notification::{TaskNotice, TaskOutline};
+use crate::task_report::task_rc_config::TASK_REPORT_CENTER;
 use crate::task_report::task_result_report::TaskReport;
 use crate::traits::DependTrait;
 
@@ -15,16 +16,15 @@ use crate::components::gxl_block::BlockNode;
 use crate::util::http_handle::{
     get_task_notice_center_url, get_task_report_center_url, send_http_request,
 };
-use std::sync::Arc;
 use std::io::Read;
 use std::io::Write;
-
-use derive_getters::Getters;
-use gag::BufferRedirect;
+use std::sync::Arc;
 
 use super::anno::FlowAnnFunc;
 use super::meta::FlowMeta;
 use super::runner::FlowRunner;
+use derive_getters::Getters;
+use gag::BufferRedirect;
 
 #[derive(Clone, Getters, Debug)]
 pub struct GxlFlow {
@@ -149,10 +149,19 @@ impl GxlFlow {
                 send_http_request(batch_task, &url).await;
             }
         }
-        
-        // 尝试创建重定向，如果失败则继续执行但不捕获输出
-        let redirect_result = BufferRedirect::stdout();
-        
+
+        // 尝试获取任务配置，如果不存在则默认关闭重定向
+        let redirect_result = match TASK_REPORT_CENTER.get() {
+            Some(task_config) if task_config.report_enable => {
+                // 如果报告中心启用，则尝试创建重定向
+                Some(BufferRedirect::stdout())
+            }
+            _ => {
+                // 如果报告中心被禁用，则不创建重定向
+                None
+            }
+        };
+
         // 执行块
         for item in &self.blocks {
             let (cur_dict, out) = item
@@ -162,16 +171,19 @@ impl GxlFlow {
             task.append(out);
         }
         task.finish();
-        
+
         // 处理输出
-        let output = if let Ok(mut buf) = redirect_result {
+        let output = if let Some(buf_result) = redirect_result {
+            // 如果重定向成功，读取捕获的输出
             let mut output = String::new();
-            buf.read_to_string(&mut output).unwrap();
+            let mut buf = buf_result.map_err(|e| ExecError::from(ExecReason::Io(e.to_string())))?;
+            buf.read_to_string(&mut output)
+                .map_err(|e| ExecError::from(ExecReason::Io(e.to_string())))?;
             // 恢复标准输出
             buf.into_inner();
             output
         } else {
-            // 如果重定向失败，返回空字符串
+            // 如果重定向失败或被禁用，返回空字符串
             String::new()
         };
         task.stdout = output.clone();
