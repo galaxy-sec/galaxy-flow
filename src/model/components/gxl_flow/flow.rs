@@ -15,7 +15,6 @@ use crate::traits::DependTrait;
 use crate::components::gxl_block::BlockNode;
 use crate::util::http_handle::send_http_request;
 use std::sync::Arc;
-use std::io::Read;
 use std::io::Write;
 
 use derive_getters::Getters;
