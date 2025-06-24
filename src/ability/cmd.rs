@@ -90,6 +90,9 @@ impl GxCmd {
             }
             Err(error) => {
                 action.stdout = error.to_string();
+                error!("cmd : {}", exe_cmd);
+                error!("error: {}", error.to_string());
+                return Err(error);
             }
         }
         action.finish();
@@ -111,5 +114,18 @@ mod tests {
           "if test ! -L  ${CONF_ROOT}/used/link2.txt ; then ln -s ${CONF_ROOT}/options/link.txt  ${CONF_ROOT}/used/link2.txt ; fi ".into()
           ) ;
         let _ = res.async_exec_with_dryrun(context, def, false).await;
+    }
+
+    #[tokio::test]
+    async fn cmd_test_err() {
+        let (context, mut def) = ability_env_init();
+        def.global_mut()
+            .set("CONF_ROOT", "${GXL_PRJ_ROOT}/example/conf");
+        //syntax error;
+        let res = GxCmd::new(
+          "if test ! -L  ${CONF_ROOT}/used/link2.txt ; then ln -s ${CONF_ROOT}/options/link.txt  ${CONF_ROOT}/used/link2.txt ; i ".into()
+          ) ;
+        let result = res.async_exec_with_dryrun(context, def, false).await;
+        assert!(result.is_err())
     }
 }
