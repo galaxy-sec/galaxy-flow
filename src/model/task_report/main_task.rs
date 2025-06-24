@@ -1,4 +1,6 @@
-use crate::util::http_handle::{get_main_task_create_url, send_http_request};
+use crate::{
+    task_report::task_rc_config::get_main_task_create_url, util::http_handle::send_http_request,
+};
 use serde::Serialize;
 use std::env;
 use time::{format_description, OffsetDateTime};
@@ -35,7 +37,8 @@ pub async fn create_main_task(task_name: String) {
     // 设置环境变量中的父id
     std::env::set_var("task_id", parent_id.to_string());
     // 创建主任务
-    if let Some(url) = get_main_task_create_url() {
+    let url = get_main_task_create_url().await;
+    if let Some(url) = url {
         send_http_request(main_task, &url).await;
     }
 }

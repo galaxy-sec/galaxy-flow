@@ -76,15 +76,18 @@ impl AsyncDryrunRunnableTrait for BlockAction {
     ) -> VTResult {
 
         // 创建输出重定向，如果任务报告中心启用则捕获标准输出
-        let redirect: Option<io::Result<BufferRedirect>> = match TASK_REPORT_CENTER.get() {
-            Some(task_config) if task_config.report_enable => {
-                // 如果报告中心启用，则尝试创建重定向
-                Some(BufferRedirect::stdout())
+        let should_create_task = {
+            if let Some(task_report_center_config) = TASK_REPORT_CENTER.get() {
+                let config = task_report_center_config.read().await;
+                config.report_enable
+            } else {
+                false
             }
-            _ => {
-                // 如果报告中心被禁用，则不创建重定向
-                None
-            }
+        };
+        let redirect: Option<io::Result<BufferRedirect>> = if should_create_task {
+            Some(BufferRedirect::stdout())
+        }else {
+            None
         };
 
         // 对于GxlRun，我们需要在执行前取消重定向

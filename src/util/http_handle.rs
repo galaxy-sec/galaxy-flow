@@ -1,66 +1,26 @@
-use std::{env, fmt::Debug};
-
+use crate::{task_report::task_rc_config::TASK_REPORT_CENTER, ExecReason};
+use colored::Colorize;
 use orion_error::StructError;
 use serde::Serialize;
-
-use crate::{task_report::task_rc_config::TASK_REPORT_CENTER, ExecReason};
-
-pub fn get_task_notice_center_url() -> Option<String> {
-    if let Ok(url) = env::var("task_result_center") {
-        return Some(url);
-    }
-    let task_config = TASK_REPORT_CENTER.get();
-    if let Some(task_config) = task_config {
-        if !task_config.report_enable {
-            return None; // 如果报告中心未启用，则返回None
-        }
-        let report_svr = task_config.report_svr.clone();
-        return Some(format!(
-            "http://{}:{}/task/create_batch_subtask/",
-            report_svr.domain, report_svr.port,
-        ));
-    }
-    None
-}
-
-pub fn get_task_report_center_url() -> Option<String> {
-    if let Ok(url) = env::var("task_report_center") {
-        return Some(url);
-    }
-    let task_config = TASK_REPORT_CENTER.get();
-    if let Some(task_config) = task_config {
-        if !task_config.report_enable {
-            return None; // 如果报告中心未启用，则返回None
-        }
-        let report_svr = task_config.report_svr.clone();
-        return Some(format!(
-            "http://{}:{}/task/update_subtask_info/",
-            report_svr.domain, report_svr.port
-        ));
-    }
-    None
-}
-
-pub fn get_main_task_create_url() -> Option<String> {
-    if let Ok(url) = env::var("main_task_create_center") {
-        return Some(url);
-    }
-    let task_config = TASK_REPORT_CENTER.get();
-    if let Some(task_config) = task_config {
-        if !task_config.report_enable {
-            return None; // 如果报告中心未启用，则返回None
-        }
-        let report_svr = task_config.report_svr.clone();
-        return Some(format!(
-            "http://{}:{}/task/create_main_task/",
-            report_svr.domain, report_svr.port
-        ));
-    }
-    None
-}
+use std::fmt::Debug;
 
 // 发送http请求
 pub async fn send_http_request<T: Serialize + Debug>(payload: T, url: &String) {
+    // 检查报告中心是否启用，并在作用域结束时释放读锁
+    let should_send = {
+        let task_config = TASK_REPORT_CENTER.get();
+        if let Some(task_config_lock) = task_config {
+            let task_config = task_config_lock.read().await;
+            task_config.report_enable
+        } else {
+            false // 如果没有配置，默认关闭
+        }
+    };
+
+    if !should_send {
+        return; // 如果报告中心未启用，则直接返回不再发送http请求
+    }
+
     let response = reqwest::Client::new()
         .post(url)
         .json(&payload)
@@ -71,6 +31,7 @@ pub async fn send_http_request<T: Serialize + Debug>(payload: T, url: &String) {
             let exec_reason = ExecReason::NetWork(format!("HTTP request failed: {}", e));
             StructError::from(exec_reason)
         });
+
     match response {
         Ok(resp) => {
             if resp.status().is_success() {
@@ -78,14 +39,34 @@ pub async fn send_http_request<T: Serialize + Debug>(payload: T, url: &String) {
             } else {
                 let status = resp.status();
                 let text = resp.text().await.unwrap_or_default();
-                warn!(
-                    "HTTP request to {} failed with status {}: {}",
-                    url, status, text
+                println!(
+                    "{}",
+                    format!(
+                        "HTTP request to {} failed with status {}: {}",
+                        url, status, text
+                    )
+                    .yellow()
+                    .bold()
                 );
+                // 在这里获取写锁，此时读锁已经释放
+                if let Some(task_config_lock) = TASK_REPORT_CENTER.get() {
+                    let mut task_config = task_config_lock.write().await;
+                    task_config.report_enable = false; // Disable reporting if the request fails
+                }
             }
         }
         Err(e) => {
-            warn!("HTTP request to {} failed: {}", url, e);
+            println!(
+                "{}",
+                format!("HTTP request to {} failed: {}", url, e)
+                    .yellow()
+                    .bold()
+            );
+            // 在这里获取写锁，此时读锁已经释放
+            if let Some(task_config_lock) = TASK_REPORT_CENTER.get() {
+                let mut task_config = task_config_lock.write().await;
+                task_config.report_enable = false; // Disable reporting if the request fails
+            }
         }
     }
 }
