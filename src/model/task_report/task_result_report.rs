@@ -25,7 +25,7 @@ pub enum SubTaskStatus {
 impl TaskReport {
     // 转化报告中心的返回结果
     pub fn from_flowtask_and_notice(task: FlowTask, taskbody: TaskNotice) -> TaskReport {
-        let mut running_log = String::new();
+        let mut running_log = task.stdout().clone();
         for action in task.actions() {
             let stdout = action.stdout();
             if !stdout.is_empty() {
