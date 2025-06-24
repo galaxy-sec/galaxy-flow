@@ -1,4 +1,5 @@
 use async_trait::async_trait;
+use gag::BufferRedirect;
 
 use super::gxl_loop::GxlLoop;
 use super::prelude::*;
@@ -19,10 +20,12 @@ use crate::context::ExecContext;
 use crate::execution::runnable::AsyncDryrunRunnableTrait;
 use crate::execution::runnable::VTResult;
 use crate::execution::task::Task;
+use crate::task_report::task_rc_config::TASK_REPORT_CENTER;
 
 use super::gxl_cond::GxlCond;
 use super::gxl_spc::GxlSpace;
 use super::gxl_var::GxlProp;
+use std::io::Read;
 
 #[derive(Clone, Debug)]
 pub enum BlockAction {
@@ -70,20 +73,108 @@ impl AsyncDryrunRunnableTrait for BlockAction {
         dct: VarSpace,
         is_dryrun: bool,
     ) -> VTResult {
-        match self {
-            BlockAction::Command(o) => o.async_exec_with_dryrun(ctx, dct, is_dryrun).await,
-            BlockAction::GxlRun(o) => o.async_exec(ctx, dct).await,
-            BlockAction::Echo(o) => o.async_exec(ctx, dct).await,
-            BlockAction::Assert(o) => o.async_exec(ctx, dct).await,
-            BlockAction::Cond(o) => o.async_exec(ctx, dct).await,
-            BlockAction::Loop(o) => o.async_exec(ctx, dct).await,
-            BlockAction::Tpl(o) => o.async_exec(ctx, dct).await,
-            BlockAction::Delegate(o) => o.async_exec(ctx, dct).await,
-            BlockAction::Version(o) => o.async_exec(ctx, dct).await,
-            BlockAction::Read(o) => o.async_exec(ctx, dct).await,
-            BlockAction::Artifact(o) => o.async_exec(ctx, dct).await,
-            BlockAction::UpLoad(o) => o.async_exec(ctx, dct).await,
-            BlockAction::DownLoad(o) => o.async_exec(ctx, dct).await,
+
+        // 创建输出重定向，如果任务报告中心启用则捕获标准输出
+        let redirect_result = match TASK_REPORT_CENTER.get() {
+            Some(task_config) if task_config.report_enable => {
+                // 如果报告中心启用，则尝试创建重定向
+                Some(BufferRedirect::stdout())
+            }
+            _ => {
+                // 如果报告中心被禁用，则不创建重定向
+                None
+            }
+        };
+
+        // 对于GxlRun，我们需要在执行前取消重定向
+        let (action_res, output) = match self {
+            BlockAction::GxlRun(o) => {
+                // 如果存在重定向，在执行GxlRun前读取并关闭它
+                let output = if let Some(buf_result) = redirect_result {
+                    let mut output = String::new();
+                    let mut redirect_buf = buf_result
+                        .map_err(|e| ExecError::from(ExecReason::Io(e.to_string())))?;
+                    
+                    redirect_buf.read_to_string(&mut output)
+                        .map_err(|e| ExecError::from(ExecReason::Io(e.to_string())))?;
+                    
+                    // 确保在执行GxlRun前恢复标准输出
+                    redirect_buf.into_inner();
+                    output
+                } else {
+                    String::new()
+                };
+                
+                // 执行GxlRun
+                (o.async_exec(ctx, dct).await, output)
+            },
+            // 对于其他动作，保持重定向
+            _ => {
+                let action_res = match self {
+                    BlockAction::Command(o) => o.async_exec_with_dryrun(ctx, dct, is_dryrun).await,
+                    BlockAction::Echo(o) => o.async_exec(ctx, dct).await,
+                    BlockAction::Assert(o) => o.async_exec(ctx, dct).await,
+                    BlockAction::Cond(o) => o.async_exec(ctx, dct).await,
+                    BlockAction::Loop(o) => o.async_exec(ctx, dct).await,
+                    BlockAction::Tpl(o) => o.async_exec(ctx, dct).await,
+                    BlockAction::Delegate(o) => o.async_exec(ctx, dct).await,
+                    BlockAction::Version(o) => o.async_exec(ctx, dct).await,
+                    BlockAction::Read(o) => o.async_exec(ctx, dct).await,
+                    BlockAction::Artifact(o) => o.async_exec(ctx, dct).await,
+                    BlockAction::UpLoad(o) => o.async_exec(ctx, dct).await,
+                    BlockAction::DownLoad(o) => o.async_exec(ctx, dct).await,
+                    _ => unreachable!(),
+                };
+
+                // 处理重定向的输出
+                let output = if let Some(buf_result) = redirect_result {
+                    let mut output = String::new();
+                    let mut redirect_buf = buf_result
+                        .map_err(|e| ExecError::from(ExecReason::Io(e.to_string())))?;
+                    
+                    redirect_buf.read_to_string(&mut output)
+                        .map_err(|e| ExecError::from(ExecReason::Io(e.to_string())))?;
+                    
+                    // 恢复标准输出
+                    redirect_buf.into_inner();
+                    output
+                } else {
+                    String::new()
+                };
+
+                (action_res, output)
+            }
+        };
+        // 只在有实际输出时打印
+        if !output.trim().is_empty() {
+            println!("{}", output);
+        }
+
+        // 处理执行结果
+        match action_res {
+            Ok((vars_dict, out)) => {
+                let out = match out {
+                    ExecOut::Action(mut act) => {
+                        if !output.is_empty() {
+                            act.stdout.push_str(&output);
+                        }
+                        ExecOut::Action(act)
+                    }
+                    ExecOut::Task(mut task) => {
+                        if !output.is_empty() {
+                            // 如果task已有输出，则添加换行符
+                            if !task.stdout.is_empty() {
+                                task.stdout.push('\n');
+                            }
+                            task.stdout.push_str(&output);
+                        }
+                        ExecOut::Task(task)
+                    }
+                    other => other,
+                };
+                Ok((vars_dict, out))
+            }
+            Err(e) => Err(e),
         }
     }
 }
