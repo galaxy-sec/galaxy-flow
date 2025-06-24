@@ -16,7 +16,6 @@ use crate::util::http_handle::{
     get_task_notice_center_url, get_task_report_center_url, send_http_request,
 };
 use std::sync::Arc;
-
 use std::io::Read;
 use std::io::Write;
 
@@ -150,25 +149,33 @@ impl GxlFlow {
                 send_http_request(batch_task, &url).await;
             }
         }
+        
+        // 尝试创建重定向，如果失败则继续执行但不捕获输出
+        let redirect_result = BufferRedirect::stdout();
+        
+        // 执行块
         for item in &self.blocks {
-            // 重定向日志输出
-            let mut buf = BufferRedirect::stdout().map_err(|e| {
-                ExecError::from(ExecReason::Io(e.to_string()))
-            })?;
             let (cur_dict, out) = item
                 .async_exec_with_dryrun(ctx.clone(), var_dict, self.is_dryrun())
                 .await?;
             var_dict = cur_dict;
-            let mut output = String::new();
-            buf.read_to_string(&mut output).unwrap();
-            // 恢复日志输出
-            buf.into_inner();
-            task.stdout = output.clone();
-            println!("{}", output);
             task.append(out);
         }
         task.finish();
-
+        
+        // 处理输出
+        let output = if let Ok(mut buf) = redirect_result {
+            let mut output = String::new();
+            buf.read_to_string(&mut output).unwrap();
+            // 恢复标准输出
+            buf.into_inner();
+            output
+        } else {
+            // 如果重定向失败，返回空字符串
+            String::new()
+        };
+        task.stdout = output.clone();
+        println!("{}", output);
         // 若任务被标记为需要返回，则进行返回
         if task_message.is_some() {
             // 若环境变量或配置文件中有返回路径则进行返回
