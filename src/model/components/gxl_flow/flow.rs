@@ -16,9 +16,11 @@ use crate::components::gxl_block::BlockNode;
 use crate::util::http_handle::send_http_request;
 use std::sync::Arc;
 
+use std::io::Read;
 use std::io::Write;
 
 use derive_getters::Getters;
+use gag::BufferRedirect;
 
 use super::anno::FlowAnnFunc;
 use super::meta::FlowMeta;
@@ -149,15 +151,24 @@ impl GxlFlow {
             }
         }
         for item in &self.blocks {
+            // 重定向日志输出
+            let mut buf = BufferRedirect::stdout().map_err(|e| {
+                ExecError::from(ExecReason::Io(e.to_string()))
+            })?;
             let (cur_dict, out) = item
                 .async_exec_with_dryrun(ctx.clone(), var_dict, self.is_dryrun())
                 .await?;
             var_dict = cur_dict;
+            let mut output = String::new();
+            buf.read_to_string(&mut output).unwrap();
+            // 恢复日志输出
+            buf.into_inner();
+            task.stdout = output.clone();
+            println!("{}", output);
             task.append(out);
         }
         task.finish();
 
-        // result_callback
         // 若任务被标记为需要返回，则进行返回
         if task_message.is_some() {
             // 若环境变量或配置文件中有返回路径则进行返回
