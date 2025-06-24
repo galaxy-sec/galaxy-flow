@@ -22,14 +22,14 @@ pub fn load_gxl_config() {
     if !path.exists() {
         warn!("conf.toml not found. Run in the default mode");
         return;
-    } 
+    }
     let content = std::fs::read_to_string(path);
     match content {
         Ok(content) => {
             let res: Result<TaskCenterAPI, toml::de::Error> = toml::from_str(&content);
             match res {
                 Ok(config) => {
-                    let _ = TASK_REPORT_CENTER.set(config);
+                    let _ = TASK_REPORT_CENTER.set(tokio::sync::RwLock::new(config));
                 }
                 Err(e) => warn!("load conf.toml error: {}", e.message()),
             };
