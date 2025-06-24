@@ -90,7 +90,7 @@ impl GxCmd {
             }
             Err(error) => {
                 action.stdout = error.to_string();
-                println!("cmd error: {}", error.to_string().yellow().bold());
+                return Err(error);
             }
         }
         action.finish();
