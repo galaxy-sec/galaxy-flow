@@ -25,6 +25,7 @@ use crate::task_report::task_rc_config::TASK_REPORT_CENTER;
 use super::gxl_cond::GxlCond;
 use super::gxl_spc::GxlSpace;
 use super::gxl_var::GxlProp;
+use std::io;
 use std::io::Read;
 
 #[derive(Clone, Debug)]
@@ -75,7 +76,7 @@ impl AsyncDryrunRunnableTrait for BlockAction {
     ) -> VTResult {
 
         // 创建输出重定向，如果任务报告中心启用则捕获标准输出
-        let redirect_result = match TASK_REPORT_CENTER.get() {
+        let redirect: Option<io::Result<BufferRedirect>> = match TASK_REPORT_CENTER.get() {
             Some(task_config) if task_config.report_enable => {
                 // 如果报告中心启用，则尝试创建重定向
                 Some(BufferRedirect::stdout())
@@ -87,19 +88,19 @@ impl AsyncDryrunRunnableTrait for BlockAction {
         };
 
         // 对于GxlRun，我们需要在执行前取消重定向
-        let (action_res, output) = match self {
+        let (execution_result, captured_data) = match self {
             BlockAction::GxlRun(o) => {
                 // 如果存在重定向，在执行GxlRun前读取并关闭它
-                let output = if let Some(buf_result) = redirect_result {
+                let output = if let Some(stdout_redirect) = redirect {
                     let mut output = String::new();
-                    let mut redirect_buf = buf_result
+                    let mut stdout_capture = stdout_redirect
                         .map_err(|e| ExecError::from(ExecReason::Io(e.to_string())))?;
                     
-                    redirect_buf.read_to_string(&mut output)
+                    stdout_capture.read_to_string(&mut output)
                         .map_err(|e| ExecError::from(ExecReason::Io(e.to_string())))?;
                     
                     // 确保在执行GxlRun前恢复标准输出
-                    redirect_buf.into_inner();
+                    stdout_capture.into_inner();
                     output
                 } else {
                     String::new()
@@ -127,16 +128,16 @@ impl AsyncDryrunRunnableTrait for BlockAction {
                 };
 
                 // 处理重定向的输出
-                let output = if let Some(buf_result) = redirect_result {
+                let output = if let Some(stdout_redirect) = redirect {
                     let mut output = String::new();
-                    let mut redirect_buf = buf_result
+                    let mut stdout_capture = stdout_redirect
                         .map_err(|e| ExecError::from(ExecReason::Io(e.to_string())))?;
                     
-                    redirect_buf.read_to_string(&mut output)
+                    stdout_capture.read_to_string(&mut output)
                         .map_err(|e| ExecError::from(ExecReason::Io(e.to_string())))?;
                     
                     // 恢复标准输出
-                    redirect_buf.into_inner();
+                    stdout_capture.into_inner();
                     output
                 } else {
                     String::new()
@@ -146,27 +147,27 @@ impl AsyncDryrunRunnableTrait for BlockAction {
             }
         };
         // 只在有实际输出时打印
-        if !output.trim().is_empty() {
-            println!("{}", output);
+        if !captured_data.trim().is_empty() {
+            println!("{}", captured_data);
         }
 
         // 处理执行结果
-        match action_res {
+        match execution_result {
             Ok((vars_dict, out)) => {
                 let out = match out {
                     ExecOut::Action(mut act) => {
-                        if !output.is_empty() {
-                            act.stdout.push_str(&output);
+                        if !captured_data.is_empty() {
+                            act.stdout.push_str(&captured_data);
                         }
                         ExecOut::Action(act)
                     }
                     ExecOut::Task(mut task) => {
-                        if !output.is_empty() {
+                        if !captured_data.is_empty() {
                             // 如果task已有输出，则添加换行符
                             if !task.stdout.is_empty() {
                                 task.stdout.push('\n');
                             }
-                            task.stdout.push_str(&output);
+                            task.stdout.push_str(&captured_data);
                         }
                         ExecOut::Task(task)
                     }
