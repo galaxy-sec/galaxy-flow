@@ -66,14 +66,14 @@ impl GxCmd {
         let mut action = Action::from("gx.cmd");
         trace!(target:ctx.path(),"cmd:{}", cmd);
         let exp = EnvExpress::from_env_mix(vars_dict.global().clone());
-        //let exe_cmd = ee.parse(cmd)?;
+        let exe_cmd = exp.eval(cmd)?;
 
         let mut expect = self.dto.expect.clone();
         expect.outer_print = *ctx.cmd_print();
         let res = gxl_sh!(
             LogicScope::Outer,
             ctx.tag_path("cmd").as_str(),
-            &cmd,
+            &exe_cmd,
             &expect,
             &exp
         );
