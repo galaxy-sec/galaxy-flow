@@ -8,7 +8,7 @@ use crate::execution::runnable::{AsyncDryrunRunnableTrait, AsyncRunnableTrait};
 use crate::execution::task::Task;
 use crate::parser::stc_base::AnnDto;
 use crate::task_report::task_notification::{TaskNotice, TaskOutline};
-use crate::task_report::task_rc_config::{get_task_notice_center_url, get_task_report_center_url};
+use crate::task_report::task_rc_config::{get_task_notice_url, get_task_report_url};
 use crate::task_report::task_result_report::TaskReport;
 use crate::traits::DependTrait;
 
@@ -133,7 +133,7 @@ impl GxlFlow {
         if let Some(des) = task_message.clone() {
             task = Task::from(des);
             // 若环境变量或配置文件中有报告中心配置则进行任务上报
-            let url = get_task_notice_center_url().await;
+            let url = get_task_notice_url().await;
             if let Some(url) = url {
                 task_body = TaskNotice {
                     parent_id: task_body.parent_id,
@@ -159,7 +159,7 @@ impl GxlFlow {
         task.finish();
         if task_message.is_some() {
             // 若环境变量或配置文件中有返回路径则进行返回
-            let url = get_task_report_center_url().await;
+            let url = get_task_report_url().await;
             if let Some(url) = url {
                 let task_result = TaskReport::from_flowtask_and_notice(task.clone(), task_body);
                 send_http_request(task_result.clone(), &url).await;

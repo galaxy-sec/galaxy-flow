@@ -21,7 +21,7 @@ pub struct ReportSVR {
     pub port: u16,
 }
 
-pub async fn get_task_notice_center_url() -> Option<String> {
+pub async fn get_task_notice_url() -> Option<String> {
     if let Ok(url) = env::var("task_result_center") {
         return Some(url);
     }
@@ -40,7 +40,7 @@ pub async fn get_task_notice_center_url() -> Option<String> {
     Some(url)
 }
 
-pub async fn get_task_report_center_url() -> Option<String> {
+pub async fn get_task_report_url() -> Option<String> {
     if let Ok(url) = env::var("task_report_center") {
         return Some(url);
     }
