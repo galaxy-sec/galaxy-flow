@@ -132,6 +132,8 @@ impl GxlFlow {
         let mut task_body = TaskNotice::new();
         if let Some(des) = task_message.clone() {
             task = Task::from(des);
+            // review:
+            // need_send_report_center
             // 若环境变量或配置文件中有报告中心配置则进行任务上报
             let url = get_task_notice_url().await;
             if let Some(url) = url {

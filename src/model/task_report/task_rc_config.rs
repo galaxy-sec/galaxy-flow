@@ -8,6 +8,12 @@ lazy_static! {
     pub static ref TASK_REPORT_CENTER: OnceCell<RwLock<TaskCenterAPI>> = OnceCell::new();
 }
 
+pub async fn report_enable() -> bool {
+    if let Some(config) = TASK_REPORT_CENTER.get() {
+        return config.read().await.report_enable;
+    }
+    false
+}
 // 任务结果配置
 #[derive(Deserialize, Debug)]
 pub struct TaskCenterAPI {

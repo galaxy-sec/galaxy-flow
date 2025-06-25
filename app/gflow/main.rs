@@ -34,6 +34,7 @@ async fn main() -> anyhow::Result<()> {
             }
         };
 
+        //review:  move this block code to  up block if  config.report_enable  {  }
         if should_create_task {
             let task_name = cmd.flow.concat();
             create_main_task(task_name).await;

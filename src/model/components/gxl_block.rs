@@ -1,5 +1,6 @@
 use async_trait::async_trait;
 use gag::BufferRedirect;
+use orion_error::ErrorOwe;
 
 use super::gxl_loop::GxlLoop;
 use super::prelude::*;
@@ -22,6 +23,7 @@ use crate::execution::runnable::AsyncDryrunRunnableTrait;
 use crate::execution::runnable::VTResult;
 use crate::execution::runnable::VTResultWithCapture;
 use crate::execution::task::Task;
+use crate::task_report::task_rc_config::report_enable;
 use crate::task_report::task_rc_config::TASK_REPORT_CENTER;
 
 use super::gxl_cond::GxlCond;
@@ -76,32 +78,16 @@ impl AsyncDryrunCaptureRunnableTrait for BlockAction {
         dct: VarSpace,
         is_dryrun: bool,
     ) -> VTResultWithCapture {
-        // 创建输出重定向，如果任务报告中心启用则捕获标准输出
-        let redirect: Option<io::Result<BufferRedirect>> = match TASK_REPORT_CENTER.get() {
-            Some(config) => config
-                .read()
-                .await
-                .report_enable
-                .then(BufferRedirect::stdout),
-            None => None,
-        };
-
-        let mut captured_output = String::new();
-        // 对于GxlRun，我们需要在执行前取消重定向
-        let exec_result = match self {
-            BlockAction::GxlRun(o) => {
-                // 如果存在重定向，在执行GxlRun前读取并关闭它
-                if let Some(stdout_redirect) = redirect {
-                    let stdout_capture = stdout_redirect
-                        .map_err(|e| ExecError::from(ExecReason::Io(e.to_string())))?;
-                    // 确保在执行GxlRun前恢复标准输出
-                    stdout_capture.into_inner();
-                }
-                // 执行GxlRun
-                o.async_exec(ctx, dct).await
-            }
-            // 对于其他动作，保持重定向
+        let (result, output) = match self {
+            BlockAction::GxlRun(o) => (o.async_exec(ctx, dct).await, String::new()),
             _ => {
+                let need_report = report_enable().await;
+                let redirect = if need_report {
+                    Some(BufferRedirect::stdout().owe_sys()?)
+                } else {
+                    None
+                };
+
                 let action_res = match self {
                     BlockAction::Command(o) => o.async_exec_with_dryrun(ctx, dct, is_dryrun).await,
                     BlockAction::Echo(o) => o.async_exec(ctx, dct).await,
@@ -117,31 +103,19 @@ impl AsyncDryrunCaptureRunnableTrait for BlockAction {
                     BlockAction::DownLoad(o) => o.async_exec(ctx, dct).await,
                     _ => unreachable!(),
                 };
-
-                // 处理重定向的输出
-                if let Some(stdout_redirect) = redirect {
-                    let mut stdout_capture = stdout_redirect
-                        .map_err(|e| ExecError::from(ExecReason::Io(e.to_string())))?;
-                    // 读取捕获的标准输出
-                    stdout_capture
-                        .read_to_string(&mut captured_output)
-                        .map_err(|e| ExecError::from(ExecReason::Io(e.to_string())))?;
-                    // 恢复标准输出
-                    stdout_capture.into_inner();
+                let mut captured_output = String::new();
+                if let Some(mut stdout_redirect) = redirect {
+                    let _ = stdout_redirect.read_to_string(&mut captured_output);
                 }
-                action_res
-            }
+                (action_res, captured_output)
+            } // 处理重定向的输出
         };
-        // 只在有实际输出时打印
-        if !captured_output.trim().is_empty() {
-            println!("{}", captured_output);
-        }
 
-        // 处理执行结果
-        match exec_result {
-            Ok((vars_dict, out)) => Ok((vars_dict, out, captured_output)),
+        println!("{}", output);
+        return match result {
+            Ok((vars_dict, out)) => Ok((vars_dict, out, output)),
             Err(e) => Err(e),
-        }
+        };
     }
 }
 

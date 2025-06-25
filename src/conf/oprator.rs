@@ -16,6 +16,7 @@ pub fn load_gxl_config() {
     let galaxy_path = home_dir()
         .map(|x| x.join(".galaxy"))
         .unwrap_or(PathBuf::from("./"));
+    //review:  Where are the development requirements?
     let task_config_path =
         std::env::var("CONF_PATH").unwrap_or(format!("{}/conf.toml", galaxy_path.display()));
     let path = Path::new(&task_config_path);
