@@ -24,12 +24,10 @@ use crate::execution::runnable::VTResult;
 use crate::execution::runnable::VTResultWithCapture;
 use crate::execution::task::Task;
 use crate::task_report::task_rc_config::report_enable;
-use crate::task_report::task_rc_config::TASK_REPORT_CENTER;
 
 use super::gxl_cond::GxlCond;
 use super::gxl_spc::GxlSpace;
 use super::gxl_var::GxlProp;
-use std::io;
 use std::io::Read;
 
 #[derive(Clone, Debug)]
@@ -82,32 +80,17 @@ impl AsyncDryrunCaptureRunnableTrait for BlockAction {
             BlockAction::GxlRun(o) => (o.async_exec(ctx, dct).await, String::new()),
             _ => {
                 let need_report = report_enable().await;
-                let redirect = if need_report {
-                    Some(BufferRedirect::stdout().owe_sys()?)
-                } else {
-                    None
-                };
+                if need_report {
+                    let mut redirect = BufferRedirect::stdout().owe_sys()?;
+                    let action_res = self.execute_action(ctx, dct, is_dryrun).await;
 
-                let action_res = match self {
-                    BlockAction::Command(o) => o.async_exec_with_dryrun(ctx, dct, is_dryrun).await,
-                    BlockAction::Echo(o) => o.async_exec(ctx, dct).await,
-                    BlockAction::Assert(o) => o.async_exec(ctx, dct).await,
-                    BlockAction::Cond(o) => o.async_exec(ctx, dct).await,
-                    BlockAction::Loop(o) => o.async_exec(ctx, dct).await,
-                    BlockAction::Tpl(o) => o.async_exec(ctx, dct).await,
-                    BlockAction::Delegate(o) => o.async_exec(ctx, dct).await,
-                    BlockAction::Version(o) => o.async_exec(ctx, dct).await,
-                    BlockAction::Read(o) => o.async_exec(ctx, dct).await,
-                    BlockAction::Artifact(o) => o.async_exec(ctx, dct).await,
-                    BlockAction::UpLoad(o) => o.async_exec(ctx, dct).await,
-                    BlockAction::DownLoad(o) => o.async_exec(ctx, dct).await,
-                    _ => unreachable!(),
-                };
-                let mut captured_output = String::new();
-                if let Some(mut stdout_redirect) = redirect {
-                    let _ = stdout_redirect.read_to_string(&mut captured_output);
+                    let mut captured_output = String::new();
+                    let _ = redirect.read_to_string(&mut captured_output);
+                    (action_res, captured_output)
+                } else {
+                    let action_res = self.execute_action(ctx, dct, is_dryrun).await;
+                    (action_res, String::new())
                 }
-                (action_res, captured_output)
             } // 处理重定向的输出
         };
 
@@ -116,6 +99,27 @@ impl AsyncDryrunCaptureRunnableTrait for BlockAction {
             Ok((vars_dict, out)) => Ok((vars_dict, out, output)),
             Err(e) => Err(e),
         };
+    }
+}
+
+impl BlockAction {
+    /// 执行具体动作
+    async fn execute_action(&self, ctx: ExecContext, dct: VarSpace, is_dryrun: bool) -> VTResult {
+        match self {
+            BlockAction::Command(o) => o.async_exec_with_dryrun(ctx, dct, is_dryrun).await,
+            BlockAction::Echo(o) => o.async_exec(ctx, dct).await,
+            BlockAction::Assert(o) => o.async_exec(ctx, dct).await,
+            BlockAction::Cond(o) => o.async_exec(ctx, dct).await,
+            BlockAction::Loop(o) => o.async_exec(ctx, dct).await,
+            BlockAction::Tpl(o) => o.async_exec(ctx, dct).await,
+            BlockAction::Delegate(o) => o.async_exec(ctx, dct).await,
+            BlockAction::Version(o) => o.async_exec(ctx, dct).await,
+            BlockAction::Read(o) => o.async_exec(ctx, dct).await,
+            BlockAction::Artifact(o) => o.async_exec(ctx, dct).await,
+            BlockAction::UpLoad(o) => o.async_exec(ctx, dct).await,
+            BlockAction::DownLoad(o) => o.async_exec(ctx, dct).await,
+            _ => unreachable!(),
+        }
     }
 }
 
