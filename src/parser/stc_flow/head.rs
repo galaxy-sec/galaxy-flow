@@ -248,7 +248,7 @@ mod tests {
             }
             Err(err) => {
                 println!("Error: {:?}", err);
-                assert!(false);
+                panic!();
             }
         };
     }
