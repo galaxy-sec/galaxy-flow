@@ -1,4 +1,5 @@
 use async_trait::async_trait;
+use gag::BufferRedirect;
 
 use super::gxl_loop::GxlLoop;
 use super::prelude::*;
@@ -16,13 +17,18 @@ use crate::ability::GxUpLoad;
 use crate::ability::RgVersion;
 use crate::calculate::cond::CondExec;
 use crate::context::ExecContext;
+use crate::execution::runnable::AsyncDryrunCaptureRunnableTrait;
 use crate::execution::runnable::AsyncDryrunRunnableTrait;
 use crate::execution::runnable::VTResult;
+use crate::execution::runnable::VTResultWithCapture;
 use crate::execution::task::Task;
+use crate::task_report::task_rc_config::TASK_REPORT_CENTER;
 
 use super::gxl_cond::GxlCond;
 use super::gxl_spc::GxlSpace;
 use super::gxl_var::GxlProp;
+use std::io;
+use std::io::Read;
 
 #[derive(Clone, Debug)]
 pub enum BlockAction {
@@ -63,27 +69,78 @@ impl CondExec for BlockNode {
     }
 }
 #[async_trait]
-impl AsyncDryrunRunnableTrait for BlockAction {
-    async fn async_exec_with_dryrun(
+impl AsyncDryrunCaptureRunnableTrait for BlockAction {
+    async fn async_exec_with_dryrun_capture(
         &self,
         ctx: ExecContext,
         dct: VarSpace,
         is_dryrun: bool,
-    ) -> VTResult {
-        match self {
-            BlockAction::Command(o) => o.async_exec_with_dryrun(ctx, dct, is_dryrun).await,
-            BlockAction::GxlRun(o) => o.async_exec(ctx, dct).await,
-            BlockAction::Echo(o) => o.async_exec(ctx, dct).await,
-            BlockAction::Assert(o) => o.async_exec(ctx, dct).await,
-            BlockAction::Cond(o) => o.async_exec(ctx, dct).await,
-            BlockAction::Loop(o) => o.async_exec(ctx, dct).await,
-            BlockAction::Tpl(o) => o.async_exec(ctx, dct).await,
-            BlockAction::Delegate(o) => o.async_exec(ctx, dct).await,
-            BlockAction::Version(o) => o.async_exec(ctx, dct).await,
-            BlockAction::Read(o) => o.async_exec(ctx, dct).await,
-            BlockAction::Artifact(o) => o.async_exec(ctx, dct).await,
-            BlockAction::UpLoad(o) => o.async_exec(ctx, dct).await,
-            BlockAction::DownLoad(o) => o.async_exec(ctx, dct).await,
+    ) -> VTResultWithCapture {
+        // 创建输出重定向，如果任务报告中心启用则捕获标准输出
+        let redirect: Option<io::Result<BufferRedirect>> = match TASK_REPORT_CENTER.get() {
+            Some(config) => config
+                .read()
+                .await
+                .report_enable
+                .then(BufferRedirect::stdout),
+            None => None,
+        };
+
+        let mut captured_output = String::new();
+        // 对于GxlRun，我们需要在执行前取消重定向
+        let exec_result = match self {
+            BlockAction::GxlRun(o) => {
+                // 如果存在重定向，在执行GxlRun前读取并关闭它
+                if let Some(stdout_redirect) = redirect {
+                    let stdout_capture = stdout_redirect
+                        .map_err(|e| ExecError::from(ExecReason::Io(e.to_string())))?;
+                    // 确保在执行GxlRun前恢复标准输出
+                    stdout_capture.into_inner();
+                }
+                // 执行GxlRun
+                o.async_exec(ctx, dct).await
+            }
+            // 对于其他动作，保持重定向
+            _ => {
+                let action_res = match self {
+                    BlockAction::Command(o) => o.async_exec_with_dryrun(ctx, dct, is_dryrun).await,
+                    BlockAction::Echo(o) => o.async_exec(ctx, dct).await,
+                    BlockAction::Assert(o) => o.async_exec(ctx, dct).await,
+                    BlockAction::Cond(o) => o.async_exec(ctx, dct).await,
+                    BlockAction::Loop(o) => o.async_exec(ctx, dct).await,
+                    BlockAction::Tpl(o) => o.async_exec(ctx, dct).await,
+                    BlockAction::Delegate(o) => o.async_exec(ctx, dct).await,
+                    BlockAction::Version(o) => o.async_exec(ctx, dct).await,
+                    BlockAction::Read(o) => o.async_exec(ctx, dct).await,
+                    BlockAction::Artifact(o) => o.async_exec(ctx, dct).await,
+                    BlockAction::UpLoad(o) => o.async_exec(ctx, dct).await,
+                    BlockAction::DownLoad(o) => o.async_exec(ctx, dct).await,
+                    _ => unreachable!(),
+                };
+
+                // 处理重定向的输出
+                if let Some(stdout_redirect) = redirect {
+                    let mut stdout_capture = stdout_redirect
+                        .map_err(|e| ExecError::from(ExecReason::Io(e.to_string())))?;
+                    // 读取捕获的标准输出
+                    stdout_capture
+                        .read_to_string(&mut captured_output)
+                        .map_err(|e| ExecError::from(ExecReason::Io(e.to_string())))?;
+                    // 恢复标准输出
+                    stdout_capture.into_inner();
+                }
+                action_res
+            }
+        };
+        // 只在有实际输出时打印
+        if !captured_output.trim().is_empty() {
+            println!("{}", captured_output);
+        }
+
+        // 处理执行结果
+        match exec_result {
+            Ok((vars_dict, out)) => Ok((vars_dict, out, captured_output)),
+            Err(e) => Err(e),
         }
     }
 }
@@ -102,10 +159,11 @@ impl AsyncDryrunRunnableTrait for BlockNode {
         self.export_props(ctx.clone(), cur_var_dict.global_mut(), "")?;
 
         for item in &self.items {
-            let (tmp_var_dict, out) = item
-                .async_exec_with_dryrun(ctx.clone(), cur_var_dict, is_dryrun)
+            let (tmp_var_dict, out, captured_output) = item
+                .async_exec_with_dryrun_capture(ctx.clone(), cur_var_dict, is_dryrun)
                 .await?;
             cur_var_dict = tmp_var_dict;
+            task.stdout.push_str(&captured_output);
             task.append(out);
         }
         task.finish();
