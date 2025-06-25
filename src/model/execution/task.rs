@@ -93,6 +93,7 @@ impl AppendAble<Task> for Task {
                 }
             }
         }
+        self.stdout.push_str(&task.stdout);
         self.actions.extend(task.actions);
     }
 }

@@ -17,8 +17,10 @@ use crate::ability::GxUpLoad;
 use crate::ability::RgVersion;
 use crate::calculate::cond::CondExec;
 use crate::context::ExecContext;
+use crate::execution::runnable::AsyncDryrunCaptureRunnableTrait;
 use crate::execution::runnable::AsyncDryrunRunnableTrait;
 use crate::execution::runnable::VTResult;
+use crate::execution::runnable::VTResultWithCapture;
 use crate::execution::task::Task;
 use crate::task_report::task_rc_config::TASK_REPORT_CENTER;
 
@@ -67,51 +69,37 @@ impl CondExec for BlockNode {
     }
 }
 #[async_trait]
-impl AsyncDryrunRunnableTrait for BlockAction {
-    async fn async_exec_with_dryrun(
+impl AsyncDryrunCaptureRunnableTrait for BlockAction {
+    async fn async_exec_with_dryrun_capture(
         &self,
         ctx: ExecContext,
         dct: VarSpace,
         is_dryrun: bool,
-    ) -> VTResult {
-
+    ) -> VTResultWithCapture {
         // 创建输出重定向，如果任务报告中心启用则捕获标准输出
-        let should_create_task = {
-            if let Some(task_report_center_config) = TASK_REPORT_CENTER.get() {
-                let config = task_report_center_config.read().await;
-                config.report_enable
-            } else {
-                false
-            }
-        };
-        let redirect: Option<io::Result<BufferRedirect>> = if should_create_task {
-            Some(BufferRedirect::stdout())
-        }else {
-            None
+        let redirect: Option<io::Result<BufferRedirect>> = match TASK_REPORT_CENTER.get() {
+            Some(config) => config
+                .read()
+                .await
+                .report_enable
+                .then(BufferRedirect::stdout),
+            None => None,
         };
 
+        let mut captured_output = String::new();
         // 对于GxlRun，我们需要在执行前取消重定向
-        let (execution_result, captured_data) = match self {
+        let exec_result = match self {
             BlockAction::GxlRun(o) => {
                 // 如果存在重定向，在执行GxlRun前读取并关闭它
-                let output = if let Some(stdout_redirect) = redirect {
-                    let mut output = String::new();
-                    let mut stdout_capture = stdout_redirect
+                if let Some(stdout_redirect) = redirect {
+                    let stdout_capture = stdout_redirect
                         .map_err(|e| ExecError::from(ExecReason::Io(e.to_string())))?;
-                    
-                    stdout_capture.read_to_string(&mut output)
-                        .map_err(|e| ExecError::from(ExecReason::Io(e.to_string())))?;
-                    
                     // 确保在执行GxlRun前恢复标准输出
                     stdout_capture.into_inner();
-                    output
-                } else {
-                    String::new()
-                };
-                
+                }
                 // 执行GxlRun
-                (o.async_exec(ctx, dct).await, output)
-            },
+                o.async_exec(ctx, dct).await
+            }
             // 对于其他动作，保持重定向
             _ => {
                 let action_res = match self {
@@ -131,53 +119,27 @@ impl AsyncDryrunRunnableTrait for BlockAction {
                 };
 
                 // 处理重定向的输出
-                let output = if let Some(stdout_redirect) = redirect {
-                    let mut output = String::new();
+                if let Some(stdout_redirect) = redirect {
                     let mut stdout_capture = stdout_redirect
                         .map_err(|e| ExecError::from(ExecReason::Io(e.to_string())))?;
-                    
-                    stdout_capture.read_to_string(&mut output)
+                    // 读取捕获的标准输出
+                    stdout_capture
+                        .read_to_string(&mut captured_output)
                         .map_err(|e| ExecError::from(ExecReason::Io(e.to_string())))?;
-                    
                     // 恢复标准输出
                     stdout_capture.into_inner();
-                    output
-                } else {
-                    String::new()
-                };
-
-                (action_res, output)
+                }
+                action_res
             }
         };
         // 只在有实际输出时打印
-        if !captured_data.trim().is_empty() {
-            println!("{}", captured_data);
+        if !captured_output.trim().is_empty() {
+            println!("{}", captured_output);
         }
 
         // 处理执行结果
-        match execution_result {
-            Ok((vars_dict, out)) => {
-                let out = match out {
-                    ExecOut::Action(mut act) => {
-                        if !captured_data.is_empty() {
-                            act.stdout.push_str(&captured_data);
-                        }
-                        ExecOut::Action(act)
-                    }
-                    ExecOut::Task(mut task) => {
-                        if !captured_data.is_empty() {
-                            // 如果task已有输出，则添加换行符
-                            if !task.stdout.is_empty() {
-                                task.stdout.push('\n');
-                            }
-                            task.stdout.push_str(&captured_data);
-                        }
-                        ExecOut::Task(task)
-                    }
-                    other => other,
-                };
-                Ok((vars_dict, out))
-            }
+        match exec_result {
+            Ok((vars_dict, out)) => Ok((vars_dict, out, captured_output)),
             Err(e) => Err(e),
         }
     }
@@ -197,10 +159,11 @@ impl AsyncDryrunRunnableTrait for BlockNode {
         self.export_props(ctx.clone(), cur_var_dict.global_mut(), "")?;
 
         for item in &self.items {
-            let (tmp_var_dict, out) = item
-                .async_exec_with_dryrun(ctx.clone(), cur_var_dict, is_dryrun)
+            let (tmp_var_dict, out, captured_output) = item
+                .async_exec_with_dryrun_capture(ctx.clone(), cur_var_dict, is_dryrun)
                 .await?;
             cur_var_dict = tmp_var_dict;
+            task.stdout.push_str(&captured_output);
             task.append(out);
         }
         task.finish();
