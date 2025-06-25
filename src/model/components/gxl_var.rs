@@ -8,13 +8,13 @@ use crate::expect::StrMap;
 use std::sync::Arc;
 
 #[derive(Debug, Clone, Default, Getters, PartialEq)]
-pub struct RgProp {
+pub struct GxlProp {
     key: String,  //var_name;
     meta: String, //var_type;
     val: String,  //var_val ;
 }
 
-impl New2<String, String> for RgProp {
+impl New2<String, String> for GxlProp {
     fn new(mut key: String, val: String) -> Self {
         key.make_ascii_uppercase();
         Self {
@@ -24,12 +24,12 @@ impl New2<String, String> for RgProp {
         }
     }
 }
-impl New2<&str, &str> for RgProp {
+impl New2<&str, &str> for GxlProp {
     fn new(key: &str, val: &str) -> Self {
         Self::new(key.to_string(), val.to_string())
     }
 }
-impl RgProp {
+impl GxlProp {
     pub fn ext_new(key: String, vtype: String, val: String) -> Self {
         Self {
             key,
@@ -43,44 +43,44 @@ impl RgProp {
 }
 
 #[derive(Debug, Clone, Default, Getters, PartialEq)]
-pub struct RgVars {
-    props: Vec<RgProp>,
+pub struct GxlVars {
+    props: Vec<GxlProp>,
 }
-pub type VarsHold = Arc<RgVars>;
+pub type VarsHold = Arc<GxlVars>;
 
-impl RgVars {
+impl GxlVars {
     pub fn insert<S: Into<String>>(&mut self, key: S, val: S) {
-        self.props.push(RgProp::new(key.into(), val.into()));
+        self.props.push(GxlProp::new(key.into(), val.into()));
     }
     pub fn load(map: StrMap) -> Self {
         let mut obj = Self { props: Vec::new() };
         for (key, val) in map {
-            obj.append(RgProp::new(key, val));
+            obj.append(GxlProp::new(key, val));
         }
         obj
     }
 }
-impl AppendAble<RgProp> for RgVars {
-    fn append(&mut self, prop: RgProp) {
+impl AppendAble<GxlProp> for GxlVars {
+    fn append(&mut self, prop: GxlProp) {
         self.props.push(prop);
     }
 }
 
-impl PropsTrait for RgVars {
-    fn fetch_props(&self) -> &Vec<RgProp> {
+impl PropsTrait for GxlVars {
+    fn fetch_props(&self) -> &Vec<GxlProp> {
         &self.props
     }
 }
 
 #[async_trait]
-impl AsyncRunnableTrait for RgVars {
+impl AsyncRunnableTrait for GxlVars {
     async fn async_exec(&self, ctx: ExecContext, mut def: VarSpace) -> VTResult {
         let action = Action::from("rg vars setting");
         self.export_props(ctx, def.global_mut(), "")?;
         Ok((def, ExecOut::Action(action)))
     }
 }
-impl ComponentMeta for RgVars {
+impl ComponentMeta for GxlVars {
     fn com_meta(&self) -> GxlMeta {
         GxlMeta::from("vars")
     }

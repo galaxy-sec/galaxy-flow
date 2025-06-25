@@ -22,7 +22,7 @@ use crate::execution::task::Task;
 
 use super::gxl_cond::GxlCond;
 use super::gxl_spc::GxlSpace;
-use super::gxl_var::RgProp;
+use super::gxl_var::GxlProp;
 
 #[derive(Clone, Debug)]
 pub enum BlockAction {
@@ -43,7 +43,7 @@ pub enum BlockAction {
 
 #[derive(Clone, Getters, Default, Debug)]
 pub struct BlockNode {
-    props: Vec<RgProp>,
+    props: Vec<GxlProp>,
     items: Vec<BlockAction>,
 }
 
@@ -143,13 +143,13 @@ impl DependTrait<&GxlSpace> for BlockNode {
     }
 }
 impl PropsTrait for BlockNode {
-    fn fetch_props(&self) -> &Vec<RgProp> {
+    fn fetch_props(&self) -> &Vec<GxlProp> {
         &self.props
     }
 }
 
-impl AppendAble<RgProp> for BlockNode {
-    fn append(&mut self, prop: RgProp) {
+impl AppendAble<GxlProp> for BlockNode {
+    fn append(&mut self, prop: GxlProp) {
         self.props.push(prop);
     }
 }
@@ -177,7 +177,7 @@ mod tests {
     #[test]
     fn test_append() {
         let mut block = BlockNode::new();
-        let prop = RgProp::new("test", "hello");
+        let prop = GxlProp::new("test", "hello");
         block.append(prop);
         assert_eq!(block.props.len(), 1);
     }
@@ -185,7 +185,7 @@ mod tests {
     #[tokio::test]
     async fn test_exec() {
         let mut block = BlockNode::new();
-        let prop = RgProp::new("test", "hello");
+        let prop = GxlProp::new("test", "hello");
         block.append(prop);
         let ctx = ExecContext::new(false, false);
         let def = VarSpace::default();

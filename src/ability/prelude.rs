@@ -1,4 +1,4 @@
-pub use crate::components::gxl_var::RgProp;
+pub use crate::components::gxl_var::GxlProp;
 pub use crate::context::ExecContext;
 pub use crate::error::{AResult, AssembleError, AssembleReason};
 pub use crate::evaluator::{EnvExpress, Parser};

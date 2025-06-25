@@ -15,15 +15,13 @@ use crate::components::gxl_block::BlockNode;
 use crate::util::http_handle::{
     get_task_notice_center_url, get_task_report_center_url, send_http_request,
 };
-use std::sync::Arc;
-
 use std::io::Write;
-
-use derive_getters::Getters;
+use std::sync::Arc;
 
 use super::anno::FlowAnnFunc;
 use super::meta::FlowMeta;
 use super::runner::FlowRunner;
+use derive_getters::Getters;
 
 #[derive(Clone, Getters, Debug)]
 pub struct GxlFlow {
@@ -148,6 +146,8 @@ impl GxlFlow {
                 send_http_request(batch_task, &url).await;
             }
         }
+
+        // 执行块
         for item in &self.blocks {
             let (cur_dict, out) = item
                 .async_exec_with_dryrun(ctx.clone(), var_dict, self.is_dryrun())
@@ -157,7 +157,6 @@ impl GxlFlow {
         }
         task.finish();
 
-        // result_callback
         // 若任务被标记为需要返回，则进行返回
         if task_message.is_some() {
             // 若环境变量或配置文件中有返回路径则进行返回

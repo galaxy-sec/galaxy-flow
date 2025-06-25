@@ -4,7 +4,7 @@ use std::{
 };
 
 use crate::ability::prelude::*;
-use crate::components::RgVars;
+use crate::components::GxlVars;
 use crate::traits::Setter;
 use crate::var::VarDict;
 
@@ -53,13 +53,13 @@ impl FileDTO {
                 e
             ))
         })?;
-        let mut vars = RgVars::default();
+        let mut vars = GxlVars::default();
         for (_, prop) in file.iter() {
             for (k, v) in prop.iter() {
                 let str_k = k.trim().to_string();
                 let str_v = v.trim().to_string();
                 debug!(target: ctx.path() , "ini import {}:{}", str_k, str_v);
-                vars.append(RgProp::new(str_k, str_v));
+                vars.append(GxlProp::new(str_k, str_v));
             }
         }
         let mut dict = VarDict::global_new();

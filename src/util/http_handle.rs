@@ -78,14 +78,14 @@ pub async fn send_http_request<T: Serialize + Debug>(payload: T, url: &String) {
             } else {
                 let status = resp.status();
                 let text = resp.text().await.unwrap_or_default();
-                println!(
+                warn!(
                     "HTTP request to {} failed with status {}: {}",
                     url, status, text
                 );
             }
         }
         Err(e) => {
-            println!("HTTP request to {} failed: {}", url, e);
+            warn!("HTTP request to {} failed: {}", url, e);
         }
     }
 }

@@ -1,17 +1,17 @@
 use super::gxl_spc::GxlSpace;
 use super::{prelude::*, GxlFlow};
 
-use super::gxl_var::RgProp;
+use super::gxl_var::GxlProp;
 
 #[derive(Clone, Getters, Debug)]
 pub struct RgIntercept {
     m_name: String,
-    props: Vec<RgProp>,
+    props: Vec<GxlProp>,
     flows: Vec<GxlFlow>,
 }
 
 impl RgIntercept {
-    pub fn new(m_name: String, props: Vec<RgProp>, flows: Vec<GxlFlow>) -> Self {
+    pub fn new(m_name: String, props: Vec<GxlProp>, flows: Vec<GxlFlow>) -> Self {
         Self {
             m_name,
             props,
@@ -48,13 +48,13 @@ impl DependTrait<&GxlSpace> for RgIntercept {
 }
 
 impl PropsTrait for RgIntercept {
-    fn fetch_props(&self) -> &Vec<RgProp> {
+    fn fetch_props(&self) -> &Vec<GxlProp> {
         &self.props
     }
 }
 
-impl AppendAble<RgProp> for RgIntercept {
-    fn append(&mut self, prop: RgProp) {
+impl AppendAble<GxlProp> for RgIntercept {
+    fn append(&mut self, prop: GxlProp) {
         self.props.push(prop);
     }
 }
