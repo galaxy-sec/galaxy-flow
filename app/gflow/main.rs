@@ -6,7 +6,7 @@ use clap::Parser;
 use galaxy_flow::conf::load_gxl_config;
 use galaxy_flow::execution::VarSpace;
 use galaxy_flow::task_report::main_task::{create_main_task, get_task_parent_id};
-use galaxy_flow::task_report::task_rc_config::{report_enable, TASK_REPORT_CENTER};
+use galaxy_flow::task_report::task_rc_config::report_enable;
 use galaxy_flow::traits::Setter;
 
 use galaxy_flow::err::*;
