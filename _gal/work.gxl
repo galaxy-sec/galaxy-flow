@@ -50,6 +50,7 @@ mod main   {
 
       gx.echo (  "ENV_BUILD_FLAG :  ${ENV_BUILD_FLAG}  " );
       gx.echo (  "ENV_TARGET_FLAG : ${ENV_TARGET_FLAG} " );
+      gx.cmd (  " hostname " , out : "false" );
     }
 
 
