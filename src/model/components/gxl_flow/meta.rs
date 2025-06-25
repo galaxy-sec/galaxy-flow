@@ -3,7 +3,7 @@ use orion_common::friendly::MultiNew2;
 use crate::{annotation::ComUsage, meta::GxlType};
 use std::fmt::Debug;
 
-use super::anno::{FlowAnnotation, TransLable};
+use super::anno::{DryrunAnno, FlowAnnotation, TransAnno};
 #[derive(Clone, Getters, Default)]
 pub struct FlowMeta {
     class: GxlType,
@@ -56,6 +56,15 @@ impl FlowMeta {
     pub fn undo_flow_name(&self) -> Option<String> {
         for ann in &self.annotations {
             if ann.undo_flow_name().is_some() {
+                return ann.undo_flow_name();
+            }
+        }
+        None
+    }
+
+    pub(crate) fn dryrun_flow_name(&self) -> Option<String> {
+        for ann in &self.annotations {
+            if ann.dryrun_flow_name().is_some() {
                 return ann.undo_flow_name();
             }
         }

@@ -5,7 +5,7 @@ use crate::data::AnnDto;
 use crate::execution::hold::TransableHold;
 use crate::model::components::prelude::*;
 
-use crate::annotation::{ComUsage, FlowHold, TaskMessage, Transaction};
+use crate::annotation::{ComUsage, Dryrunable, FlowHold, TaskMessage, Transaction};
 use crate::execution::runnable::{AsyncDryrunRunnableTrait, AsyncRunnableTrait};
 use crate::execution::task::Task;
 use crate::task_report::task_notification::{TaskNotice, TaskOutline};
@@ -31,6 +31,7 @@ pub struct GxlFlow {
     pre_flows: Vec<FlowRunner>,
     post_flows: Vec<FlowRunner>,
     undo_flow_item: Option<TransableHold>,
+    dryrun_flow: Option<TransableHold>,
     blocks: Vec<BlockNode>,
 }
 
@@ -64,8 +65,13 @@ impl DependTrait<&GxlSpace> for GxlFlow {
         }
         if let Some(undo_name) = self.meta().undo_flow_name() {
             info!( target: "assemble", "undo flow {} ", undo_name );
-            let undo_flow = assemble_undo(mod_name, undo_name.as_str(), src)?;
+            let undo_flow = assemble_fetch(mod_name, undo_name.as_str(), src)?;
             target.undo_flow_item = Some(TransableHold::from(FlowHold::new(undo_flow)));
+        }
+        if let Some(dryrun_name) = self.meta().dryrun_flow_name() {
+            info!( target: "assemble", "undo flow {} ", dryrun_name );
+            let dryrun_flow = assemble_fetch(mod_name, dryrun_name.as_str(), src)?;
+            target.dryrun_flow = Some(TransableHold::from(FlowHold::new(dryrun_flow)));
         }
         for block in self.blocks {
             let full_block = block.assemble(mod_name, src)?;
@@ -93,7 +99,7 @@ fn assemble_pipe(
     ))))
 }
 
-fn assemble_undo(m_name: &str, flow: &str, src: &GxlSpace) -> AResult<FlowRunner> {
+fn assemble_fetch(m_name: &str, flow: &str, src: &GxlSpace) -> AResult<FlowRunner> {
     let (t_mod, flow_name) = mod_obj_name(m_name, flow);
     if let Some(flow) = src.get(&t_mod).and_then(|m| m.load_scope_flow(&flow_name)) {
         let undo_flow = flow.assemble(m_name, src)?;
@@ -114,6 +120,7 @@ impl From<FlowMeta> for GxlFlow {
             post_flows: Vec::new(),
             blocks: Vec::new(),
             undo_flow_item: None,
+            dryrun_flow: None,
         }
     }
 }
@@ -127,6 +134,7 @@ impl From<&str> for GxlFlow {
             post_flows: Vec::new(),
             blocks: Vec::new(),
             undo_flow_item: None,
+            dryrun_flow: None,
         }
     }
 }
@@ -142,7 +150,14 @@ impl GxlFlow {
             post_flows: Vec::new(),
             blocks: Vec::new(),
             undo_flow_item: None,
+            dryrun_flow: None,
         }
+    }
+}
+
+impl Dryrunable for GxlFlow {
+    fn dryrun_hold(&self) -> Option<TransableHold> {
+        self.dryrun_flow.clone()
     }
 }
 

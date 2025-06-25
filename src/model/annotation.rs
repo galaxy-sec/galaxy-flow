@@ -51,4 +51,8 @@ pub trait Transaction {
     fn undo_hold(&self) -> Option<TransableHold>;
 }
 
+pub trait Dryrunable {
+    fn dryrun_hold(&self) -> Option<TransableHold>;
+}
+
 pub type FlowHold = Arc<FlowRunner>;

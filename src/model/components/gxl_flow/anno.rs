@@ -53,13 +53,26 @@ impl ComUsage for FlowAnnotation {
 
 pub type FlowAnnotation = Annotation<FlowAnnFunc>;
 
-pub trait TransLable {
+pub trait TransAnno {
     fn undo_flow_name(&self) -> Option<String>;
 }
+pub trait DryrunAnno {
+    fn dryrun_flow_name(&self) -> Option<String>;
+}
 
-impl TransLable for FlowAnnotation {
+impl TransAnno for FlowAnnotation {
     fn undo_flow_name(&self) -> Option<String> {
         if self.func == FlowAnnFunc::Undo {
+            self.get_arg(FST_ARG_TAG)
+        } else {
+            None
+        }
+    }
+}
+
+impl DryrunAnno for FlowAnnotation {
+    fn dryrun_flow_name(&self) -> Option<String> {
+        if self.func == FlowAnnFunc::Dryrun {
             self.get_arg(FST_ARG_TAG)
         } else {
             None
