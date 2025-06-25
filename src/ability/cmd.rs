@@ -66,14 +66,14 @@ impl GxCmd {
         let mut action = Action::from("gx.cmd");
         trace!(target:ctx.path(),"cmd:{}", cmd);
         let exp = EnvExpress::from_env_mix(vars_dict.global().clone());
-        //let exe_cmd = ee.parse(cmd)?;
+        let exe_cmd = exp.eval(cmd)?;
 
         let mut expect = self.dto.expect.clone();
         expect.outer_print = *ctx.cmd_print();
         let res = gxl_sh!(
             LogicScope::Outer,
             ctx.tag_path("cmd").as_str(),
-            &cmd,
+            &exe_cmd,
             &expect,
             &exp
         );
@@ -90,6 +90,9 @@ impl GxCmd {
             }
             Err(error) => {
                 action.stdout = error.to_string();
+                error!("cmd : {}", exe_cmd);
+                error!("error: {}", error);
+                return Err(error);
             }
         }
         action.finish();
@@ -108,12 +111,26 @@ mod tests {
     async fn cmd_test() {
         let (context, mut def) = ability_env_init();
         def.global_mut()
-            .set("CONF_ROOT", "${GXL_PRJ_ROOT}/example/conf");
+            .set("CONF_ROOT", "${GXL_PRJ_ROOT}/tests/material");
         let res = GxCmd::new(
-          "if test ! -L  ${CONF_ROOT}/used/link2.txt ; then ln -s ${CONF_ROOT}/options/link.txt  ${CONF_ROOT}/used/link2.txt ; fi ".into()
+          "if test ! -L  ${CONF_ROOT}/ability.bak; then ln -s ${CONF_ROOT}/ability.gxl ${CONF_ROOT}/ability.bak;  fi ".into()
           ) ;
-        res.async_exec_with_dryrun(context, def, false)
+        let _ = res
+            .async_exec_with_dryrun(context, def, false)
             .await
             .assert("dryrun");
+    }
+
+    #[tokio::test]
+    async fn cmd_test_err() {
+        let (context, mut def) = ability_env_init();
+        def.global_mut()
+            .set("CONF_ROOT", "${GXL_PRJ_ROOT}/example/conf");
+        //syntax error;
+        let res = GxCmd::new(
+          "if test ! -L  ${CONF_ROOT}/used/link2.txt ; then ln -s ${CONF_ROOT}/options/link.txt  ${CONF_ROOT}/used/link2.txt ; i ".into()
+          ) ;
+        let result = res.async_exec_with_dryrun(context, def, false).await;
+        assert!(result.is_err())
     }
 }

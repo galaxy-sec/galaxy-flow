@@ -93,6 +93,24 @@ mod tests {
         assert_eq!(data, "");
         assert_eq!(obj, GxCmd::dto_new(xpt));
     }
+    #[test]
+    fn cmd_test_raw_string() {
+        let expect = ShellOption::default();
+        let mut data = "
+             gx.cmd(
+               cmd  : r#\"git branch --show-current |  sed -E \"s/(feature|develop|ver-dev|release|master|issue)(\\/.*)?/_branch_\\1/g\" \"# ,
+             ) ;";
+        let obj = gal_cmd(&mut data).assert();
+        //let (input, obj) = show_err(data, RgCmdParser::default().parse(ctx, data)).unwrap();
+        let xpt = GxCmdDtoBuilder::default()
+            .cmd( r#"git branch --show-current |  sed -E "s/(feature|develop|ver-dev|release|master|issue)(\/.*)?/_branch_\1/g" "#
+                    .into())
+            .expect(expect)
+            .build()
+            .unwrap();
+        assert_eq!(data, "");
+        assert_eq!(obj, GxCmd::dto_new(xpt));
+    }
 
     #[test]
     fn cmd_test2() {

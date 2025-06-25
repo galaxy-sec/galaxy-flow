@@ -8,3 +8,4 @@ _gal/.report
 .*
 temp
 .DS_Store
+*.bak
