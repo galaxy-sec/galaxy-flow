@@ -1,4 +1,11 @@
-use crate::{task_report::task_rc_config::TASK_REPORT_CENTER, ExecReason};
+use crate::{
+    execution::task::Task,
+    task_report::{
+        task_notification::{TaskNotice, TaskOutline},
+        task_rc_config::{build_task_url, report_enable, set_report_enable, TaskUrlType},
+    },
+    ExecReason,
+};
 use colored::Colorize;
 use orion_error::StructError;
 use serde::Serialize;
@@ -6,18 +13,7 @@ use std::fmt::Debug;
 
 // 发送http请求
 pub async fn send_http_request<T: Serialize + Debug>(payload: T, url: &String) {
-    // 检查报告中心是否启用，并在作用域结束时释放读锁
-    let should_send = {
-        let task_config = TASK_REPORT_CENTER.get();
-        if let Some(task_config_lock) = task_config {
-            let task_config = task_config_lock.read().await;
-            task_config.report_enable
-        } else {
-            false // 如果没有配置，默认关闭
-        }
-    };
-
-    if !should_send {
+    if !report_enable().await {
         return; // 如果报告中心未启用，则直接返回不再发送http请求
     }
 
@@ -29,7 +25,7 @@ pub async fn send_http_request<T: Serialize + Debug>(payload: T, url: &String) {
         .map_err(|e| {
             // Convert reqwest::Error to your ExecReason type, then into StructError
             let exec_reason = ExecReason::NetWork(format!("HTTP request failed: {}", e));
-            StructError::from(exec_reason)
+            StructError::<ExecReason>::from(exec_reason)
         });
 
     match response {
@@ -48,11 +44,7 @@ pub async fn send_http_request<T: Serialize + Debug>(payload: T, url: &String) {
                     .yellow()
                     .bold()
                 );
-                // 在这里获取写锁，此时读锁已经释放
-                if let Some(task_config_lock) = TASK_REPORT_CENTER.get() {
-                    let mut task_config = task_config_lock.write().await;
-                    task_config.report_enable = false; // Disable reporting if the request fails
-                }
+                set_report_enable(false).await; // Disable reporting if the request fails
             }
         }
         Err(e) => {
@@ -62,11 +54,29 @@ pub async fn send_http_request<T: Serialize + Debug>(payload: T, url: &String) {
                     .yellow()
                     .bold()
             );
-            // 在这里获取写锁，此时读锁已经释放
-            if let Some(task_config_lock) = TASK_REPORT_CENTER.get() {
-                let mut task_config = task_config_lock.write().await;
-                task_config.report_enable = false; // Disable reporting if the request fails
-            }
+            set_report_enable(false).await; // Disable reporting if the request fails
         }
     }
+}
+
+// 创建并发送任务通知
+pub async fn create_and_send_task_notice(
+    task: &Task,
+    task_notice: &TaskNotice,
+) -> Result<TaskNotice, StructError<ExecReason>> {
+    let url = build_task_url(TaskUrlType::TaskNotice).await.unwrap_or_default();
+
+    let notice = TaskNotice {
+        parent_id: task_notice.parent_id, // 明确初始化
+        name: task.name().to_string(),
+        description: task.name().to_string(),
+        order: task_notice.order, // 明确初始化
+    };
+
+    let task_outline = TaskOutline {
+        tasks: vec![notice.clone()],
+    };
+
+    send_http_request(task_outline, &url).await;
+    Ok(notice)
 }
