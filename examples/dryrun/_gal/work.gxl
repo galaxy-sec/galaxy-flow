@@ -12,7 +12,7 @@ flow _step2 {
 }
 
 flow _dryrun_step {
-    gx.echo ("this dryrun setp");
+    gx.echo ("dryrun setp2");
 }
 
 flow start | _step1 | _step2 ;
