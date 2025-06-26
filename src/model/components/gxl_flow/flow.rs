@@ -69,7 +69,7 @@ impl DependTrait<&GxlSpace> for GxlFlow {
             target.undo_flow_item = Some(TransableHold::from(FlowHold::new(undo_flow)));
         }
         if let Some(dryrun_name) = self.meta().dryrun_flow_name() {
-            info!( target: "assemble", "undo flow {} ", dryrun_name );
+            info!( target: "assemble", "dryrun flow {} ", dryrun_name );
             let dryrun_flow = assemble_fetch(mod_name, dryrun_name.as_str(), src)?;
             target.dryrun_flow = Some(TransableHold::from(FlowHold::new(dryrun_flow)));
         }

@@ -15,7 +15,7 @@ pub struct FlowMeta {
 
 impl Debug for FlowMeta {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("STCMeta")
+        f.debug_struct("FlowMeta")
             .field("class", &self.class)
             .field("name", &self.name)
             .finish()

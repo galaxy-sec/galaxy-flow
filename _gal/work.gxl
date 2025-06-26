@@ -94,6 +94,8 @@ mod main   {
 
   flow pub_dysec  | _pub_gflow | _pub_gprj ;
 
+
+  #[dryrun(_pub_dryrun)]
   flow ver.use | @_pub_dysec {
     gx.echo (  "pub ${UP_TARGET} to dysec " );
     gx.upload (
@@ -110,5 +112,9 @@ mod main   {
         password : "${SEC_GFLOW_PASSWORD}",
         local_file : "./version.txt"
     );
+  }
+  flow ver.use | @_pub_dryrun {
+        gx.echo ("https://dy-sec-generic.pkg.coding.net/galaxy-open/${DIST_REPO}/${UP_TARGET}?version=${VERSION}");
+        gx.echo ("./${MAIN_RLS_BINS}/${UP_TARGET}");
   }
 }

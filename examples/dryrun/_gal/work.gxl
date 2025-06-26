@@ -1,0 +1,20 @@
+mod main {
+
+env default {}
+
+flow _step1 {
+    gx.echo ("step1");
+}
+
+#[dryrun(_dryrun_step)]
+flow _step2 {
+    gx.echo ("step2");
+}
+
+flow _dryrun_step {
+    gx.echo ("this dryrun setp");
+}
+
+flow start | _step1 | _step2 ;
+
+}

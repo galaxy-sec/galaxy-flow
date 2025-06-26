@@ -253,6 +253,19 @@ mod tests {
     }
 
     #[test]
+    fn test_ext_ann_dryrun() {
+        let mut input = r#"#[dryrun(_dryrun_flow)]"#;
+        let expected = AnnDto {
+            funs: [FunDto::new(
+                "dryrun",
+                [(FST_ARG_TAG, "_dryrun_flow")].to_vec(),
+            )]
+            .to_vec(),
+        };
+        assert_ext_ann(&mut input, expected);
+    }
+
+    #[test]
     fn test_gal_multi_fun() {
         let mut input = r#"load(a,b)"#;
         let expected = [FunDto::new(

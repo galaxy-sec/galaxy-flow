@@ -46,11 +46,11 @@ impl Sequence {
     async fn execute_sequence(&self, ctx: ExecContext, mut def: VarSpace) -> VTResult {
         let mut job = Job::from(&self.name);
         let mut undo_stack = VecDeque::new();
-        warn!(target: ctx.path(), "sequence size: {}", self.run_items().len());
+        warn!(target: ctx.path(), "sequence size: {}  dryrun: {}", self.run_items().len(), ctx.dryrun());
 
         let mut transaction_begin = false;
         for (index, item) in self.run_items.iter().enumerate() {
-            debug!(target: ctx.path(), "executing item {}: {}", index, item.com_meta().name());
+            debug!(target: ctx.path(), "executing item {}: {} ", index, item.com_meta().name());
             if item.is_transaction() {
                 transaction_begin = true;
                 warn!(target: ctx.path(), "transaction begin")
@@ -63,6 +63,7 @@ impl Sequence {
             }
             let result = if *ctx.dryrun() {
                 if let Some(dryrun) = item.dryrun_hold() {
+                    warn!(target: ctx.path(), "execute dryrun flow");
                     dryrun.async_exec(ctx.clone(), def.clone()).await
                 } else {
                     item.async_exec(ctx.clone(), def.clone()).await
