@@ -184,4 +184,10 @@ mod tests {
         assert_eq!(a.args.len(), 1);
         assert_eq!(a.args["a"], "b");
     }
+    #[test]
+    fn test_anno_1() {
+        let dto = FunDto::new("dryrun", [(FST_ARG_TAG, "_dryrun_flow")].to_vec());
+        let anno = FlowAnnotation::from(dto);
+        assert_eq!(anno.dryrun_flow_name(), Some("_dryrun_flow".to_string()));
+    }
 }

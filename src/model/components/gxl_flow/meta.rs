@@ -63,9 +63,10 @@ impl FlowMeta {
     }
 
     pub(crate) fn dryrun_flow_name(&self) -> Option<String> {
+        debug!("{:?}", self.annotations());
         for ann in &self.annotations {
             if ann.dryrun_flow_name().is_some() {
-                return ann.undo_flow_name();
+                return ann.dryrun_flow_name();
             }
         }
         None
