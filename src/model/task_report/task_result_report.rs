@@ -1,4 +1,4 @@
-use crate::execution::task::Task as FlowTask;
+use crate::execution::task::Task;
 use crate::task_report::main_task::get_task_parent_id;
 use crate::task_report::task_notification::TaskNotice;
 use serde::Serialize;
@@ -24,7 +24,7 @@ pub enum SubTaskStatus {
 
 impl TaskReport {
     // 转化报告中心的返回结果
-    pub fn from_flowtask_and_notice(task: FlowTask, taskbody: TaskNotice) -> TaskReport {
+    pub fn from_task_and_notice(task: Task, task_notice: TaskNotice) -> TaskReport {
         let mut running_log = task.stdout().clone();
         for action in task.actions() {
             let stdout = action.stdout();
@@ -43,7 +43,7 @@ impl TaskReport {
                 Ok(_) => SubTaskStatus::Success,
                 Err(_) => SubTaskStatus::Failed,
             },
-            order: taskbody.order,
+            order: task_notice.order,
         }
     }
 }

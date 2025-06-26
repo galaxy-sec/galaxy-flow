@@ -1,7 +1,5 @@
-use std::env;
-
 use once_cell::sync::OnceCell;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use tokio::sync::RwLock;
 
 lazy_static! {
@@ -14,72 +12,71 @@ pub async fn report_enable() -> bool {
     }
     false
 }
+
+pub async fn set_report_enable(enable: bool) {
+    if let Some(config) = TASK_REPORT_CENTER.get() {
+        let mut task_config = config.write().await;
+        task_config.report_enable = enable;
+    }
+}
+
 // 任务结果配置
-#[derive(Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Getters, Clone)]
 pub struct TaskCenterAPI {
     pub report_enable: bool,
-    pub report_svr: ReportSVR,
+    pub report_svr: ReportCenterConf,
 }
 
-#[derive(Deserialize, Debug, Clone)]
-pub struct ReportSVR {
-    pub domain: String,
-    pub port: u16,
+#[derive(Serialize, Deserialize, Debug, PartialEq, Getters, Clone)]
+pub struct ReportCenterConf {
+    domain: String,
+    port: u16,
 }
-
-pub async fn get_task_notice_url() -> Option<String> {
-    if let Ok(url) = env::var("task_result_center") {
-        return Some(url);
-    }
-    let url = {
-        let task_config = TASK_REPORT_CENTER.get()?;
-        let task_config = task_config.read().await;
-        if !task_config.report_enable {
-            return None; // 如果报告中心未启用，则返回None
+impl ReportCenterConf {
+    pub fn new<S: Into<String>>(domain: S, port: u16) -> Self {
+        Self {
+            domain: domain.into(),
+            port,
         }
-        let report_svr = task_config.report_svr.clone();
-        format!(
+    }
+
+    // 定义一个名为local的函数，返回Self类型
+    pub fn local() -> Self {
+        // 调用Self的new方法，传入参数
+        Self::new(
+            // 传入IP地址
+            "127.0.0.1",
+            // 传入端口号
+            8066,
+        )
+    }
+}
+
+pub enum TaskUrlType {
+    TaskNotice,
+    TaskReport,
+    MainTaskCreate,
+}
+
+pub async fn build_task_url(url_type: TaskUrlType) -> Option<String> {
+    let task_config = TASK_REPORT_CENTER.get()?;
+    let task_config = task_config.read().await;
+    let report_svr = task_config.report_svr.clone();
+    match url_type {
+        TaskUrlType::TaskNotice => Some(format!(
             "http://{}:{}/task/create_batch_subtask/",
-            report_svr.domain, report_svr.port,
-        )
-    };
-    Some(url)
-}
-
-pub async fn get_task_report_url() -> Option<String> {
-    if let Ok(url) = env::var("task_report_center") {
-        return Some(url);
-    }
-    let url = {
-        let task_config = TASK_REPORT_CENTER.get()?;
-        let task_config = task_config.read().await;
-        if !task_config.report_enable {
-            return None; // 如果报告中心未启用，则返回None
-        }
-        let report_svr = task_config.report_svr.clone();
-        format!(
+            report_svr.domain(),
+            report_svr.port(),
+        )),
+        TaskUrlType::TaskReport => Some(format!(
             "http://{}:{}/task/update_subtask_info/",
-            report_svr.domain, report_svr.port
-        )
-    };
-    Some(url)
-}
-
-pub async fn get_main_task_create_url() -> Option<String> {
-    if let Ok(url) = env::var("main_task_create_center") {
-        return Some(url);
-    }
-    let url = {
-        let task_config = TASK_REPORT_CENTER.get()?;
-        let task_config = task_config.read().await;
-        if !task_config.report_enable {
-            return None; // 如果报告中心未启用，则返回None
-        }
-        let report_svr = task_config.report_svr.clone();
-        format!(
+            report_svr.domain(),
+            report_svr.port()
+        )),
+        TaskUrlType::MainTaskCreate => Some(format!(
             "http://{}:{}/task/create_main_task/",
-            report_svr.domain, report_svr.port
-        )
-    };
-    Some(url)
+            report_svr.domain(),
+            report_svr.port()
+        )),
+    }
 }
