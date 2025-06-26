@@ -1,6 +1,6 @@
 use crate::{
     ability::prelude::RgProp,
-    annotation::Transaction,
+    annotation::{Dryrunable, Transaction},
     components::{gxl_intercept::GxlIntercept, gxl_spc::GxlSpace},
     execution::hold::TransableHold,
     model::components::prelude::*,
@@ -50,6 +50,12 @@ impl Transaction for FlowRunner {
     }
     fn undo_hold(&self) -> Option<TransableHold> {
         self.flow.undo_hold()
+    }
+}
+
+impl Dryrunable for FlowRunner {
+    fn dryrun_hold(&self) -> Option<TransableHold> {
+        self.flow.dryrun_hold()
     }
 }
 

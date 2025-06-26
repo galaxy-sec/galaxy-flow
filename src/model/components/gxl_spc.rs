@@ -139,6 +139,24 @@ fn parse_obj_path(obj_path: &str) -> ExecResult<(&str, &str)> {
     }
 }
 
+#[derive(Default, Debug, Clone)]
+pub struct ExecOptions {
+    dryrun: bool,
+    out: bool,
+}
+impl ExecOptions {
+    pub fn with_dryrun(mut self, dryrun: bool) -> Self {
+        self.dryrun = dryrun;
+        self
+    }
+    pub fn is_dryrun(&self) -> bool {
+        self.dryrun
+    }
+    pub fn is_out(&self) -> bool {
+        self.out
+    }
+}
+
 impl GxlSpace {
     pub async fn exec<VS: Into<Vec<String>>>(
         &self,

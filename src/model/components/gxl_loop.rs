@@ -1,10 +1,7 @@
 use orion_syspec::error::ToErr;
 
 use super::prelude::*;
-use crate::{
-    execution::{runnable::AsyncDryrunRunnableTrait, task::Task},
-    traits::Setter,
-};
+use crate::{execution::task::Task, traits::Setter};
 
 use super::gxl_block::BlockNode;
 
@@ -35,10 +32,7 @@ impl AsyncRunnableTrait for GxlLoop {
                 cur_dict
                     .global_mut()
                     .set(self.cur_name().as_str(), v.clone());
-                let (dict, out) = self
-                    .body
-                    .async_exec_with_dryrun(ctx.clone(), cur_dict, false)
-                    .await?;
+                let (dict, out) = self.body.async_exec(ctx.clone(), cur_dict).await?;
                 cur_dict = dict;
                 task.append(out);
             }

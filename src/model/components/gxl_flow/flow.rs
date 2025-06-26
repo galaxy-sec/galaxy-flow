@@ -6,7 +6,7 @@ use crate::execution::hold::TransableHold;
 use crate::model::components::prelude::*;
 
 use crate::annotation::{ComUsage, Dryrunable, FlowHold, TaskMessage, Transaction};
-use crate::execution::runnable::{AsyncDryrunRunnableTrait, AsyncRunnableTrait};
+use crate::execution::runnable::AsyncRunnableTrait;
 use crate::execution::task::Task;
 use crate::task_report::task_notification::{TaskNotice, TaskOutline};
 use crate::task_report::task_result_report::TaskReport;
@@ -199,9 +199,7 @@ impl GxlFlow {
             }
         }
         for item in &self.blocks {
-            let (cur_dict, out) = item
-                .async_exec_with_dryrun(ctx.clone(), var_dict, self.is_dryrun())
-                .await?;
+            let (cur_dict, out) = item.async_exec(ctx.clone(), var_dict).await?;
             var_dict = cur_dict;
             task.append(out);
         }

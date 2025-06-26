@@ -5,7 +5,7 @@ use async_trait::async_trait;
 use orion_common::friendly::AppendAble;
 use orion_error::UvsSysFrom;
 
-use crate::annotation::Transaction;
+use crate::annotation::{Dryrunable, Transaction};
 use crate::context::ExecContext;
 use crate::execution::hold::AsyncComHold;
 use crate::execution::hold::{ComHold, IsolationHold};
@@ -61,8 +61,16 @@ impl Sequence {
                     undo_stack.push_back((undo, def.clone()));
                 }
             }
-
-            match item.async_exec(ctx.clone(), def.clone()).await {
+            let result = if *ctx.dryrun() {
+                if let Some(dryrun) = item.dryrun_hold() {
+                    dryrun.async_exec(ctx.clone(), def.clone()).await
+                } else {
+                    item.async_exec(ctx.clone(), def.clone()).await
+                }
+            } else {
+                item.async_exec(ctx.clone(), def.clone()).await
+            };
+            match result {
                 Ok((new_def, out)) => {
                     def = new_def;
                     job.append(out);

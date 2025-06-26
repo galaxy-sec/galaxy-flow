@@ -4,7 +4,7 @@ use async_trait::async_trait;
 use derive_more::From;
 
 use crate::ability::GxRead;
-use crate::annotation::Transaction;
+use crate::annotation::{Dryrunable, Transaction};
 use crate::components::gxl_flow::runner::FlowRunner;
 use crate::components::gxl_mod::body::ModRunner;
 use crate::components::{GxlEnv, GxlFlow, GxlMod};
@@ -85,6 +85,14 @@ impl Transaction for ComHold {
         }
     }
 }
+impl Dryrunable for ComHold {
+    fn dryrun_hold(&self) -> Option<TransableHold> {
+        match self {
+            ComHold::Conduction(h) => h.dryrun_hold(),
+            ComHold::Isolation(h) => h.dryrun_hold(),
+        }
+    }
+}
 impl Transaction for IsolationHold {
     fn is_transaction(&self) -> bool {
         self.hold.is_transaction()
@@ -92,6 +100,25 @@ impl Transaction for IsolationHold {
 
     fn undo_hold(&self) -> Option<TransableHold> {
         self.hold.undo_hold()
+    }
+}
+impl Dryrunable for IsolationHold {
+    fn dryrun_hold(&self) -> Option<TransableHold> {
+        self.hold.dryrun_hold()
+    }
+}
+
+impl Dryrunable for AsyncComHold {
+    fn dryrun_hold(&self) -> Option<TransableHold> {
+        match self {
+            AsyncComHold::Flow(h) => h.dryrun_hold(),
+            AsyncComHold::FlwRunner(h) => h.dryrun_hold(),
+            AsyncComHold::Stub(_)
+            | AsyncComHold::EnvRunner(_)
+            | AsyncComHold::Read(_)
+            | AsyncComHold::Env(_)
+            | AsyncComHold::Mox(_) => None,
+        }
     }
 }
 
