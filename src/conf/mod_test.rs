@@ -16,8 +16,8 @@ mod tests {
         conf.save_toml(&file).assert("save toml");
         let loaded = GxlConf::from_toml(&file).assert("load toml");
         assert_eq!(
-            loaded.task_rc_config().report_svr(),
-            conf.task_rc_config().report_svr()
+            loaded.task_report().report_svr(),
+            conf.task_report().report_svr()
         );
     }
 }

@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use tokio::sync::RwLock;
 
 lazy_static! {
-    pub static ref TASK_REPORT_CENTER: OnceCell<RwLock<TaskCenterAPI>> = OnceCell::new();
+    pub static ref TASK_REPORT_CENTER: OnceCell<RwLock<TaskCenter>> = OnceCell::new();
 }
 
 pub async fn report_enable() -> bool {
@@ -22,7 +22,7 @@ pub async fn set_report_enable(enable: bool) {
 
 // 任务结果配置
 #[derive(Serialize, Deserialize, Debug, PartialEq, Getters, Clone)]
-pub struct TaskCenterAPI {
+pub struct TaskCenter {
     pub report_enable: bool,
     pub report_svr: ReportCenterConf,
 }

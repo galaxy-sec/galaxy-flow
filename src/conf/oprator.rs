@@ -29,7 +29,7 @@ pub fn load_gxl_config() {
     match toml::from_str::<GxlConf>(&content) {
         Ok(config) => {
             if TASK_REPORT_CENTER
-                .set(tokio::sync::RwLock::new(config.task_rc_config().clone()))
+                .set(tokio::sync::RwLock::new(config.task_report().clone()))
                 .is_err()
             {
                 warn!("Failed to set task report center");
