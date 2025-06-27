@@ -147,7 +147,9 @@ impl GxlFlow {
 
         match task_description {
             Some(_) => {
-                let url = build_task_url(TaskUrlType::TaskReport).await.unwrap_or_default();
+                let url = build_task_url(TaskUrlType::TaskReport)
+                    .await
+                    .unwrap_or_default();
                 let task_result = TaskReport::from_task_and_notice(task.clone(), task_notice);
                 send_http_request(task_result.clone(), &url).await;
                 Ok((var_dict, ExecOut::Task(task)))

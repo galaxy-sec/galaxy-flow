@@ -64,7 +64,9 @@ pub async fn create_and_send_task_notice(
     task: &Task,
     task_notice: &TaskNotice,
 ) -> Result<TaskNotice, StructError<ExecReason>> {
-    let url = build_task_url(TaskUrlType::TaskNotice).await.unwrap_or_default();
+    let url = build_task_url(TaskUrlType::TaskNotice)
+        .await
+        .unwrap_or_default();
 
     let notice = TaskNotice {
         parent_id: task_notice.parent_id, // 明确初始化
