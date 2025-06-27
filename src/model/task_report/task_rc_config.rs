@@ -64,17 +64,17 @@ pub async fn build_task_url(url_type: TaskUrlType) -> Option<String> {
     let report_svr = task_config.report_svr.clone();
     match url_type {
         TaskUrlType::TaskNotice => Some(format!(
-            "http://{}:{}/task/create_batch_subtask/",
+            "http://{}:{}/api/task/subtasks:batchCreate",
             report_svr.domain(),
             report_svr.port(),
         )),
         TaskUrlType::TaskReport => Some(format!(
-            "http://{}:{}/task/update_subtask_info/",
+            "http://{}:{}/api/task/subtasks:update",
             report_svr.domain(),
             report_svr.port()
         )),
         TaskUrlType::MainTaskCreate => Some(format!(
-            "http://{}:{}/task/create_main_task/",
+            "http://{}:{}/api/task/maintasks",
             report_svr.domain(),
             report_svr.port()
         )),
