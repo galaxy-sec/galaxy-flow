@@ -31,7 +31,7 @@ pub async fn send_http_request<T: Serialize + Debug>(payload: T, url: &String) {
     match response {
         Ok(resp) => {
             if resp.status().is_success() {
-                debug!("HTTP request to {} succeeded", url);
+                info!("HTTP request to {} succeeded. {}", url,resp.text().await.unwrap_or_default());
             } else {
                 let status = resp.status();
                 let text = resp.text().await.unwrap_or_default();
@@ -64,7 +64,9 @@ pub async fn create_and_send_task_notice(
     task: &Task,
     task_notice: &TaskNotice,
 ) -> Result<TaskNotice, StructError<ExecReason>> {
-    let url = build_task_url(TaskUrlType::TaskNotice).await.unwrap_or_default();
+    let url = build_task_url(TaskUrlType::TaskNotice)
+        .await
+        .unwrap_or_default();
 
     let notice = TaskNotice {
         parent_id: task_notice.parent_id, // 明确初始化

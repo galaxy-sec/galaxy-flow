@@ -14,12 +14,12 @@ pub struct TaskReport {
 }
 
 /// 任务状态
-#[derive(Debug, Clone, Serialize, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub enum SubTaskStatus {
-    Created,
-    Running,
+    Pending,
+    Inprogress,
     Success,
-    Failed,
+    Failure,
 }
 
 impl TaskReport {
@@ -41,7 +41,7 @@ impl TaskReport {
             log: running_log,
             status: match task.result() {
                 Ok(_) => SubTaskStatus::Success,
-                Err(_) => SubTaskStatus::Failed,
+                Err(_) => SubTaskStatus::Failure,
             },
             order: task_notice.order,
         }
