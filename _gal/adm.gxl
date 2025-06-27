@@ -15,8 +15,11 @@ mod main :  {
   flow up_v_patch   : ver.patch,_ver_app      { }
   #[usage(desp="update version of feature ")]
   flow up_v_feature : ver.feature, _ver_app  { }
-  #[usage(desp="add tag by version ")]
-  flow ver_tag     : git.tag_ver ;
+
+  #[usage(desp="release by tag version ")]
+  flow tag_release     : git.tag_ver ;
+  #[usage(desp="release-pre by tag version ")]
+  flow tag_release_pre     : git.tag_ver_pre ;
 
   #[usage(desp="update version to crates cargo.toml ")]
   flow _ver_app: ver.use {
