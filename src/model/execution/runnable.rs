@@ -21,6 +21,36 @@ pub enum ExecOut {
     Ignore,
     Code(i32),
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Getters)]
+pub struct TaskValue {
+    vars: VarSpace,
+    out: String,
+    task: ExecOut,
+}
+impl TaskValue {
+    pub fn new(vars: VarSpace, out: String, task: ExecOut) -> Self {
+        Self { vars, out, task }
+    }
+}
+impl From<(VarSpace, ExecOut)> for TaskValue {
+    fn from(value: (VarSpace, ExecOut)) -> Self {
+        Self {
+            vars: value.0,
+            task: value.1,
+            out: String::new(),
+        }
+    }
+}
+
+impl From<(VarSpace, ExecOut, String)> for TaskValue {
+    fn from(value: (VarSpace, ExecOut, String)) -> Self {
+        Self {
+            vars: value.0,
+            task: value.1,
+            out: value.2,
+        }
+    }
+}
 
 pub type TaskResult = ExecResult<ExecOut>;
 pub type VarsResult = ExecResult<VarSpace>;
