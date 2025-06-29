@@ -16,14 +16,14 @@ fn rg_test() {
         outer_print: false,
         ..Default::default()
     };
-    let cmd = format!("rm -rf ./tmp/");
+    let cmd = "rm -rf ./tmp/".to_string();
     let (_code, _stdout, _stderr) = shells::execute_with("bash", &cmd);
     let repo = ModRepo::new("https://galaxy-sec.org/free/galaxy/rg-tpl.git", "develop").unwrap();
     loader
         .init(repo, "./tmp/", true, "simple", expect.clone())
         .unwrap();
 
-    let cmd = format!("rm -rf ./tmp/");
+    let cmd = "rm -rf ./tmp/".to_string();
     let (_code, _stdout, _stderr) = shells::execute_with("bash", &cmd);
     let repo = ModRepo::new("https://galaxy-sec.org/free/galaxy/rg-tpl.git", "beta").unwrap();
     loader

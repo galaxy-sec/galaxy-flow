@@ -5,8 +5,12 @@ pub struct MenuItem {
     pub color: Option<String>,
 }
 impl MenuItem {
-    pub fn new(key: String, desp: Option<String>, color: Option<String>) -> Self {
-        MenuItem { key, desp, color }
+    pub fn new<S: Into<String>>(key: S, desp: Option<String>, color: Option<String>) -> Self {
+        MenuItem {
+            key: key.into(),
+            desp,
+            color,
+        }
     }
 }
 #[derive(Default, Getters, Builder, Debug, PartialEq, Clone)]

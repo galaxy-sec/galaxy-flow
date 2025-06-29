@@ -25,23 +25,15 @@ fn menu_normal() {
     .assert();
     let menu = spc.menu().unwrap();
     let mut expect = GxMenu::default();
-    expect.envs.push(MenuItem::new(format!("g_e1"), None, None));
-    expect.envs.push(MenuItem::new(format!("b_e1"), None, None));
-    expect.envs.push(MenuItem::new(format!("e1"), None, None));
-    expect
-        .flows
-        .push(MenuItem::new(format!("g_f1"), None, None));
-    expect
-        .flows
-        .push(MenuItem::new(format!("g_f2"), None, None));
-    expect
-        .flows
-        .push(MenuItem::new(format!("b_f1"), None, None));
-    expect
-        .flows
-        .push(MenuItem::new(format!("b_f2"), None, None));
-    expect.flows.push(MenuItem::new(format!("f1"), None, None));
-    expect.flows.push(MenuItem::new(format!("f2"), None, None));
+    expect.envs.push(MenuItem::new("g_e1", None, None));
+    expect.envs.push(MenuItem::new("b_e1", None, None));
+    expect.envs.push(MenuItem::new("e1", None, None));
+    expect.flows.push(MenuItem::new("g_f1", None, None));
+    expect.flows.push(MenuItem::new("g_f2", None, None));
+    expect.flows.push(MenuItem::new("b_f1", None, None));
+    expect.flows.push(MenuItem::new("b_f2", None, None));
+    expect.flows.push(MenuItem::new("f1", None, None));
+    expect.flows.push(MenuItem::new("f2", None, None));
     assert_eq!(menu, expect);
 }
 
@@ -62,8 +54,8 @@ fn menu_simple() {
     .assert();
     let menu = spc.menu().unwrap();
     let mut expect = GxMenu::default();
-    expect.envs.push(MenuItem::new(format!("e1"), None, None));
-    expect.flows.push(MenuItem::new(format!("f1"), None, None));
-    expect.flows.push(MenuItem::new(format!("f2"), None, None));
+    expect.envs.push(MenuItem::new("e1", None, None));
+    expect.flows.push(MenuItem::new("f1", None, None));
+    expect.flows.push(MenuItem::new("f2", None, None));
     assert_eq!(menu, expect);
 }

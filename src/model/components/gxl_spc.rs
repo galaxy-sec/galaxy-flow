@@ -1,5 +1,8 @@
 use super::{code_spc::CodeSpace, prelude::*};
-use crate::{execution::sequence::Sequence, menu::*, util::task_report::task_local_report};
+use crate::{
+    ability::prelude::TaskValue, execution::sequence::Sequence, menu::*,
+    util::task_report::task_local_report,
+};
 use colored::Colorize;
 use orion_error::ErrorConv;
 use std::{collections::HashMap, fmt::Display};
@@ -213,13 +216,13 @@ impl GxlSpace {
             .await
             .err_conv()
         {
-            Ok((_, output)) => {
-                task_local_report(output);
-                return Ok(());
+            Ok(TaskValue { rec, .. }) => {
+                task_local_report(rec);
+                Ok(())
             }
             Err(do_err) => {
                 //todo report;
-                return Err(do_err);
+                Err(do_err)
             }
         }
     }
@@ -263,61 +266,6 @@ impl GxlSpace {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::{
-        ability::prelude::RgProp,
-        components::{gxl_mod::meta::ModMeta, GxlEnv, GxlFlow, GxlMod, RgVars},
-        execution::exec_init_env,
-        types::AnyResult,
-    };
-    use orion_common::friendly::New2;
-    use orion_error::TestAssert;
-
-    #[tokio::test]
-    async fn execute_forward() -> AnyResult<()> {
-        let (ctx, def) = exec_init_env();
-
-        // Create main module
-        let mut main_mod = GxlMod::from(ModMeta::build_mod(MAIN_MOD));
-        main_mod.append(RgProp::new("key1", "val1"));
-
-        let flow = GxlFlow::load_ins("flow1");
-        main_mod.append(flow);
-
-        // Create environment module
-        let mut env_mod = GxlMod::from(ModMeta::build_mod(ENV_MOD));
-
-        let mut env = GxlEnv::from("env1");
-        env.append(RgProp::new("key1", "val1"));
-
-        let mut rg_vars = RgVars::default();
-        rg_vars.append(RgProp::new("key1", "val1"));
-        env.append(rg_vars);
-
-        env_mod.append(env);
-
-        // Build code space
-        let mut code_space = CodeSpace::default();
-        code_space.append(env_mod);
-        code_space.append(main_mod);
-
-        // Execute
-        let mut flow = Sequence::from("test");
-        let work_space = code_space.assemble_mix().assert();
-
-        work_space.load_env(ctx.clone(), &mut flow, "env.env1")?;
-        work_space.load_flow(ctx.clone(), &mut flow, "main.flow1")?;
-
-        let (_, job) = flow.test_execute(ctx, def).await.unwrap();
-        debug!("Job result: {:#?}", job);
-
-        work_space.show().unwrap();
-        Ok(())
-    }
-}
-
 // UI helper functions
 pub fn show_item(item: &MenuItem) {
     if item.key.starts_with('_') {
@@ -347,4 +295,59 @@ pub fn color_show<S: AsRef<str> + Display>(text: S, color: Option<&str>) {
     };
 
     println!("{}", colored_text);
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{
+        ability::prelude::GxlProp,
+        components::{gxl_mod::meta::ModMeta, GxlEnv, GxlFlow, GxlMod, GxlVars},
+        execution::exec_init_env,
+        types::AnyResult,
+    };
+    use orion_common::friendly::New2;
+    use orion_error::TestAssert;
+
+    #[tokio::test]
+    async fn execute_forward() -> AnyResult<()> {
+        let (ctx, def) = exec_init_env();
+
+        // Create main module
+        let mut main_mod = GxlMod::from(ModMeta::build_mod(MAIN_MOD));
+        main_mod.append(GxlProp::new("key1", "val1"));
+
+        let flow = GxlFlow::load_ins("flow1");
+        main_mod.append(flow);
+
+        // Create environment module
+        let mut env_mod = GxlMod::from(ModMeta::build_mod(ENV_MOD));
+
+        let mut env = GxlEnv::from("env1");
+        env.append(GxlProp::new("key1", "val1"));
+
+        let mut rg_vars = GxlVars::default();
+        rg_vars.append(GxlProp::new("key1", "val1"));
+        env.append(rg_vars);
+
+        env_mod.append(env);
+
+        // Build code space
+        let mut code_space = CodeSpace::default();
+        code_space.append(env_mod);
+        code_space.append(main_mod);
+
+        // Execute
+        let mut flow = Sequence::from("test");
+        let work_space = code_space.assemble_mix().assert();
+
+        work_space.load_env(ctx.clone(), &mut flow, "env.env1")?;
+        work_space.load_flow(ctx.clone(), &mut flow, "main.flow1")?;
+
+        let task_v = flow.test_execute(ctx, def).await.unwrap();
+        debug!("Job result: {:#?}", task_v);
+
+        work_space.show().unwrap();
+        Ok(())
+    }
 }

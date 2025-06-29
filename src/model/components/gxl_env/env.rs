@@ -1,7 +1,7 @@
-use crate::ability::prelude::RgProp;
+use crate::ability::prelude::{GxlProp, TaskValue};
 use crate::components::gxl_spc::GxlSpace;
 use crate::components::gxl_utls::mod_obj_name;
-use crate::components::RgVars;
+use crate::components::GxlVars;
 use crate::data::{AnnDto, FunDto};
 use crate::model::components::prelude::*;
 
@@ -19,12 +19,12 @@ use super::meta::EnvMeta;
 #[derive(Clone, Getters, Debug, Default)]
 pub struct GxlEnv {
     meta: EnvMeta,
-    props: Vec<RgProp>,
+    props: Vec<GxlProp>,
     items: Vec<EnvItem>,
 }
 #[derive(Clone, Debug)]
 pub enum EnvItem {
-    Var(RgVars),
+    Var(GxlVars),
     Read(GxRead),
     //Vault(GxVault),
 }
@@ -157,9 +157,10 @@ impl AsyncRunnableTrait for GxlEnv {
         debug!(target: ctx.path(),"env {} setting", env_name );
         self.export_props(ctx.clone(), def.global_mut(), "ENV")?;
         for item in &self.items {
-            (def, _) = item.async_exec(ctx.clone(), def).await?
+            let TaskValue { vars, .. } = item.async_exec(ctx.clone(), def).await?;
+            def = vars;
         }
-        Ok((def, ExecOut::Ignore))
+        Ok(TaskValue::from((def, ExecOut::Ignore)))
     }
 }
 #[async_trait]
@@ -179,25 +180,25 @@ impl ComponentMeta for GxlEnv {
 }
 
 impl PropsTrait for GxlEnv {
-    fn fetch_props(&self) -> &Vec<RgProp> {
+    fn fetch_props(&self) -> &Vec<GxlProp> {
         &self.props
     }
 }
 
 pub type GxlEnvHold = Arc<GxlEnv>;
-impl AppendAble<RgProp> for GxlEnv {
-    fn append(&mut self, prop: RgProp) {
+impl AppendAble<GxlProp> for GxlEnv {
+    fn append(&mut self, prop: GxlProp) {
         self.props.push(prop);
     }
 }
-impl AppendAble<Vec<RgProp>> for GxlEnv {
-    fn append(&mut self, mut props: Vec<RgProp>) {
+impl AppendAble<Vec<GxlProp>> for GxlEnv {
+    fn append(&mut self, mut props: Vec<GxlProp>) {
         self.props.append(&mut props)
     }
 }
 
-impl AppendAble<RgVars> for GxlEnv {
-    fn append(&mut self, vars: RgVars) {
+impl AppendAble<GxlVars> for GxlEnv {
+    fn append(&mut self, vars: GxlVars) {
         self.items.push(EnvItem::Var(vars))
     }
 }
@@ -215,7 +216,7 @@ mod tests {
     use orion_error::TestAssert;
 
     use crate::{
-        components::{code_spc::CodeSpace, gxl_spc::GxlSpace, gxl_var::RgProp, GxlEnv},
+        components::{code_spc::CodeSpace, gxl_spc::GxlSpace, gxl_var::GxlProp, GxlEnv},
         infra::once_init_log,
         model::components::GxlMod,
         traits::{DependTrait, PropsTrait},
@@ -226,14 +227,14 @@ mod tests {
     fn test_assemble_com() -> AnyResult<()> {
         // Create a base RgEnv instance
         let mut base_env = GxlEnv::from("base_env");
-        base_env.append(RgProp::new("base_prop1", "p1"));
-        base_env.append(RgProp::new("base_prop2", "p2"));
+        base_env.append(GxlProp::new("base_prop1", "p1"));
+        base_env.append(GxlProp::new("base_prop2", "p2"));
 
         // Create a source RgMod with an RgEnv to be merged
         let mut src_mod = GxlMod::from("src_mod");
         let mut src_env = GxlEnv::from("src_env");
-        src_env.append(RgProp::new("src_prop1", "s1"));
-        src_env.append(RgProp::new("src_prop2", "s2"));
+        src_env.append(GxlProp::new("src_prop1", "s1"));
+        src_env.append(GxlProp::new("src_prop2", "s2"));
         src_mod.append(src_env);
         let mut raw_spc = CodeSpace::default();
         raw_spc.append(src_mod);
@@ -260,19 +261,19 @@ mod tests {
         once_init_log();
         // Create a base RgEnv instance
         let mut base_env = GxlEnv::from("base_env");
-        base_env.append(RgProp::new("base_prop1", "p1"));
+        base_env.append(GxlProp::new("base_prop1", "p1"));
 
         // Create a source RgMod with multiple RgEnv instances to be merged
         let mut src_mod = GxlMod::from("src_mod");
 
         // Add first source environment
         let mut src_env1 = GxlEnv::from("src_env1");
-        src_env1.append(RgProp::new("src_prop1", "s1"));
+        src_env1.append(GxlProp::new("src_prop1", "s1"));
         src_mod.append(src_env1);
 
         // Add second source environment
         let mut src_env2 = GxlEnv::from("src_env2");
-        src_env2.append(RgProp::new("src_prop2", "s2"));
+        src_env2.append(GxlProp::new("src_prop2", "s2"));
         src_mod.append(src_env2);
 
         // Add both source environments to the base environment's mix
@@ -299,12 +300,12 @@ mod tests {
     fn test_assemble_com_with_no_mix() -> AnyResult<()> {
         // Create a base RgEnv instance
         let mut base_env = GxlEnv::from("base_env");
-        base_env.append(RgProp::new("base_prop1", "p1"));
+        base_env.append(GxlProp::new("base_prop1", "p1"));
 
         // Create a source RgMod with an RgEnv, but do not add it to the mix
         let mut src_mod = GxlMod::from("src_mod");
         let mut src_env = GxlEnv::from("src_env");
-        src_env.append(RgProp::new("src_prop1", "s1"));
+        src_env.append(GxlProp::new("src_prop1", "s1"));
         src_mod.append(src_env);
 
         let mut spc = GxlSpace::default();

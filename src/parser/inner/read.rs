@@ -99,10 +99,11 @@ mod tests {
     #[test]
     fn read_cmd_test1() {
         once_init_log();
-        let mut dto = CmdDTO::default();
-        dto.expect = ShellOption::default();
-        dto.cmd = format!("echo galaxy-1.0");
-        dto.name = format!("RG");
+        let dto = CmdDTO {
+            expect: ShellOption::default(),
+            cmd: "echo galaxy-1.0".to_string(),
+            name: "RG".to_string(),
+        };
         let mut data = r#"
                  gx.read_cmd (
                  name : "RG",
@@ -114,13 +115,15 @@ mod tests {
     }
     #[test]
     fn read_cmd_test2() {
-        let mut dto = CmdDTO::default();
-        dto.expect = ShellOption::default();
+        let mut dto = CmdDTO {
+            expect: ShellOption::default(),
+            ..Default::default()
+        };
         dto.expect.log_lev = Some(log::Level::Info);
 
-        dto.cmd = format!("echo galaxy-1.0");
-        dto.name = format!("RG");
-        dto.expect.err = Some(format!("you err"));
+        dto.cmd = "echo galaxy-1.0".to_string();
+        dto.name = "RG".to_string();
+        dto.expect.err = Some("you err".into());
 
         let mut data = r#"
                  gx.read_cmd(
@@ -136,8 +139,10 @@ mod tests {
     }
     #[test]
     fn read_file_test() {
-        let mut dto = FileDTO::default();
-        dto.file = format!("vars.ini");
+        let dto = FileDTO {
+            file: "vars.ini".to_string(),
+            ..Default::default()
+        };
 
         let mut data = r#"
                  gx.read_file (
@@ -149,8 +154,10 @@ mod tests {
     }
     #[test]
     fn read_file_default() {
-        let mut dto = FileDTO::default();
-        dto.file = format!("vars.ini");
+        let dto = FileDTO {
+            file: "vars.ini".to_string(),
+            ..Default::default()
+        };
 
         let mut data = r#"
                  gx.read_file (  "vars.ini" ) ;"#;
@@ -161,9 +168,10 @@ mod tests {
 
     #[test]
     fn read_stdin_test() {
-        let mut dto = StdinDTO::default();
-        dto.name = format!("name");
-        dto.prompt = format!("please input you name");
+        let dto = StdinDTO {
+            name: "name".to_string(),
+            prompt: "please input you name".to_string(),
+        };
 
         let mut data = r#"
                  gx.read_stdin (

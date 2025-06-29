@@ -1,3 +1,4 @@
+use crate::ability::prelude::TaskValue;
 use crate::components::gxl_env::env::anns_from_option_dto;
 use crate::components::gxl_spc::GxlSpace;
 use crate::components::gxl_utls::mod_obj_name;
@@ -8,15 +9,13 @@ use crate::model::components::prelude::*;
 use crate::annotation::{ComUsage, Dryrunable, FlowHold, TaskMessage, Transaction};
 use crate::execution::runnable::AsyncRunnableTrait;
 use crate::execution::task::Task;
-use crate::task_report::task_notification::{TaskNotice, TaskOutline};
+use crate::task_report::task_notification::TaskNotice;
+use crate::task_report::task_rc_config::{build_task_url, TaskUrlType};
 use crate::task_report::task_result_report::TaskReport;
 use crate::traits::DependTrait;
 
 use crate::components::gxl_block::BlockNode;
-use crate::util::http_handle::{
-    get_task_notice_center_url, get_task_report_center_url, send_http_request,
-};
-
+use crate::util::http_handle::{create_and_send_task_notice, send_http_request};
 use std::io::Write;
 
 use derive_getters::Getters;
@@ -179,45 +178,33 @@ impl Transaction for GxlFlow {
 }
 impl GxlFlow {
     async fn exec_self(&self, ctx: ExecContext, mut var_dict: VarSpace) -> VTResult {
-        let task_message = self.get_task_message();
+        let task_description = self.task_description();
         let mut task = Task::from(self.meta.name());
-        let mut task_body = TaskNotice::new();
-        if let Some(des) = task_message.clone() {
+        let mut task_notice = TaskNotice::new();
+        if let Some(des) = task_description.clone() {
             task = Task::from(des);
-            // 若环境变量或配置文件中有报告中心则进行任务上报
-            if let Some(url) = get_task_notice_center_url() {
-                task_body = TaskNotice {
-                    parent_id: task_body.parent_id,
-                    name: task.name().to_string(),
-                    description: task.name().to_string(),
-                    order: task_body.order,
-                };
-                let batch_task = TaskOutline {
-                    tasks: vec![task_body.clone()],
-                };
-                send_http_request(batch_task, &url).await;
-            }
+            task_notice = create_and_send_task_notice(&task, &task_notice).await?;
         }
+
+        // 执行块
         for item in &self.blocks {
-            let (cur_dict, out) = item.async_exec(ctx.clone(), var_dict).await?;
-            var_dict = cur_dict;
-            task.append(out);
+            let TaskValue { vars, rec, .. } = item.async_exec(ctx.clone(), var_dict).await?;
+            var_dict = vars;
+            task.append(rec);
         }
         task.finish();
 
-        // result_callback
-        // 若任务被标记为需要返回，则进行返回
-        if task_message.is_some() {
-            // 若环境变量或配置文件中有返回路径则进行返回
-            if let Some(url) = get_task_report_center_url() {
-                let task_result = TaskReport::from_flowtask_and_notice(task.clone(), task_body);
+        match task_description {
+            Some(_) => {
+                let url = build_task_url(TaskUrlType::TaskReport)
+                    .await
+                    .unwrap_or_default();
+                let task_result = TaskReport::from_task_and_notice(task.clone(), task_notice);
                 send_http_request(task_result.clone(), &url).await;
+                Ok(TaskValue::from((var_dict, ExecOut::Task(task))))
             }
+            None => Ok(TaskValue::from((var_dict, ExecOut::Ignore))),
         }
-        if task_message.is_none() {
-            return Ok((var_dict, ExecOut::Ignore));
-        }
-        Ok((var_dict, ExecOut::Task(task)))
     }
 
     // 获取注解中的描述信息
@@ -232,7 +219,7 @@ impl GxlFlow {
     }
 
     // 获取注解中的描述信息
-    pub fn get_task_message(&self) -> Option<String> {
+    pub fn task_description(&self) -> Option<String> {
         let annotation = self.meta.annotations();
         for ann in annotation {
             if ann.message().is_some() {
@@ -255,34 +242,30 @@ impl GxlFlow {
 #[async_trait]
 impl AsyncRunnableTrait for GxlFlow {
     async fn async_exec(&self, mut ctx: ExecContext, mut var_dict: VarSpace) -> VTResult {
-        let des = self.get_task_message();
-        let mut job = Job::from(self.meta.name());
-        if let Some(des) = des.clone() {
-            job = Job::from(&des);
-        }
+        let des = self
+            .task_description()
+            .unwrap_or(self.meta.name().to_string());
+        let mut job = Job::from(&des);
         ctx.append(self.meta.name());
         //pre_flows,post_flows run in main sequence
         /*
         for pre in self.pre_flows() {
-            let (cur_dict, task) = pre.async_exec(ctx.clone(), var_dict).await?;
-            var_dict = cur_dict;
-            job.append(task);
+            let TaskValue { vars, rec, .. } = pre.async_exec(ctx.clone(), var_dict).await?;
+            var_dict = vars;
+            job.append(rec);
         }
         */
-        let (cur_dict, task) = self.exec_self(ctx.clone(), var_dict).await?;
-        var_dict = cur_dict;
-        job.append(task);
+        let TaskValue { vars, rec, .. } = self.exec_self(ctx.clone(), var_dict).await?;
+        var_dict = vars;
+        job.append(rec);
         /*
         for post in self.post_flows() {
-            let (cur_dict, task) = post.async_exec(ctx.clone(), var_dict).await?;
-            var_dict = cur_dict;
-            job.append(task);
+            let TaskValue { vars, rec, .. } = post.async_exec(ctx.clone(), var_dict).await?;
+            var_dict = vars;
+            job.append(rec);
         }
         */
-        if des.is_none() {
-            return Ok((var_dict, ExecOut::Ignore));
-        }
-        Ok((var_dict, ExecOut::Job(job)))
+        Ok(TaskValue::from((var_dict, ExecOut::Job(job))))
     }
 }
 impl ComponentMeta for GxlFlow {

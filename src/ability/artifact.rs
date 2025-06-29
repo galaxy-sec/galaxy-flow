@@ -8,7 +8,7 @@ use orion_syspec::{
     update::UpdateOptions,
 };
 
-use crate::ability::prelude::*;
+use crate::{ability::prelude::*, execution::runnable::TaskValue};
 
 #[derive(Clone, Default, Debug, PartialEq, Builder, Getters)]
 #[builder(setter(into))]
@@ -42,7 +42,7 @@ impl AsyncRunnableTrait for GxArtifact {
                 .err_conv()?;
         }
 
-        Ok((vars_dict, ExecOut::Ignore))
+        Ok(TaskValue::from((vars_dict, ExecOut::Ignore)))
     }
 }
 

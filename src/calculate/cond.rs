@@ -2,7 +2,7 @@ use async_trait::async_trait;
 
 use super::express::ExpressEnum;
 use super::express::*;
-use crate::ability::prelude::{VTResult, VarSpace};
+use crate::ability::prelude::{TaskValue, VTResult, VarSpace};
 use crate::components::gxl_cond::TGxlCond;
 use crate::context::ExecContext;
 use crate::execution::runnable::ExecOut;
@@ -33,16 +33,16 @@ where
             self.true_block.cond_exec(ctx, def).await
         } else {
             for cond in &self.elseif_blocks {
-                if let Ok((vars, out)) = cond.cond.cond_exec(ctx.clone(), def.clone()).await {
-                    if out != ExecOut::Ignore {
-                        return Ok((vars, out));
+                if let Ok(task_value) = cond.cond.cond_exec(ctx.clone(), def.clone()).await {
+                    if task_value.rec() != &ExecOut::Ignore {
+                        return Ok(task_value);
                     }
                 }
             }
             if let Some(false_cond) = self.false_block.as_ref() {
                 return false_cond.cond_exec(ctx, def).await;
             }
-            Ok((def, ExecOut::Ignore))
+            Ok(TaskValue::from((def, ExecOut::Ignore)))
         }
     }
 }
@@ -52,7 +52,7 @@ pub struct StuBlock {
 #[async_trait]
 impl CondExec for StuBlock {
     async fn cond_exec(&self, _ctx: ExecContext, _def: VarSpace) -> VTResult {
-        Ok((_def, self.out.clone()))
+        Ok(TaskValue::from((_def, self.out.clone())))
     }
 }
 
@@ -96,7 +96,7 @@ mod tests {
             ctrl_express
                 .cond_exec(ExecContext::default(), VarSpace::default(),)
                 .await,
-            Ok((VarSpace::default(), ExecOut::Code(0)))
+            Ok(TaskValue::from((VarSpace::default(), ExecOut::Code(0))))
         );
     }
 
@@ -125,7 +125,7 @@ mod tests {
             ctrl_express
                 .cond_exec(ExecContext::default(), VarSpace::default(),)
                 .await,
-            Ok((VarSpace::default(), ExecOut::Code(1)))
+            Ok(TaskValue::from((VarSpace::default(), ExecOut::Code(1))))
         );
     }
 
@@ -145,7 +145,7 @@ mod tests {
             ctrl_express
                 .cond_exec(ExecContext::default(), VarSpace::default(),)
                 .await,
-            Ok((VarSpace::default(), ExecOut::Code(1)))
+            Ok(TaskValue::from((VarSpace::default(), ExecOut::Code(1))))
         );
     }
 }

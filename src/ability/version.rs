@@ -126,7 +126,7 @@ impl AsyncRunnableTrait for RgVersion {
                 .set(&self.export.to_uppercase(), format!("{}", &ver));
             let mut file = File::create(file_path.as_str()).owe_res()?;
             file.write_all(ver.to_string().as_bytes()).owe_res()?;
-            Ok((dict, ExecOut::Ignore))
+            Ok(TaskValue::from((dict, ExecOut::Ignore)))
         } else {
             Err(ExecReason::Depend("version file parse failed!".to_string()).into())
         }

@@ -94,7 +94,7 @@ mod tests {
         let original_path = sec_value_default_path();
         std::env::set_var("GAL_SEC_FILE_PATH", file_path.to_str().unwrap());
 
-        let _ = load_secfile(&mut var_dict).assert("load secfile");
+        load_secfile(&mut var_dict).assert("load secfile");
 
         // 验证全局变量
         assert!(var_dict.contains_key("SEC_KEY1"));

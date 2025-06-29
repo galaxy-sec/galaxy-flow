@@ -45,7 +45,7 @@ impl AsyncRunnableTrait for GxUpLoad {
         if local_file_path.exists() {
             addr.upload(&local_file_path, &method).await.err_conv()?;
             action.finish();
-            Ok((vars_dict, ExecOut::Action(action)))
+            Ok(TaskValue::from((vars_dict, ExecOut::Action(action))))
         } else {
             return ExecReason::Miss("local_file".into())
                 .err_result()
@@ -79,7 +79,7 @@ impl AsyncRunnableTrait for GxDownLoad {
                 .await
                 .err_conv()?;
             action.finish();
-            Ok((vars_dict, ExecOut::Action(action)))
+            Ok(TaskValue::from((vars_dict, ExecOut::Action(action))))
         } else {
             return ExecReason::Miss("local_file_parent".into())
                 .err_result()

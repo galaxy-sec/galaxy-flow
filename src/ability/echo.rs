@@ -19,7 +19,7 @@ impl AsyncRunnableTrait for GxEcho {
         let out = ex.eval(&self.value)?;
         info!(target: ctx.path(), "{} :{}", &self.value, out);
         println!("{}", out);
-        Ok((vars_dict, ExecOut::Ignore))
+        Ok(TaskValue::from((vars_dict, ExecOut::Ignore)))
     }
 }
 

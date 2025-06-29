@@ -5,6 +5,7 @@ use async_trait::async_trait;
 use orion_common::friendly::AppendAble;
 use orion_error::UvsSysFrom;
 
+use crate::ability::prelude::TaskValue;
 use crate::annotation::{Dryrunable, Transaction};
 use crate::context::ExecContext;
 use crate::execution::hold::AsyncComHold;
@@ -72,9 +73,9 @@ impl Sequence {
                 item.async_exec(ctx.clone(), def.clone()).await
             };
             match result {
-                Ok((new_def, out)) => {
-                    def = new_def;
-                    job.append(out);
+                Ok(TaskValue { vars, rec, .. }) => {
+                    def = vars;
+                    job.append(rec);
                 }
                 Err(e) => {
                     warn!("Sequence aborted at step {}: {}", index, e);
@@ -85,7 +86,7 @@ impl Sequence {
             }
         }
 
-        Ok((def, ExecOut::Job(job)))
+        Ok(TaskValue::from((def, ExecOut::Job(job))))
     }
 
     async fn undo_transactions(
@@ -186,7 +187,7 @@ impl AsyncRunnableTrait for RunStub {
 
         debug!(target: ctx.path(), "executing stub: {}", self.name);
         let task = Task::from(&self.name);
-        Ok((def, ExecOut::Task(task)))
+        Ok(TaskValue::from((def, ExecOut::Task(task))))
     }
 }
 
@@ -209,9 +210,9 @@ mod tests {
         flow.append(AsyncComHold::from(stub_node("step1")));
         flow.append(AsyncComHold::from(stub_node("step2")));
 
-        let (_, out) = flow.execute(ctx, def).await.unwrap();
+        let TaskValue { rec, .. } = flow.execute(ctx, def).await.unwrap();
 
-        if let ExecOut::Job(job) = out {
+        if let ExecOut::Job(job) = rec {
             assert_eq!(job.tasks().len(), 2);
             assert_eq!(job.tasks()[0].name(), "step1");
             assert_eq!(job.tasks()[1].name(), "step2");

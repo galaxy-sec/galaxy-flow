@@ -1,4 +1,7 @@
-use crate::util::http_handle::{get_main_task_create_url, send_http_request};
+use crate::{
+    task_report::task_rc_config::{build_task_url, report_enable, TaskUrlType},
+    util::http_handle::send_http_request,
+};
 use serde::Serialize;
 use std::env;
 use time::{format_description, OffsetDateTime};
@@ -13,6 +16,11 @@ pub struct MainTask {
 }
 
 pub async fn create_main_task(task_name: String) {
+    // 检查报告中心是否启用
+    // 如果未启用，则不创建主任务,直接返回
+    if !report_enable().await {
+        return;
+    }
     // 创建主任务
     let datetime = OffsetDateTime::now_local().unwrap_or_else(|_| OffsetDateTime::now_utc());
     let format: Result<
@@ -35,9 +43,10 @@ pub async fn create_main_task(task_name: String) {
     // 设置环境变量中的父id
     std::env::set_var("task_id", parent_id.to_string());
     // 创建主任务
-    if let Some(url) = get_main_task_create_url() {
-        send_http_request(main_task, &url).await;
-    }
+    let url = build_task_url(TaskUrlType::MainTaskCreate)
+        .await
+        .unwrap_or_default();
+    send_http_request(main_task, &url).await;
 }
 
 // 获取当前任务的父id

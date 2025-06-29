@@ -179,7 +179,7 @@ impl Activity {
         debug!(target: ctx.path(),"cmd: {}, opt:{:?}", cmd,opt);
         gxl_sh!(LogicScope::Outer, ctx.path(), &cmd, &opt, &exp).with(&r_with)?;
         action.finish();
-        Ok((vars_dict, ExecOut::Action(action)))
+        Ok(TaskValue::from((vars_dict, ExecOut::Action(action))))
     }
     pub fn exec_cmd(&self, ctx: ExecContext, vars_dict: VarSpace, dto: &ActivityDTO) -> VTResult {
         self.execute_impl(ctx, vars_dict, dto)
@@ -222,8 +222,8 @@ mod tests {
         });
 
         let act = Activity::dto_new(dto.clone());
-        let (_, result) = act.async_exec(context.clone(), def).await.assert();
-        match result {
+        let task_value = act.async_exec(context.clone(), def).await.assert();
+        match task_value.rec() {
             ExecOut::Action(action) => {
                 assert_eq!(action.name(), "os.copy");
             }

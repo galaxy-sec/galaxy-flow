@@ -1,5 +1,5 @@
 use crate::{
-    ability::prelude::RgProp,
+    ability::prelude::{GxlProp, TaskValue},
     annotation::{Dryrunable, Transaction},
     components::{gxl_intercept::GxlIntercept, gxl_spc::GxlSpace},
     execution::hold::TransableHold,
@@ -19,7 +19,7 @@ pub struct FlowRunner {
 impl FlowRunner {
     pub(crate) fn new(
         m_name: String,
-        props: Vec<RgProp>,
+        props: Vec<GxlProp>,
         flow: GxlFlow,
         befores: Vec<GxlFlow>,
         afters: Vec<GxlFlow>,
@@ -67,23 +67,23 @@ impl AsyncRunnableTrait for FlowRunner {
         ctx.append(self.m_name.as_str());
         // 使用链式调用和模式匹配
         let dict = {
-            let (d, t) = self.before().async_exec(ctx.clone(), dict).await?;
-            job.append(t);
-            d
+            let TaskValue { vars, rec, .. } = self.before().async_exec(ctx.clone(), dict).await?;
+            job.append(rec);
+            vars
         };
 
         let dict = {
-            let (d, t) = self.flow().async_exec(ctx.clone(), dict).await?;
-            job.append(t);
-            d
+            let TaskValue { vars, rec, .. } = self.flow().async_exec(ctx.clone(), dict).await?;
+            job.append(rec);
+            vars
         };
 
         let dict = {
-            let (d, t) = self.after().async_exec(ctx.clone(), dict).await?;
-            job.append(t);
-            d
+            let TaskValue { vars, rec, .. } = self.after().async_exec(ctx.clone(), dict).await?;
+            job.append(rec);
+            vars
         };
-        Ok((dict, ExecOut::Job(job)))
+        Ok(TaskValue::from((dict, ExecOut::Job(job))))
     }
 }
 impl ComponentMeta for FlowRunner {

@@ -1,5 +1,6 @@
 use crate::ability::delegate::Activity;
-use crate::ability::prelude::RgProp;
+use crate::ability::prelude::GxlProp;
+use crate::ability::prelude::TaskValue;
 use crate::components::gxl_flow::runner::FlowRunner;
 use crate::components::gxl_spc::GxlSpace;
 use crate::components::GxlEnv;
@@ -30,7 +31,7 @@ pub enum ModItem {
 #[derive(Clone, Getters, Default)]
 pub struct GxlMod {
     meta: ModMeta,
-    props: Vec<RgProp>,
+    props: Vec<GxlProp>,
     env_names: Vec<MenuItem>,
     flow_names: Vec<MenuItem>,
     envs: HashMap<String, GxlEnv>,
@@ -82,7 +83,7 @@ impl DependTrait<&GxlSpace> for GxlMod {
     }
 }
 impl PropsTrait for GxlMod {
-    fn fetch_props(&self) -> &Vec<RgProp> {
+    fn fetch_props(&self) -> &Vec<GxlProp> {
         &self.props
     }
 }
@@ -188,11 +189,11 @@ impl AsyncRunnableTrait for ModRunner {
         ctx.append(self.meta().name());
         let mut job = Job::default();
         for i in &self.async_items {
-            let (d, t) = i.async_exec(ctx.clone(), dct).await?;
-            dct = d;
-            job.append(t);
+            let TaskValue { vars, rec, .. } = i.async_exec(ctx.clone(), dct).await?;
+            dct = vars;
+            job.append(rec);
         }
-        Ok((dct, ExecOut::Job(job)))
+        Ok(TaskValue::from((dct, ExecOut::Job(job))))
     }
 }
 
@@ -267,7 +268,7 @@ impl ExecLoadTrait for GxlMod {
 impl GxlMod {
     fn exec_self(&self, ctx: ExecContext, mut def: VarSpace) -> VTResult {
         self.export_props(ctx, def.global_mut(), self.meta.name().as_str())?;
-        Ok((def, ExecOut::Ignore))
+        Ok(TaskValue::from((def, ExecOut::Ignore)))
     }
 }
 
@@ -283,13 +284,13 @@ impl ComponentMeta for GxlMod {
     }
 }
 
-impl AppendAble<RgProp> for GxlMod {
-    fn append(&mut self, prop: RgProp) {
+impl AppendAble<GxlProp> for GxlMod {
+    fn append(&mut self, prop: GxlProp) {
         self.props.push(prop);
     }
 }
-impl AppendAble<Vec<RgProp>> for GxlMod {
-    fn append(&mut self, prop_vec: Vec<RgProp>) {
+impl AppendAble<Vec<GxlProp>> for GxlMod {
+    fn append(&mut self, prop_vec: Vec<GxlProp>) {
         for prop in prop_vec {
             self.props.push(prop);
         }
@@ -344,8 +345,8 @@ mod test {
 
     use crate::{
         components::{
-            gxl_env::meta::EnvMeta, gxl_flow::meta::FlowMeta, gxl_spc::GxlSpace, gxl_var::RgProp,
-            GxlEnv, GxlFlow, GxlMod, RgVars,
+            gxl_env::meta::EnvMeta, gxl_flow::meta::FlowMeta, gxl_spc::GxlSpace, gxl_var::GxlProp,
+            GxlEnv, GxlFlow, GxlMod, GxlVars,
         },
         context::ExecContext,
         execution::sequence::Sequence,
@@ -367,24 +368,23 @@ mod test {
         let mod1 = GxlMod::from(ModMeta::build_mod("mod1"));
         let mixs: Vec<GxlMod> = vec![mod1];
         let result = merge_mod(mixs);
-        assert_eq!(result.is_some(), true);
+        assert!(result.is_some());
     }
 
     #[test]
     fn test_merge_to_head_multiple() {
         let meta1 = ModMeta::build_mod("mod1");
         let mut mod1 = GxlMod::from(meta1.clone());
-        mod1.props.push(RgProp::new("k1", "v1"));
+        mod1.props.push(GxlProp::new("k1", "v1"));
 
         let meta2 = ModMeta::new2(GxlType::Mod, "mod2".to_string());
         let mut mod2 = GxlMod::from(meta2);
-        mod2.props.push(RgProp::new("k2", "v2"));
+        mod2.props.push(GxlProp::new("k2", "v2"));
 
         let mixs: Vec<GxlMod> = vec![mod1, mod2];
 
         let result = merge_mod(mixs);
-        assert_eq!(result.is_some(), true);
-
+        assert!(result.is_some());
         if let Some(target) = result {
             assert_eq!(target.meta.name(), "mod1");
             assert_eq!(target.props.len(), 2);
@@ -415,7 +415,7 @@ mod test {
         let meta_mod1 = ModMeta::build_mod(mod_name);
         let mut mod1 = GxlMod::from(meta_mod1.clone());
         let mut env1 = GxlEnv::from("env1");
-        env1.append(RgProp::new("key1", "value1"));
+        env1.append(GxlProp::new("key1", "value1"));
         mod1.append(ModItem::Env(env1));
 
         // 创建 mod2 并引用 mod1 的环境变量
@@ -425,7 +425,7 @@ mod test {
 
         // 假设 mod2 添加了一个依赖于 mod1 的环境变量
         let mut env2 = GxlEnv::from(EnvMeta::build_env_mix("env2", vec!["mod1.env1"]));
-        env2.append(RgProp::new("key2", "value2"));
+        env2.append(GxlProp::new("key2", "value2"));
         mod2.append(ModItem::Env(env2));
 
         let mut spc = GxlSpace::default();
@@ -453,12 +453,12 @@ mod test {
 
         // 添加一个环境变量
         let mut env1 = GxlEnv::from("env1");
-        env1.append(RgProp::new("key1", "value1"));
-        let mut var = RgVars::default();
+        env1.append(GxlProp::new("key1", "value1"));
+        let mut var = GxlVars::default();
         var.insert("key3", "value1");
         env1.append(var);
         mod1.append(env1);
-        mod1.append(RgProp::new("key2", "value1"));
+        mod1.append(GxlProp::new("key2", "value1"));
 
         let ctx = ExecContext::default();
         let mut sequ = Sequence::from("exec");
@@ -468,7 +468,7 @@ mod test {
 
         let ctx = ExecContext::default();
         let vars = VarSpace::default();
-        let (vars, _) = sequ.execute(ctx, vars.clone()).await.unwrap();
+        let TaskValue { vars, .. } = sequ.execute(ctx, vars.clone()).await.unwrap();
 
         println!("{:?}", vars.global().maps());
         assert_eq!(
@@ -487,12 +487,12 @@ mod test {
         once_init_log();
         let meta1 = ModMeta::build_mod("mod1");
         let mut mod1 = GxlMod::from(meta1);
-        mod1.append(RgProp::new("k1", "v1"));
+        mod1.append(GxlProp::new("k1", "v1"));
         mod1.append(GxlFlow::from("flow1"));
 
         let meta2 = ModMeta::build_mod("mod2");
         let mut mod2 = GxlMod::from(meta2.clone());
-        mod2.append(RgProp::new("k2", "v2"));
+        mod2.append(GxlProp::new("k2", "v2"));
 
         // 添加一个流程
         let flow1 = GxlFlow::from(FlowMeta::build_flow_pre("flow2", "mod1.flow1"));
@@ -513,7 +513,7 @@ mod test {
 
         let ctx = ExecContext::default();
         let vars = VarSpace::default();
-        let (vars, _task) = sequ.execute(ctx, vars).await.unwrap();
+        let TaskValue { vars, .. } = sequ.execute(ctx, vars).await.unwrap();
 
         println!("{:?}", vars.global().maps());
         assert_eq!(

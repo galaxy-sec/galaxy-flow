@@ -1,7 +1,7 @@
 use orion_syspec::error::ToErr;
 
 use super::prelude::*;
-use crate::{execution::task::Task, traits::Setter};
+use crate::{ability::prelude::TaskValue, execution::task::Task, traits::Setter};
 
 use super::gxl_block::BlockNode;
 
@@ -32,11 +32,12 @@ impl AsyncRunnableTrait for GxlLoop {
                 cur_dict
                     .global_mut()
                     .set(self.cur_name().as_str(), v.clone());
-                let (dict, out) = self.body.async_exec(ctx.clone(), cur_dict).await?;
-                cur_dict = dict;
-                task.append(out);
+                let TaskValue { vars, rec, .. } =
+                    self.body.async_exec(ctx.clone(), cur_dict).await?;
+                cur_dict = vars;
+                task.append(rec);
             }
-            return Ok((cur_dict, ExecOut::Task(task)));
+            return Ok(TaskValue::from((cur_dict, ExecOut::Task(task))));
         }
         ExecReason::Miss(self.dct_name().into()).err_result()
     }
@@ -84,9 +85,8 @@ mod tests {
 
         // 验证结果
         assert!(result.is_ok());
-        let (_, exec_out) = result.unwrap();
-        if let ExecOut::Task(_task) = exec_out {
-            assert!(true)
+        let TaskValue { rec, .. } = result.unwrap();
+        if let ExecOut::Task(_task) = rec {
             //assert_eq!(job.tasks().len(), 2); // 应该有两个任务，对应两个键值对
         } else {
             panic!("Expected Job output");
@@ -137,9 +137,9 @@ mod tests {
 
         // 验证变量设置
         assert!(result.is_ok());
-        let (result_dict, _) = result.unwrap();
+        let TaskValue { vars, .. } = result.unwrap();
         assert_eq!(
-            result_dict.global().get("current").unwrap().to_string(),
+            vars.global().get("current").unwrap().to_string(),
             "value1" // 最后一次循环设置的值
         );
     }

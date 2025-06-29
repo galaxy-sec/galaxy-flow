@@ -1,17 +1,19 @@
+use crate::ability::prelude::TaskValue;
+
 use super::gxl_spc::GxlSpace;
 use super::{prelude::*, GxlFlow};
 
-use super::gxl_var::RgProp;
+use super::gxl_var::GxlProp;
 
 #[derive(Clone, Getters)]
 pub struct GxlIntercept {
     m_name: String,
-    props: Vec<RgProp>,
+    props: Vec<GxlProp>,
     flows: Vec<GxlFlow>,
 }
 
 impl GxlIntercept {
-    pub fn new(m_name: String, props: Vec<RgProp>, flows: Vec<GxlFlow>) -> Self {
+    pub fn new(m_name: String, props: Vec<GxlProp>, flows: Vec<GxlFlow>) -> Self {
         Self {
             m_name,
             props,
@@ -26,11 +28,11 @@ impl AsyncRunnableTrait for GxlIntercept {
         let mut job = Job::from("intercept");
         self.export_props(ctx.clone(), var_dict.global_mut(), self.m_name())?;
         for flow in &self.flows {
-            let (cur_dict, task) = flow.async_exec(ctx.clone(), var_dict).await?;
-            var_dict = cur_dict;
-            job.append(task);
+            let TaskValue { vars, rec, .. } = flow.async_exec(ctx.clone(), var_dict).await?;
+            var_dict = vars;
+            job.append(rec);
         }
-        Ok((var_dict, ExecOut::Job(job)))
+        Ok(TaskValue::from((var_dict, ExecOut::Job(job))))
     }
 }
 impl DependTrait<&GxlSpace> for GxlIntercept {
@@ -48,13 +50,13 @@ impl DependTrait<&GxlSpace> for GxlIntercept {
 }
 
 impl PropsTrait for GxlIntercept {
-    fn fetch_props(&self) -> &Vec<RgProp> {
+    fn fetch_props(&self) -> &Vec<GxlProp> {
         &self.props
     }
 }
 
-impl AppendAble<RgProp> for GxlIntercept {
-    fn append(&mut self, prop: RgProp) {
+impl AppendAble<GxlProp> for GxlIntercept {
+    fn append(&mut self, prop: GxlProp) {
         self.props.push(prop);
     }
 }

@@ -4,7 +4,7 @@ use std::{
 };
 
 use crate::ability::prelude::*;
-use crate::components::RgVars;
+use crate::components::GxlVars;
 use crate::traits::Setter;
 use crate::var::VarDict;
 
@@ -53,13 +53,13 @@ impl FileDTO {
                 e
             ))
         })?;
-        let mut vars = RgVars::default();
+        let mut vars = GxlVars::default();
         for (_, prop) in file.iter() {
             for (k, v) in prop.iter() {
                 let str_k = k.trim().to_string();
                 let str_v = v.trim().to_string();
                 debug!(target: ctx.path() , "ini import {}:{}", str_k, str_v);
-                vars.append(RgProp::new(str_k, str_v));
+                vars.append(GxlProp::new(str_k, str_v));
             }
         }
         let mut dict = VarDict::global_new();
@@ -87,7 +87,7 @@ impl FileDTO {
         } else {
             vars_dict.global_mut().merge_dict(cur_dict);
         }
-        Ok((vars_dict, ExecOut::Ignore))
+        Ok(TaskValue::from((vars_dict, ExecOut::Ignore)))
     }
 
     fn impl_toml_mlist(&self, _ctx: ExecContext, file_path: &Path) -> ExecResult<VarDict> {
@@ -169,8 +169,11 @@ mod tests {
         let (context, mut def) = ability_env_init();
         def.global_mut()
             .set("CONF_ROOT", "${GXL_PRJ_ROOT}/examples/read");
-        let mut dto = FileDTO::default();
-        dto.file = String::from("${CONF_ROOT}/var.ini");
+        let dto = FileDTO {
+            file: String::from("${CONF_ROOT}/var.ini"),
+            ..Default::default()
+        };
+        //dto.file = String::from("${CONF_ROOT}/var.ini");
         let res = GxRead::from(ReadMode::from(dto));
         res.async_exec(context, def).await.unwrap();
     }

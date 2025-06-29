@@ -1,10 +1,13 @@
 use async_trait::async_trait;
+use gag::BufferRedirect;
+use orion_error::ErrorOwe;
 
 use super::gxl_loop::GxlLoop;
 use super::prelude::*;
 
 use crate::ability::artifact::GxArtifact;
 use crate::ability::delegate::ActCall;
+use crate::ability::prelude::TaskValue;
 use crate::ability::GxAssert;
 use crate::ability::GxCmd;
 use crate::ability::GxDownLoad;
@@ -18,10 +21,12 @@ use crate::calculate::cond::CondExec;
 use crate::context::ExecContext;
 use crate::execution::runnable::VTResult;
 use crate::execution::task::Task;
+use crate::task_report::task_rc_config::report_enable;
 
 use super::gxl_cond::GxlCond;
 use super::gxl_spc::GxlSpace;
-use super::gxl_var::RgProp;
+use super::gxl_var::GxlProp;
+use std::io::Read;
 
 #[derive(Clone, Debug)]
 pub enum BlockAction {
@@ -42,7 +47,7 @@ pub enum BlockAction {
 
 #[derive(Clone, Getters, Default, Debug)]
 pub struct BlockNode {
-    props: Vec<RgProp>,
+    props: Vec<GxlProp>,
     items: Vec<BlockAction>,
 }
 
@@ -64,9 +69,37 @@ impl CondExec for BlockNode {
 #[async_trait]
 impl AsyncRunnableTrait for BlockAction {
     async fn async_exec(&self, ctx: ExecContext, dct: VarSpace) -> VTResult {
+        let (result, output) = match self {
+            BlockAction::GxlRun(o) => (o.async_exec(ctx, dct).await, String::new()),
+            _ => {
+                let need_report = report_enable().await;
+                if need_report {
+                    let mut redirect = BufferRedirect::stdout().owe_sys()?;
+                    let action_res = self.execute_action(ctx, dct).await;
+
+                    let mut captured_output = String::new();
+                    let _ = redirect.read_to_string(&mut captured_output);
+                    (action_res, captured_output)
+                } else {
+                    let action_res = self.execute_action(ctx, dct).await;
+                    (action_res, String::new())
+                }
+            } // 处理重定向的输出
+        };
+
+        println!("{}", output);
+        return match result {
+            Ok(tv) => Ok(tv),
+            Err(e) => Err(e),
+        };
+    }
+}
+
+impl BlockAction {
+    /// 执行具体动作
+    async fn execute_action(&self, ctx: ExecContext, dct: VarSpace) -> VTResult {
         match self {
             BlockAction::Command(o) => o.async_exec(ctx, dct).await,
-            BlockAction::GxlRun(o) => o.async_exec(ctx, dct).await,
             BlockAction::Echo(o) => o.async_exec(ctx, dct).await,
             BlockAction::Assert(o) => o.async_exec(ctx, dct).await,
             BlockAction::Cond(o) => o.async_exec(ctx, dct).await,
@@ -78,6 +111,7 @@ impl AsyncRunnableTrait for BlockAction {
             BlockAction::Artifact(o) => o.async_exec(ctx, dct).await,
             BlockAction::UpLoad(o) => o.async_exec(ctx, dct).await,
             BlockAction::DownLoad(o) => o.async_exec(ctx, dct).await,
+            _ => unreachable!(),
         }
     }
 }
@@ -91,12 +125,13 @@ impl AsyncRunnableTrait for BlockNode {
         self.export_props(ctx.clone(), cur_var_dict.global_mut(), "")?;
 
         for item in &self.items {
-            let (tmp_var_dict, out) = item.async_exec(ctx.clone(), cur_var_dict).await?;
-            cur_var_dict = tmp_var_dict;
-            task.append(out);
+            let TaskValue { vars, out, rec } = item.async_exec(ctx.clone(), cur_var_dict).await?;
+            cur_var_dict = vars;
+            task.stdout.push_str(out.as_str());
+            task.append(rec);
         }
         task.finish();
-        Ok((cur_var_dict, ExecOut::Task(task)))
+        Ok(TaskValue::from((cur_var_dict, ExecOut::Task(task))))
     }
 }
 impl DependTrait<&GxlSpace> for BlockNode {
@@ -130,13 +165,13 @@ impl DependTrait<&GxlSpace> for BlockNode {
     }
 }
 impl PropsTrait for BlockNode {
-    fn fetch_props(&self) -> &Vec<RgProp> {
+    fn fetch_props(&self) -> &Vec<GxlProp> {
         &self.props
     }
 }
 
-impl AppendAble<RgProp> for BlockNode {
-    fn append(&mut self, prop: RgProp) {
+impl AppendAble<GxlProp> for BlockNode {
+    fn append(&mut self, prop: GxlProp) {
         self.props.push(prop);
     }
 }
@@ -164,7 +199,7 @@ mod tests {
     #[test]
     fn test_append() {
         let mut block = BlockNode::new();
-        let prop = RgProp::new("test", "hello");
+        let prop = GxlProp::new("test", "hello");
         block.append(prop);
         assert_eq!(block.props.len(), 1);
     }
@@ -172,11 +207,11 @@ mod tests {
     #[tokio::test]
     async fn test_exec() {
         let mut block = BlockNode::new();
-        let prop = RgProp::new("test", "hello");
+        let prop = GxlProp::new("test", "hello");
         block.append(prop);
         let ctx = ExecContext::new(false, false);
         let def = VarSpace::default();
         let res = block.async_exec(ctx, def).await;
-        assert_eq!(res.is_ok(), true);
+        assert!(res.is_ok());
     }
 }

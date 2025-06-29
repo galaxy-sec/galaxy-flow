@@ -11,7 +11,7 @@ use crate::components::{GxlEnv, GxlFlow, GxlMod};
 use crate::context::ExecContext;
 use crate::meta::GxlMeta;
 
-use super::runnable::{AsyncRunnableTrait, ComponentMeta, VTResult};
+use super::runnable::{AsyncRunnableTrait, ComponentMeta, TaskValue, VTResult};
 use super::sequence::RunStub;
 use super::VarSpace;
 #[derive(Clone, From)]
@@ -45,7 +45,7 @@ impl Transaction for AsyncComHold {
         };
         info!(target:"trans",
             "{} is transaction :{}", self.com_meta().name(), trans);
-        return trans;
+        trans
     }
 
     fn undo_hold(&self) -> Option<TransableHold> {
@@ -163,8 +163,8 @@ impl AsyncRunnableTrait for IsolationHold {
     ///varspace isolation
     async fn async_exec(&self, ctx: ExecContext, dict: VarSpace) -> VTResult {
         let origin = dict.clone();
-        let (_, task) = self.hold.async_exec(ctx, dict).await?;
-        Ok((origin, task))
+        let TaskValue { rec, .. } = self.hold.async_exec(ctx, dict).await?;
+        Ok(TaskValue::from((origin, rec)))
     }
 }
 
