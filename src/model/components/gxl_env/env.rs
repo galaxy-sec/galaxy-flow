@@ -316,7 +316,6 @@ mod tests {
         // Verify that the assembled environment only contains the base property
         let props = assembled_env.fetch_props();
         assert_eq!(props.len(), 1);
-        //println!("{:?}", props);
         assert!(props.iter().any(|p| p.key() == "BASE_PROP1"));
         Ok(())
     }

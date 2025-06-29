@@ -37,7 +37,6 @@ impl EnvExpress {
         EnvExpress::new(data)
     }
     pub fn from_env_mix(map: VarDict) -> EnvExpress {
-        //debug!("map: {:?}", &map);
         let mut data = VarDict::global_new();
         for (key, value) in env::vars() {
             data.set(&key, value);
