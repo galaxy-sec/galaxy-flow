@@ -226,7 +226,7 @@ impl AsyncRunnableTrait for GxTpl {
         let mut action = Action::from("build tpl file");
         self.render_path(ctx, &self.dto, vars_dict.clone())?;
         action.finish();
-        Ok((vars_dict, ExecOut::Action(action)))
+        Ok(TaskValue::from((vars_dict, ExecOut::Action(action))))
     }
 }
 

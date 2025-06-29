@@ -21,22 +21,29 @@ pub enum ExecOut {
     Ignore,
     Code(i32),
 }
-#[derive(Debug, Clone, PartialEq, Serialize, Getters)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct TaskValue {
-    vars: VarSpace,
-    out: String,
-    task: ExecOut,
+    pub vars: VarSpace,
+    pub out: String,
+    pub rec: ExecOut,
 }
 impl TaskValue {
     pub fn new(vars: VarSpace, out: String, task: ExecOut) -> Self {
-        Self { vars, out, task }
+        Self {
+            vars,
+            out,
+            rec: task,
+        }
+    }
+    pub fn rec(&self) -> &ExecOut {
+        &self.rec
     }
 }
 impl From<(VarSpace, ExecOut)> for TaskValue {
     fn from(value: (VarSpace, ExecOut)) -> Self {
         Self {
             vars: value.0,
-            task: value.1,
+            rec: value.1,
             out: String::new(),
         }
     }
@@ -46,7 +53,7 @@ impl From<(VarSpace, ExecOut, String)> for TaskValue {
     fn from(value: (VarSpace, ExecOut, String)) -> Self {
         Self {
             vars: value.0,
-            task: value.1,
+            rec: value.1,
             out: value.2,
         }
     }
@@ -54,8 +61,8 @@ impl From<(VarSpace, ExecOut, String)> for TaskValue {
 
 pub type TaskResult = ExecResult<ExecOut>;
 pub type VarsResult = ExecResult<VarSpace>;
-pub type VTResult = ExecResult<(VarSpace, ExecOut)>;
-pub type VTResultWithCapture = ExecResult<(VarSpace, ExecOut, String)>;
+pub type VTResult = ExecResult<TaskValue>;
+pub type VTResultWithCapture = ExecResult<TaskValue>;
 
 //#[automock]
 #[async_trait]

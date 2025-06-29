@@ -1,6 +1,7 @@
 use async_trait::async_trait;
 use orion_common::friendly::AppendAble;
 
+use crate::ability::prelude::TaskValue;
 use crate::context::ExecContext;
 use crate::execution::hold::AsyncComHold;
 use crate::execution::job::Job;
@@ -44,11 +45,11 @@ impl Sequence {
         warn!(target: ctx.path() ,"sequ size:{} ", self.run_items().len());
         for obj in &self.run_items {
             debug!(target: ctx.path() ,"sequ exec runner :{} ",obj.com_meta().name());
-            let (cur_dict, out) = obj.async_exec(ctx.clone(), def).await?;
-            def = cur_dict;
-            job.append(out);
+            let TaskValue { vars, rec, .. } = obj.async_exec(ctx.clone(), def).await?;
+            def = vars;
+            job.append(rec);
         }
-        Ok((def, ExecOut::Job(job)))
+        Ok(TaskValue::from((def, ExecOut::Job(job))))
     }
 }
 
@@ -79,7 +80,7 @@ impl AsyncRunnableTrait for RunStub {
     async fn async_exec(&self, ctx: ExecContext, _def: VarSpace) -> VTResult {
         debug!(target:ctx.path(), "{}", self.name);
         let task = Task::from(&self.name);
-        Ok((_def, ExecOut::Task(task)))
+        Ok(TaskValue::from((_def, ExecOut::Task(task))))
     }
 }
 
@@ -87,7 +88,7 @@ impl RunnableTrait for RunStub {
     fn exec(&self, ctx: ExecContext, _def: VarSpace) -> VTResult {
         debug!(target:ctx.path(), "{}", self.name);
         let task = Task::from(&self.name);
-        Ok((_def, ExecOut::Task(task)))
+        Ok(TaskValue::from((_def, ExecOut::Task(task))))
     }
 }
 impl ComponentMeta for RunStub {
@@ -114,8 +115,8 @@ mod tests {
         flow.append(AsyncComHold::from(node21.clone()));
         flow.append(AsyncComHold::from(node22.clone()));
 
-        let (_, out) = flow.execute(ctx, def).await.unwrap();
-        if let ExecOut::Job(job) = out {
+        let TaskValue { rec, .. } = flow.execute(ctx, def).await.unwrap();
+        if let ExecOut::Job(job) = rec {
             debug!("{:#?}", job);
             assert_eq!(job.tasks().len(), 2);
             assert_eq!(job.tasks()[0].name(), "self.step1");

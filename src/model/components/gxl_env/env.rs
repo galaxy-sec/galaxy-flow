@@ -1,4 +1,4 @@
-use crate::ability::prelude::GxlProp;
+use crate::ability::prelude::{GxlProp, TaskValue};
 use crate::components::gxl_spc::GxlSpace;
 use crate::components::gxl_utls::mod_obj_name;
 use crate::components::GxlVars;
@@ -157,9 +157,10 @@ impl AsyncRunnableTrait for GxlEnv {
         debug!(target: ctx.path(),"env {} setting", env_name );
         self.export_props(ctx.clone(), def.global_mut(), "ENV")?;
         for item in &self.items {
-            (def, _) = item.async_exec(ctx.clone(), def).await?
+            let TaskValue { vars, .. } = item.async_exec(ctx.clone(), def).await?;
+            def = vars;
         }
-        Ok((def, ExecOut::Ignore))
+        Ok(TaskValue::from((def, ExecOut::Ignore)))
     }
 }
 #[async_trait]

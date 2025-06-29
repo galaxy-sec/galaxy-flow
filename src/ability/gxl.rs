@@ -59,7 +59,7 @@ impl AsyncRunnableTrait for GxRun {
         let sub_var_space = VarSpace::inherit_init(vars_dict.clone(), self.env_isolate)?;
         GxlRunner::run(cmd, sub_var_space).await.err_conv()?;
         action.finish();
-        Ok((vars_dict, ExecOut::Action(action)))
+        Ok(TaskValue::from((vars_dict, ExecOut::Action(action))))
     }
 }
 impl ComponentMeta for GxRun {

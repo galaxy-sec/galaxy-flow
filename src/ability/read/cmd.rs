@@ -24,7 +24,7 @@ impl CmdDTO {
         let mut vars = GxlVars::default();
         vars.append(GxlProp::new(name, data_str.trim().to_string()));
         vars.export_props(ctx, vars_dict.global_mut(), "")?;
-        Ok((vars_dict, ExecOut::Ignore))
+        Ok(TaskValue::from((vars_dict, ExecOut::Ignore)))
     }
 }
 

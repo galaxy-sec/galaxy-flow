@@ -87,7 +87,7 @@ impl FileDTO {
         } else {
             vars_dict.global_mut().merge_dict(cur_dict);
         }
-        Ok((vars_dict, ExecOut::Ignore))
+        Ok(TaskValue::from((vars_dict, ExecOut::Ignore)))
     }
 
     fn impl_toml_mlist(&self, _ctx: ExecContext, file_path: &Path) -> ExecResult<VarDict> {

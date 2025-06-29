@@ -1,3 +1,4 @@
+use crate::ability::prelude::TaskValue;
 use crate::components::gxl_env::env::anns_from_option_dto;
 use crate::components::gxl_spc::GxlSpace;
 use crate::components::gxl_utls::mod_obj_name;
@@ -137,11 +138,11 @@ impl GxlFlow {
 
         // 执行块
         for item in &self.blocks {
-            let (cur_dict, out) = item
+            let TaskValue { vars, rec, .. } = item
                 .async_exec_with_dryrun(ctx.clone(), var_dict, self.is_dryrun())
                 .await?;
-            var_dict = cur_dict;
-            task.append(out);
+            var_dict = vars;
+            task.append(rec);
         }
         task.finish();
 
@@ -152,9 +153,9 @@ impl GxlFlow {
                     .unwrap_or_default();
                 let task_result = TaskReport::from_task_and_notice(task.clone(), task_notice);
                 send_http_request(task_result.clone(), &url).await;
-                Ok((var_dict, ExecOut::Task(task)))
+                Ok(TaskValue::from((var_dict, ExecOut::Task(task))))
             }
-            None => Ok((var_dict, ExecOut::Ignore)),
+            None => Ok(TaskValue::from((var_dict, ExecOut::Ignore))),
         }
     }
 
@@ -199,22 +200,22 @@ impl AsyncRunnableTrait for GxlFlow {
         let mut job = Job::from(&des);
         ctx.append(self.meta.name());
         for pre in self.pre_flows() {
-            let (cur_dict, task) = pre.async_exec(ctx.clone(), var_dict).await?;
-            var_dict = cur_dict;
-            job.append(task);
+            let TaskValue { vars, rec, .. } = pre.async_exec(ctx.clone(), var_dict).await?;
+            var_dict = vars;
+            job.append(rec);
         }
-        let (cur_dict, task) = self.exec_self(ctx.clone(), var_dict).await?;
-        var_dict = cur_dict;
-        job.append(task);
+        let TaskValue { vars, rec, .. } = self.exec_self(ctx.clone(), var_dict).await?;
+        var_dict = vars;
+        job.append(rec);
         for post in self.post_flows() {
-            let (cur_dict, task) = post.async_exec(ctx.clone(), var_dict).await?;
-            var_dict = cur_dict;
-            job.append(task);
+            let TaskValue { vars, rec, .. } = post.async_exec(ctx.clone(), var_dict).await?;
+            var_dict = vars;
+            job.append(rec);
         }
         if self.task_description().is_none() {
-            return Ok((var_dict, ExecOut::Ignore));
+            return Ok(TaskValue::from((var_dict, ExecOut::Ignore)));
         }
-        Ok((var_dict, ExecOut::Job(job)))
+        Ok(TaskValue::from((var_dict, ExecOut::Job(job))))
     }
 }
 impl ComponentMeta for GxlFlow {

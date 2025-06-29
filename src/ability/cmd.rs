@@ -38,7 +38,7 @@ impl AsyncDryrunRunnableTrait for GxCmd {
             println!("{}", buffer.yellow().bold());
             action.stdout = buffer;
             action.finish();
-            Ok((vars_dict, ExecOut::Action(action)))
+            Ok(TaskValue::from((vars_dict, ExecOut::Action(action))))
         } else {
             self.execute_impl(&self.dto.cmd, ctx, vars_dict)
         }
@@ -94,7 +94,7 @@ impl GxCmd {
             }
         }
         action.finish();
-        Ok((vars_dict, ExecOut::Action(action)))
+        Ok(TaskValue::from((vars_dict, ExecOut::Action(action))))
     }
 }
 
