@@ -1,6 +1,6 @@
 use winnow::ascii::{multispace0, newline, till_line_ending};
 use winnow::combinator::opt;
-use winnow::{ModalResult, Parser};
+use winnow::{Parser, Result};
 
 #[derive(Debug)]
 enum DslStatus {
@@ -18,19 +18,19 @@ impl CommentParser {
     pub fn new() -> Self {
         CommentParser {}
     }
-    pub fn ignore_comment(input: &mut &str) -> ModalResult<String> {
+    pub fn ignore_comment(input: &mut &str) -> Result<String> {
         let mut status = DslStatus::Code;
         let mut out = String::new();
         while !input.is_empty() {
             match status {
                 DslStatus::Code => {
                     multispace0.parse_next(input)?;
-                    let long_comment: ModalResult<&str> = "/*".parse_next(input);
+                    let long_comment: Result<&str> = "/*".parse_next(input);
                     if long_comment.is_ok() {
                         status = DslStatus::Comment;
                         continue;
                     }
-                    let short_comment: ModalResult<&str> = "//".parse_next(input);
+                    let short_comment: Result<&str> = "//".parse_next(input);
                     if short_comment.is_ok() {
                         let _ = till_line_ending.parse_next(input)?;
                         continue;
@@ -45,7 +45,7 @@ impl CommentParser {
 
                 DslStatus::Comment => {
                     multispace0.parse_next(input)?;
-                    let is_end: ModalResult<&str> = r#"*/"#.parse_next(input);
+                    let is_end: Result<&str> = r#"*/"#.parse_next(input);
                     if is_end.is_ok() {
                         status = DslStatus::Code;
                         continue;

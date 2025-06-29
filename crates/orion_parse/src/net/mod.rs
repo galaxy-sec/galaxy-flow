@@ -3,9 +3,9 @@ use std::net::{IpAddr, Ipv4Addr};
 use winnow::{
     ascii::{multispace0, Caseless},
     combinator::{fail, peek, repeat},
-    error::{ContextError, ErrMode, ParserError},
+    error::{ContextError, ParserError},
     token::any,
-    ModalResult, Parser,
+    Parser, Result,
 };
 
 use crate::symbol::wn_desc;
@@ -47,7 +47,7 @@ fn head_ip<'a>(last: &mut Option<AddrKind>) -> impl Parser<&'a str, char, Contex
     }
 }
 
-pub fn ip_v4(input: &mut &str) -> ModalResult<IpAddr> {
+pub fn ip_v4(input: &mut &str) -> Result<IpAddr> {
     let mut last_kind = None;
     let accurate_ip = repeat(1.., head_ip(&mut last_kind))
         .fold(String::new, |mut acc, c| {
@@ -58,7 +58,7 @@ pub fn ip_v4(input: &mut &str) -> ModalResult<IpAddr> {
         .parse_next(input)?;
     Ok(accurate_ip)
 }
-pub fn ip(input: &mut &str) -> ModalResult<IpAddr> {
+pub fn ip(input: &mut &str) -> Result<IpAddr> {
     multispace0.parse_next(input)?;
 
     let str = peek_one.parse_next(input);
@@ -73,6 +73,6 @@ pub fn ip(input: &mut &str) -> ModalResult<IpAddr> {
         };
         Ok(addr)
     } else {
-        Err(ErrMode::Backtrack(ParserError::from_input(input)))
+        Err(ParserError::from_input(input))
     }
 }

@@ -29,7 +29,7 @@ edition = "2021"
 license = "Apache-2.0"
 
 [workspace.dependencies]
-winnow = "0.6"
+winnow = "0.7.11"
 orion-error = "~0.3"
 #orion-error = { path = "../orion-error" }
 #orion-syspec = { path = "../orion-syspec" }

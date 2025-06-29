@@ -22,7 +22,7 @@ use super::{
     stc_base::gal_mod_head,
     stc_env::gal_stc_env_body,
 };
-pub fn gal_stc_mod_item(input: &mut &str) -> ModalResult<ModItem> {
+pub fn gal_stc_mod_item(input: &mut &str) -> Result<ModItem> {
     skip_spaces_block.parse_next(input)?;
     let ann = opt(gal_ann).parse_next(input)?;
     skip_spaces_block.parse_next(input)?;
@@ -50,7 +50,7 @@ pub fn gal_stc_mod_item(input: &mut &str) -> ModalResult<ModItem> {
     fail.context(wn_desc("mod not support")).parse_next(input)
 }
 
-pub fn gal_stc_mod(input: &mut &str) -> ModalResult<GxlMod> {
+pub fn gal_stc_mod(input: &mut &str) -> Result<GxlMod> {
     skip_spaces_block(input)?;
     let ann_dto = opt(gal_ann).parse_next(input)?;
     let anns = anns_from_option_dto(ann_dto);

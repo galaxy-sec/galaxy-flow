@@ -7,7 +7,7 @@ use crate::ability::GxTpl;
 use crate::ability::TplDTOBuilder;
 use crate::parser::domain::gal_keyword_alt;
 
-pub fn gal_tpl(input: &mut &str) -> ModalResult<GxTpl> {
+pub fn gal_tpl(input: &mut &str) -> Result<GxTpl> {
     gal_keyword_alt("gx.tpl", "rg.tpl", input)?;
     let props = sentence_call_args.parse_next(input)?;
     let mut builder = TplDTOBuilder::default();

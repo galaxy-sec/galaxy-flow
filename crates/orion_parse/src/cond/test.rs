@@ -5,13 +5,13 @@ use crate::symbol::{symbol_cmp, symbol_dollar};
 use orion_common::cond::{cmp_is_true, CmpOP, CompareExpress, Condition, LogicExpress, ValueGet};
 use std::collections::HashMap;
 use winnow::ascii::{digit1, multispace0};
-use winnow::{ModalResult, Parser};
+use winnow::{Parser, Result};
 
 use orion_common::cond::RustSymbol;
 
 pub struct ObjGet {}
 impl CmpParser<u32, RustSymbol> for ObjGet {
-    fn cmp_exp(data: &mut &str) -> ModalResult<CompareExpress<u32, RustSymbol>> {
+    fn cmp_exp(data: &mut &str) -> Result<CompareExpress<u32, RustSymbol>> {
         symbol_dollar.parse_next(data)?;
         let var_name = take_var_name(data)?;
         let op = symbol_cmp.parse_next(data)?;
@@ -42,7 +42,7 @@ impl Condition<VMap> for LogicExpress<u32, RustSymbol> {
 
 type CondParser = WnCondParser<u32, ObjGet, RustSymbol>;
 #[test]
-pub fn test_express_exec_simple() -> ModalResult<()> {
+pub fn test_express_exec_simple() -> Result<()> {
     let data = SVMap::from([("A", 100), ("B", 200)]);
 
     let mut code = r#"$A == 100"#;

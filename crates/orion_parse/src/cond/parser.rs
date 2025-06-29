@@ -6,9 +6,9 @@ use orion_common::cond::{
 };
 use winnow::ascii::multispace0;
 use winnow::combinator::peek;
-use winnow::error::{ErrMode, ParserError, StrContext, StrContextValue};
+use winnow::error::{ParserError, StrContext, StrContextValue};
 use winnow::token::literal;
-use winnow::{ModalResult, Parser};
+use winnow::{Parser, Result};
 
 use super::LogicSymbolGet;
 
@@ -40,7 +40,7 @@ where
     H: CmpParser<T, S>,
     S: LogicSymbolGet + LogicSymbolDef + CmpSymbolDef,
 {
-    pub fn lev2_exp(data: &mut &str, stop: Option<&str>) -> ModalResult<ExpressEnum<T, S>> {
+    pub fn lev2_exp(data: &mut &str, stop: Option<&str>) -> Result<ExpressEnum<T, S>> {
         let mut left: Option<ExpressEnum<T, S>> = None;
         loop {
             multispace0.parse_next(data)?;
@@ -88,12 +88,12 @@ where
         }
         match left {
             Some(o) => Ok(o),
-            None => Err(ErrMode::Backtrack(ParserError::from_input(data))),
+            None => Err(ParserError::from_input(data)),
         }
     }
 
     #[allow(clippy::never_loop)]
-    fn lev0_exp(data: &mut &str, stop: Option<&str>) -> ModalResult<ExpressEnum<T, S>> {
+    fn lev0_exp(data: &mut &str, stop: Option<&str>) -> Result<ExpressEnum<T, S>> {
         let mut left: Option<ExpressEnum<T, S>> = None;
         loop {
             multispace0.parse_next(data)?;
@@ -119,14 +119,14 @@ where
         }
         match left {
             Some(o) => Ok(o),
-            None => Err(ErrMode::Backtrack(ParserError::from_input(
+            None => Err(ParserError::from_input(
                 data, //&"overall express data not empty",
                      //ErrorKind::Token,
-            ))),
+            )),
         }
     }
 
-    fn lev1_exp(data: &mut &str, stop: Option<&str>) -> ModalResult<ExpressEnum<T, S>> {
+    fn lev1_exp(data: &mut &str, stop: Option<&str>) -> Result<ExpressEnum<T, S>> {
         let mut left: Option<ExpressEnum<T, S>> = None;
         loop {
             multispace0.parse_next(data)?;
@@ -167,23 +167,23 @@ where
         }
         match left {
             Some(o) => Ok(o),
-            None => Err(ErrMode::Backtrack(ParserError::from_input(data))),
+            None => Err(ParserError::from_input(data)),
         }
     }
 
-    fn group_exp(data: &mut &str) -> ModalResult<ExpressEnum<T, S>> {
+    fn group_exp(data: &mut &str) -> Result<ExpressEnum<T, S>> {
         multispace0.parse_next(data)?;
         symbol_bracket_beg.parse_next(data)?;
         Self::lev2_exp(data, Some(")"))
     }
 }
-fn peek_str(what: &str, input: &mut &str) -> ModalResult<()> {
+fn peek_str(what: &str, input: &mut &str) -> Result<()> {
     peek(what).parse_next(input)?;
     Ok(())
 }
 
 impl LogicSymbolGet for RustSymbol {
-    fn logic_and(data: &mut &str) -> ModalResult<LogicSymbol> {
+    fn logic_and(data: &mut &str) -> Result<LogicSymbol> {
         let _ = multispace0.parse_next(data)?;
         literal("&&")
             .context(StrContext::Label("symbol"))
@@ -194,7 +194,7 @@ impl LogicSymbolGet for RustSymbol {
         Ok(LogicSymbol::And)
     }
 
-    fn logic_or(data: &mut &str) -> ModalResult<LogicSymbol> {
+    fn logic_or(data: &mut &str) -> Result<LogicSymbol> {
         let _ = multispace0.parse_next(data)?;
         literal("||")
             .context(StrContext::Label("symbol"))
@@ -205,7 +205,7 @@ impl LogicSymbolGet for RustSymbol {
         Ok(LogicSymbol::Or)
     }
 
-    fn logic_not(data: &mut &str) -> ModalResult<LogicSymbol> {
+    fn logic_not(data: &mut &str) -> Result<LogicSymbol> {
         let _ = multispace0.parse_next(data)?;
         literal("!")
             .context(StrContext::Label("symbol"))
@@ -218,7 +218,7 @@ impl LogicSymbolGet for RustSymbol {
 }
 
 impl LogicSymbolGet for SQLSymbol {
-    fn logic_and(data: &mut &str) -> ModalResult<LogicSymbol> {
+    fn logic_and(data: &mut &str) -> Result<LogicSymbol> {
         let _ = multispace0.parse_next(data)?;
         literal("and")
             .context(StrContext::Label("symbol"))
@@ -229,7 +229,7 @@ impl LogicSymbolGet for SQLSymbol {
         Ok(LogicSymbol::And)
     }
 
-    fn logic_or(data: &mut &str) -> ModalResult<LogicSymbol> {
+    fn logic_or(data: &mut &str) -> Result<LogicSymbol> {
         let _ = multispace0.parse_next(data)?;
         literal("or")
             .context(StrContext::Label("symbol"))
@@ -240,7 +240,7 @@ impl LogicSymbolGet for SQLSymbol {
         Ok(LogicSymbol::Or)
     }
 
-    fn logic_not(data: &mut &str) -> ModalResult<LogicSymbol> {
+    fn logic_not(data: &mut &str) -> Result<LogicSymbol> {
         let _ = multispace0.parse_next(data)?;
         literal("not")
             .context(StrContext::Label("symbol"))

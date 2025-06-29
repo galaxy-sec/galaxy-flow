@@ -1,6 +1,6 @@
 use orion_common::cond::{CmpSymbolDef, CompareExpress, ExpressEnum, LogicSymbolDef};
 use std::marker::PhantomData;
-use winnow::ModalResult;
+use winnow::Result;
 
 use crate::symbol::LogicSymbol;
 
@@ -12,7 +12,7 @@ pub trait CmpParser<T, S>
 where
     S: CmpSymbolDef,
 {
-    fn cmp_exp(data: &mut &str) -> ModalResult<CompareExpress<T, S>>;
+    fn cmp_exp(data: &mut &str) -> Result<CompareExpress<T, S>>;
 }
 
 pub struct WnCondParser<T, H, S> {
@@ -26,10 +26,10 @@ where
     H: CmpParser<T, S>,
     S: LogicSymbolGet + LogicSymbolDef + CmpSymbolDef,
 {
-    pub fn end_exp(data: &mut &str, stop: &str) -> ModalResult<ExpressEnum<T, S>> {
+    pub fn end_exp(data: &mut &str, stop: &str) -> Result<ExpressEnum<T, S>> {
         Self::lev2_exp(data, Some(stop))
     }
-    pub fn exp(data: &mut &str) -> ModalResult<ExpressEnum<T, S>> {
+    pub fn exp(data: &mut &str) -> Result<ExpressEnum<T, S>> {
         Self::lev2_exp(data, None)
     }
 }
@@ -39,7 +39,7 @@ pub trait SymbolFrom<T> {
 }
 
 pub trait LogicSymbolGet {
-    fn logic_and(data: &mut &str) -> ModalResult<LogicSymbol>;
-    fn logic_or(data: &mut &str) -> ModalResult<LogicSymbol>;
-    fn logic_not(data: &mut &str) -> ModalResult<LogicSymbol>;
+    fn logic_and(data: &mut &str) -> Result<LogicSymbol>;
+    fn logic_or(data: &mut &str) -> Result<LogicSymbol>;
+    fn logic_not(data: &mut &str) -> Result<LogicSymbol>;
 }

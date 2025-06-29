@@ -6,7 +6,7 @@ use crate::ability::GxCmd;
 use crate::expect::ShellOption;
 use crate::parser::domain::{gal_keyword, gal_keyword_alt};
 
-pub fn gal_cmd(input: &mut &str) -> ModalResult<GxCmd> {
+pub fn gal_cmd(input: &mut &str) -> Result<GxCmd> {
     let mut builder = GxCmdDtoBuilder::default();
     gal_keyword_alt("gx.cmd", "rg.cmd", input)?;
     let props = sentence_call_args.parse_next(input)?;
@@ -29,7 +29,7 @@ pub fn gal_cmd(input: &mut &str) -> ModalResult<GxCmd> {
 }
 
 /// read ```cmd  ... ``` to GxCmd;
-pub fn gal_cmd_block(input: &mut &str) -> ModalResult<GxCmd> {
+pub fn gal_cmd_block(input: &mut &str) -> Result<GxCmd> {
     let mut builder = GxCmdDtoBuilder::default();
     builder.expect(ShellOption::default());
     // 1. 匹配开始的 ```cmd

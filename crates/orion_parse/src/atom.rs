@@ -1,22 +1,22 @@
 use crate::symbol::{symbol_colon, wn_desc};
 use winnow::ascii::{multispace0, multispace1, newline, take_escaped, till_line_ending};
-use winnow::combinator::{cut_err, delimited, repeat};
+use winnow::combinator::{delimited, repeat};
 use winnow::error::{ContextError, ErrMode, StrContext, StrContextValue};
 use winnow::token::{literal, one_of, take_till, take_until, take_while};
-use winnow::{ModalResult, Parser};
+use winnow::{Parser, Result};
 
-pub fn take_var_name(input: &mut &str) -> ModalResult<String> {
+pub fn take_var_name(input: &mut &str) -> Result<String> {
     let _ = multispace0.parse_next(input)?;
     let key = take_while(1.., ('0'..='9', 'A'..='Z', 'a'..='z', ['_'])).parse_next(input)?;
     Ok(key.to_string())
 }
 
-pub fn take_var_path(input: &mut &str) -> ModalResult<String> {
+pub fn take_var_path(input: &mut &str) -> Result<String> {
     let _ = multispace0.parse_next(input)?;
     let key = take_while(1.., ('0'..='9', 'A'..='Z', 'a'..='z', ['_', '.'])).parse_next(input)?;
     Ok(key.to_string())
 }
-pub fn take_json_path(input: &mut &str) -> ModalResult<String> {
+pub fn take_json_path(input: &mut &str) -> Result<String> {
     let _ = multispace0.parse_next(input)?;
     let key = take_while(
         1..,
@@ -26,7 +26,7 @@ pub fn take_json_path(input: &mut &str) -> ModalResult<String> {
     Ok(key.to_string())
 }
 
-pub fn take_wild_key(input: &mut &str) -> ModalResult<String> {
+pub fn take_wild_key(input: &mut &str) -> Result<String> {
     let _ = multispace0.parse_next(input)?;
     let key = take_while(
         1..,
@@ -40,20 +40,20 @@ pub fn take_wild_key(input: &mut &str) -> ModalResult<String> {
     .parse_next(input)?;
     Ok(key.to_string())
 }
-pub fn take_path(input: &mut &str) -> ModalResult<String> {
+pub fn take_path(input: &mut &str) -> Result<String> {
     let _ = multispace0.parse_next(input)?;
     let key = take_while(1.., ('0'..='9', 'A'..='Z', 'a'..='z', ['_', '.', '/'], '-'))
         .parse_next(input)?;
     Ok(key.to_string())
 }
 
-pub fn take_obj_path(input: &mut &str) -> ModalResult<String> {
+pub fn take_obj_path(input: &mut &str) -> Result<String> {
     let _ = multispace0.parse_next(input)?;
     let key = take_while(1.., ('0'..='9', 'A'..='Z', 'a'..='z', ['_', '/'])).parse_next(input)?;
     let _ = multispace1.parse_next(input)?;
     Ok(key.to_string())
 }
-pub fn take_obj_wild_path(input: &mut &str) -> ModalResult<String> {
+pub fn take_obj_wild_path(input: &mut &str) -> Result<String> {
     let _ = multispace0.parse_next(input)?;
     let key =
         take_while(1.., ('0'..='9', 'A'..='Z', 'a'..='z', ['_', '/', '*'])).parse_next(input)?;
@@ -61,7 +61,7 @@ pub fn take_obj_wild_path(input: &mut &str) -> ModalResult<String> {
     Ok(key.to_string())
 }
 
-pub fn take_key_pair(input: &mut &str) -> ModalResult<(String, String)> {
+pub fn take_key_pair(input: &mut &str) -> Result<(String, String)> {
     let _ = multispace0.parse_next(input)?;
     let key = take_while(1.., ('0'..='9', 'A'..='Z', 'a'..='z', ['_', '.'])).parse_next(input)?;
     symbol_colon.parse_next(input)?;
@@ -70,7 +70,7 @@ pub fn take_key_pair(input: &mut &str) -> ModalResult<(String, String)> {
     Ok((key.to_string(), val.to_string()))
 }
 
-pub fn take_key_val(input: &mut &str) -> ModalResult<(String, String)> {
+pub fn take_key_val(input: &mut &str) -> Result<(String, String)> {
     let _ = multispace0.parse_next(input)?;
     let key = take_while(1.., ('0'..='9', 'A'..='Z', 'a'..='z', ['_', '.'])).parse_next(input)?;
     symbol_colon.parse_next(input)?;
@@ -78,12 +78,12 @@ pub fn take_key_val(input: &mut &str) -> ModalResult<(String, String)> {
     let val = take_till(1.., |c| c == ',' || c == ';').parse_next(input)?;
     Ok((key.to_string(), val.to_string()))
 }
-pub fn take_empty(input: &mut &str) -> ModalResult<()> {
+pub fn take_empty(input: &mut &str) -> Result<()> {
     let _ = multispace0.parse_next(input)?;
     Ok(())
 }
 
-pub fn take_parentheses_val(data: &mut &str) -> ModalResult<String> {
+pub fn take_parentheses_val(data: &mut &str) -> Result<String> {
     let _ = multispace0.parse_next(data)?;
     literal("(")
         .context(StrContext::Label("syntax"))
@@ -101,7 +101,7 @@ pub fn take_parentheses_val(data: &mut &str) -> ModalResult<String> {
     Ok(target_val.trim().to_string())
 }
 
-fn inner_parentheses_val(data: &mut &str, depth: &mut u32) -> ModalResult<String> {
+fn inner_parentheses_val(data: &mut &str, depth: &mut u32) -> Result<String> {
     let mut target_val = take_till(0.., |c| c == '(' || c == ')')
         .parse_next(data)?
         .to_string();
@@ -122,7 +122,7 @@ fn inner_parentheses_val(data: &mut &str, depth: &mut u32) -> ModalResult<String
     Ok(target_val)
 }
 
-pub fn take_parentheses_scope(data: &mut &str) -> ModalResult<(String, String)> {
+pub fn take_parentheses_scope(data: &mut &str) -> Result<(String, String)> {
     let _ = multispace0.parse_next(data)?;
     literal("(").parse_next(data)?;
     let beg = take_till(0.., |x| x == ',').parse_next(data)?;
@@ -135,7 +135,7 @@ pub fn take_parentheses_scope(data: &mut &str) -> ModalResult<(String, String)> 
 
 //take string
 //eg:  "hello", "a/b/c", "\""
-pub fn take_string(data: &mut &str) -> ModalResult<String> {
+pub fn take_string(data: &mut &str) -> Result<String> {
     // 使用 take_escaped 解析转义字符
     let string_parser = take_escaped(
         take_while(1.., |c: char| c != '"' && c != '\\'), // 普通字符的条件
@@ -147,7 +147,7 @@ pub fn take_string(data: &mut &str) -> ModalResult<String> {
     //preceded(
     delimited(
         '"',
-        cut_err(string_parser.map(String::from)), // 将 &str 转换为 String
+        string_parser.map(String::from), // 将 &str 转换为 String
         '"',
     )
     .context(StrContext::Label("string"))
@@ -156,19 +156,17 @@ pub fn take_string(data: &mut &str) -> ModalResult<String> {
 
 //take var name.
 // eg : ${name}  -> name
-pub fn take_env_var(data: &mut &str) -> ModalResult<String> {
+pub fn take_env_var(data: &mut &str) -> Result<String> {
     let _ = multispace0.parse_next(data)?;
     delimited(
         "${",
-        cut_err(
-            take_till(1.., |c| c == '}')
-                .map(|s: &str| s.trim())
-                .verify(|s: &str| !s.is_empty())
-                .context(StrContext::Expected(StrContextValue::Description(
-                    "non-empty variable name",
-                ))),
-        ),
-        cut_err("}").context(StrContext::Expected(StrContextValue::Description(
+        take_till(1.., |c| c == '}')
+            .map(|s: &str| s.trim())
+            .verify(|s: &str| !s.is_empty())
+            .context(StrContext::Expected(StrContextValue::Description(
+                "non-empty variable name",
+            ))),
+        "}".context(StrContext::Expected(StrContextValue::Description(
             "missing closing '}'",
         ))),
     )
@@ -178,7 +176,7 @@ pub fn take_env_var(data: &mut &str) -> ModalResult<String> {
 }
 //take raw sting by ^""^
 //eg:  ^"hello"^ , ^"hell"0"^
-pub fn gal_raw_string(data: &mut &str) -> ModalResult<String> {
+pub fn gal_raw_string(data: &mut &str) -> Result<String> {
     delimited(
         "r#\"",
         take_until(0.., "\"#"),
@@ -189,13 +187,13 @@ pub fn gal_raw_string(data: &mut &str) -> ModalResult<String> {
     .map(String::from)
 }
 
-pub fn skip_spaces_block(input: &mut &str) -> ModalResult<()> {
+pub fn skip_spaces_block(input: &mut &str) -> Result<()> {
     let _: Vec<()> = repeat(0.., skip_spaces_line).parse_next(input)?;
     let _ = multispace0.parse_next(input)?;
     Ok(())
 }
 
-pub fn skip_spaces_line(input: &mut &str) -> ModalResult<()> {
+pub fn skip_spaces_line(input: &mut &str) -> Result<()> {
     let _ = multispace0.parse_next(input)?;
     //let _ = alt((newline.map(|_| ()), multispace1.map(|_| ()))).parse_next(input)?;
     let _ = newline.parse_next(input)?;
@@ -229,10 +227,10 @@ mod tests {
     use crate::atom::{
         gal_raw_string, skip_spaces_block, take_env_var, take_string, take_var_name,
     };
-    use winnow::{ModalResult, Parser};
+    use winnow::{Parser, Result};
 
     #[test]
-    fn test_key_val() -> ModalResult<()> {
+    fn test_key_val() -> Result<()> {
         let mut data = "x";
         let key = take_var_name.parse_next(&mut data)?;
         assert_eq!(key, "x");
@@ -384,7 +382,7 @@ mod tests {
     }
 
     #[test]
-    fn test_ignore_spaces_block_empty() -> ModalResult<()> {
+    fn test_ignore_spaces_block_empty() -> Result<()> {
         let mut input = "";
         skip_spaces_block(&mut input)?;
         assert_eq!(input, "");
@@ -392,7 +390,7 @@ mod tests {
     }
 
     #[test]
-    fn test_ignore_spaces_block_only_spaces() -> ModalResult<()> {
+    fn test_ignore_spaces_block_only_spaces() -> Result<()> {
         let mut input = "   ";
         skip_spaces_block(&mut input)?;
         assert_eq!(input, "");
@@ -400,7 +398,7 @@ mod tests {
     }
 
     #[test]
-    fn test_ignore_spaces_block_only_newlines() -> ModalResult<()> {
+    fn test_ignore_spaces_block_only_newlines() -> Result<()> {
         let mut input = "\n\n\n";
         skip_spaces_block(&mut input)?;
         assert_eq!(input, "");
@@ -408,7 +406,7 @@ mod tests {
     }
 
     #[test]
-    fn test_ignore_spaces_block_mixed_spaces_and_newlines() -> ModalResult<()> {
+    fn test_ignore_spaces_block_mixed_spaces_and_newlines() -> Result<()> {
         let mut input = "  \n  \n  \n";
         skip_spaces_block(&mut input)?;
         assert_eq!(input, "");
@@ -416,7 +414,7 @@ mod tests {
     }
 
     #[test]
-    fn test_ignore_spaces_block_trailing_text() -> ModalResult<()> {
+    fn test_ignore_spaces_block_trailing_text() -> Result<()> {
         let mut input = "  \n  \n  \n  some text";
         skip_spaces_block(&mut input)?;
         assert_eq!(input, "some text");
@@ -424,7 +422,7 @@ mod tests {
     }
 
     #[test]
-    fn test_ignore_spaces_block_no_spaces() -> ModalResult<()> {
+    fn test_ignore_spaces_block_no_spaces() -> Result<()> {
         let mut input = "some text";
         skip_spaces_block(&mut input)?;
         assert_eq!(input, "some text");
@@ -432,7 +430,7 @@ mod tests {
     }
 
     #[test]
-    fn test_ignore_spaces_block_mixed_spaces_newlines_and_text() -> ModalResult<()> {
+    fn test_ignore_spaces_block_mixed_spaces_newlines_and_text() -> Result<()> {
         let mut input = "  \n  some text\n  more text  \n";
         skip_spaces_block(&mut input)?;
         assert_eq!(input, "some text\n  more text  \n");

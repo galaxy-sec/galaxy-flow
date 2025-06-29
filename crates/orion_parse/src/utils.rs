@@ -2,17 +2,17 @@ use crate::scope::ScopeEval;
 use std::fmt::Display;
 use winnow::ascii::multispace0;
 use winnow::combinator::peek;
-use winnow::error::{ErrMode, ParserError};
+use winnow::error::ParserError;
 use winnow::stream::{Checkpoint, Stream};
 use winnow::token::{literal, take};
-use winnow::ModalResult;
 use winnow::Parser;
+use winnow::Result;
 
-pub fn get_scope(data: &mut &str, beg: char, end: char) -> ModalResult<String> {
+pub fn get_scope(data: &mut &str, beg: char, end: char) -> Result<String> {
     multispace0.parse_next(data)?;
     let extend_len = ScopeEval::len(data, beg, end);
     if extend_len < 2 {
-        return Err(ErrMode::Backtrack(ParserError::from_input(data)));
+        return Err(ParserError::from_input(data));
     }
     literal(beg.to_string().as_str()).parse_next(data)?;
     let group = take(extend_len - 2).parse_next(data)?;
@@ -21,7 +21,7 @@ pub fn get_scope(data: &mut &str, beg: char, end: char) -> ModalResult<String> {
     Ok(group.to_string())
 }
 
-pub fn peek_one(data: &mut &str) -> ModalResult<String> {
+pub fn peek_one(data: &mut &str) -> Result<String> {
     let char = peek(take(1usize)).parse_next(data)?;
     Ok(char.to_string())
 }
@@ -39,9 +39,9 @@ impl<T, E> RestAble for Result<T, E> {
     }
 }
 
-pub fn err_convert<T, E: Display>(result: Result<T, E>) -> ModalResult<T> {
+pub fn err_convert<T, E: Display>(result: Result<T, E>) -> Result<T> {
     match result {
         Ok(obj) => Ok(obj),
-        Err(_e) => Err(ErrMode::Backtrack(ParserError::from_input(&"loss err"))),
+        Err(_e) => Err(ParserError::from_input(&"loss err")),
     }
 }

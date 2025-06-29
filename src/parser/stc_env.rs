@@ -16,7 +16,7 @@ use super::{
     stc_base::gal_env_head,
 };
 
-pub fn gal_env_item(input: &mut &str) -> ModalResult<EnvItem> {
+pub fn gal_env_item(input: &mut &str) -> Result<EnvItem> {
     multispace0(input)?;
     if starts_with("gx.vars", input) {
         return gal_vars.map(EnvItem::Var).parse_next(input);
@@ -37,7 +37,7 @@ pub fn gal_env_item(input: &mut &str) -> ModalResult<EnvItem> {
         .parse_next(input)
 }
 
-pub fn gal_stc_env(input: &mut &str) -> ModalResult<GxlEnv> {
+pub fn gal_stc_env(input: &mut &str) -> Result<GxlEnv> {
     //let mut builder = RgAssertBuilder::default();
     skip_spaces_block(input)?;
     let ann = opt(gal_ann).parse_next(input)?;
@@ -45,7 +45,7 @@ pub fn gal_stc_env(input: &mut &str) -> ModalResult<GxlEnv> {
     env.set_anns(ann);
     Ok(env)
 }
-pub fn gal_stc_env_body(input: &mut &str) -> ModalResult<GxlEnv> {
+pub fn gal_stc_env_body(input: &mut &str) -> Result<GxlEnv> {
     let head = gal_env_head
         .context(wn_desc("<env-head>"))
         .parse_next(input)?;
