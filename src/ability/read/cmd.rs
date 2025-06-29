@@ -39,9 +39,11 @@ mod tests {
         let (context, mut def) = ability_env_init();
         def.global_mut()
             .set("CONF_ROOT", "${GXL_PRJ_ROOT}/example/conf");
-        let mut dto = CmdDTO::default();
-        dto.name = format!("RG");
-        dto.cmd = format!("echo galaxy-1.0");
+        let dto = CmdDTO {
+            name: "RG".to_string(),
+            cmd: "echo galaxy-1.0".to_string(),
+            ..Default::default()
+        };
         let res = GxRead::from(ReadMode::from(dto));
         res.async_exec(context, def).await.unwrap();
     }

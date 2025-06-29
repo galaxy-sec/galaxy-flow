@@ -58,9 +58,11 @@ mod tests {
                  tpl : "${PRJ_ROOT}/conf_tpl.toml" ,
                  dst : "${PRJ_ROOT}/conf.toml" ,
                  ) ;"#;
-        let mut dto = TplDTO::default();
-        dto.tpl = tpl.to_string();
-        dto.dst = dst.to_string();
+        let dto = TplDTO {
+            tpl: tpl.to_string(),
+            dst: dst.to_string(),
+            ..Default::default()
+        };
         let obj = run_gxl(gal_tpl, &mut data).assert();
         assert_eq!(data, "");
         assert_eq!(&dto, obj.dto());
@@ -76,10 +78,12 @@ mod tests {
                  data : r#\"{\"branchs\": [\"develop\",\"issue/11\"]} \"#,
                  ) ;";
         let obj = run_gxl(gal_tpl, &mut data).assert();
-        let mut dto = TplDTO::default();
-        dto.tpl = tpl.to_string();
-        dto.dst = dst.to_string();
-        dto.data = Some(String::from("{\"branchs\": [\"develop\",\"issue/11\"]} "));
+        let dto = TplDTO {
+            tpl: tpl.to_string(),
+            dst: dst.to_string(),
+            data: Some(String::from("{\"branchs\": [\"develop\",\"issue/11\"]} ")),
+            ..Default::default()
+        };
         assert_eq!(data, "");
         assert_eq!(&dto, obj.dto());
     }

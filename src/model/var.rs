@@ -258,7 +258,7 @@ mod tests {
     #[test]
     fn context_use() {
         let mut def = VarDict::default();
-        def.set("src", format!("hello src"));
+        def.set("src", "hello src");
         def.set("dst", "hello dst");
         let src = def.must_get("src");
         let dst = def.must_get("dst");

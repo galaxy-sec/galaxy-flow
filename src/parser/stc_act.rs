@@ -75,10 +75,12 @@ mod tests {
         }
   "#;
         let obj = run_gxl(gal_activity, &mut data).assert();
-        let mut dto = ActivityDTO::default();
-        dto.name = "copy".to_string();
-        dto.executer = "copy_act.sh".to_string();
-        dto.default_param = Some("src".into());
+        let mut dto = ActivityDTO {
+            name: "copy".to_string(),
+            executer: "copy_act.sh".to_string(),
+            default_param: Some("src".into()),
+            ..Default::default()
+        };
         dto.expect.log_lev = Some(log::Level::Info);
         dto.append_prop(Property {
             key: "src".into(),

@@ -227,6 +227,6 @@ mod tests {
         let ctx = ExecContext::new(false, false);
         let def = VarSpace::default();
         let res = block.async_exec_with_dryrun(ctx, def, false).await;
-        assert_eq!(res.is_ok(), true);
+        assert!(res.is_ok());
     }
 }

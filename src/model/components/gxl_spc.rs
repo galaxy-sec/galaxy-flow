@@ -240,6 +240,37 @@ impl GxlSpace {
     }
 }
 
+// UI helper functions
+pub fn show_item(item: &MenuItem) {
+    if item.key.starts_with('_') {
+        return;
+    }
+
+    let display_text = match &item.desp {
+        Some(desp) => format!("    * {:<20} -- {}", item.key, desp),
+        None => format!("    * {:<20}", item.key),
+    };
+
+    color_show(display_text, item.color.as_deref());
+}
+
+pub fn color_show<S: AsRef<str> + Display>(text: S, color: Option<&str>) {
+    let colored_text = match color {
+        Some("red") => text.as_ref().red(),
+        Some("green") => text.as_ref().green(),
+        Some("blue") => text.as_ref().blue(),
+        Some("yellow") => text.as_ref().yellow(),
+        Some("cyan") => text.as_ref().cyan(),
+        Some("magenta") => text.as_ref().magenta(),
+        Some("black") => text.as_ref().black(),
+        Some("white") => text.as_ref().white(),
+        Some("purple") => text.as_ref().purple(),
+        _ => return println!("{}", text),
+    };
+
+    println!("{}", colored_text);
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -293,35 +324,4 @@ mod tests {
         work_space.show().unwrap();
         Ok(())
     }
-}
-
-// UI helper functions
-pub fn show_item(item: &MenuItem) {
-    if item.key.starts_with('_') {
-        return;
-    }
-
-    let display_text = match &item.desp {
-        Some(desp) => format!("    * {:<20} -- {}", item.key, desp),
-        None => format!("    * {:<20}", item.key),
-    };
-
-    color_show(display_text, item.color.as_deref());
-}
-
-pub fn color_show<S: AsRef<str> + Display>(text: S, color: Option<&str>) {
-    let colored_text = match color {
-        Some("red") => text.as_ref().red(),
-        Some("green") => text.as_ref().green(),
-        Some("blue") => text.as_ref().blue(),
-        Some("yellow") => text.as_ref().yellow(),
-        Some("cyan") => text.as_ref().cyan(),
-        Some("magenta") => text.as_ref().magenta(),
-        Some("black") => text.as_ref().black(),
-        Some("white") => text.as_ref().white(),
-        Some("purple") => text.as_ref().purple(),
-        _ => return println!("{}", text),
-    };
-
-    println!("{}", colored_text);
 }

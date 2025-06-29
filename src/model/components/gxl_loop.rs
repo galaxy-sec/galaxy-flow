@@ -93,7 +93,6 @@ mod tests {
         assert!(result.is_ok());
         let TaskValue { rec, .. } = result.unwrap();
         if let ExecOut::Task(_task) = rec {
-            assert!(true)
             //assert_eq!(job.tasks().len(), 2); // 应该有两个任务，对应两个键值对
         } else {
             panic!("Expected Job output");

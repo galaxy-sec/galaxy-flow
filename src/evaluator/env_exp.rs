@@ -126,7 +126,7 @@ mod tests {
     #[test]
     pub fn regex_test() {
         let re = Regex::new(r"(\$\{([[:alnum:]]+)\})").unwrap();
-        let fun = |caps: &Captures| format!("{}", &caps[2]);
+        let fun = |caps: &Captures| caps[2].to_string();
         let newc = re.replace_all("${HOME}/bin", &fun);
         assert_eq!("HOME/bin", newc);
         let newc = re.replace_all("${HOME}/bin/${USER}", &fun);
@@ -149,7 +149,7 @@ mod tests {
             ex.eval("${HOME}/bin").unwrap(),
             String::from("/home/galaxy/bin")
         );
-        assert!(ex.eval("${HOME}/bin").unwrap() != String::from("/home/galaxy1/bin"));
+        assert!(ex.eval("${HOME}/bin").unwrap() != "/home/galaxy1/bin");
         assert_eq!(
             ex.eval("${HOME}/${USER}/bin").unwrap(),
             String::from("/home/galaxy/galaxy/bin")
@@ -158,9 +158,9 @@ mod tests {
             ex.eval("${HOME2}"),
             Err(ExecReason::NoVal("__NO[HOME2]__".to_string()).into())
         );
-        assert_eq!(ex.eval(&format!("HOME2")).unwrap(), String::from("HOME2"));
+        assert_eq!(ex.eval("HOME2").unwrap(), String::from("HOME2"));
 
-        let content = format!("HOME2");
+        let content = "HOME2".to_string();
         assert_eq!(ex.eval(&content).unwrap(), String::from("HOME2"));
     }
     #[test]

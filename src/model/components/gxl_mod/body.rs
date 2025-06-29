@@ -361,7 +361,7 @@ mod test {
         let mod1 = GxlMod::from(ModMeta::build_mod("mod1"));
         let mixs: Vec<GxlMod> = vec![mod1];
         let result = merge_mod(mixs);
-        assert_eq!(result.is_some(), true);
+        assert!(result.is_some());
     }
 
     #[test]
@@ -377,8 +377,7 @@ mod test {
         let mixs: Vec<GxlMod> = vec![mod1, mod2];
 
         let result = merge_mod(mixs);
-        assert_eq!(result.is_some(), true);
-
+        assert!(result.is_some());
         if let Some(target) = result {
             assert_eq!(target.meta.name(), "mod1");
             assert_eq!(target.props.len(), 2);
