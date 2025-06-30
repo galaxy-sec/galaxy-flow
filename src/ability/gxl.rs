@@ -47,7 +47,7 @@ impl AsyncRunnableTrait for GxRun {
             debug: 0,
             conf: Some(exp.eval(&self.gxl_path)?),
             log: None,
-            cmd_print: true,
+            cmd_print: *ctx.cmd_print(),
             cmd_arg: String::new(),
             dryrun: false,
         };

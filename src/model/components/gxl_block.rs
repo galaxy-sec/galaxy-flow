@@ -19,10 +19,8 @@ use crate::ability::GxUpLoad;
 use crate::ability::RgVersion;
 use crate::calculate::cond::CondExec;
 use crate::context::ExecContext;
-use crate::execution::runnable::AsyncDryrunCaptureRunnableTrait;
 use crate::execution::runnable::AsyncDryrunRunnableTrait;
 use crate::execution::runnable::VTResult;
-use crate::execution::runnable::VTResultWithCapture;
 use crate::execution::task::Task;
 use crate::task_report::task_rc_config::report_enable;
 
@@ -70,13 +68,13 @@ impl CondExec for BlockNode {
     }
 }
 #[async_trait]
-impl AsyncDryrunCaptureRunnableTrait for BlockAction {
-    async fn async_exec_with_dryrun_capture(
+impl AsyncDryrunRunnableTrait for BlockAction {
+    async fn async_exec_with_dryrun(
         &self,
         ctx: ExecContext,
         dct: VarSpace,
         is_dryrun: bool,
-    ) -> VTResultWithCapture {
+    ) -> VTResult {
         let (result, output) = match self {
             BlockAction::GxlRun(o) => (o.async_exec(ctx, dct).await, String::new()),
             _ => {
@@ -95,7 +93,7 @@ impl AsyncDryrunCaptureRunnableTrait for BlockAction {
             } // 处理重定向的输出
         };
 
-        println!("{}", output);
+        print!("{}", output);
         return match result {
             Ok(mut tv) => {
                 tv.append_out(output);
@@ -142,7 +140,7 @@ impl AsyncDryrunRunnableTrait for BlockNode {
 
         for item in &self.items {
             let TaskValue { vars, out, rec } = item
-                .async_exec_with_dryrun_capture(ctx.clone(), cur_var_dict, is_dryrun)
+                .async_exec_with_dryrun(ctx.clone(), cur_var_dict, is_dryrun)
                 .await?;
             cur_var_dict = vars;
             task.stdout.push_str(out.as_str());
@@ -227,7 +225,7 @@ mod tests {
         let mut block = BlockNode::new();
         let prop = GxlProp::new("test", "hello");
         block.append(prop);
-        let ctx = ExecContext::new(false, false);
+        let ctx = ExecContext::new(Some(false), false);
         let def = VarSpace::default();
         let res = block.async_exec_with_dryrun(ctx, def, false).await;
         assert!(res.is_ok());

@@ -8,11 +8,11 @@ pub struct ExecContext {
     env_vars: HashMap<String, String>,
     abs_path: String,
     cur_path: String,
-    cmd_print: bool,
+    cmd_print: Option<bool>,
     dryrun: bool,
 }
 impl ExecContext {
-    pub fn new(out: bool, dryrun: bool) -> Self {
+    pub fn new(out: Option<bool>, dryrun: bool) -> Self {
         let cur_path = env::current_dir().unwrap();
         let cur_path = cur_path.as_path().to_str().unwrap();
 

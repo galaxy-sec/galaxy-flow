@@ -148,7 +148,7 @@ mod tests {
         spc.exec(
             ["default".into()].to_vec(),
             ["conf".into()].to_vec(),
-            true,
+            Some(true),
             false,
             VarSpace::sys_init()?,
         )

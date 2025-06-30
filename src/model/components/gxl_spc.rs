@@ -147,13 +147,13 @@ impl GxlSpace {
         &self,
         envs_name: VS,
         flows_name: VS,
-        out: bool,
+        out: Option<bool>,
         dryrun: bool,
         var_space: VarSpace,
     ) -> RunResult<()> {
         info!(
             target: "execution",
-            "Starting execution stack with output: {}", out
+            "Starting execution stack with output: {:?}", out
         );
 
         let envs: Vec<String> = envs_name.into();

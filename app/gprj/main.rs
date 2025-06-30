@@ -197,7 +197,7 @@ mod tests {
             debug: 0,
             env: "default".into(),
             flow: vec!["echo".into()],
-            cmd_print: true,
+            cmd_print: Some(true),
             cmd_arg: String::new(),
             dryrun: false,
         })

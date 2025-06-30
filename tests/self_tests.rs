@@ -22,7 +22,7 @@ async fn prj_conf() -> AnyResult<()> {
     spc.exec(
         vec!["default".into()],
         vec!["conf".into()],
-        false,
+        Some(false),
         false,
         VarSpace::sys_init()?,
     )
