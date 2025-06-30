@@ -176,8 +176,8 @@ impl Activity {
         let cmd = exp.eval(&dto.executer).with(&r_with)?;
         let mut opt = self.dto.expect.clone();
         // 若未设置全局的输出模式，则使用局部模式
-        if let Some(outer_print) = ctx.cmd_print() {
-            opt.outer_print = *outer_print;
+        if let Some(quiet) = ctx.quiet() {
+            opt.quiet = quiet;
         }
 
         debug!(target: ctx.path(),"cmd: {}, opt:{:?}", cmd,opt);

@@ -13,7 +13,7 @@ fn rg_test() {
     once_init_log();
     let loader = GxLoader::new();
     let expect = ShellOption {
-        outer_print: false,
+        quiet: false,
         ..Default::default()
     };
     let cmd = "rm -rf ./tmp/".to_string();

@@ -70,8 +70,8 @@ impl GxCmd {
 
         let mut expect = self.dto.expect.clone();
         // 若未设置全局输出模式，则使用局部模式
-        if let Some(out_print) = ctx.cmd_print() {
-            expect.outer_print = *out_print;
+        if let Some(quiet) = ctx.quiet() {
+            expect.quiet = quiet;
         }
 
         let res = gxl_sh!(

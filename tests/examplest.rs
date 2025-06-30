@@ -11,7 +11,7 @@ mod tests {
 
     fn test_opt() -> ShellOption {
         ShellOption {
-            outer_print: false,
+            quiet: false,
             ..Default::default()
         }
     }

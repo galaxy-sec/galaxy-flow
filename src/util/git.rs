@@ -78,7 +78,7 @@ impl GitTools {
         let cmd = format!("{}/{}", self.gxl_root, "git_check.sh");
         debug!(target:"sys", "cmd:{}", cmd);
         let sh_opt = ShellOption {
-            outer_print: true,
+            quiet: true,
             inner_print: true,
             ..Default::default()
         };

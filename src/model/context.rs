@@ -8,7 +8,8 @@ pub struct ExecContext {
     env_vars: HashMap<String, String>,
     abs_path: String,
     cur_path: String,
-    cmd_print: Option<bool>,
+    #[getter(copy)]
+    quiet: Option<bool>,
     dryrun: bool,
 }
 impl ExecContext {
@@ -20,7 +21,7 @@ impl ExecContext {
             abs_path: String::from(""),
             cur_path: String::from(cur_path),
             env_vars: HashMap::new(),
-            cmd_print: out,
+            quiet: out,
             dryrun,
         }
     }
