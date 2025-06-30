@@ -29,7 +29,7 @@ async fn gxl_normal_test() -> AnyResult<()> {
     spc.exec(
         vec!["dev".into()],
         vec!["api".into(), "start".into()],
-        false,
+        Some(false),
         false,
         VarSpace::default(),
     )

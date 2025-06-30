@@ -175,7 +175,11 @@ impl Activity {
         let exp = EnvExpress::from_env_mix(dict.global().clone());
         let cmd = exp.eval(&dto.executer).with(&r_with)?;
         let mut opt = self.dto.expect.clone();
-        opt.outer_print = *ctx.cmd_print();
+        // 若未设置全局的输出模式，则使用局部模式
+        if let Some(outer_print) = ctx.cmd_print() {
+            opt.outer_print = *outer_print;
+        }
+
         debug!(target: ctx.path(),"cmd: {}, opt:{:?}", cmd,opt);
         gxl_sh!(LogicScope::Outer, ctx.path(), &cmd, &opt, &exp).with(&r_with)?;
         action.finish();

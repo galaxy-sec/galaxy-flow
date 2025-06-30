@@ -21,7 +21,7 @@ pub struct StubFlowAbi {}
 #[allow(dead_code)]
 pub fn ability_env_init() -> (ExecContext, VarSpace) {
     once_init_log();
-    let context = ExecContext::new(false, false);
+    let context = ExecContext::new(Some(false), false);
     let mut def = VarSpace::default();
     def.global_mut()
         .set("GXL_PRJ_ROOT", context.cur_path().as_str());

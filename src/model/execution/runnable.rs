@@ -65,7 +65,6 @@ impl From<(VarSpace, ExecOut, String)> for TaskValue {
 pub type TaskResult = ExecResult<ExecOut>;
 pub type VarsResult = ExecResult<VarSpace>;
 pub type VTResult = ExecResult<TaskValue>;
-pub type VTResultWithCapture = ExecResult<TaskValue>;
 
 //#[automock]
 #[async_trait]
@@ -81,17 +80,6 @@ pub trait AsyncDryrunRunnableTrait {
         dict: VarSpace,
         dryrun: bool,
     ) -> VTResult;
-}
-
-// 用于action级别的日志重定向捕获
-#[async_trait]
-pub trait AsyncDryrunCaptureRunnableTrait {
-    async fn async_exec_with_dryrun_capture(
-        &self,
-        ctx: ExecContext,
-        dict: VarSpace,
-        dryrun: bool,
-    ) -> VTResultWithCapture;
 }
 
 pub trait RunnableTrait {

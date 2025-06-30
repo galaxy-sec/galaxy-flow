@@ -69,7 +69,11 @@ impl GxCmd {
         let exe_cmd = exp.eval(cmd)?;
 
         let mut expect = self.dto.expect.clone();
-        expect.outer_print = *ctx.cmd_print();
+        // 若未设置全局输出模式，则使用局部模式
+        if let Some(out_print) = ctx.cmd_print() {
+            expect.outer_print = *out_print;
+        }
+
         let res = gxl_sh!(
             LogicScope::Outer,
             ctx.tag_path("cmd").as_str(),

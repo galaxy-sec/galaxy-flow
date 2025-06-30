@@ -16,7 +16,7 @@ pub mod task;
 #[allow(dead_code)]
 pub fn exec_init_env() -> (ExecContext, VarSpace) {
     once_init_log();
-    let ctx = ExecContext::new(false, false);
+    let ctx = ExecContext::new(Some(false), false);
     let def = VarSpace::default();
     (ctx, def)
 }
