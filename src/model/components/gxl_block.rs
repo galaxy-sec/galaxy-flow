@@ -89,7 +89,10 @@ impl AsyncRunnableTrait for BlockAction {
 
         println!("{}", output);
         return match result {
-            Ok(tv) => Ok(tv),
+            Ok(mut tv) => {
+                tv.append_out(output);
+                Ok(tv)
+            }
             Err(e) => Err(e),
         };
     }

@@ -38,6 +38,9 @@ impl TaskValue {
     pub fn rec(&self) -> &ExecOut {
         &self.rec
     }
+    pub fn append_out(&mut self, out: String) {
+        self.out.push_str(&out);
+    }
 }
 impl From<(VarSpace, ExecOut)> for TaskValue {
     fn from(value: (VarSpace, ExecOut)) -> Self {
