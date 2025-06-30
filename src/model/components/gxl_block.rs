@@ -7,6 +7,7 @@ use super::prelude::*;
 
 use crate::ability::artifact::GxArtifact;
 use crate::ability::delegate::ActCall;
+use crate::ability::prelude::TaskValue;
 use crate::ability::GxAssert;
 use crate::ability::GxCmd;
 use crate::ability::GxDownLoad;
@@ -96,7 +97,7 @@ impl AsyncDryrunCaptureRunnableTrait for BlockAction {
 
         println!("{}", output);
         return match result {
-            Ok((vars_dict, out)) => Ok((vars_dict, out, output)),
+            Ok(tv) => Ok(tv),
             Err(e) => Err(e),
         };
     }
@@ -137,15 +138,15 @@ impl AsyncDryrunRunnableTrait for BlockNode {
         self.export_props(ctx.clone(), cur_var_dict.global_mut(), "")?;
 
         for item in &self.items {
-            let (tmp_var_dict, out, captured_output) = item
+            let TaskValue { vars, out, rec } = item
                 .async_exec_with_dryrun_capture(ctx.clone(), cur_var_dict, is_dryrun)
                 .await?;
-            cur_var_dict = tmp_var_dict;
-            task.stdout.push_str(&captured_output);
-            task.append(out);
+            cur_var_dict = vars;
+            task.stdout.push_str(out.as_str());
+            task.append(rec);
         }
         task.finish();
-        Ok((cur_var_dict, ExecOut::Task(task)))
+        Ok(TaskValue::from((cur_var_dict, ExecOut::Task(task))))
     }
 }
 impl DependTrait<&GxlSpace> for BlockNode {
@@ -226,6 +227,6 @@ mod tests {
         let ctx = ExecContext::new(false, false);
         let def = VarSpace::default();
         let res = block.async_exec_with_dryrun(ctx, def, false).await;
-        assert_eq!(res.is_ok(), true);
+        assert!(res.is_ok());
     }
 }

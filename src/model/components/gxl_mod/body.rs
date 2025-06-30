@@ -1,5 +1,6 @@
 use crate::ability::delegate::Activity;
 use crate::ability::prelude::GxlProp;
+use crate::ability::prelude::TaskValue;
 use crate::components::gxl_flow::runner::FlowRunner;
 use crate::components::gxl_spc::GxlSpace;
 use crate::components::GxlEnv;
@@ -189,11 +190,11 @@ impl AsyncRunnableTrait for ModRunner {
         ctx.append(self.meta().name());
         let mut job = Job::default();
         for i in &self.async_items {
-            let (d, t) = i.async_exec(ctx.clone(), dct).await?;
-            dct = d;
-            job.append(t);
+            let TaskValue { vars, rec, .. } = i.async_exec(ctx.clone(), dct).await?;
+            dct = vars;
+            job.append(rec);
         }
-        Ok((dct, ExecOut::Job(job)))
+        Ok(TaskValue::from((dct, ExecOut::Job(job))))
     }
 }
 
@@ -260,7 +261,7 @@ impl ExecLoadTrait for GxlMod {
 impl GxlMod {
     fn exec_self(&self, ctx: ExecContext, mut def: VarSpace) -> VTResult {
         self.export_props(ctx, def.global_mut(), self.meta.name().as_str())?;
-        Ok((def, ExecOut::Ignore))
+        Ok(TaskValue::from((def, ExecOut::Ignore)))
     }
 }
 
@@ -360,7 +361,7 @@ mod test {
         let mod1 = GxlMod::from(ModMeta::build_mod("mod1"));
         let mixs: Vec<GxlMod> = vec![mod1];
         let result = merge_mod(mixs);
-        assert_eq!(result.is_some(), true);
+        assert!(result.is_some());
     }
 
     #[test]
@@ -376,8 +377,7 @@ mod test {
         let mixs: Vec<GxlMod> = vec![mod1, mod2];
 
         let result = merge_mod(mixs);
-        assert_eq!(result.is_some(), true);
-
+        assert!(result.is_some());
         if let Some(target) = result {
             assert_eq!(target.meta.name(), "mod1");
             assert_eq!(target.props.len(), 2);
@@ -461,7 +461,7 @@ mod test {
 
         let ctx = ExecContext::default();
         let vars = VarSpace::default();
-        let (vars, _) = sequ.execute(ctx, vars.clone()).await.unwrap();
+        let TaskValue { vars, .. } = sequ.execute(ctx, vars.clone()).await.unwrap();
 
         println!("{:?}", vars.global().maps());
         assert_eq!(
@@ -507,7 +507,7 @@ mod test {
 
         let ctx = ExecContext::default();
         let vars = VarSpace::default();
-        let (vars, _task) = sequ.execute(ctx, vars).await.unwrap();
+        let TaskValue { vars, .. } = sequ.execute(ctx, vars).await.unwrap();
 
         println!("{:?}", vars.global().maps());
         assert_eq!(

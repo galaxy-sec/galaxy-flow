@@ -87,7 +87,7 @@ impl FileDTO {
         } else {
             vars_dict.global_mut().merge_dict(cur_dict);
         }
-        Ok((vars_dict, ExecOut::Ignore))
+        Ok(TaskValue::from((vars_dict, ExecOut::Ignore)))
     }
 
     fn impl_toml_mlist(&self, _ctx: ExecContext, file_path: &Path) -> ExecResult<VarDict> {
@@ -169,8 +169,11 @@ mod tests {
         let (context, mut def) = ability_env_init();
         def.global_mut()
             .set("CONF_ROOT", "${GXL_PRJ_ROOT}/examples/read");
-        let mut dto = FileDTO::default();
-        dto.file = String::from("${CONF_ROOT}/var.ini");
+        let dto = FileDTO {
+            file: String::from("${CONF_ROOT}/var.ini"),
+            ..Default::default()
+        };
+        //dto.file = String::from("${CONF_ROOT}/var.ini");
         let res = GxRead::from(ReadMode::from(dto));
         res.async_exec(context, def).await.unwrap();
     }

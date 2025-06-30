@@ -226,7 +226,7 @@ impl AsyncRunnableTrait for GxTpl {
         let mut action = Action::from("build tpl file");
         self.render_path(ctx, &self.dto, vars_dict.clone())?;
         action.finish();
-        Ok((vars_dict, ExecOut::Action(action)))
+        Ok(TaskValue::from((vars_dict, ExecOut::Action(action))))
     }
 }
 
@@ -299,10 +299,12 @@ mod tests {
         let dst = format!("{}/used", root);
         let file = format!("{}/value.json", root);
 
-        let mut dto = TplDTO::default();
-        dto.tpl = tpl.clone();
-        dto.dst = dst.clone();
-        dto.file = Some(file.clone());
+        let dto = TplDTO {
+            tpl: tpl.clone(),
+            dst: dst.clone(),
+            file: Some(file.clone()),
+            ..Default::default()
+        };
 
         let conf_tpl = GxTpl::new_by_dto(dto);
         conf_tpl.async_exec(context.clone(), def).await.unwrap();

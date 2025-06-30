@@ -25,7 +25,7 @@ impl StdinDTO {
         let mut vars = GxlVars::default();
         vars.append(GxlProp::new(name, buffer.trim().to_string()));
         vars.export_props(ctx, vars_dict.global_mut(), "")?;
-        Ok((vars_dict, ExecOut::Ignore))
+        Ok(TaskValue::from((vars_dict, ExecOut::Ignore)))
     }
 }
 
@@ -41,9 +41,10 @@ mod tests {
         let (context, mut def) = ability_env_init();
         def.global_mut()
             .set("CONF_ROOT", "${GXL_PRJ_ROOT}/example/conf");
-        let mut dto = StdinDTO::default();
-        dto.prompt = String::from("please input you name");
-        dto.name = String::from("name");
+        let dto = StdinDTO {
+            prompt: String::from("please input you name"),
+            name: String::from("name"),
+        };
         let res = GxRead::from(ReadMode::from(dto));
         res.async_exec(context, def).await.unwrap();
     }

@@ -94,7 +94,7 @@ mod tests {
         let mut data = r#"
              gx.ver  ( file : "./tests/version.txt",  inc : "build"  ) ;"#;
         let found = gal_version(&mut data).unwrap();
-        let expect = RgVersion::new(format!("./tests/version.txt"));
+        let expect = RgVersion::new("./tests/version.txt".into());
         assert_eq!(found, expect);
         assert_eq!(data, "");
     }

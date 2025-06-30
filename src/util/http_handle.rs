@@ -31,7 +31,11 @@ pub async fn send_http_request<T: Serialize + Debug>(payload: T, url: &String) {
     match response {
         Ok(resp) => {
             if resp.status().is_success() {
-                debug!("HTTP request to {} succeeded", url);
+                info!(
+                    "HTTP request to {} succeeded. {}",
+                    url,
+                    resp.text().await.unwrap_or_default()
+                );
             } else {
                 let status = resp.status();
                 let text = resp.text().await.unwrap_or_default();

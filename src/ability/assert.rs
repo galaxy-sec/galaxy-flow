@@ -55,7 +55,7 @@ impl AsyncRunnableTrait for GxAssert {
             println!("assert true : {}", value);
         }
         info!(target: ctx.path(), "value {} match exprect", value);
-        Ok((vars_dict, ExecOut::Ignore))
+        Ok(TaskValue::from((vars_dict, ExecOut::Ignore)))
     }
 }
 impl ComponentMeta for GxAssert {

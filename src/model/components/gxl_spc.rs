@@ -1,5 +1,8 @@
 use super::{code_spc::CodeSpace, prelude::*};
-use crate::{execution::sequence::Sequence, menu::*, util::task_report::task_local_report};
+use crate::{
+    ability::prelude::TaskValue, execution::sequence::Sequence, menu::*,
+    util::task_report::task_local_report,
+};
 use colored::Colorize;
 use orion_error::ErrorConv;
 use std::{collections::HashMap, fmt::Display};
@@ -189,12 +192,12 @@ impl GxlSpace {
             .err_conv()?;
 
         let exec_ctx = main_ctx.clone().with_subcontext("exec");
-        let (_, output) = exec_sequ
+        let TaskValue { rec, .. } = exec_sequ
             .execute(exec_ctx, var_space.clone())
             .await
             .err_conv()?;
 
-        task_local_report(output);
+        task_local_report(rec);
         Ok(())
     }
 
@@ -235,6 +238,37 @@ impl GxlSpace {
 
         Ok(())
     }
+}
+
+// UI helper functions
+pub fn show_item(item: &MenuItem) {
+    if item.key.starts_with('_') {
+        return;
+    }
+
+    let display_text = match &item.desp {
+        Some(desp) => format!("    * {:<20} -- {}", item.key, desp),
+        None => format!("    * {:<20}", item.key),
+    };
+
+    color_show(display_text, item.color.as_deref());
+}
+
+pub fn color_show<S: AsRef<str> + Display>(text: S, color: Option<&str>) {
+    let colored_text = match color {
+        Some("red") => text.as_ref().red(),
+        Some("green") => text.as_ref().green(),
+        Some("blue") => text.as_ref().blue(),
+        Some("yellow") => text.as_ref().yellow(),
+        Some("cyan") => text.as_ref().cyan(),
+        Some("magenta") => text.as_ref().magenta(),
+        Some("black") => text.as_ref().black(),
+        Some("white") => text.as_ref().white(),
+        Some("purple") => text.as_ref().purple(),
+        _ => return println!("{}", text),
+    };
+
+    println!("{}", colored_text);
 }
 
 #[cfg(test)]
@@ -284,41 +318,10 @@ mod tests {
         work_space.load_env(ctx.clone(), &mut flow, "env.env1")?;
         work_space.load_flow(ctx.clone(), &mut flow, "main.flow1")?;
 
-        let (_, job) = flow.test_execute(ctx, def).await.unwrap();
-        debug!("Job result: {:#?}", job);
+        let task_v = flow.test_execute(ctx, def).await.unwrap();
+        debug!("Job result: {:#?}", task_v);
 
         work_space.show().unwrap();
         Ok(())
     }
-}
-
-// UI helper functions
-pub fn show_item(item: &MenuItem) {
-    if item.key.starts_with('_') {
-        return;
-    }
-
-    let display_text = match &item.desp {
-        Some(desp) => format!("    * {:<20} -- {}", item.key, desp),
-        None => format!("    * {:<20}", item.key),
-    };
-
-    color_show(display_text, item.color.as_deref());
-}
-
-pub fn color_show<S: AsRef<str> + Display>(text: S, color: Option<&str>) {
-    let colored_text = match color {
-        Some("red") => text.as_ref().red(),
-        Some("green") => text.as_ref().green(),
-        Some("blue") => text.as_ref().blue(),
-        Some("yellow") => text.as_ref().yellow(),
-        Some("cyan") => text.as_ref().cyan(),
-        Some("magenta") => text.as_ref().magenta(),
-        Some("black") => text.as_ref().black(),
-        Some("white") => text.as_ref().white(),
-        Some("purple") => text.as_ref().purple(),
-        _ => return println!("{}", text),
-    };
-
-    println!("{}", colored_text);
 }

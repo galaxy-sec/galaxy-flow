@@ -118,7 +118,7 @@ mod tests {
         let _wd = WorkDir::change(temp_dir.path());
 
         // 调用函数并断言结果
-        assert_eq!(find_project_define().is_some(), true)
+        assert!(find_project_define().is_some())
     }
 
     #[ignore = "change work dir"]
@@ -138,7 +138,7 @@ mod tests {
         //env::set_current_dir(&child_dir).expect("Failed to set current dir");
 
         // 调用函数应找到父目录中的文件
-        assert_eq!(find_project_define().is_some(), true);
+        assert!(find_project_define().is_some());
     }
 
     #[ignore = "change work dir"]

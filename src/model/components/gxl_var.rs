@@ -1,6 +1,7 @@
 use orion_common::friendly::New2;
 
 use super::prelude::*;
+use crate::ability::prelude::TaskValue;
 use crate::execution::action::Action;
 use crate::execution::runnable::ComponentMeta;
 use crate::expect::StrMap;
@@ -77,7 +78,7 @@ impl AsyncRunnableTrait for GxlVars {
     async fn async_exec(&self, ctx: ExecContext, mut def: VarSpace) -> VTResult {
         let action = Action::from("rg vars setting");
         self.export_props(ctx, def.global_mut(), "")?;
-        Ok((def, ExecOut::Action(action)))
+        Ok(TaskValue::from((def, ExecOut::Action(action))))
     }
 }
 impl ComponentMeta for GxlVars {

@@ -1,3 +1,5 @@
+use crate::ability::prelude::TaskValue;
+
 use super::gxl_spc::GxlSpace;
 use super::{prelude::*, GxlFlow};
 
@@ -26,11 +28,11 @@ impl AsyncRunnableTrait for RgIntercept {
         let mut job = Job::from("intercept");
         self.export_props(ctx.clone(), var_dict.global_mut(), self.m_name())?;
         for flow in &self.flows {
-            let (cur_dict, task) = flow.async_exec(ctx.clone(), var_dict).await?;
-            var_dict = cur_dict;
-            job.append(task);
+            let TaskValue { vars, rec, .. } = flow.async_exec(ctx.clone(), var_dict).await?;
+            var_dict = vars;
+            job.append(rec);
         }
-        Ok((var_dict, ExecOut::Job(job)))
+        Ok(TaskValue::from((var_dict, ExecOut::Job(job))))
     }
 }
 impl DependTrait<&GxlSpace> for RgIntercept {

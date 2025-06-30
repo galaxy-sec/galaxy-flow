@@ -114,8 +114,10 @@ mod tests {
 
     #[test]
     fn cmd_test2() {
-        let mut expect = ShellOption::default();
-        expect.log_lev = Some(log::Level::Info);
+        let mut expect = ShellOption {
+            log_lev: Some(log::Level::Info),
+            ..Default::default()
+        };
         let mut data = r#"
              gx.cmd(
              cmd : "${PRJ_ROOT}/do.sh",
@@ -135,8 +137,10 @@ mod tests {
 
     #[test]
     fn cmd_test3() {
-        let mut expect = ShellOption::default();
-        expect.log_lev = Some(log::Level::Info);
+        let mut expect = ShellOption {
+            log_lev: Some(log::Level::Info),
+            ..Default::default()
+        };
         let mut data = r#"
              gx.cmd(
              "${PRJ_ROOT}/do.sh",
