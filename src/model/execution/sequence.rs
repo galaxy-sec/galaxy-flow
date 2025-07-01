@@ -1,4 +1,4 @@
-use std::collections::VecDeque;
+use std::collections::{HashMap, VecDeque};
 use std::sync::Arc;
 
 use async_trait::async_trait;
@@ -7,6 +7,7 @@ use orion_error::UvsSysFrom;
 
 use crate::ability::prelude::TaskValue;
 use crate::annotation::{Dryrunable, Transaction};
+use crate::components::{GxlFlow, GxlMod};
 use crate::context::ExecContext;
 use crate::execution::hold::AsyncComHold;
 use crate::execution::hold::{ComHold, IsolationHold};
@@ -23,12 +24,18 @@ use super::hold::TransableHold;
 #[derive(Clone, Getters)]
 pub struct Sequence {
     name: String,
+    mods_entry: HashMap<String, bool>,
+    mods_exits: HashMap<String, bool>,
+    mods_head: HashMap<String, bool>,
     run_items: Vec<ComHold>,
 }
 
 impl From<&str> for Sequence {
     fn from(name: &str) -> Self {
         Self {
+            mods_entry: HashMap::new(),
+            mods_exits: HashMap::new(),
+            mods_head: HashMap::new(),
             name: name.to_string(),
             run_items: Vec::new(),
         }
@@ -99,6 +106,25 @@ impl Sequence {
                 Ok(_) => warn!("Undo successful for {}", undo.com_meta().name()),
                 Err(e) => error!("Undo failed for {}: {}", undo.com_meta().name(), e),
             }
+        }
+    }
+    pub fn append_mod_entry(&mut self, flow: GxlFlow) {
+        if !self.mods_entry().contains_key(flow.meta().name()) {
+            self.mods_entry.insert(flow.meta().name().clone(), true);
+            self.run_items.push(AsyncComHold::from(flow).into());
+        }
+    }
+    pub fn append_mod_exit(&mut self, flow: GxlFlow) {
+        if !self.mods_exits().contains_key(flow.meta().name()) {
+            self.mods_exits.insert(flow.meta().name().clone(), true);
+            self.run_items.push(AsyncComHold::from(flow).into());
+        }
+    }
+
+    pub fn append_mod_head(&mut self, gmod: GxlMod) {
+        if !self.mods_head().contains_key(gmod.meta().name()) {
+            self.mods_head.insert(gmod.meta().name().clone(), true);
+            self.run_items.push(AsyncComHold::from(gmod).into());
         }
     }
 }

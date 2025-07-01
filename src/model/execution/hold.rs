@@ -11,7 +11,7 @@ use crate::components::{GxlEnv, GxlFlow, GxlMod};
 use crate::context::ExecContext;
 use crate::meta::GxlMeta;
 
-use super::runnable::{AsyncRunnableTrait, ComponentMeta, TaskValue, TaskResult};
+use super::runnable::{AsyncRunnableTrait, ComponentMeta, TaskResult, TaskValue};
 use super::sequence::RunStub;
 use super::VarSpace;
 #[derive(Clone, From)]

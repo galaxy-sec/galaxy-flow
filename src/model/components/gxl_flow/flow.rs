@@ -6,7 +6,9 @@ use crate::data::AnnDto;
 use crate::execution::hold::TransableHold;
 use crate::model::components::prelude::*;
 
-use crate::annotation::{ComUsage, Dryrunable, FlowHold, TaskMessage, Transaction};
+use crate::annotation::{
+    ComUsage, Dryrunable, FlowHold, GetArgValue, TaskMessage, Transaction, FST_ARG_TAG,
+};
 use crate::execution::runnable::AsyncRunnableTrait;
 use crate::execution::task::Task;
 use crate::task_report::task_notification::TaskNotice;
@@ -22,13 +24,14 @@ use derive_getters::Getters;
 
 use super::anno::FlowAnnFunc;
 use super::meta::FlowMeta;
-use super::runner::FlowRunner;
 
 #[derive(Clone, Getters)]
 pub struct GxlFlow {
     meta: FlowMeta,
-    pre_flows: Vec<FlowRunner>,
-    post_flows: Vec<FlowRunner>,
+    pre_flows: Vec<GxlFlow>,
+    post_flows: Vec<GxlFlow>,
+    //entry_flows: Vec<GxlFlow>,
+    //exits_flows: Vec<GxlFlow>,
     undo_flow_item: Option<TransableHold>,
     dryrun_flow: Option<TransableHold>,
     blocks: Vec<BlockNode>,
@@ -84,7 +87,7 @@ fn assemble_pipe(
     m_name: &str,
     flow: &str,
     src: &GxlSpace,
-    target: &mut Vec<FlowRunner>,
+    target: &mut Vec<GxlFlow>,
 ) -> AResult<()> {
     let (t_mod, flow_name) = mod_obj_name(m_name, flow);
     if let Some(flow) = src.get(&t_mod).and_then(|m| m.load_scope_flow(&flow_name)) {
@@ -98,7 +101,7 @@ fn assemble_pipe(
     ))))
 }
 
-fn assemble_fetch(m_name: &str, flow: &str, src: &GxlSpace) -> AResult<FlowRunner> {
+fn assemble_fetch(m_name: &str, flow: &str, src: &GxlSpace) -> AResult<GxlFlow> {
     let (t_mod, flow_name) = mod_obj_name(m_name, flow);
     if let Some(flow) = src.get(&t_mod).and_then(|m| m.load_scope_flow(&flow_name)) {
         let undo_flow = flow.assemble(m_name, src)?;
@@ -238,6 +241,28 @@ impl GxlFlow {
         }
         false
     }
+    pub fn is_auto_entry(&self) -> bool {
+        let annotation = self.meta.annotations();
+        for ann in annotation {
+            if ann.func == FlowAnnFunc::AutoLoad {
+                if ann.get_arg(FST_ARG_TAG) == Some("entry".to_string()) {
+                    return true;
+                }
+            }
+        }
+        false
+    }
+    pub fn is_auto_exit(&self) -> bool {
+        let annotation = self.meta.annotations();
+        for ann in annotation {
+            if ann.func == FlowAnnFunc::AutoLoad {
+                if ann.get_arg(FST_ARG_TAG) == Some("exit".to_string()) {
+                    return true;
+                }
+            }
+        }
+        false
+    }
 }
 #[async_trait]
 impl AsyncRunnableTrait for GxlFlow {
@@ -360,10 +385,10 @@ mod tests {
 
         // 验证 pre_ows 和 post_ows 是否正确组装
         assert_eq!(assembled_flow.pre_flows().len(), 2);
-        assert_eq!(assembled_flow.pre_flows()[0].flow().meta.name(), "flow1");
-        assert_eq!(assembled_flow.pre_flows()[1].flow().meta.name(), "flow2");
+        assert_eq!(assembled_flow.pre_flows()[0].meta.name(), "flow1");
+        assert_eq!(assembled_flow.pre_flows()[1].meta.name(), "flow2");
 
         assert_eq!(assembled_flow.post_flows().len(), 1);
-        assert_eq!(assembled_flow.post_flows()[0].flow().meta.name(), "flow3");
+        assert_eq!(assembled_flow.post_flows()[0].meta.name(), "flow3");
     }
 }

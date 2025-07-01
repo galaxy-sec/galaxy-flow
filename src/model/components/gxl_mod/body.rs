@@ -1,7 +1,6 @@
 use crate::ability::delegate::Activity;
 use crate::ability::prelude::GxlProp;
 use crate::ability::prelude::TaskValue;
-use crate::components::gxl_flow::runner::FlowRunner;
 use crate::components::gxl_spc::GxlSpace;
 use crate::components::GxlEnv;
 use crate::components::GxlFlow;
@@ -36,6 +35,8 @@ pub struct GxlMod {
     flow_names: Vec<MenuItem>,
     envs: HashMap<String, GxlEnv>,
     flows: HashMap<String, GxlFlow>,
+    entrys: Vec<GxlFlow>,
+    exits: Vec<GxlFlow>,
     acts: HashMap<String, Activity>,
 }
 
@@ -67,7 +68,14 @@ impl DependTrait<&GxlSpace> for GxlMod {
             ins.envs.insert(k.clone(), env.assemble(mod_name, src)?);
         }
         for (k, flow) in self.flows {
-            ins.flows.insert(k.clone(), flow.assemble(mod_name, src)?);
+            let ass_flow = flow.assemble(mod_name, src)?;
+            if ass_flow.is_auto_entry() {
+                ins.entrys.push(ass_flow.clone());
+            }
+            if ass_flow.is_auto_exit() {
+                ins.exits.push(ass_flow.clone());
+            }
+            ins.flows.insert(k.clone(), ass_flow);
         }
         for (k, act) in self.acts {
             ins.acts.insert(k.clone(), act.assemble(mod_name, src)?);
@@ -105,19 +113,9 @@ impl From<&str> for GxlMod {
 }
 
 impl GxlMod {
-    pub fn load_scope_flow(&self, name: &str) -> Option<FlowRunner> {
+    pub fn load_scope_flow(&self, name: &str) -> Option<GxlFlow> {
         if let Some(flow) = self.flows.get(name) {
-            debug!(target : "assmeble","load scope flow {}", name);
-            let props = self.props().clone();
-            let befores = self.get_auto_func("entry");
-            let afters = self.get_auto_func("exit");
-            Some(FlowRunner::new(
-                self.of_name(),
-                props,
-                flow.clone(),
-                befores,
-                afters,
-            ))
+            Some(flow.clone())
         } else {
             None
         }
@@ -236,17 +234,25 @@ impl ExecLoadTrait for GxlMod {
         Err(ExecError::from(ExecReason::Miss(args.into())))
     }
 
-    fn load_flow(&self, mut ctx: ExecContext, sequ: &mut Sequence, args: &str) -> ExecResult<()> {
+    fn load_flow(&self, mut ctx: ExecContext, sequ: &mut Sequence, name: &str) -> ExecResult<()> {
         ctx.append(self.meta.name().as_str());
-        if let Some(found) = self.load_scope_flow(args) {
-            let pre_flows = found.flow().pre_flows().clone();
-            let post_flows = found.flow().post_flows().clone();
+
+        if let Some(found) = self.flows.get(name) {
+            sequ.append_mod_head(self.clone());
+            for x in self.entrys.iter() {
+                sequ.append_mod_entry(x.clone());
+            }
+            let pre_flows = found.pre_flows().clone();
+            let post_flows = found.post_flows().clone();
             for flow in pre_flows.into_iter() {
                 sequ.append(AsyncComHold::from(flow));
             }
-            sequ.append(AsyncComHold::from(found));
+            sequ.append(AsyncComHold::from(found.clone()));
             for flow in post_flows.into_iter() {
                 sequ.append(AsyncComHold::from(flow));
+            }
+            for x in self.exits().iter() {
+                sequ.append_mod_exit(x.clone());
             }
         }
         Ok(())

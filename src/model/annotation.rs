@@ -1,9 +1,9 @@
 use std::{collections::HashMap, sync::Arc};
 
 use super::{
-    components::gxl_flow::{
-        anno::{FlowAnnFunc, FlowAnnotation},
-        runner::FlowRunner,
+    components::{
+        gxl_flow::anno::{FlowAnnFunc, FlowAnnotation},
+        GxlFlow,
     },
     execution::hold::TransableHold,
 };
@@ -55,4 +55,4 @@ pub trait Dryrunable {
     fn dryrun_hold(&self) -> Option<TransableHold>;
 }
 
-pub type FlowHold = Arc<FlowRunner>;
+pub type FlowHold = Arc<GxlFlow>;
