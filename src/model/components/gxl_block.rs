@@ -87,7 +87,7 @@ impl AsyncRunnableTrait for BlockAction {
             } // 处理重定向的输出
         };
 
-        println!("{}", output);
+        print!("{}", output);
         return match result {
             Ok(mut tv) => {
                 tv.append_out(output);
@@ -212,7 +212,7 @@ mod tests {
         let mut block = BlockNode::new();
         let prop = GxlProp::new("test", "hello");
         block.append(prop);
-        let ctx = ExecContext::new(false, false);
+        let ctx = ExecContext::new(Some(false), false);
         let def = VarSpace::default();
         let res = block.async_exec(ctx, def).await;
         assert!(res.is_ok());

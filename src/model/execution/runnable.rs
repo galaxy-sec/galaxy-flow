@@ -65,7 +65,6 @@ impl From<(VarSpace, ExecOut, String)> for TaskValue {
 pub type TaskResult = ExecResult<ExecOut>;
 pub type VarsResult = ExecResult<VarSpace>;
 pub type VTResult = ExecResult<TaskValue>;
-pub type VTResultWithCapture = ExecResult<TaskValue>;
 
 //#[automock]
 #[async_trait]

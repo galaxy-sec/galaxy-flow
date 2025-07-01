@@ -20,7 +20,7 @@ pub fn rg_sh(
     if !opt.secrecy {
         let lev = opt.log_lev.unwrap_or(log::Level::Debug);
         log!(target: target, lev, "cmd : {}", sec_cmd);
-        if opt.cmd_print(scope) {
+        if !opt.quiet(scope) {
             show_cmd(&sec_cmd);
         }
     }
@@ -57,7 +57,7 @@ pub fn rg_sh(
                 }
 
                 let log_level = opt.log_lev.unwrap_or(log::Level::Debug);
-                if opt.cmd_print(scope) {
+                if !opt.quiet(scope) {
                     if !out_msg.is_empty() {
                         println!("{}", out_msg);
                         log!(target: target, log_level, "out:\n{}", out_msg);
@@ -120,7 +120,7 @@ mod tests {
         dict.sec_set("SEC_KEY", "galaxy");
         let exp = EnvExpress::from_env_mix(dict);
         let opt = ShellOption {
-            outer_print: true,
+            quiet: true,
             ..Default::default()
         };
         let cmd = "echo ${SEC_KEY}".to_string();

@@ -19,7 +19,7 @@ impl GxlRunner {
                     .with(("conf", conf));
             }
             let expect = ShellOption {
-                outer_print: cmd.cmd_print,
+                quiet: cmd.quiet.unwrap_or(false),
                 ..Default::default()
             };
             let spc = GxlSpace::try_from(loader.parse_file(conf.as_str(), false, expect, &vars)?)
@@ -35,8 +35,7 @@ impl GxlRunner {
                     cmd.flow.clone()
                     //cmd.flow.iter().collect()
                 };
-                spc.exec(envs, flws, cmd.cmd_print, cmd.dryrun, vars)
-                    .await?;
+                spc.exec(envs, flws, cmd.quiet, cmd.dryrun, vars).await?;
                 println!("\ngod job!");
             }
             Ok(())
@@ -65,8 +64,8 @@ pub struct GxlCmd {
     /// config log ; eg: --log  cmd=debug,parse=info
     #[arg(long = "log")]
     pub log: Option<String>,
-    #[arg(short= 'q', long = "quiet" ,action = ArgAction::SetFalse , default_value = "true")]
-    pub cmd_print: bool,
+    #[arg(short = 'q', long = "quiet")]
+    pub quiet: Option<bool>,
     #[arg( allow_hyphen_values = true,  // 关键设置：允许值以 - 开头
         last = true,                 // 关键设置：捕获所有剩余参数
         value_name = "cmd_args",

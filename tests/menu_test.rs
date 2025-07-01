@@ -13,7 +13,7 @@ fn menu_normal() {
     once_init_log();
     let mut loader = GxLoader::new();
     let expect = ShellOption {
-        outer_print: false,
+        quiet: false,
         ..Default::default()
     };
     let vars = VarSpace::sys_init().assert();
@@ -42,7 +42,7 @@ fn menu_simple() {
     once_init_log();
     let mut loader = GxLoader::new();
     let expect = ShellOption {
-        outer_print: false,
+        quiet: false,
         ..Default::default()
     };
     let vars = VarSpace::sys_init().assert();
