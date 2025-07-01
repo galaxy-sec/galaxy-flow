@@ -3,7 +3,7 @@
 mod tests {
     use galaxy_flow::err::report_gxl_error;
     use galaxy_flow::execution::VarSpace;
-    use galaxy_flow::util::path::{WorkDir, WorkDirWithLock};
+    use galaxy_flow::util::path::WorkDirWithLock;
     use galaxy_flow::{
         components::gxl_spc::GxlSpace, err::RunResult, expect::ShellOption, infra::once_init_log,
         GxLoader,
@@ -14,27 +14,6 @@ mod tests {
         ShellOption {
             quiet: false,
             ..Default::default()
-        }
-    }
-
-    use std::env;
-    use std::path::PathBuf;
-
-    pub struct ScopedRunDir {
-        original_dir: PathBuf,
-    }
-
-    impl ScopedRunDir {
-        pub fn new(new_dir: &str) -> std::io::Result<Self> {
-            let original_dir = env::current_dir()?;
-            env::set_current_dir(new_dir)?;
-            Ok(Self { original_dir })
-        }
-    }
-
-    impl Drop for ScopedRunDir {
-        fn drop(&mut self) {
-            let _ = env::set_current_dir(&self.original_dir);
         }
     }
 
@@ -139,15 +118,14 @@ mod tests {
             GxlSpace::try_from(loader.parse_file("./_gal/work.gxl", false, test_opt(), &vars)?)
                 .assert();
         let dryrun = true;
-        let _ = spc
-            .exec(
-                vec!["default".into()],
-                vec!["start".into()],
-                Some(false),
-                dryrun,
-                VarSpace::default(),
-            )
-            .await?;
+        spc.exec(
+            vec!["default".into()],
+            vec!["start".into()],
+            Some(false),
+            dryrun,
+            VarSpace::default(),
+        )
+        .await?;
 
         let dryrun = false;
         let fail = spc
