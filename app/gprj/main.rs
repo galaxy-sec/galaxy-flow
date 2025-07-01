@@ -116,7 +116,7 @@ impl GxAdm {
             InitCmd::Remote(args) => {
                 configure_run_logging(args.log.clone(), args.debug);
                 let sh_opt = ShellOption {
-                    outer_print: args.cmd_print,
+                    quiet: args.cmd_print,
                     inner_print: args.cmd_print,
                     ..Default::default()
                 };
@@ -126,7 +126,7 @@ impl GxAdm {
             InitCmd::Update(args) => {
                 configure_run_logging(args.log.clone(), args.debug);
                 let sh_opt = ShellOption {
-                    outer_print: args.cmd_print,
+                    quiet: args.cmd_print,
                     inner_print: args.cmd_print,
                     ..Default::default()
                 };
@@ -197,7 +197,7 @@ mod tests {
             debug: 0,
             env: "default".into(),
             flow: vec!["echo".into()],
-            cmd_print: true,
+            quiet: Some(true),
             cmd_arg: String::new(),
             dryrun: false,
         })

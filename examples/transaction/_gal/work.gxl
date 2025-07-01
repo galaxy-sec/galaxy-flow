@@ -4,7 +4,8 @@ mod envs {
 mod main   {
 
 
-  flow trans | step1 | step2 | step3 ;
+  flow trans1 | step1 | step2 | step3 ;
+  flow trans2 | step1 | step3 | step2 ;
 
   #[transaction,undo(_undo_step1)]
   flow step1 {

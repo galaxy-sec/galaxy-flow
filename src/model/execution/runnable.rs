@@ -38,6 +38,9 @@ impl TaskValue {
     pub fn rec(&self) -> &ExecOut {
         &self.rec
     }
+    pub fn append_out(&mut self, out: String) {
+        self.out.push_str(&out);
+    }
 }
 impl From<(VarSpace, ExecOut)> for TaskValue {
     fn from(value: (VarSpace, ExecOut)) -> Self {
@@ -62,7 +65,6 @@ impl From<(VarSpace, ExecOut, String)> for TaskValue {
 pub type TaskResult = ExecResult<ExecOut>;
 pub type VarsResult = ExecResult<VarSpace>;
 pub type VTResult = ExecResult<TaskValue>;
-pub type VTResultWithCapture = ExecResult<TaskValue>;
 
 //#[automock]
 #[async_trait]

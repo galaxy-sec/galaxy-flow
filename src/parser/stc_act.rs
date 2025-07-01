@@ -34,7 +34,7 @@ pub fn gal_activity(input: &mut &str) -> Result<Activity> {
             dto.expect.secrecy = true;
             continue;
         } else if key == "out" && one.1.to_lowercase() == "true" {
-            dto.expect.outer_print = true;
+            dto.expect.quiet = true;
             continue;
         } else if key == "suc" {
             dto.expect.suc = Some(one.1);

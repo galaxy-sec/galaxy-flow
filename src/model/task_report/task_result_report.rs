@@ -25,20 +25,13 @@ pub enum SubTaskStatus {
 impl TaskReport {
     // 转化报告中心的返回结果
     pub fn from_task_and_notice(task: Task, task_notice: TaskNotice) -> TaskReport {
-        let mut running_log = task.stdout().clone();
-        for action in task.actions() {
-            let stdout = action.stdout();
-            if !stdout.is_empty() {
-                running_log.push_str(&format!("{}\n", stdout));
-            }
-        }
         TaskReport {
             parent_id: get_task_parent_id()
                 .unwrap_or_default()
                 .parse::<i64>()
                 .unwrap_or(0),
             name: task.name().clone(),
-            log: running_log,
+            log: task.stdout.clone(),
             status: match task.result() {
                 Ok(_) => SubTaskStatus::Success,
                 Err(_) => SubTaskStatus::Failure,

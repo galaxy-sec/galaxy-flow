@@ -41,8 +41,18 @@ pub fn sentence_body(input: &mut &str) -> Result<Vec<(String, String)>> {
 pub fn shell_opt_setting(key: String, value: String, expect: &mut ShellOption) {
     if key == "suc" {
         expect.suc = Some(value);
-    } else if key == "out" && value.to_lowercase() == "true" {
-        expect.outer_print = true;
+    } else if key == "quiet" {
+        if value.to_lowercase() == "true" {
+            expect.quiet = true;
+        } else if value.to_lowercase() == "true" {
+            expect.quiet = false;
+        }
+    } else if key == "out" {
+        if value.to_lowercase() == "true" {
+            expect.quiet = false;
+        } else if value.to_lowercase() == "true" {
+            expect.quiet = true;
+        }
     } else if key == "err" {
         expect.err = Some(value);
     } else if key == "sudo" && value.to_lowercase() == "true" {

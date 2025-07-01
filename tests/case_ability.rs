@@ -16,7 +16,7 @@ async fn conf_base_test() -> AnyResult<()> {
     let mut loader = GxLoader::new();
     let vars = VarSpace::sys_init().assert();
     let expect = ShellOption {
-        outer_print: false,
+        quiet: false,
         ..Default::default()
     };
     let spc = GxlSpace::try_from(loader.parse_file(
@@ -29,7 +29,7 @@ async fn conf_base_test() -> AnyResult<()> {
     spc.exec(
         vec!["default".into()],
         vec!["test".into()],
-        false,
+        Some(false),
         false,
         VarSpace::default(),
     )
@@ -43,7 +43,7 @@ async fn conf_web_test() {
     let vars = VarSpace::sys_init().assert();
     let mut loader = GxLoader::new();
     let sh_opt = ShellOption {
-        outer_print: false,
+        quiet: false,
         ..Default::default()
     };
     let spc = GxlSpace::try_from(
@@ -55,7 +55,7 @@ async fn conf_web_test() {
     spc.exec(
         vec!["dev".into()],
         vec!["api".into(), "api2".into()],
-        false,
+        Some(false),
         false,
         VarSpace::default(),
     )
@@ -69,7 +69,7 @@ fn prj_init_test() -> RunResult<()> {
     once_init_log();
     let vars = VarSpace::sys_init().assert();
     let sh_opt = ShellOption {
-        outer_print: true,
+        quiet: true,
         ..Default::default()
     };
     let mut gx = GxLoader::new();

@@ -17,9 +17,10 @@ pub enum LogicScope {
     Inner,
 }
 
-#[derive(Clone, Debug, Builder, PartialEq, Default)]
+#[derive(Clone, Debug, Builder, PartialEq)]
 pub struct ShellOption {
-    pub outer_print: bool,
+    pub quiet: bool,
+    //用于Git 调用的内部命令
     pub inner_print: bool,
     pub sudo: bool,
     pub err: Option<String>,
@@ -28,11 +29,16 @@ pub struct ShellOption {
     pub expect: Vec<i32>,
     pub log_lev: Option<log::Level>,
 }
+impl Default for ShellOption {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 impl ShellOption {
     pub fn new() -> Self {
         ShellOption {
-            outer_print: false,
+            quiet: false,
             inner_print: false,
             sudo: false,
             err: None,
@@ -44,7 +50,7 @@ impl ShellOption {
     }
     pub fn new_explicit(outer: bool, inner: bool) -> Self {
         ShellOption {
-            outer_print: outer,
+            quiet: outer,
             inner_print: inner,
             sudo: true,
             err: None,
@@ -54,9 +60,9 @@ impl ShellOption {
             log_lev: Some(log::Level::Info),
         }
     }
-    pub fn cmd_print(&self, scope: LogicScope) -> bool {
+    pub fn quiet(&self, scope: LogicScope) -> bool {
         match scope {
-            LogicScope::Outer => self.outer_print,
+            LogicScope::Outer => self.quiet,
             LogicScope::Inner => self.inner_print,
         }
     }

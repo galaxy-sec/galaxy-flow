@@ -136,7 +136,7 @@ mod tests {
         let mut loader = GxLoader::default();
         let conf = "./_gal/work.gxl";
         let sh_opt = ShellOption {
-            outer_print: true,
+            quiet: true,
             ..Default::default()
         };
         let vars = VarSpace::sys_init()?;
@@ -148,7 +148,7 @@ mod tests {
         spc.exec(
             ["default".into()].to_vec(),
             ["conf".into()].to_vec(),
-            true,
+            Some(true),
             false,
             VarSpace::sys_init()?,
         )
