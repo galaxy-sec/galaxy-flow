@@ -12,8 +12,8 @@ use super::flow::GxlFlow;
 pub struct FlowRunner {
     m_name: String,
     flow: GxlFlow,
-    before: GxlIntercept,
-    after: GxlIntercept,
+    entry: GxlIntercept,
+    exit: GxlIntercept,
 }
 //pub type FlowHold = Rc<FlowRunner>;
 impl FlowRunner {
@@ -25,9 +25,9 @@ impl FlowRunner {
         afters: Vec<GxlFlow>,
     ) -> Self {
         Self {
-            before: GxlIntercept::new(m_name.clone(), props, befores),
+            entry: GxlIntercept::new(m_name.clone(), props, befores),
             flow,
-            after: GxlIntercept::new(m_name.clone(), Vec::new(), afters),
+            exit: GxlIntercept::new(m_name.clone(), Vec::new(), afters),
             m_name,
         }
     }
@@ -37,9 +37,9 @@ impl DependTrait<&GxlSpace> for FlowRunner {
     fn assemble(self, mod_name: &str, src: &GxlSpace) -> AResult<Self> {
         Ok(Self {
             m_name: self.m_name,
-            before: self.before.assemble(mod_name, src)?,
+            entry: self.entry.assemble(mod_name, src)?,
             flow: self.flow.assemble(mod_name, src)?,
-            after: self.after.assemble(mod_name, src)?,
+            exit: self.exit.assemble(mod_name, src)?,
         })
     }
 }
@@ -61,13 +61,13 @@ impl Dryrunable for FlowRunner {
 
 #[async_trait]
 impl AsyncRunnableTrait for FlowRunner {
-    async fn async_exec(&self, mut ctx: ExecContext, dict: VarSpace) -> VTResult {
+    async fn async_exec(&self, mut ctx: ExecContext, dict: VarSpace) -> TaskResult {
         //let orgion = dict.clone();
         let mut job = Job::from("scope_flow");
         ctx.append(self.m_name.as_str());
         // 使用链式调用和模式匹配
         let dict = {
-            let TaskValue { vars, rec, .. } = self.before().async_exec(ctx.clone(), dict).await?;
+            let TaskValue { vars, rec, .. } = self.entry().async_exec(ctx.clone(), dict).await?;
             job.append(rec);
             vars
         };
@@ -79,7 +79,7 @@ impl AsyncRunnableTrait for FlowRunner {
         };
 
         let dict = {
-            let TaskValue { vars, rec, .. } = self.after().async_exec(ctx.clone(), dict).await?;
+            let TaskValue { vars, rec, .. } = self.exit().async_exec(ctx.clone(), dict).await?;
             job.append(rec);
             vars
         };

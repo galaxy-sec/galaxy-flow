@@ -66,7 +66,7 @@ impl FileDTO {
         vars.export_props(ctx, &mut dict, "")?;
         Ok(dict)
     }
-    pub fn execute(&self, mut ctx: ExecContext, mut vars_dict: VarSpace) -> VTResult {
+    pub fn execute(&self, mut ctx: ExecContext, mut vars_dict: VarSpace) -> TaskResult {
         ctx.append("gx.read_file");
         let exp = EnvExpress::from_env_mix(vars_dict.global().clone());
         let file = self.file.clone();

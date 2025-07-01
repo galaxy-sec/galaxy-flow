@@ -19,7 +19,7 @@ use crate::ability::GxUpLoad;
 use crate::ability::RgVersion;
 use crate::calculate::cond::CondExec;
 use crate::context::ExecContext;
-use crate::execution::runnable::VTResult;
+use crate::execution::runnable::TaskResult;
 use crate::execution::task::Task;
 use crate::task_report::task_rc_config::report_enable;
 
@@ -62,13 +62,13 @@ impl BlockNode {
 
 #[async_trait]
 impl CondExec for BlockNode {
-    async fn cond_exec(&self, ctx: ExecContext, def: VarSpace) -> VTResult {
+    async fn cond_exec(&self, ctx: ExecContext, def: VarSpace) -> TaskResult {
         self.async_exec(ctx, def).await
     }
 }
 #[async_trait]
 impl AsyncRunnableTrait for BlockAction {
-    async fn async_exec(&self, ctx: ExecContext, dct: VarSpace) -> VTResult {
+    async fn async_exec(&self, ctx: ExecContext, dct: VarSpace) -> TaskResult {
         let (result, output) = match self {
             BlockAction::GxlRun(o) => (o.async_exec(ctx, dct).await, String::new()),
             _ => {
@@ -100,7 +100,7 @@ impl AsyncRunnableTrait for BlockAction {
 
 impl BlockAction {
     /// 执行具体动作
-    async fn execute_action(&self, ctx: ExecContext, dct: VarSpace) -> VTResult {
+    async fn execute_action(&self, ctx: ExecContext, dct: VarSpace) -> TaskResult {
         match self {
             BlockAction::Command(o) => o.async_exec(ctx, dct).await,
             BlockAction::Echo(o) => o.async_exec(ctx, dct).await,
@@ -121,7 +121,7 @@ impl BlockAction {
 
 #[async_trait]
 impl AsyncRunnableTrait for BlockNode {
-    async fn async_exec(&self, ctx: ExecContext, var_dict: VarSpace) -> VTResult {
+    async fn async_exec(&self, ctx: ExecContext, var_dict: VarSpace) -> TaskResult {
         //ctx.append("block");
         let mut task = Task::from("block");
         let mut cur_var_dict = var_dict;

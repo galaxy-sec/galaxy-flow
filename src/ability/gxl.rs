@@ -37,7 +37,7 @@ impl GxRun {
 }
 #[async_trait]
 impl AsyncRunnableTrait for GxRun {
-    async fn async_exec(&self, mut ctx: ExecContext, vars_dict: VarSpace) -> VTResult {
+    async fn async_exec(&self, mut ctx: ExecContext, vars_dict: VarSpace) -> TaskResult {
         ctx.append("gx.run");
         let mut action = Action::from("gx.run");
         let exp = EnvExpress::from_env_mix(vars_dict.global().clone());

@@ -12,7 +12,7 @@ use crate::execution::hold::AsyncComHold;
 use crate::execution::hold::{ComHold, IsolationHold};
 use crate::execution::job::Job;
 use crate::execution::runnable::ComponentMeta;
-use crate::execution::runnable::{AsyncRunnableTrait, ExecOut, VTResult};
+use crate::execution::runnable::{AsyncRunnableTrait, ExecOut, TaskResult};
 use crate::execution::task::Task;
 use crate::execution::VarSpace;
 use crate::meta::GxlMeta;
@@ -36,15 +36,15 @@ impl From<&str> for Sequence {
 }
 
 impl Sequence {
-    pub async fn execute(&self, ctx: ExecContext, def: VarSpace) -> VTResult {
+    pub async fn execute(&self, ctx: ExecContext, def: VarSpace) -> TaskResult {
         self.execute_sequence(ctx, def).await
     }
 
-    pub async fn test_execute(&self, ctx: ExecContext, def: VarSpace) -> VTResult {
+    pub async fn test_execute(&self, ctx: ExecContext, def: VarSpace) -> TaskResult {
         self.execute_sequence(ctx, def).await
     }
 
-    async fn execute_sequence(&self, ctx: ExecContext, mut def: VarSpace) -> VTResult {
+    async fn execute_sequence(&self, ctx: ExecContext, mut def: VarSpace) -> TaskResult {
         let mut job = Job::from(&self.name);
         let mut undo_stack = VecDeque::new();
         warn!(target: ctx.path(), "sequence size: {}  dryrun: {}", self.run_items().len(), ctx.dryrun());
@@ -173,7 +173,7 @@ impl ComponentMeta for RunStub {
 
 #[async_trait]
 impl AsyncRunnableTrait for RunStub {
-    async fn async_exec(&self, ctx: ExecContext, def: VarSpace) -> VTResult {
+    async fn async_exec(&self, ctx: ExecContext, def: VarSpace) -> TaskResult {
         // 先执行可能的副作用
         if let Some(effect) = &self.effect {
             effect();

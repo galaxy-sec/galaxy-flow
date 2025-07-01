@@ -11,7 +11,7 @@ use crate::components::{GxlEnv, GxlFlow, GxlMod};
 use crate::context::ExecContext;
 use crate::meta::GxlMeta;
 
-use super::runnable::{AsyncRunnableTrait, ComponentMeta, TaskValue, VTResult};
+use super::runnable::{AsyncRunnableTrait, ComponentMeta, TaskValue, TaskResult};
 use super::sequence::RunStub;
 use super::VarSpace;
 #[derive(Clone, From)]
@@ -124,7 +124,7 @@ impl Dryrunable for AsyncComHold {
 
 #[async_trait]
 impl AsyncRunnableTrait for AsyncComHold {
-    async fn async_exec(&self, ctx: ExecContext, dct: VarSpace) -> VTResult {
+    async fn async_exec(&self, ctx: ExecContext, dct: VarSpace) -> TaskResult {
         match self {
             Self::Flow(obj) => obj.async_exec(ctx, dct).await,
             Self::Stub(obj) => obj.async_exec(ctx, dct).await,
@@ -139,7 +139,7 @@ impl AsyncRunnableTrait for AsyncComHold {
 
 #[async_trait]
 impl AsyncRunnableTrait for TransableHold {
-    async fn async_exec(&self, ctx: ExecContext, dct: VarSpace) -> VTResult {
+    async fn async_exec(&self, ctx: ExecContext, dct: VarSpace) -> TaskResult {
         match self {
             Self::Flow(obj) => obj.async_exec(ctx, dct).await,
             Self::Stub(obj) => obj.async_exec(ctx, dct).await,
@@ -161,7 +161,7 @@ impl ComponentMeta for TransableHold {
 #[async_trait]
 impl AsyncRunnableTrait for IsolationHold {
     ///varspace isolation
-    async fn async_exec(&self, ctx: ExecContext, dict: VarSpace) -> VTResult {
+    async fn async_exec(&self, ctx: ExecContext, dict: VarSpace) -> TaskResult {
         let origin = dict.clone();
         let TaskValue { rec, .. } = self.hold.async_exec(ctx, dict).await?;
         Ok(TaskValue::from((origin, rec)))
@@ -170,7 +170,7 @@ impl AsyncRunnableTrait for IsolationHold {
 
 #[async_trait]
 impl AsyncRunnableTrait for ComHold {
-    async fn async_exec(&self, ctx: ExecContext, dict: VarSpace) -> VTResult {
+    async fn async_exec(&self, ctx: ExecContext, dict: VarSpace) -> TaskResult {
         match self {
             ComHold::Conduction(h) => h.async_exec(ctx, dict).await,
             ComHold::Isolation(h) => h.async_exec(ctx, dict).await,

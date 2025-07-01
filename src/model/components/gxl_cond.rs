@@ -24,7 +24,7 @@ impl GxlCond {
 
 #[async_trait]
 impl AsyncRunnableTrait for GxlCond {
-    async fn async_exec(&self, ctx: ExecContext, dct: VarSpace) -> VTResult {
+    async fn async_exec(&self, ctx: ExecContext, dct: VarSpace) -> TaskResult {
         //EnvVarTag::clear_import(&dct.export());
         self.cond.cond_exec(ctx, dct).await
     }

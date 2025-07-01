@@ -24,7 +24,7 @@ impl GxlLoop {
 
 #[async_trait]
 impl AsyncRunnableTrait for GxlLoop {
-    async fn async_exec(&self, ctx: ExecContext, dict: VarSpace) -> VTResult {
+    async fn async_exec(&self, ctx: ExecContext, dict: VarSpace) -> TaskResult {
         let mut task = Task::from("loop");
         if let Some(named_dict) = dict.nameds().get(self.dct_name()) {
             let mut cur_dict = dict.clone();

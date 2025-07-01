@@ -222,7 +222,7 @@ impl GxTpl {
 
 #[async_trait]
 impl AsyncRunnableTrait for GxTpl {
-    async fn async_exec(&self, ctx: ExecContext, vars_dict: VarSpace) -> VTResult {
+    async fn async_exec(&self, ctx: ExecContext, vars_dict: VarSpace) -> TaskResult {
         let mut action = Action::from("build tpl file");
         self.render_path(ctx, &self.dto, vars_dict.clone())?;
         action.finish();

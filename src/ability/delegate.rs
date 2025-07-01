@@ -70,7 +70,7 @@ impl ActCall {
 }
 #[async_trait]
 impl AsyncRunnableTrait for ActCall {
-    async fn async_exec(&self, mut ctx: ExecContext, vars_dict: VarSpace) -> VTResult {
+    async fn async_exec(&self, mut ctx: ExecContext, vars_dict: VarSpace) -> TaskResult {
         ctx.append("@");
         match &self.act {
             Some(act) => act.async_exec(ctx, vars_dict).await,
@@ -110,7 +110,7 @@ impl ActivityDTO {
 
 #[async_trait]
 impl AsyncRunnableTrait for Activity {
-    async fn async_exec(&self, ctx: ExecContext, vars_dict: VarSpace) -> VTResult {
+    async fn async_exec(&self, ctx: ExecContext, vars_dict: VarSpace) -> TaskResult {
         self.exec_cmd(ctx, vars_dict, &self.dto)
         // Ok(ExecOut::Ignore)
     }
@@ -145,7 +145,7 @@ impl Activity {
         mut ctx: ExecContext,
         vars_dict: VarSpace,
         dto: &ActivityDTO,
-    ) -> VTResult {
+    ) -> TaskResult {
         ctx.append(format!("{}.{}", self.host, dto.name));
         debug!(target: ctx.path(),"actcall");
         let mut action = Action::from(dto.name.as_str());
@@ -185,7 +185,7 @@ impl Activity {
         action.finish();
         Ok(TaskValue::from((vars_dict, ExecOut::Action(action))))
     }
-    pub fn exec_cmd(&self, ctx: ExecContext, vars_dict: VarSpace, dto: &ActivityDTO) -> VTResult {
+    pub fn exec_cmd(&self, ctx: ExecContext, vars_dict: VarSpace, dto: &ActivityDTO) -> TaskResult {
         self.execute_impl(ctx, vars_dict, dto)
     }
 }

@@ -2,7 +2,7 @@ use async_trait::async_trait;
 use derive_more::From;
 
 use crate::{
-    ability::prelude::{AsyncRunnableTrait, ComponentMeta, VTResult, VarSpace},
+    ability::prelude::{AsyncRunnableTrait, ComponentMeta, TaskResult, VarSpace},
     context::ExecContext,
     meta::GxlMeta,
     ExecReason,
@@ -25,7 +25,7 @@ pub enum ReadMode {
 
 #[async_trait]
 impl AsyncRunnableTrait for GxRead {
-    async fn async_exec(&self, ctx: ExecContext, vars_dict: VarSpace) -> VTResult {
+    async fn async_exec(&self, ctx: ExecContext, vars_dict: VarSpace) -> TaskResult {
         self.execute_impl(ctx, vars_dict)
     }
 }
@@ -36,7 +36,7 @@ impl ComponentMeta for GxRead {
     }
 }
 impl GxRead {
-    fn execute_impl(&self, ctx: ExecContext, dict: VarSpace) -> VTResult {
+    fn execute_impl(&self, ctx: ExecContext, dict: VarSpace) -> TaskResult {
         match &self.imp {
             ReadMode::CMD(cmd_dto) => cmd_dto.execute(ctx, dict),
             ReadMode::FILE(ini_dto) => ini_dto.execute(ctx, dict),

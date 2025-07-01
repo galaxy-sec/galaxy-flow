@@ -24,7 +24,7 @@ impl GxlIntercept {
 
 #[async_trait]
 impl AsyncRunnableTrait for GxlIntercept {
-    async fn async_exec(&self, ctx: ExecContext, mut var_dict: VarSpace) -> VTResult {
+    async fn async_exec(&self, ctx: ExecContext, mut var_dict: VarSpace) -> TaskResult {
         let mut job = Job::from("intercept");
         self.export_props(ctx.clone(), var_dict.global_mut(), self.m_name())?;
         for flow in &self.flows {

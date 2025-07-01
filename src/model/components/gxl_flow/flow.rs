@@ -177,7 +177,7 @@ impl Transaction for GxlFlow {
     }
 }
 impl GxlFlow {
-    async fn exec_self(&self, ctx: ExecContext, mut var_dict: VarSpace) -> VTResult {
+    async fn exec_self(&self, ctx: ExecContext, mut var_dict: VarSpace) -> TaskResult {
         let task_description = self.task_description();
         let mut task = Task::from(self.meta.name());
         let mut task_notice = TaskNotice::new();
@@ -241,7 +241,7 @@ impl GxlFlow {
 }
 #[async_trait]
 impl AsyncRunnableTrait for GxlFlow {
-    async fn async_exec(&self, mut ctx: ExecContext, mut var_dict: VarSpace) -> VTResult {
+    async fn async_exec(&self, mut ctx: ExecContext, mut var_dict: VarSpace) -> TaskResult {
         let des = self
             .task_description()
             .unwrap_or(self.meta.name().to_string());

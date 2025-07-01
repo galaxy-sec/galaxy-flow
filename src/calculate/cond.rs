@@ -2,7 +2,7 @@ use async_trait::async_trait;
 
 use super::express::ExpressEnum;
 use super::express::*;
-use crate::ability::prelude::{TaskValue, VTResult, VarSpace};
+use crate::ability::prelude::{TaskValue, TaskResult, VarSpace};
 use crate::components::gxl_cond::TGxlCond;
 use crate::context::ExecContext;
 use crate::execution::runnable::ExecOut;
@@ -10,7 +10,7 @@ use orion_error::ErrorOwe;
 use std::sync::Arc;
 #[async_trait]
 pub trait CondExec {
-    async fn cond_exec(&self, ctx: ExecContext, def: VarSpace) -> VTResult;
+    async fn cond_exec(&self, ctx: ExecContext, def: VarSpace) -> TaskResult;
 }
 
 pub type CondHandle = Arc<dyn CondExec>;
@@ -27,7 +27,7 @@ impl<T> CondExec for IFExpress<T>
 where
     T: CondExec + std::marker::Sync,
 {
-    async fn cond_exec(&self, ctx: ExecContext, def: VarSpace) -> VTResult {
+    async fn cond_exec(&self, ctx: ExecContext, def: VarSpace) -> TaskResult {
         let x = self.express.decide(ctx.clone(), &def).owe_logic()?;
         if x {
             self.true_block.cond_exec(ctx, def).await
@@ -51,7 +51,7 @@ pub struct StuBlock {
 }
 #[async_trait]
 impl CondExec for StuBlock {
-    async fn cond_exec(&self, _ctx: ExecContext, _def: VarSpace) -> VTResult {
+    async fn cond_exec(&self, _ctx: ExecContext, _def: VarSpace) -> TaskResult {
         Ok(TaskValue::from((_def, self.out.clone())))
     }
 }

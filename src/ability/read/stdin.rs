@@ -12,7 +12,7 @@ pub struct StdinDTO {
 }
 
 impl StdinDTO {
-    pub fn execute(&self, mut ctx: ExecContext, mut vars_dict: VarSpace) -> VTResult {
+    pub fn execute(&self, mut ctx: ExecContext, mut vars_dict: VarSpace) -> TaskResult {
         ctx.append("gx.read_ini");
         let exp = EnvExpress::from_env_mix(vars_dict.global().clone());
         let msg = self.prompt.clone();

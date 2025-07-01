@@ -75,7 +75,7 @@ impl PropsTrait for GxlVars {
 
 #[async_trait]
 impl AsyncRunnableTrait for GxlVars {
-    async fn async_exec(&self, ctx: ExecContext, mut def: VarSpace) -> VTResult {
+    async fn async_exec(&self, ctx: ExecContext, mut def: VarSpace) -> TaskResult {
         let action = Action::from("rg vars setting");
         self.export_props(ctx, def.global_mut(), "")?;
         Ok(TaskValue::from((def, ExecOut::Action(action))))

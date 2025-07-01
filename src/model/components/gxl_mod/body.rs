@@ -185,7 +185,7 @@ impl AppendAble<AsyncComHold> for ModRunner {
 }
 #[async_trait]
 impl AsyncRunnableTrait for ModRunner {
-    async fn async_exec(&self, mut ctx: ExecContext, mut dct: VarSpace) -> VTResult {
+    async fn async_exec(&self, mut ctx: ExecContext, mut dct: VarSpace) -> TaskResult {
         ctx.append(self.meta().name());
         let mut job = Job::default();
         for i in &self.async_items {
@@ -266,7 +266,7 @@ impl ExecLoadTrait for GxlMod {
     }
 }
 impl GxlMod {
-    fn exec_self(&self, ctx: ExecContext, mut def: VarSpace) -> VTResult {
+    fn exec_self(&self, ctx: ExecContext, mut def: VarSpace) -> TaskResult {
         self.export_props(ctx, def.global_mut(), self.meta.name().as_str())?;
         Ok(TaskValue::from((def, ExecOut::Ignore)))
     }
@@ -274,7 +274,7 @@ impl GxlMod {
 
 #[async_trait]
 impl AsyncRunnableTrait for GxlMod {
-    async fn async_exec(&self, ctx: ExecContext, def: VarSpace) -> VTResult {
+    async fn async_exec(&self, ctx: ExecContext, def: VarSpace) -> TaskResult {
         self.exec_self(ctx, def)
     }
 }

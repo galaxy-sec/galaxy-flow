@@ -150,7 +150,7 @@ impl GxlEnv {
 
 #[async_trait]
 impl AsyncRunnableTrait for GxlEnv {
-    async fn async_exec(&self, mut ctx: ExecContext, mut def: VarSpace) -> VTResult {
+    async fn async_exec(&self, mut ctx: ExecContext, mut def: VarSpace) -> TaskResult {
         let env_name = self.meta.name();
         ctx.append(env_name);
 
@@ -165,7 +165,7 @@ impl AsyncRunnableTrait for GxlEnv {
 }
 #[async_trait]
 impl AsyncRunnableTrait for EnvItem {
-    async fn async_exec(&self, ctx: ExecContext, dict: VarSpace) -> VTResult {
+    async fn async_exec(&self, ctx: ExecContext, dict: VarSpace) -> TaskResult {
         match self {
             EnvItem::Var(o) => o.async_exec(ctx, dict).await,
             EnvItem::Read(o) => o.async_exec(ctx, dict).await,
