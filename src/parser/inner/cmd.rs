@@ -34,14 +34,13 @@ pub fn gal_cmd_block(input: &mut &str) -> ModalResult<GxCmd> {
     builder.expect(ShellOption::default());
     // 1. 匹配开始的 ```cmd
     gal_keyword("```cmd", input)?;
-
     // 2. 跳过可能的空白和换行
     //*input = input.trim_start();
     let cmd_content = take_until(0.., "```")
         .context(wn_desc("cmd block"))
         .parse_next(input)?;
     "```".context(wn_desc("block-end")).parse_next(input)?;
-    builder.cmd(cmd_content.trim().to_string());
+    builder.cmd(format_shell_script(cmd_content));
     multispace0.parse_next(input)?;
     // 6. 构建并返回 GxCmd
     if let Ok(dto) = builder.build() {
@@ -50,6 +49,37 @@ pub fn gal_cmd_block(input: &mut &str) -> ModalResult<GxCmd> {
         fail.context(wn_desc("cmd-block build fail"))
             .parse_next(input)
     }
+}
+fn format_shell_script(input: &str) -> String {
+    // 替换转义的引号和换行符
+    let input = input.replace(r#"\""#, r#"""#);
+    let input = input.replace(r#"\n"#, "\n");
+
+    // 分成几行并处理每一行
+    let lines: Vec<&str> = input.lines().collect();
+
+    // 找到最小缩进
+    let min_indent = lines
+        .iter()
+        .filter(|line| !line.trim().is_empty())
+        .map(|line| line.chars().take_while(|c| c.is_whitespace()).count())
+        .min()
+        .unwrap_or(0);
+
+    // 删除每行的最小缩进
+    lines
+        .iter()
+        .map(|line| {
+            if line.len() >= min_indent {
+                &line[min_indent..]
+            } else {
+                line
+            }
+        })
+        .collect::<Vec<_>>()
+        .join("\n")
+        .trim() // 删除任何尾随空格
+        .to_string()
 }
 
 #[cfg(test)]

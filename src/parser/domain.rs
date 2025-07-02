@@ -169,7 +169,7 @@ pub fn gal_block_end(input: &mut &str) -> ModalResult<()> {
 }
 
 pub fn gal_keyword(keyword: &'static str, input: &mut &str) -> ModalResult<()> {
-    (multispace0, keyword, multispace0)
+    (multispace0, keyword)
         .context(wn_desc(keyword))
         .parse_next(input)?;
     Ok(())
