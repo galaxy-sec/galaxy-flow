@@ -4,14 +4,14 @@ use crate::ability::prelude::TaskValue;
 use crate::components::gxl_spc::GxlSpace;
 use crate::components::GxlEnv;
 use crate::components::GxlFlow;
+use crate::execution::hold::TransableHold;
 use crate::model::components::prelude::*;
-
-use crate::annotation::is_auto_func;
 
 use crate::execution::job::Job;
 use crate::execution::runnable::ComponentMeta;
 use crate::menu::*;
 use crate::meta::*;
+use contracts::requires;
 use derive_getters::Getters;
 
 use std::collections::HashMap;
@@ -38,6 +38,7 @@ pub struct GxlMod {
     entrys: Vec<GxlFlow>,
     exits: Vec<GxlFlow>,
     acts: HashMap<String, Activity>,
+    assembled: bool,
 }
 
 pub fn merge_mod(mut mixs: Vec<GxlMod>) -> Option<GxlMod> {
@@ -56,6 +57,7 @@ pub fn merge_mod(mut mixs: Vec<GxlMod>) -> Option<GxlMod> {
 }
 impl DependTrait<&GxlSpace> for GxlMod {
     fn assemble(self, _mod_name: &str, src: &GxlSpace) -> AResult<Self> {
+        debug!(target : "assemble", "will assemble mod {}" , self.meta().name() );
         let mod_name = &self.meta.name();
         let mut ins = GxlMod::from(self.meta().clone());
 
@@ -86,6 +88,8 @@ impl DependTrait<&GxlSpace> for GxlMod {
         for item in self.env_names {
             ins.env_names.push(item.clone());
         }
+        ins.assembled = true;
+        debug!(target : "assemble", "assemble mod {} end!" , ins.meta().name() );
 
         Ok(ins)
     }
@@ -113,32 +117,17 @@ impl From<&str> for GxlMod {
 }
 
 impl GxlMod {
-    pub fn load_scope_flow(&self, name: &str) -> Option<GxlFlow> {
+    pub fn load_scope_flow(&self, name: &str) -> Vec<TransableHold> {
+        let mut run_hold: Vec<TransableHold> = Vec::new();
         if let Some(flow) = self.flows.get(name) {
-            Some(flow.clone())
-        } else {
-            None
+            run_hold.push(TransableHold::from(self.clone()));
+            run_hold.push(TransableHold::from(flow.clone()));
         }
+        run_hold
     }
 
     fn up_meta(&mut self, meta: ModMeta) {
         self.meta = meta;
-    }
-
-    fn get_auto_func(&self, auto_arg: &str) -> Vec<GxlFlow> {
-        let mut found = Vec::new();
-        for flow in self.flows().values() {
-            if flow
-                .meta()
-                .annotations()
-                .iter()
-                .any(|x| is_auto_func(x, auto_arg))
-            {
-                //sequ.append(make_stc_hold(flow.clone()));
-                found.push(flow.clone());
-            }
-        }
-        found
     }
 }
 
@@ -234,16 +223,20 @@ impl ExecLoadTrait for GxlMod {
         Err(ExecError::from(ExecReason::Miss(args.into())))
     }
 
+    #[requires(self.assembled)]
     fn load_flow(&self, mut ctx: ExecContext, sequ: &mut Sequence, name: &str) -> ExecResult<()> {
         ctx.append(self.meta.name().as_str());
 
         if let Some(found) = self.flows.get(name) {
+            debug_assert!(found.assembled());
+            debug_assert!(self.assembled());
             sequ.append_mod_head(self.clone());
             for x in self.entrys.iter() {
+                debug_assert!(x.assembled());
                 sequ.append_mod_entry(x.clone());
             }
-            let pre_flows = found.pre_flows().clone();
-            let post_flows = found.post_flows().clone();
+            let pre_flows = found.clone_pre_flows();
+            let post_flows = found.clone_post_flows();
             for flow in pre_flows.into_iter() {
                 sequ.append(AsyncComHold::from(flow));
             }
@@ -252,6 +245,7 @@ impl ExecLoadTrait for GxlMod {
                 sequ.append(AsyncComHold::from(flow));
             }
             for x in self.exits().iter() {
+                debug_assert!(x.assembled());
                 sequ.append_mod_exit(x.clone());
             }
         }
@@ -272,6 +266,7 @@ impl ExecLoadTrait for GxlMod {
     }
 }
 impl GxlMod {
+    #[requires(self.assembled)]
     fn exec_self(&self, ctx: ExecContext, mut def: VarSpace) -> TaskResult {
         self.export_props(ctx, def.global_mut(), self.meta.name().as_str())?;
         Ok(TaskValue::from((def, ExecOut::Ignore)))
@@ -348,6 +343,7 @@ impl AppendAble<ModItem> for GxlMod {
 mod test {
     use super::*;
     use orion_common::friendly::{MultiNew2, New2};
+    use orion_error::TestAssertWithMsg;
 
     use crate::{
         components::{
@@ -465,12 +461,16 @@ mod test {
         env1.append(var);
         mod1.append(env1);
         mod1.append(GxlProp::new("key2", "value1"));
+        let mut spc = GxlSpace::default();
+        spc.append(mod1);
+        spc = spc.assemble_depend().assert("assemble");
 
         let ctx = ExecContext::default();
         let mut sequ = Sequence::from("exec");
+        //mod1.assemble(mod_name, src)
 
         // 调用 assemble_env 方法
-        mod1.load_env(ctx, &mut sequ, "env1")?;
+        spc.load_env(ctx, &mut sequ, "mod1.env1")?;
 
         let ctx = ExecContext::default();
         let vars = VarSpace::default();

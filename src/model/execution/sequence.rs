@@ -64,17 +64,26 @@ impl Sequence {
                 warn!(target: ctx.path(), "transaction begin")
             }
             if transaction_begin {
-                if let Some(undo) = item.undo_hold() {
+                for undo in item.undo_hold() {
                     info!(target: ctx.path(), "regist undo {}", undo.com_meta().name());
                     undo_stack.push_back((undo, def.clone()));
                 }
             }
             let result = if *ctx.dryrun() {
-                if let Some(dryrun) = item.dryrun_hold() {
-                    warn!(target: ctx.path(), "execute dryrun flow");
-                    dryrun.async_exec(ctx.clone(), def.clone()).await
-                } else {
+                if item.dryrun_hold().is_empty() {
                     item.async_exec(ctx.clone(), def.clone()).await
+                } else {
+                    todo!();
+                    //abc
+                    /*
+                    for dryrun in item.dryrun_hold() {
+                        warn!(target: ctx.path(), "execute dryrun flow");
+                        let TaskValue { vars, rec, .. } =
+                            dryrun.async_exec(ctx.clone(), def.clone()).await?;
+                        def = vars;
+                    }
+                    TaskValue::new(def, out, task)
+                    */
                 }
             } else {
                 item.async_exec(ctx.clone(), def.clone()).await
@@ -109,12 +118,14 @@ impl Sequence {
         }
     }
     pub fn append_mod_entry(&mut self, flow: GxlFlow) {
+        debug_assert!(flow.assembled());
         if !self.mods_entry().contains_key(flow.meta().name()) {
             self.mods_entry.insert(flow.meta().name().clone(), true);
             self.run_items.push(AsyncComHold::from(flow).into());
         }
     }
     pub fn append_mod_exit(&mut self, flow: GxlFlow) {
+        debug_assert!(flow.assembled());
         if !self.mods_exits().contains_key(flow.meta().name()) {
             self.mods_exits.insert(flow.meta().name().clone(), true);
             self.run_items.push(AsyncComHold::from(flow).into());
@@ -122,7 +133,9 @@ impl Sequence {
     }
 
     pub fn append_mod_head(&mut self, gmod: GxlMod) {
+        debug_assert!(gmod.assembled());
         if !self.mods_head().contains_key(gmod.meta().name()) {
+            debug!(target: "assemble", "append mod {}", gmod.meta().name() );
             self.mods_head.insert(gmod.meta().name().clone(), true);
             self.run_items.push(AsyncComHold::from(gmod).into());
         }
@@ -141,11 +154,11 @@ impl AppendAble<IsolationHold> for Sequence {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct RunStub {
     name: String,
     trans_begin: bool,
-    undo_item: Option<TransableHold>,
+    undo_item: Vec<TransableHold>,
     should_fail: bool,
     effect: Option<Arc<dyn Fn() + Send + Sync>>,
 }
@@ -154,13 +167,15 @@ impl RunStub {
     pub fn new<S: Into<String>>(name: S) -> Self {
         Self {
             name: name.into(),
-            trans_begin: false,
-            undo_item: None,
-            should_fail: false,
-            effect: None,
+            ..Default::default()
         }
     }
-    pub fn with_transaction(mut self, trans_begin: bool, undo: Option<TransableHold>) -> Self {
+    pub fn with_transaction(mut self, trans_begin: bool, undo: TransableHold) -> Self {
+        self.trans_begin = trans_begin;
+        self.undo_item = vec![undo];
+        self
+    }
+    pub fn with_transactions(mut self, trans_begin: bool, undo: Vec<TransableHold>) -> Self {
         self.trans_begin = trans_begin;
         self.undo_item = undo;
         self
@@ -186,7 +201,7 @@ impl Transaction for RunStub {
         self.trans_begin
     }
 
-    fn undo_hold(&self) -> Option<TransableHold> {
+    fn undo_hold(&self) -> Vec<TransableHold> {
         self.undo_item.clone()
     }
 }
@@ -268,11 +283,10 @@ mod tests {
         });
 
         // 配置事务
-        let step1 = stub_node("step1")
-            .with_transaction(true, Some(TransableHold::from(Arc::new(step1_undo))));
+        let step1 = stub_node("step1").with_transaction(true, TransableHold::from(step1_undo));
 
         let step2 = stub_node("step2")
-            .with_transaction(false, Some(TransableHold::from(Arc::new(step2_undo))))
+            .with_transaction(false, TransableHold::from(step2_undo))
             .with_should_fail(true); // 使第二步失败
 
         flow.append(AsyncComHold::from(step1));

@@ -21,6 +21,7 @@ pub struct GxlEnv {
     meta: EnvMeta,
     props: Vec<GxlProp>,
     items: Vec<EnvItem>,
+    assembled: bool,
 }
 #[derive(Clone, Debug)]
 pub enum EnvItem {
@@ -46,7 +47,7 @@ impl GxlEnv {
         let mut mix_list = VecDeque::from(self.meta.mix().clone());
 
         let mut linked = false;
-        let target = if let Some(top) = mix_list.pop_front() {
+        let mut target = if let Some(top) = mix_list.pop_front() {
             let mut base = Self::get_env(mod_name, top.as_str(), src)?;
             for mix in mix_list {
                 let link_env = Self::get_env(mod_name, mix.as_str(), src)?;
@@ -69,6 +70,7 @@ impl GxlEnv {
                 String::from_utf8(buffer).unwrap()
             );
         }
+        target.assembled = true;
         Ok(target)
     }
 }
@@ -83,8 +85,7 @@ impl From<&str> for GxlEnv {
     fn from(name: &str) -> Self {
         Self {
             meta: EnvMeta::build_env(name.to_string()),
-            props: Vec::new(),
-            items: Vec::new(),
+            ..Default::default()
         }
     }
 }
@@ -101,8 +102,7 @@ impl From<String> for GxlEnv {
     fn from(name: String) -> Self {
         Self {
             meta: EnvMeta::build_env(name),
-            props: Vec::new(),
-            items: Vec::new(),
+            ..Default::default()
         }
     }
 }
@@ -113,8 +113,7 @@ impl From<(String, Vec<String>)> for GxlEnv {
         meta.set_mix(value.1);
         Self {
             meta,
-            props: Vec::new(),
-            items: Vec::new(),
+            ..Default::default()
         }
     }
 }

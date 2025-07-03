@@ -1183,6 +1183,7 @@ dependencies = [
  "async-trait",
  "clap",
  "colored",
+ "contracts",
  "derive-getters",
  "derive_builder",
  "derive_more",

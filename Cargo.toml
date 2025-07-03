@@ -83,6 +83,7 @@ reqwest = { version = "0.12.11", features = ["json"] }
 time = { version = "0.3.41", features = ["formatting", "local-offset"] }
 serde_yaml = "0.9"
 gag = "1.0.0"
+contracts = "0.6"
 
 [features]
 res_depend_test = []

@@ -5,7 +5,6 @@ use derive_more::From;
 
 use crate::ability::GxRead;
 use crate::annotation::{Dryrunable, Transaction};
-use crate::components::gxl_flow::runner::FlowRunner;
 use crate::components::gxl_mod::body::ModRunner;
 use crate::components::{GxlEnv, GxlFlow, GxlMod};
 use crate::context::ExecContext;
@@ -16,27 +15,49 @@ use super::sequence::RunStub;
 use super::VarSpace;
 #[derive(Clone, From)]
 pub enum AsyncComHold {
-    Flow(GxlFlow),
-    Stub(RunStub),
-    EnvRunner(ModRunner),
-    FlwRunner(FlowRunner),
-    Read(GxRead),
-    Env(GxlEnv),
-    Mox(GxlMod),
+    #[from(GxlFlow)]
+    Flow(Arc<GxlFlow>),
+    #[from(RunStub)]
+    Stub(Arc<RunStub>),
+    #[from(ModRunner)]
+    EnvRunner(Arc<ModRunner>),
+    #[from(GxRead)]
+    Read(Arc<GxRead>),
+    #[from(GxlEnv)]
+    Env(Arc<GxlEnv>),
+    #[from(GxlMod)]
+    Mox(Arc<GxlMod>),
 }
 
 #[derive(Clone, From)]
 pub enum TransableHold {
+    #[from(GxlMod)]
+    Mod(Arc<GxlMod>),
+    #[from(GxlFlow)]
     Flow(Arc<GxlFlow>),
+    #[from(RunStub)]
     Stub(Arc<RunStub>),
-    FlwRunner(Arc<FlowRunner>),
+}
+impl From<TransableHold> for AsyncComHold {
+    fn from(value: TransableHold) -> Self {
+        match value {
+            TransableHold::Mod(o) => {
+                debug_assert!(o.assembled(), "{} miss assemble ", o.meta().name());
+                AsyncComHold::Mox(o)
+            }
+            TransableHold::Flow(o) => {
+                debug_assert!(o.assembled());
+                AsyncComHold::Flow(o)
+            }
+            TransableHold::Stub(o) => AsyncComHold::Stub(o),
+        }
+    }
 }
 
 impl Transaction for AsyncComHold {
     fn is_transaction(&self) -> bool {
         let trans = match self {
             AsyncComHold::Flow(h) => h.is_transaction(),
-            AsyncComHold::FlwRunner(h) => h.is_transaction(),
             AsyncComHold::Stub(h) => h.is_transaction(),
             AsyncComHold::EnvRunner(_)
             | AsyncComHold::Read(_)
@@ -48,15 +69,14 @@ impl Transaction for AsyncComHold {
         trans
     }
 
-    fn undo_hold(&self) -> Option<TransableHold> {
+    fn undo_hold(&self) -> Vec<TransableHold> {
         match self {
             AsyncComHold::Flow(h) => h.undo_hold(),
-            AsyncComHold::FlwRunner(h) => h.undo_hold(),
             AsyncComHold::Stub(h) => h.undo_hold(),
             AsyncComHold::EnvRunner(_)
             | AsyncComHold::Read(_)
             | AsyncComHold::Env(_)
-            | AsyncComHold::Mox(_) => None,
+            | AsyncComHold::Mox(_) => Vec::new(),
         }
     }
 }
@@ -78,7 +98,7 @@ impl Transaction for ComHold {
         }
     }
 
-    fn undo_hold(&self) -> Option<TransableHold> {
+    fn undo_hold(&self) -> Vec<TransableHold> {
         match self {
             ComHold::Conduction(h) => h.undo_hold(),
             ComHold::Isolation(h) => h.undo_hold(),
@@ -86,7 +106,7 @@ impl Transaction for ComHold {
     }
 }
 impl Dryrunable for ComHold {
-    fn dryrun_hold(&self) -> Option<TransableHold> {
+    fn dryrun_hold(&self) -> Vec<TransableHold> {
         match self {
             ComHold::Conduction(h) => h.dryrun_hold(),
             ComHold::Isolation(h) => h.dryrun_hold(),
@@ -98,26 +118,25 @@ impl Transaction for IsolationHold {
         self.hold.is_transaction()
     }
 
-    fn undo_hold(&self) -> Option<TransableHold> {
+    fn undo_hold(&self) -> Vec<TransableHold> {
         self.hold.undo_hold()
     }
 }
 impl Dryrunable for IsolationHold {
-    fn dryrun_hold(&self) -> Option<TransableHold> {
+    fn dryrun_hold(&self) -> Vec<TransableHold> {
         self.hold.dryrun_hold()
     }
 }
 
 impl Dryrunable for AsyncComHold {
-    fn dryrun_hold(&self) -> Option<TransableHold> {
+    fn dryrun_hold(&self) -> Vec<TransableHold> {
         match self {
             AsyncComHold::Flow(h) => h.dryrun_hold(),
-            AsyncComHold::FlwRunner(h) => h.dryrun_hold(),
             AsyncComHold::Stub(_)
             | AsyncComHold::EnvRunner(_)
             | AsyncComHold::Read(_)
             | AsyncComHold::Env(_)
-            | AsyncComHold::Mox(_) => None,
+            | AsyncComHold::Mox(_) => Vec::new(),
         }
     }
 }
@@ -129,7 +148,6 @@ impl AsyncRunnableTrait for AsyncComHold {
             Self::Flow(obj) => obj.async_exec(ctx, dct).await,
             Self::Stub(obj) => obj.async_exec(ctx, dct).await,
             Self::EnvRunner(obj) => obj.async_exec(ctx, dct).await,
-            Self::FlwRunner(obj) => obj.async_exec(ctx, dct).await,
             Self::Read(obj) => obj.async_exec(ctx, dct).await,
             Self::Env(obj) => obj.async_exec(ctx, dct).await,
             Self::Mox(obj) => obj.async_exec(ctx, dct).await,
@@ -141,9 +159,9 @@ impl AsyncRunnableTrait for AsyncComHold {
 impl AsyncRunnableTrait for TransableHold {
     async fn async_exec(&self, ctx: ExecContext, dct: VarSpace) -> TaskResult {
         match self {
+            Self::Mod(obj) => obj.async_exec(ctx, dct).await,
             Self::Flow(obj) => obj.async_exec(ctx, dct).await,
             Self::Stub(obj) => obj.async_exec(ctx, dct).await,
-            Self::FlwRunner(obj) => obj.async_exec(ctx, dct).await,
         }
     }
 }
@@ -151,9 +169,9 @@ impl AsyncRunnableTrait for TransableHold {
 impl ComponentMeta for TransableHold {
     fn com_meta(&self) -> GxlMeta {
         match self {
+            TransableHold::Mod(h) => h.com_meta(),
             TransableHold::Flow(h) => h.com_meta(),
             TransableHold::Stub(h) => h.com_meta(),
-            TransableHold::FlwRunner(h) => h.flow().com_meta(),
         }
     }
 }
@@ -193,7 +211,6 @@ impl ComponentMeta for AsyncComHold {
             Self::Flow(obj) => obj.com_meta(),
             Self::Stub(obj) => obj.com_meta(),
             Self::EnvRunner(obj) => obj.com_meta(),
-            Self::FlwRunner(obj) => obj.com_meta(),
             Self::Read(obj) => obj.com_meta(),
             Self::Env(obj) => obj.com_meta(),
             Self::Mox(obj) => obj.com_meta(),

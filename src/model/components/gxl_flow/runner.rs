@@ -33,13 +33,13 @@ impl Transaction for FlowRunner {
     fn is_transaction(&self) -> bool {
         self.flow.is_transaction()
     }
-    fn undo_hold(&self) -> Option<TransableHold> {
+    fn undo_hold(&self) -> Vec<TransableHold> {
         self.flow.undo_hold()
     }
 }
 
 impl Dryrunable for FlowRunner {
-    fn dryrun_hold(&self) -> Option<TransableHold> {
+    fn dryrun_hold(&self) -> Vec<TransableHold> {
         self.flow.dryrun_hold()
     }
 }

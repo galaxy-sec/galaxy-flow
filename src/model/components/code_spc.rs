@@ -26,8 +26,7 @@ impl CodeSpace {
                 }
             }
         }
-        target_spc.assemble_depend()?;
-        Ok(target_spc)
+        Ok(target_spc.assemble_depend()?)
     }
 }
 

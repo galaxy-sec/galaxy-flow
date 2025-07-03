@@ -4,6 +4,7 @@ use crate::{
     util::task_report::task_local_report,
 };
 use colored::Colorize;
+use contracts::requires;
 use orion_error::ErrorConv;
 use std::{collections::HashMap, fmt::Display};
 
@@ -17,6 +18,7 @@ const ENVS_MOD: &str = "envs";
 pub struct GxlSpace {
     mods_name: Vec<String>,
     mods_store: HashMap<String, GxlMod>,
+    assembled: bool,
 }
 
 impl GxlSpace {
@@ -66,16 +68,16 @@ impl GxlSpace {
         Ok(())
     }
 
-    pub(crate) fn assemble_depend(&mut self) -> AResult<Self> {
+    pub fn assemble_depend(&mut self) -> AResult<Self> {
         let mut spc = Self::default();
 
         for mod_name in &self.mods_name {
             if let Some(module) = self.get(mod_name) {
-                let updated = module.clone().assemble(mod_name, self)?;
+                let updated = module.clone().assemble(mod_name, &spc)?;
                 spc.append(updated);
             }
         }
-
+        spc.assembled = true;
         Ok(spc)
     }
 }
@@ -97,6 +99,7 @@ impl TryFrom<CodeSpace> for GxlSpace {
 }
 
 impl ExecLoadTrait for GxlSpace {
+    #[requires(self.assembled)]
     fn load_env(&self, ctx: ExecContext, sequ: &mut Sequence, obj_path: &str) -> ExecResult<()> {
         let (mod_name, item_name) = parse_obj_path(obj_path)?;
 
@@ -106,6 +109,7 @@ impl ExecLoadTrait for GxlSpace {
             .load_env(ctx, sequ, item_name)
     }
 
+    #[requires(self.assembled)]
     fn load_flow(&self, ctx: ExecContext, sequ: &mut Sequence, obj_path: &str) -> ExecResult<()> {
         let (mod_name, item_name) = parse_obj_path(obj_path)?;
 
@@ -161,6 +165,7 @@ impl ExecOptions {
 }
 
 impl GxlSpace {
+    #[requires(self.assembled)]
     pub async fn exec<VS: Into<Vec<String>>>(
         &self,
         envs_name: VS,
@@ -190,6 +195,7 @@ impl GxlSpace {
         Ok(())
     }
 
+    #[requires(self.assembled)]
     async fn execute_flow(
         &self,
         main_ctx: &ExecContext,
