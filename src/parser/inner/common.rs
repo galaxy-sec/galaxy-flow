@@ -3,7 +3,7 @@ use orion_parse::symbol::symbol_comma;
 use winnow::combinator::separated;
 
 use crate::ability::delegate::ActCall;
-use crate::components::gxl_var::*;
+use crate::components::{gxl_var::*, GxlProps};
 use crate::expect::ShellOption;
 use crate::parser::domain::{
     gal_call_beg, gal_call_end, gal_keyword, gal_sentence_beg, gal_sentence_end, gal_var_assign,
@@ -11,8 +11,8 @@ use crate::parser::domain::{
 };
 use crate::types::Property;
 
-pub fn gal_vars(input: &mut &str) -> ModalResult<GxlVars> {
-    let mut vars = GxlVars::default();
+pub fn gal_vars(input: &mut &str) -> ModalResult<GxlProps> {
+    let mut vars = GxlProps::default();
     gal_keyword("gx.vars", input)?;
     let founds = sentence_body.parse_next(input)?;
     for one in founds {
@@ -77,11 +77,11 @@ pub fn gal_call(input: &mut &str) -> ModalResult<ActCall> {
     Ok(dto)
 }
 
-pub fn gal_prop(input: &mut &str) -> ModalResult<GxlProp> {
+pub fn gal_prop(input: &mut &str) -> ModalResult<GxlVar> {
     skip_spaces_block.parse_next(input)?;
     let prop = gal_var_assign.parse_next(input)?;
     alt((symbol_comma, symbol_semicolon)).parse_next(input)?;
-    let vars = GxlProp::ext_new(prop.0, "str".into(), prop.1);
+    let vars = GxlVar::ext_new(prop.0, "str".into(), prop.1);
     Ok(vars)
 }
 
@@ -115,9 +115,9 @@ mod tests {
              y = "${PRJ_ROOT}/test/main.py" ;
              } ;"#;
         let var = gal_vars(&mut data)?;
-        let mut expect = GxlVars::default();
-        expect.append(GxlProp::new("X", "${PRJ_ROOT}/test/main.py"));
-        expect.append(GxlProp::new("Y", "${PRJ_ROOT}/test/main.py"));
+        let mut expect = GxlProps::default();
+        expect.append(GxlVar::new("X", "${PRJ_ROOT}/test/main.py"));
+        expect.append(GxlVar::new("Y", "${PRJ_ROOT}/test/main.py"));
         assert_eq!(var, expect);
         assert_eq!(data, "");
         Ok(())

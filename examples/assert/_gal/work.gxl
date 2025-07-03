@@ -47,7 +47,9 @@ mod main   {
   conf = "${ENV_ROOT}/conf" ;
 
   #[auto_load(entry)]
-  flow __into : other.def ;
+  flow __into  | other.def  {
+    other_val = "OTHER_DE1";
+  }
   #[auto_load(exit)]
   flow __exit : other.def2 ;
   #[usage(desp="main")]

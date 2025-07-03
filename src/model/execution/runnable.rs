@@ -62,18 +62,17 @@ impl From<(VarSpace, ExecOut, String)> for TaskValue {
     }
 }
 
-pub type TaskResult = ExecResult<ExecOut>;
 pub type VarsResult = ExecResult<VarSpace>;
-pub type VTResult = ExecResult<TaskValue>;
+pub type TaskResult = ExecResult<TaskValue>;
 
 //#[automock]
 #[async_trait]
 pub trait AsyncRunnableTrait {
-    async fn async_exec(&self, ctx: ExecContext, dict: VarSpace) -> VTResult;
+    async fn async_exec(&self, ctx: ExecContext, dict: VarSpace) -> TaskResult;
 }
 
 pub trait RunnableTrait {
-    fn exec(&self, ctx: ExecContext, dict: VarSpace) -> VTResult;
+    fn exec(&self, ctx: ExecContext, dict: VarSpace) -> TaskResult;
 }
 
 pub trait ComponentMeta {

@@ -70,7 +70,7 @@ impl ActCall {
 }
 #[async_trait]
 impl AsyncRunnableTrait for ActCall {
-    async fn async_exec(&self, mut ctx: ExecContext, vars_dict: VarSpace) -> VTResult {
+    async fn async_exec(&self, mut ctx: ExecContext, vars_dict: VarSpace) -> TaskResult {
         ctx.append("@");
         match &self.act {
             Some(act) => act.async_exec(ctx, vars_dict).await,
@@ -82,10 +82,11 @@ impl AsyncRunnableTrait for ActCall {
     }
 }
 
-#[derive(Debug, Default, Builder, PartialEq, Clone)]
+#[derive(Debug, Default, Builder, PartialEq, Clone, Getters)]
 pub struct Activity {
     host: String,
     dto: ActivityDTO,
+    assembled: bool,
 }
 #[derive(Clone, Debug, Builder, PartialEq, Default)]
 pub struct ActivityDTO {
@@ -110,7 +111,7 @@ impl ActivityDTO {
 
 #[async_trait]
 impl AsyncRunnableTrait for Activity {
-    async fn async_exec(&self, ctx: ExecContext, vars_dict: VarSpace) -> VTResult {
+    async fn async_exec(&self, ctx: ExecContext, vars_dict: VarSpace) -> TaskResult {
         self.exec_cmd(ctx, vars_dict, &self.dto)
         // Ok(ExecOut::Ignore)
     }
@@ -126,6 +127,7 @@ impl Activity {
         Activity {
             host: String::new(),
             dto,
+            ..Default::default()
         }
     }
     pub fn set_host(&mut self, host: String) {
@@ -145,7 +147,7 @@ impl Activity {
         mut ctx: ExecContext,
         vars_dict: VarSpace,
         dto: &ActivityDTO,
-    ) -> VTResult {
+    ) -> TaskResult {
         ctx.append(format!("{}.{}", self.host, dto.name));
         debug!(target: ctx.path(),"actcall");
         let mut action = Action::from(dto.name.as_str());
@@ -185,14 +187,16 @@ impl Activity {
         action.finish();
         Ok(TaskValue::from((vars_dict, ExecOut::Action(action))))
     }
-    pub fn exec_cmd(&self, ctx: ExecContext, vars_dict: VarSpace, dto: &ActivityDTO) -> VTResult {
+    pub fn exec_cmd(&self, ctx: ExecContext, vars_dict: VarSpace, dto: &ActivityDTO) -> TaskResult {
         self.execute_impl(ctx, vars_dict, dto)
     }
 }
 
 impl DependTrait<&GxlSpace> for Activity {
     fn assemble(self, _mod_name: &str, _src: &GxlSpace) -> AResult<Self> {
-        Ok(self.clone())
+        let mut ins = self.clone();
+        ins.assembled = true;
+        Ok(ins)
     }
 }
 

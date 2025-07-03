@@ -5,7 +5,6 @@ pub use crate::execution::job::Job;
 pub use crate::execution::runnable::AsyncRunnableTrait;
 pub use crate::execution::runnable::ExecOut;
 pub use crate::execution::runnable::TaskResult;
-pub use crate::execution::runnable::VTResult;
 
 pub use crate::error::{AssembleError, AssembleReason};
 pub use crate::evaluator::EnvExpress;

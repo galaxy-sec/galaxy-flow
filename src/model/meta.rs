@@ -3,13 +3,16 @@ use std::fmt::Debug;
 
 use derive_more::From;
 
-use super::components::{gxl_env::meta::EnvMeta, gxl_flow::meta::FlowMeta, gxl_mod::meta::ModMeta};
-#[derive(Debug, Clone, Default)]
+use super::components::{
+    gxl_env::meta::EnvMeta, gxl_flow::meta::FlowMeta, gxl_mod::meta::ModMeta, gxl_prop::PropMeta,
+};
+#[derive(Debug, Clone, Default, PartialEq)]
 pub enum GxlType {
     Env,
     Flow,
     Mod,
     Vars,
+    Props,
     #[default]
     Ignore,
     Activity,
@@ -24,6 +27,7 @@ impl GxlType {
 
 #[derive(Clone, From)]
 pub enum GxlMeta {
+    Prop(PropMeta),
     Env(EnvMeta),
     Flow(FlowMeta),
     Mod(ModMeta),
@@ -33,6 +37,7 @@ pub enum GxlMeta {
 impl GxlMeta {
     pub fn name(&self) -> &str {
         match self {
+            GxlMeta::Prop(m) => m.name(),
             GxlMeta::Env(m) => m.name(),
             GxlMeta::Flow(m) => m.name(),
             GxlMeta::Mod(m) => m.name(),

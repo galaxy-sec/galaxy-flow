@@ -111,7 +111,7 @@ impl RgVersion {
 }
 #[async_trait]
 impl AsyncRunnableTrait for RgVersion {
-    async fn async_exec(&self, mut ctx: ExecContext, mut dict: VarSpace) -> VTResult {
+    async fn async_exec(&self, mut ctx: ExecContext, mut dict: VarSpace) -> TaskResult {
         ctx.append("version");
         let exp = EnvExpress::from_env_mix(dict.global().clone());
         let file_path = exp.eval(&self.file)?;

@@ -7,6 +7,7 @@ pub mod gxl_flow;
 pub mod gxl_intercept;
 pub mod gxl_loop;
 pub mod gxl_mod;
+pub mod gxl_prop;
 pub mod gxl_spc;
 pub mod gxl_utls;
 pub mod gxl_var;
@@ -16,7 +17,7 @@ pub use crate::model::components::{
     gxl_env::env::{GxlEnv, GxlEnvHold},
     gxl_flow::flow::GxlFlow,
     gxl_mod::{GxlMod, ModHold},
-    gxl_var::{GxlVars, VarsHold},
+    gxl_prop::{GxlProps, VarsHold},
 };
 
 #[derive(Debug, Clone, Default, Getters)]
