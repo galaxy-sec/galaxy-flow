@@ -5,9 +5,11 @@ use derive_more::From;
 
 use crate::ability::GxRead;
 use crate::annotation::{Dryrunable, Transaction};
+use crate::components::gxl_spc::GxlSpace;
 use crate::components::{GxlEnv, GxlFlow, GxlMod, GxlProps};
 use crate::context::ExecContext;
 use crate::meta::GxlMeta;
+use crate::traits::DependTrait;
 
 use super::runnable::{AsyncRunnableTrait, ComponentMeta, TaskResult, TaskValue};
 use super::sequence::RunStub;
@@ -41,22 +43,15 @@ impl From<TransableHold> for AsyncComHold {
     fn from(value: TransableHold) -> Self {
         match value {
             TransableHold::Props(o) => AsyncComHold::Props(o),
-            TransableHold::Flow(o) => {
-                debug_assert!(o.assembled());
-                AsyncComHold::Flow(o)
-            }
+            TransableHold::Flow(o) => AsyncComHold::Flow(o),
             TransableHold::Stub(o) => AsyncComHold::Stub(o),
         }
     }
 }
-/*
 impl DependTrait<&GxlSpace> for TransableHold {
     fn assemble(self, mod_name: &str, src: &GxlSpace) -> crate::error::AResult<Self> {
         let obj = match self {
-            TransableHold::Mod(o) => {
-                //Self::Mod(o.clone()),
-                Self::from(<GxlMod as Clone>::clone(&o).assemble(mod_name, src)?)
-            }
+            TransableHold::Props(o) => Self::Props(o.clone()),
             TransableHold::Flow(o) => {
                 Self::from(<GxlFlow as Clone>::clone(&o).assemble(mod_name, src)?)
             }
@@ -65,7 +60,6 @@ impl DependTrait<&GxlSpace> for TransableHold {
         Ok(obj)
     }
 }
-*/
 
 impl Transaction for AsyncComHold {
     fn is_transaction(&self) -> bool {

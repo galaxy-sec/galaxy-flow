@@ -101,8 +101,8 @@ fn assemble_pipe(
         if !flows.is_empty() {
             for item in flows {
                 //TODO： 这个需要确认是否还需要 assemble ?
-                //item.assemble(m_name, src)?;
-                target.push(item);
+                let ass_item = item.assemble(m_name, src)?;
+                target.push(ass_item);
             }
             return Ok(());
         }
@@ -120,8 +120,8 @@ fn assemble_fetch(m_name: &str, flow: &str, src: &GxlSpace) -> AResult<Vec<Trans
         //let undo_flow = flow.assemble(m_name, src)?;
         for item in flows.into_iter() {
             //TODO： 这个需要确认是否还需要 assemble ?
-            //target.push(item.assemble(m_name, src)?);
-            target.push(item);
+            target.push(item.assemble(m_name, src)?);
+            //target.push(item);
         }
     }
     return Ok(target);

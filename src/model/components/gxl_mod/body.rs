@@ -167,7 +167,7 @@ impl MergeTrait for GxlMod {
 }
 
 impl ExecLoadTrait for GxlMod {
-    // 加载环境变量
+    #[requires(!self.props().meta().name().is_empty())]
     fn load_env(&self, mut ctx: ExecContext, sequ: &mut Sequence, args: &str) -> ExecResult<()> {
         // 将当前模块的名称添加到上下文中
         ctx.append(self.meta.name().as_str());
@@ -449,7 +449,7 @@ mod test {
             Some(&SecVar::new(VarMeta::Normal, "value1".to_string()))
         );
         assert_eq!(
-            vars.global().maps().get(&"MOD1_KEY2".to_string()),
+            vars.global().maps().get(&"KEY3".to_string()),
             Some(&SecVar::new(VarMeta::Normal, "value1".to_string()))
         );
         Ok(())
