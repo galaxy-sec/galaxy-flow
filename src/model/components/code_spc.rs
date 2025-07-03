@@ -26,7 +26,7 @@ impl CodeSpace {
                 }
             }
         }
-        Ok(target_spc.assemble()?)
+        target_spc.assemble()
     }
 }
 

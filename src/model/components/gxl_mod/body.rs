@@ -8,7 +8,6 @@ use crate::components::GxlProps;
 use crate::execution::hold::TransableHold;
 use crate::model::components::prelude::*;
 
-use crate::execution::job::Job;
 use crate::execution::runnable::ComponentMeta;
 use crate::menu::*;
 use crate::meta::*;

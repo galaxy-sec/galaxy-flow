@@ -7,7 +7,7 @@ use orion_error::UvsSysFrom;
 
 use crate::ability::prelude::TaskValue;
 use crate::annotation::{Dryrunable, Transaction};
-use crate::components::{GxlFlow, GxlMod, GxlProps};
+use crate::components::{GxlFlow, GxlProps};
 use crate::context::ExecContext;
 use crate::execution::hold::AsyncComHold;
 use crate::execution::hold::{ComHold, IsolationHold};

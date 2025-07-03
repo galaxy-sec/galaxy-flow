@@ -124,7 +124,7 @@ fn assemble_fetch(m_name: &str, flow: &str, src: &GxlSpace) -> AResult<Vec<Trans
             //target.push(item);
         }
     }
-    return Ok(target);
+    Ok(target)
 }
 
 impl From<FlowMeta> for GxlFlow {
@@ -246,10 +246,10 @@ impl GxlFlow {
     pub fn is_auto_entry(&self) -> bool {
         let annotation = self.meta.annotations();
         for ann in annotation {
-            if ann.func == FlowAnnFunc::AutoLoad {
-                if ann.get_arg(FST_ARG_TAG) == Some("entry".to_string()) {
-                    return true;
-                }
+            if ann.func == FlowAnnFunc::AutoLoad
+                && ann.get_arg(FST_ARG_TAG) == Some("entry".to_string())
+            {
+                return true;
             }
         }
         false
@@ -257,10 +257,10 @@ impl GxlFlow {
     pub fn is_auto_exit(&self) -> bool {
         let annotation = self.meta.annotations();
         for ann in annotation {
-            if ann.func == FlowAnnFunc::AutoLoad {
-                if ann.get_arg(FST_ARG_TAG) == Some("exit".to_string()) {
-                    return true;
-                }
+            if ann.func == FlowAnnFunc::AutoLoad
+                && ann.get_arg(FST_ARG_TAG) == Some("exit".to_string())
+            {
+                return true;
             }
         }
         false
