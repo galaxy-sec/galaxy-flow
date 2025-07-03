@@ -74,17 +74,18 @@ impl DependTrait<&GxlSpace> for GxlFlow {
         }
         if let Some(undo_name) = self.meta().undo_flow_name() {
             info!( target: "assemble", "undo flow {} ", undo_name );
-            target.undo_flow_item = assemble_fetch(mod_name, undo_name.as_str(), src);
+            target.undo_flow_item = assemble_fetch(mod_name, undo_name.as_str(), src)?;
         }
         if let Some(dryrun_name) = self.meta().dryrun_flow_name() {
             info!( target: "assemble", "dryrun flow {} ", dryrun_name );
-            target.dryrun_flow = assemble_fetch(mod_name, dryrun_name.as_str(), src);
+            target.dryrun_flow = assemble_fetch(mod_name, dryrun_name.as_str(), src)?;
         }
         for block in self.blocks {
             let full_block = block.assemble(mod_name, src)?;
             target.append(full_block);
         }
         target.assembled = true;
+        debug!(target : "assemble", "assemble flow {} end" , target.meta().name() );
         Ok(target)
     }
 }
@@ -112,18 +113,18 @@ fn assemble_pipe(
     ))))
 }
 
-fn assemble_fetch(m_name: &str, flow: &str, src: &GxlSpace) -> Vec<TransableHold> {
+fn assemble_fetch(m_name: &str, flow: &str, src: &GxlSpace) -> AResult<Vec<TransableHold>> {
     let mut target: Vec<TransableHold> = Vec::new();
     let (t_mod, flow_name) = mod_obj_name(m_name, flow);
     if let Some(flows) = src.get(&t_mod).map(|m| m.load_scope_flow(&flow_name)) {
         //let undo_flow = flow.assemble(m_name, src)?;
-        for item in flows {
+        for item in flows.into_iter() {
             //TODO： 这个需要确认是否还需要 assemble ?
-            //item.assemble(m_name, src)?;
+            //target.push(item.assemble(m_name, src)?);
             target.push(item);
         }
     }
-    return target;
+    return Ok(target);
 }
 
 impl From<FlowMeta> for GxlFlow {
@@ -342,7 +343,7 @@ mod tests {
         gxl_mod.append(target_flow);
         let mut spc = GxlSpace::default();
         spc.append(gxl_mod);
-        assert!(spc.assemble_depend().is_err());
+        assert!(spc.assemble().is_err());
         // 调用 assemble_com 方法
         //assert!(target_flow.assemble("test_mod", &spc).is_err());
     }
@@ -369,7 +370,7 @@ mod tests {
         //gxl_mod.append(target_flow.clone());
         let mut spc = GxlSpace::default();
         spc.append(gxl_mod);
-        spc = spc.assemble_depend().assert();
+        spc = spc.assemble().assert();
 
         // 调用 assemble_com 方法
         let assembled_flow = target_flow.assemble("test_mod", &spc).assert();

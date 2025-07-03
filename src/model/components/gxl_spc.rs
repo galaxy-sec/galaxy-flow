@@ -68,17 +68,23 @@ impl GxlSpace {
         Ok(())
     }
 
-    pub fn assemble_depend(&mut self) -> AResult<Self> {
+    pub fn assemble(&mut self) -> AResult<Self> {
         let mut spc = Self::default();
 
         for mod_name in &self.mods_name {
             if let Some(module) = self.get(mod_name) {
+                spc.append(module.clone());
                 let updated = module.clone().assemble(mod_name, &spc)?;
-                spc.append(updated);
+                debug_assert!(updated.assembled());
+                spc.replace(updated);
             }
         }
         spc.assembled = true;
         Ok(spc)
+    }
+
+    fn replace(&mut self, updated: GxlMod) {
+        self.mods_store.insert(updated.of_name(), updated);
     }
 }
 
@@ -94,7 +100,7 @@ impl TryFrom<CodeSpace> for GxlSpace {
     type Error = AssembleError;
 
     fn try_from(value: CodeSpace) -> AResult<Self> {
-        value.assemble_mix()?.assemble_depend()
+        value.assemble()
     }
 }
 
@@ -345,7 +351,7 @@ mod tests {
 
         // Execute
         let mut flow = Sequence::from("test");
-        let work_space = code_space.assemble_mix().assert();
+        let work_space = code_space.assemble().assert();
 
         work_space.load_env(ctx.clone(), &mut flow, "env.env1")?;
         work_space.load_flow(ctx.clone(), &mut flow, "main.flow1")?;

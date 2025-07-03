@@ -69,35 +69,31 @@ impl Sequence {
                     undo_stack.push_back((undo, def.clone()));
                 }
             }
-            let result = if *ctx.dryrun() {
+            let mut sub_queue = VecDeque::new();
+
+            if *ctx.dryrun() {
                 if item.dryrun_hold().is_empty() {
-                    item.async_exec(ctx.clone(), def.clone()).await
+                    sub_queue.push_back(item.clone());
                 } else {
-                    todo!();
-                    //abc
-                    /*
                     for dryrun in item.dryrun_hold() {
-                        warn!(target: ctx.path(), "execute dryrun flow");
-                        let TaskValue { vars, rec, .. } =
-                            dryrun.async_exec(ctx.clone(), def.clone()).await?;
-                        def = vars;
+                        sub_queue.push_back(ComHold::from(AsyncComHold::from(dryrun)));
                     }
-                    TaskValue::new(def, out, task)
-                    */
                 }
             } else {
-                item.async_exec(ctx.clone(), def.clone()).await
+                sub_queue.push_back(item.clone());
             };
-            match result {
-                Ok(TaskValue { vars, rec, .. }) => {
-                    def = vars;
-                    job.append(rec);
-                }
-                Err(e) => {
-                    warn!("Sequence aborted at step {}: {}", index, e);
-                    warn!("will execute undo :{}", undo_stack.len());
-                    self.undo_transactions(ctx.clone(), undo_stack).await;
-                    return Err(e);
+            while let Some(item) = sub_queue.pop_back() {
+                match item.async_exec(ctx.clone(), def.clone()).await {
+                    Ok(TaskValue { vars, rec, .. }) => {
+                        def = vars;
+                        job.append(rec);
+                    }
+                    Err(e) => {
+                        warn!("Sequence aborted at step {}: {}", index, e);
+                        warn!("will execute undo :{}", undo_stack.len());
+                        self.undo_transactions(ctx.clone(), undo_stack).await;
+                        return Err(e);
+                    }
                 }
             }
         }

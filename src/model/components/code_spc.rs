@@ -17,7 +17,7 @@ pub struct CodeSpace {
 
 impl CodeSpace {
     #[allow(clippy::result_large_err)]
-    pub fn assemble_mix(&self) -> AResult<GxlSpace> {
+    pub fn assemble(&self) -> AResult<GxlSpace> {
         let mut target_spc = GxlSpace::default();
         for m_name in self.mods.iter() {
             if let Some(m) = self.store.get(m_name) {
@@ -26,7 +26,7 @@ impl CodeSpace {
                 }
             }
         }
-        Ok(target_spc.assemble_depend()?)
+        Ok(target_spc.assemble()?)
     }
 }
 
@@ -98,7 +98,7 @@ mod tests {
         gxl_space.append(gxl_mod);
 
         let mut flow = Sequence::from("test");
-        let work_spc = gxl_space.assemble_mix().assert();
+        let work_spc = gxl_space.assemble().assert();
         work_spc.load_env(ctx.clone(), &mut flow, "env.env1")?;
         work_spc.load_flow(ctx.clone(), &mut flow, "main.flow1")?;
         let job = flow.test_execute(ctx, def).await;

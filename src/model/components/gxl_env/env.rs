@@ -38,11 +38,12 @@ impl GxlEnv {
             return Ok(link_env);
         }
         Err(AssembleError::from(AssembleReason::Miss(format!(
-            "mod : {} env {} : by {} , {} ",
+            "{}:{}  by {},{} ",
             mod_name, cur_mix, t_mod, env_name
         ))))
     }
     fn assemble_impl(&self, mod_name: &str, src: &GxlSpace) -> AResult<Self> {
+        debug!(target : "assemble", "will assemble env {}" , self.meta().name() );
         let mut buffer = Vec::new();
         let mut mix_list = VecDeque::from(self.meta.mix().clone());
 
@@ -71,6 +72,7 @@ impl GxlEnv {
             );
         }
         target.assembled = true;
+        debug!(target : "assemble", "assemble env {} end!" , target.meta().name() );
         Ok(target)
     }
 }
@@ -237,7 +239,7 @@ mod tests {
         src_mod.append(src_env);
         let mut raw_spc = CodeSpace::default();
         raw_spc.append(src_mod);
-        let work_spc = raw_spc.assemble_mix().assert();
+        let work_spc = raw_spc.assemble().assert();
 
         // Add the source environment to the base environment's mix
         base_env.meta_mut().set_mix(vec!["src_env".to_string()]);
@@ -282,7 +284,7 @@ mod tests {
 
         let mut spc = CodeSpace::default();
         spc.append(src_mod);
-        let w_spc = spc.assemble_mix().assert();
+        let w_spc = spc.assemble().assert();
         // Assemble the base environment with the source module
         let assembled_env = base_env.assemble("src_mod", &w_spc)?;
 

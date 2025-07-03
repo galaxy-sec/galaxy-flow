@@ -1,6 +1,6 @@
 extern mod head { path = "${GXL_START_ROOT}/_gal/"; }
 
-mod env  {
+mod envs  {
    env _common  : rust_env.init   {
     root      = ".";
     target_name = "";
@@ -21,7 +21,7 @@ mod env  {
 
 
   #[usage(desp="default mamcos", color="green")]
-  env default    : _common,debug;
+  env default    : envs._common,debug;
 }
 
 mod main   {

@@ -203,7 +203,7 @@ impl ExecLoadTrait for GxlMod {
     fn load_env(&self, mut ctx: ExecContext, sequ: &mut Sequence, args: &str) -> ExecResult<()> {
         // 将当前模块的名称添加到上下文中
         ctx.append(self.meta.name().as_str());
-        //info!(target:ctx.path(),"load env:{}", obj_path);
+        debug!(target:ctx.path(),"will load env:{}", args);
         // 如果环境变量中存在指定的参数
         if let Some(found) = self.envs.get(args) {
             // 创建一个模块运行器
@@ -463,7 +463,7 @@ mod test {
         mod1.append(GxlProp::new("key2", "value1"));
         let mut spc = GxlSpace::default();
         spc.append(mod1);
-        spc = spc.assemble_depend().assert("assemble");
+        spc = spc.assemble().assert("assemble");
 
         let ctx = ExecContext::default();
         let mut sequ = Sequence::from("exec");
@@ -509,7 +509,7 @@ mod test {
         let mut spc = GxlSpace::default();
         spc.append(mod1);
         spc.append(mod2);
-        let work_spc = spc.assemble_depend()?;
+        let work_spc = spc.assemble()?;
 
         let ctx = ExecContext::default();
         let mut sequ = Sequence::from("exec");
