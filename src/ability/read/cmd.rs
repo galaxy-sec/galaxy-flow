@@ -1,5 +1,5 @@
 use crate::ability::prelude::*;
-use crate::components::GxlVars;
+use crate::components::GxlProps;
 use crate::expect::{LogicScope, ShellOption};
 
 use orion_common::friendly::New2;
@@ -21,8 +21,8 @@ impl CmdDTO {
         let (data, _) = gxl_sh!(LogicScope::Outer, ctx.path(), &cmd, &self.expect, &exp)?;
         let data_str = String::from_utf8(data)
             .map_err(|msg| ExecReason::Exp(format!("bad result {}", msg)))?;
-        let mut vars = GxlVars::default();
-        vars.append(GxlProp::new(name, data_str.trim().to_string()));
+        let mut vars = GxlProps::new("cmd");
+        vars.append(GxlVar::new(name, data_str.trim().to_string()));
         vars.export_props(ctx, vars_dict.global_mut(), "")?;
         Ok(TaskValue::from((vars_dict, ExecOut::Ignore)))
     }

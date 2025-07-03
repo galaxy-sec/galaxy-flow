@@ -1,7 +1,7 @@
 use std::io;
 
 use crate::ability::prelude::*;
-use crate::components::GxlVars;
+use crate::components::GxlProps;
 
 use orion_common::friendly::New2;
 
@@ -22,8 +22,8 @@ impl StdinDTO {
         let mut buffer = String::new();
         let stdin = io::stdin(); // We get `Stdin` here.
         stdin.read_line(&mut buffer).owe_data()?;
-        let mut vars = GxlVars::default();
-        vars.append(GxlProp::new(name, buffer.trim().to_string()));
+        let mut vars = GxlProps::new("stdio");
+        vars.append(GxlVar::new(name, buffer.trim().to_string()));
         vars.export_props(ctx, vars_dict.global_mut(), "")?;
         Ok(TaskValue::from((vars_dict, ExecOut::Ignore)))
     }

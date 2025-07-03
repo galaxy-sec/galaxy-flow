@@ -8,7 +8,7 @@ use orion_parse::{
     symbol::wn_desc,
 };
 
-use crate::components::{gxl_env::env::EnvItem, gxl_var::GxlProp, GxlEnv};
+use crate::components::{gxl_env::env::EnvItem, gxl_var::GxlVar, GxlEnv};
 
 use super::{
     inner::{gal_prop, gal_vars},
@@ -57,7 +57,7 @@ pub fn gal_stc_env_body(input: &mut &str) -> ModalResult<GxlEnv> {
     gal_sentence_beg
         .context(wn_desc("<env-beg>"))
         .parse_next(input)?;
-    let props: Vec<GxlProp> = repeat(0.., gal_prop).parse_next(input)?;
+    let props: Vec<GxlVar> = repeat(0.., gal_prop).parse_next(input)?;
     let env_items: Vec<EnvItem> = repeat(0.., gal_env_item).parse_next(input)?;
     gal_sentence_end
         .context(wn_desc("<env-end>"))

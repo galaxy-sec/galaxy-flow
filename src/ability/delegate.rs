@@ -82,10 +82,11 @@ impl AsyncRunnableTrait for ActCall {
     }
 }
 
-#[derive(Debug, Default, Builder, PartialEq, Clone)]
+#[derive(Debug, Default, Builder, PartialEq, Clone, Getters)]
 pub struct Activity {
     host: String,
     dto: ActivityDTO,
+    assembled: bool,
 }
 #[derive(Clone, Debug, Builder, PartialEq, Default)]
 pub struct ActivityDTO {
@@ -126,6 +127,7 @@ impl Activity {
         Activity {
             host: String::new(),
             dto,
+            ..Default::default()
         }
     }
     pub fn set_host(&mut self, host: String) {
@@ -192,7 +194,9 @@ impl Activity {
 
 impl DependTrait<&GxlSpace> for Activity {
     fn assemble(self, _mod_name: &str, _src: &GxlSpace) -> AResult<Self> {
-        Ok(self.clone())
+        let mut ins = self.clone();
+        ins.assembled = true;
+        Ok(ins)
     }
 }
 

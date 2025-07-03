@@ -3,17 +3,17 @@ use crate::ability::prelude::TaskValue;
 use super::gxl_spc::GxlSpace;
 use super::{prelude::*, GxlFlow};
 
-use super::gxl_var::GxlProp;
+use super::gxl_var::GxlVar;
 
 #[derive(Clone, Getters)]
 pub struct GxlIntercept {
     m_name: String,
-    props: Vec<GxlProp>,
+    props: Vec<GxlVar>,
     flows: Vec<GxlFlow>,
 }
 
 impl GxlIntercept {
-    pub fn new(m_name: String, props: Vec<GxlProp>, flows: Vec<GxlFlow>) -> Self {
+    pub fn new(m_name: String, props: Vec<GxlVar>, flows: Vec<GxlFlow>) -> Self {
         Self {
             m_name,
             props,
@@ -50,13 +50,13 @@ impl DependTrait<&GxlSpace> for GxlIntercept {
 }
 
 impl PropsTrait for GxlIntercept {
-    fn fetch_props(&self) -> &Vec<GxlProp> {
+    fn fetch_props(&self) -> &Vec<GxlVar> {
         &self.props
     }
 }
 
-impl AppendAble<GxlProp> for GxlIntercept {
-    fn append(&mut self, prop: GxlProp) {
+impl AppendAble<GxlVar> for GxlIntercept {
+    fn append(&mut self, prop: GxlVar) {
         self.props.push(prop);
     }
 }

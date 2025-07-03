@@ -313,8 +313,8 @@ pub fn color_show<S: AsRef<str> + Display>(text: S, color: Option<&str>) {
 mod tests {
     use super::*;
     use crate::{
-        ability::prelude::GxlProp,
-        components::{gxl_mod::meta::ModMeta, GxlEnv, GxlFlow, GxlMod, GxlVars},
+        ability::prelude::GxlVar,
+        components::{gxl_mod::meta::ModMeta, GxlEnv, GxlFlow, GxlMod, GxlProps},
         execution::exec_init_env,
         types::AnyResult,
     };
@@ -327,7 +327,7 @@ mod tests {
 
         // Create main module
         let mut main_mod = GxlMod::from(ModMeta::build_mod(MAIN_MOD));
-        main_mod.append(GxlProp::new("key1", "val1"));
+        main_mod.append(GxlVar::new("key1", "val1"));
 
         let flow = GxlFlow::load_ins("flow1");
         main_mod.append(flow);
@@ -336,10 +336,10 @@ mod tests {
         let mut env_mod = GxlMod::from(ModMeta::build_mod(ENV_MOD));
 
         let mut env = GxlEnv::from("env1");
-        env.append(GxlProp::new("key1", "val1"));
+        env.append(GxlVar::new("key1", "val1"));
 
-        let mut rg_vars = GxlVars::default();
-        rg_vars.append(GxlProp::new("key1", "val1"));
+        let mut rg_vars = GxlProps::default();
+        rg_vars.append(GxlVar::new("key1", "val1"));
         env.append(rg_vars);
 
         env_mod.append(env);

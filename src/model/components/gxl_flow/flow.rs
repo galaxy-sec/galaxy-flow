@@ -377,13 +377,22 @@ mod tests {
 
         // 验证 pre_ows 和 post_ows 是否正确组装
         assert_eq!(assembled_flow.pre_flows().len(), 4);
-        assert_eq!(assembled_flow.pre_flows()[0].com_meta().name(), "test_mod");
+        assert_eq!(
+            assembled_flow.pre_flows()[0].com_meta().name(),
+            "test_mod.props"
+        );
         assert_eq!(assembled_flow.pre_flows()[1].com_meta().name(), "flow1");
-        assert_eq!(assembled_flow.pre_flows()[2].com_meta().name(), "test_mod");
+        assert_eq!(
+            assembled_flow.pre_flows()[2].com_meta().name(),
+            "test_mod.props"
+        );
         assert_eq!(assembled_flow.pre_flows()[3].com_meta().name(), "flow2");
 
         assert_eq!(assembled_flow.post_flows().len(), 2);
-        assert_eq!(assembled_flow.post_flows()[0].com_meta().name(), "test_mod");
+        assert_eq!(
+            assembled_flow.post_flows()[0].com_meta().name(),
+            "test_mod.props"
+        );
         assert_eq!(assembled_flow.post_flows()[1].com_meta().name(), "flow3");
     }
 }

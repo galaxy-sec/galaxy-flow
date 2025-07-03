@@ -7,7 +7,7 @@ use orion_error::UvsSysFrom;
 
 use crate::ability::prelude::TaskValue;
 use crate::annotation::{Dryrunable, Transaction};
-use crate::components::{GxlFlow, GxlMod};
+use crate::components::{GxlFlow, GxlMod, GxlProps};
 use crate::context::ExecContext;
 use crate::execution::hold::AsyncComHold;
 use crate::execution::hold::{ComHold, IsolationHold};
@@ -128,12 +128,11 @@ impl Sequence {
         }
     }
 
-    pub fn append_mod_head(&mut self, gmod: GxlMod) {
-        debug_assert!(gmod.assembled());
-        if !self.mods_head().contains_key(gmod.meta().name()) {
-            debug!(target: "assemble", "append mod {}", gmod.meta().name() );
-            self.mods_head.insert(gmod.meta().name().clone(), true);
-            self.run_items.push(AsyncComHold::from(gmod).into());
+    pub fn append_mod_head(&mut self, props: GxlProps) {
+        if !self.mods_head().contains_key(props.meta().name()) {
+            debug!(target: "assemble", "append mod {}", props.meta().name() );
+            self.mods_head.insert(props.meta().name().clone(), true);
+            self.run_items.push(AsyncComHold::from(props).into());
         }
     }
 }

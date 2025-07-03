@@ -62,8 +62,8 @@ mod tests {
     use orion_error::TestAssert;
 
     use crate::components::gxl_mod::meta::ModMeta;
-    use crate::components::gxl_var::GxlProp;
-    use crate::components::{GxlEnv, GxlFlow, GxlMod, GxlVars};
+    use crate::components::gxl_var::GxlVar;
+    use crate::components::{GxlEnv, GxlFlow, GxlMod, GxlProps};
     use crate::execution::exec_init_env;
     use crate::execution::sequence::Sequence;
     use crate::types::AnyResult;
@@ -76,19 +76,19 @@ mod tests {
 
         let meta = ModMeta::build_mod("main");
         let mut gxl_mod = GxlMod::from(meta);
-        gxl_mod.append(GxlProp::new("key1", "val1"));
+        gxl_mod.append(GxlVar::new("key1", "val1"));
 
         let gxl_flow = GxlFlow::load_ins("flow1".to_string());
 
-        let mut gxl_vars = GxlVars::default();
-        gxl_vars.append(GxlProp::new("key1", "val1"));
+        let mut gxl_vars = GxlProps::new("forword.props");
+        gxl_vars.append(GxlVar::new("key1", "val1"));
 
         let meta = ModMeta::build_mod("env");
         let mut gxl_mod_env = GxlMod::from(meta);
-        gxl_mod.append(GxlProp::new("key1", "val1"));
+        gxl_mod.append(GxlVar::new("key1", "val1"));
 
         let mut gxl_env = GxlEnv::from("env1");
-        gxl_env.append(GxlProp::new("key1", "val1"));
+        gxl_env.append(GxlVar::new("key1", "val1"));
         gxl_env.append(gxl_vars);
         gxl_mod_env.append(gxl_env);
 
