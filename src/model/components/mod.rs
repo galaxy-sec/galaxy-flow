@@ -4,7 +4,7 @@ pub(crate) mod gxl_cond;
 pub mod gxl_env;
 pub mod gxl_extend;
 pub mod gxl_flow;
-pub mod gxl_intercept;
+//pub mod gxl_intercept;
 pub mod gxl_loop;
 pub mod gxl_mod;
 pub mod gxl_prop;

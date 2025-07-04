@@ -160,14 +160,20 @@ impl Activity {
             "".into()
         };
         default_key.make_ascii_uppercase();
+        let mut use_default_key = false;
         for prop in &dto.props {
             let mut key = prop.key.clone();
             key.make_ascii_uppercase();
             if key == "DEFAULT" {
+                use_default_key = true;
                 dict.global_mut().set(&default_key, prop.val.clone());
-            } else if key == default_key {
-                //ignore key value
+                debug!(target: ctx.path(),"set default to dict {}:{}", default_key,prop.val);
             } else {
+                if key == default_key && use_default_key {
+                    debug!(target: ctx.path(),"use default not {}:{} ", key,prop.val);
+                    continue;
+                }
+                debug!(target: ctx.path(),"set to dict {}:{}", key,prop.val);
                 dict.global_mut().set(&key, prop.val.clone());
             }
         }
@@ -182,7 +188,6 @@ impl Activity {
             opt.quiet = quiet;
         }
 
-        debug!(target: ctx.path(),"cmd: {}, opt:{:?}", cmd,opt);
         gxl_sh!(LogicScope::Outer, ctx.path(), &cmd, &opt, &exp).with(&r_with)?;
         action.finish();
         Ok(TaskValue::from((vars_dict, ExecOut::Action(action))))
