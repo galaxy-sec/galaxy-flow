@@ -35,8 +35,8 @@ pub struct GxlMod {
     flow_names: Vec<MenuItem>,
     envs: HashMap<String, GxlEnv>,
     flows: HashMap<String, GxlFlow>,
-    entrys: Vec<GxlFlow>,
-    exits: Vec<GxlFlow>,
+    entrys: Vec<TransableHold>,
+    exits: Vec<TransableHold>,
     acts: HashMap<String, Activity>,
     assembled: bool,
 }
@@ -72,10 +72,22 @@ impl DependTrait<&GxlSpace> for GxlMod {
             let ass_flow = flow.assemble(mod_name, src)?;
             debug_assert!(ass_flow.assembled());
             if ass_flow.is_auto_entry() {
-                ins.entrys.push(ass_flow.clone());
+                for pre in ass_flow.pre_flows() {
+                    ins.entrys.push(pre.clone().assemble(mod_name, src)?);
+                }
+                ins.entrys.push(TransableHold::from(ass_flow.clone()));
+                for pre in ass_flow.post_flows() {
+                    ins.entrys.push(pre.clone().assemble(mod_name, src)?);
+                }
             }
             if ass_flow.is_auto_exit() {
-                ins.exits.push(ass_flow.clone());
+                for pre in ass_flow.pre_flows() {
+                    ins.exits.push(pre.clone().assemble(mod_name, src)?);
+                }
+                ins.exits.push(TransableHold::from(ass_flow.clone()));
+                for pre in ass_flow.post_flows() {
+                    ins.exits.push(pre.clone().assemble(mod_name, src)?);
+                }
             }
             ins.flows.insert(k.clone(), ass_flow);
         }
@@ -191,7 +203,7 @@ impl ExecLoadTrait for GxlMod {
             debug_assert!(self.assembled());
             sequ.append_mod_head(self.props.clone());
             for x in self.entrys.iter() {
-                debug_assert!(x.assembled());
+                //debug_assert!(x.assembled());
                 sequ.append_mod_entry(x.clone());
             }
             let pre_flows = found.clone_pre_flows();
@@ -204,7 +216,7 @@ impl ExecLoadTrait for GxlMod {
                 sequ.append(AsyncComHold::from(flow));
             }
             for x in self.exits().iter() {
-                debug_assert!(x.assembled());
+                //debug_assert!(x.assembled());
                 sequ.append_mod_exit(x.clone());
             }
         }

@@ -17,7 +17,6 @@ mod tests {
         }
     }
 
-    #[ignore = "reason"]
     #[tokio::test(flavor = "current_thread")]
     async fn example_read() -> RunResult<()> {
         //once_init_log();
@@ -38,7 +37,6 @@ mod tests {
         Ok(())
     }
 
-    #[ignore = "reason"]
     #[tokio::test(flavor = "current_thread")]
     async fn example_assert() -> RunResult<()> {
         //once_init_log();
@@ -58,7 +56,6 @@ mod tests {
         .await?;
         Ok(())
     }
-    #[ignore = "reason"]
     #[tokio::test(flavor = "current_thread")]
     async fn example_template() -> RunResult<()> {
         //jonce_init_log();
