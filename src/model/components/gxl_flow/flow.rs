@@ -97,7 +97,9 @@ fn assemble_pipe(
     target: &mut Vec<TransableHold>,
 ) -> AResult<()> {
     let (t_mod, flow_name) = mod_obj_name(m_name, flow);
+    debug!(target:"assemble", " find flow by {t_mod}.{flow_name}" );
     if let Some(flows) = src.get(&t_mod).map(|m| m.load_scope_flow(&flow_name)) {
+        debug!(target:"assemble", "found flow by {t_mod}.{flow_name}" );
         if !flows.is_empty() {
             for item in flows {
                 //TODO： 这个需要确认是否还需要 assemble ?

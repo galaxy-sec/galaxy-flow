@@ -1,10 +1,28 @@
 mod envs {
     env default {};
 }
+mod base {
+    #[undo(base_step1_undo)]
+    flow base_step1 {
+        gx.echo (" base_step1 ");
+    }
+    flow base_step1_undo {
+        gx.echo (" undo base_step1 ");
+    }
+
+    #[undo(base_step2_undo)]
+    flow base_step2 {
+        gx.echo (" base_step2 ");
+    }
+    flow base_step2_undo {
+        gx.echo (" undo base_step2 ");
+    }
+
+}
 mod main   {
 
 
-  flow trans1 | step1 | step2 | step3 ;
+  flow trans1 | step1 | step2 | base.base_step1 | step3;
   flow trans2 | step1 | step3 | step2 ;
 
   #[transaction,undo(_undo_step1)]
