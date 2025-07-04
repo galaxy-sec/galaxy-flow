@@ -24,7 +24,7 @@ where
     ensure_directory_exists(path)?;
 
     // 将 TOML 字符串写入文件
-    std::fs::write(path, toml).with_context(|| format!("write toml file : {}", file_name))?;
+    std::fs::write(path, toml).with_context(|| format!("write toml file : {file_name}"))?;
 
     Ok(())
 }

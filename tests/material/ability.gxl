@@ -1,5 +1,5 @@
 
-mod env {
+mod envs {
     env default {
       ROOT = ".";
       gx.vars {

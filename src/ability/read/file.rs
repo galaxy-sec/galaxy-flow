@@ -4,7 +4,7 @@ use std::{
 };
 
 use crate::ability::prelude::*;
-use crate::components::GxlVars;
+use crate::components::GxlProps;
 use crate::traits::Setter;
 use crate::var::VarDict;
 
@@ -53,20 +53,20 @@ impl FileDTO {
                 e
             ))
         })?;
-        let mut vars = GxlVars::default();
+        let mut vars = GxlProps::new("ini");
         for (_, prop) in file.iter() {
             for (k, v) in prop.iter() {
                 let str_k = k.trim().to_string();
                 let str_v = v.trim().to_string();
-                debug!(target: ctx.path() , "ini import {}:{}", str_k, str_v);
-                vars.append(GxlProp::new(str_k, str_v));
+                debug!(target: ctx.path() , "ini import {str_k}:{str_v}" );
+                vars.append(GxlVar::new(str_k, str_v));
             }
         }
         let mut dict = VarDict::global_new();
         vars.export_props(ctx, &mut dict, "")?;
         Ok(dict)
     }
-    pub fn execute(&self, mut ctx: ExecContext, mut vars_dict: VarSpace) -> VTResult {
+    pub fn execute(&self, mut ctx: ExecContext, mut vars_dict: VarSpace) -> TaskResult {
         ctx.append("gx.read_file");
         let exp = EnvExpress::from_env_mix(vars_dict.global().clone());
         let file = self.file.clone();
@@ -136,11 +136,11 @@ impl FileDTO {
                         serde_json::Value::Null => todo!(),
                         serde_json::Value::Bool(_) => todo!(),
                         serde_json::Value::Number(v) => {
-                            debug!(target: ctx.path() , "json import {}:{}", k, v);
+                            debug!(target: ctx.path() , "json import {k}:{v}");
                             dict.set(k.to_string(), v.to_string());
                         }
                         serde_json::Value::String(v) => {
-                            debug!(target: ctx.path() , "json import {}:{}", k, v);
+                            debug!(target: ctx.path() , "json import {k}:{v}" );
                             dict.set(k.to_string(), v.clone());
                         }
                         serde_json::Value::Array(_) => todo!(),

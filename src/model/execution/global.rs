@@ -48,7 +48,7 @@ fn get_os_info() -> (String, String, u64) {
 
 fn format_os_sys() -> String {
     let (arch, os_type, ver_major) = get_os_info();
-    format!("{}_{}_{}", arch, os_type, ver_major)
+    format!("{arch}_{os_type }_{ver_major}",)
 }
 
 pub fn load_secfile(vars_dict: &mut VarDict) -> ExecResult<()> {

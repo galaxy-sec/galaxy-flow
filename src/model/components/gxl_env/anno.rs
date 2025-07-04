@@ -16,7 +16,7 @@ impl From<&str> for EnvAnnFunc {
         match s {
             "usage" => EnvAnnFunc::Usage,
             _ => {
-                warn!("UnImpl FlowAnnFunc: {}", s);
+                warn!("UnImpl FlowAnnFunc: {s}",);
                 EnvAnnFunc::UnImpl
             }
         }

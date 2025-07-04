@@ -54,7 +54,7 @@ pub fn gal_git_path(input: &mut &str) -> Result<(String, String)> {
 pub fn gal_mix_item(input: &mut &str) -> Result<String> {
     alt((
         take_var_name,
-        take_var_ref_name.map(|x| format!("${{{}}}", x)),
+        take_var_ref_name.map(|x| format!("${{{x}}}")),
     ))
     .parse_next(input)
 }
@@ -169,7 +169,7 @@ pub fn gal_block_end(input: &mut &str) -> Result<()> {
 }
 
 pub fn gal_keyword(keyword: &'static str, input: &mut &str) -> Result<()> {
-    (multispace0, keyword, multispace0)
+    (multispace0, keyword)
         .context(wn_desc(keyword))
         .parse_next(input)?;
     Ok(())

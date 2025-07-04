@@ -18,7 +18,7 @@ impl GxCmdDto {
 }
 #[async_trait]
 impl AsyncRunnableTrait for GxCmd {
-    async fn async_exec(&self, ctx: ExecContext, vars_dict: VarSpace) -> VTResult {
+    async fn async_exec(&self, ctx: ExecContext, vars_dict: VarSpace) -> TaskResult {
         self.execute_impl(&self.dto.cmd, ctx, vars_dict)
     }
 }
@@ -39,10 +39,10 @@ impl GxCmd {
     pub fn dto_new(dto: GxCmdDto) -> Self {
         GxCmd { dto }
     }
-    fn execute_impl(&self, cmd: &String, mut ctx: ExecContext, vars_dict: VarSpace) -> VTResult {
+    fn execute_impl(&self, cmd: &String, mut ctx: ExecContext, vars_dict: VarSpace) -> TaskResult {
         ctx.append("gx.cmd");
         let mut action = Action::from("gx.cmd");
-        trace!(target:ctx.path(),"cmd:{}", cmd);
+        trace!(target:ctx.path(),"cmd:{cmd}", );
         let exp = EnvExpress::from_env_mix(vars_dict.global().clone());
         let exe_cmd = exp.eval(cmd)?;
 
@@ -65,7 +65,7 @@ impl GxCmd {
                 let err = String::from_utf8(stderr).map_err(|e| ExecReason::Io(e.to_string()))?;
                 action.stdout = out.clone();
                 if !action.stdout.is_empty() {
-                    action.stdout = format!("{}\n{}", out, err);
+                    action.stdout = format!("{out}\n{err}",);
                 } else {
                     action.stdout = err;
                 }

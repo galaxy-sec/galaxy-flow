@@ -39,22 +39,22 @@ impl From<ValueDict> for VarDict {
             match var_def {
                 ValueType::String(v) => {
                     let str_k = k.clone();
-                    let str_v = v.value().to_string();
+                    let str_v = v.clone();
                     dict.set(str_k, str_v);
                 }
                 ValueType::Bool(v) => {
                     let str_k = k.clone();
-                    let str_v = v.value().to_string();
+                    let str_v = v.to_string();
                     dict.set(str_k, str_v);
                 }
                 ValueType::Int(v) => {
                     let str_k = k.clone();
-                    let str_v = v.value().to_string();
+                    let str_v = v.to_string();
                     dict.set(str_k, str_v);
                 }
                 ValueType::Float(v) => {
                     let str_k = k.clone();
-                    let str_v = v.value().to_string();
+                    let str_v = v.to_string();
                     dict.set(str_k, str_v);
                 }
             }
@@ -93,7 +93,7 @@ impl Display for VarDict {
         keys.sort(); // 对键进行排序
         for k in keys {
             if let Some(v) = self.maps.get(k) {
-                writeln!(f, "{:30}: {}", k, v)?;
+                writeln!(f, "{k:30}: {v}")?;
             }
         }
         Ok(())
@@ -172,7 +172,7 @@ impl Getter<&String, SecVar> for VarDict {
         if let Some(val) = self.maps.get(key) {
             val
         } else {
-            panic!("un get key {}", key);
+            panic!("un get key {key}",);
         }
     }
     fn get(&self, key: &String) -> Option<&SecVar> {
@@ -184,7 +184,7 @@ impl Getter<&str, SecVar> for VarDict {
         if let Some(val) = self.maps.get(key) {
             val
         } else {
-            panic!("un get key {}", key);
+            panic!("un get key {key}");
         }
     }
     fn get(&self, key: &str) -> Option<&SecVar> {

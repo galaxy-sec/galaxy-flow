@@ -44,7 +44,7 @@ where
     T: OptionConvTag,
 {
     fn no_less(self, name: &str) -> Result<T, E> {
-        self.ok_or(E::less(format!("{} less", name)))
+        self.ok_or(E::less(format!("{name} less")))
     }
 
     fn no_empty(self) -> Result<T, E> {

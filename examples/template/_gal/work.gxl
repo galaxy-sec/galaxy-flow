@@ -15,7 +15,7 @@ mod base_env {
       ROOT   = "./example";
     }
 }
-mod env : base_env {
+mod envs : base_env {
     #[usage(desp="default")]
     env default : cli ;
     env empty {}

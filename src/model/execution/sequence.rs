@@ -1,4 +1,4 @@
-use std::collections::VecDeque;
+use std::collections::{HashMap, VecDeque};
 use std::sync::Arc;
 
 use async_trait::async_trait;
@@ -7,12 +7,13 @@ use orion_error::UvsSysFrom;
 
 use crate::ability::prelude::TaskValue;
 use crate::annotation::{Dryrunable, Transaction};
+use crate::components::GxlProps;
 use crate::context::ExecContext;
 use crate::execution::hold::AsyncComHold;
 use crate::execution::hold::{ComHold, IsolationHold};
 use crate::execution::job::Job;
 use crate::execution::runnable::ComponentMeta;
-use crate::execution::runnable::{AsyncRunnableTrait, ExecOut, VTResult};
+use crate::execution::runnable::{AsyncRunnableTrait, ExecOut, TaskResult};
 use crate::execution::task::Task;
 use crate::execution::VarSpace;
 use crate::meta::GxlMeta;
@@ -23,12 +24,18 @@ use super::hold::TransableHold;
 #[derive(Clone, Getters)]
 pub struct Sequence {
     name: String,
+    mods_entry: HashMap<String, bool>,
+    mods_exits: HashMap<String, bool>,
+    mods_head: HashMap<String, bool>,
     run_items: Vec<ComHold>,
 }
 
 impl From<&str> for Sequence {
     fn from(name: &str) -> Self {
         Self {
+            mods_entry: HashMap::new(),
+            mods_exits: HashMap::new(),
+            mods_head: HashMap::new(),
             name: name.to_string(),
             run_items: Vec::new(),
         }
@@ -36,15 +43,15 @@ impl From<&str> for Sequence {
 }
 
 impl Sequence {
-    pub async fn execute(&self, ctx: ExecContext, def: VarSpace) -> VTResult {
+    pub async fn execute(&self, ctx: ExecContext, def: VarSpace) -> TaskResult {
         self.execute_sequence(ctx, def).await
     }
 
-    pub async fn test_execute(&self, ctx: ExecContext, def: VarSpace) -> VTResult {
+    pub async fn test_execute(&self, ctx: ExecContext, def: VarSpace) -> TaskResult {
         self.execute_sequence(ctx, def).await
     }
 
-    async fn execute_sequence(&self, ctx: ExecContext, mut def: VarSpace) -> VTResult {
+    async fn execute_sequence(&self, ctx: ExecContext, mut def: VarSpace) -> TaskResult {
         let mut job = Job::from(&self.name);
         let mut undo_stack = VecDeque::new();
         warn!(target: ctx.path(), "sequence size: {}  dryrun: {}", self.run_items().len(), ctx.dryrun());
@@ -57,31 +64,36 @@ impl Sequence {
                 warn!(target: ctx.path(), "transaction begin")
             }
             if transaction_begin {
-                if let Some(undo) = item.undo_hold() {
+                for undo in item.undo_hold() {
                     info!(target: ctx.path(), "regist undo {}", undo.com_meta().name());
                     undo_stack.push_back((undo, def.clone()));
                 }
             }
-            let result = if *ctx.dryrun() {
-                if let Some(dryrun) = item.dryrun_hold() {
-                    warn!(target: ctx.path(), "execute dryrun flow");
-                    dryrun.async_exec(ctx.clone(), def.clone()).await
+            let mut sub_queue = VecDeque::new();
+
+            if *ctx.dryrun() {
+                if item.dryrun_hold().is_empty() {
+                    sub_queue.push_back(item.clone());
                 } else {
-                    item.async_exec(ctx.clone(), def.clone()).await
+                    for dryrun in item.dryrun_hold() {
+                        sub_queue.push_back(ComHold::from(AsyncComHold::from(dryrun)));
+                    }
                 }
             } else {
-                item.async_exec(ctx.clone(), def.clone()).await
+                sub_queue.push_back(item.clone());
             };
-            match result {
-                Ok(TaskValue { vars, rec, .. }) => {
-                    def = vars;
-                    job.append(rec);
-                }
-                Err(e) => {
-                    warn!("Sequence aborted at step {}: {}", index, e);
-                    warn!("will execute undo :{}", undo_stack.len());
-                    self.undo_transactions(ctx.clone(), undo_stack).await;
-                    return Err(e);
+            while let Some(item) = sub_queue.pop_back() {
+                match item.async_exec(ctx.clone(), def.clone()).await {
+                    Ok(TaskValue { vars, rec, .. }) => {
+                        def = vars;
+                        job.append(rec);
+                    }
+                    Err(e) => {
+                        warn!("Sequence aborted at step {index}: {e}");
+                        warn!("will execute undo :{}", undo_stack.len());
+                        self.undo_transactions(ctx.clone(), undo_stack).await;
+                        return Err(e);
+                    }
                 }
             }
         }
@@ -101,6 +113,29 @@ impl Sequence {
             }
         }
     }
+    pub fn append_mod_entry(&mut self, flow: TransableHold) {
+        debug_assert!(flow.assembled());
+        if !self.mods_entry().contains_key(flow.com_meta().name()) {
+            self.mods_entry
+                .insert(flow.com_meta().name().to_string(), true);
+            self.run_items.push(AsyncComHold::from(flow).into());
+        }
+    }
+    pub fn append_mod_exit(&mut self, flow: TransableHold) {
+        debug_assert!(flow.assembled());
+        if !self.mods_exits().contains_key(flow.com_meta().name()) {
+            self.mods_exits.insert(flow.com_meta().name().into(), true);
+            self.run_items.push(AsyncComHold::from(flow).into());
+        }
+    }
+
+    pub fn append_mod_head(&mut self, props: GxlProps) {
+        if !self.mods_head().contains_key(props.meta().name()) {
+            debug!(target: "assemble", "append mod {}", props.meta().name() );
+            self.mods_head.insert(props.meta().name().clone(), true);
+            self.run_items.push(AsyncComHold::from(props).into());
+        }
+    }
 }
 
 impl AppendAble<AsyncComHold> for Sequence {
@@ -115,11 +150,11 @@ impl AppendAble<IsolationHold> for Sequence {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct RunStub {
     name: String,
     trans_begin: bool,
-    undo_item: Option<TransableHold>,
+    undo_item: Vec<TransableHold>,
     should_fail: bool,
     effect: Option<Arc<dyn Fn() + Send + Sync>>,
 }
@@ -128,13 +163,15 @@ impl RunStub {
     pub fn new<S: Into<String>>(name: S) -> Self {
         Self {
             name: name.into(),
-            trans_begin: false,
-            undo_item: None,
-            should_fail: false,
-            effect: None,
+            ..Default::default()
         }
     }
-    pub fn with_transaction(mut self, trans_begin: bool, undo: Option<TransableHold>) -> Self {
+    pub fn with_transaction(mut self, trans_begin: bool, undo: TransableHold) -> Self {
+        self.trans_begin = trans_begin;
+        self.undo_item = vec![undo];
+        self
+    }
+    pub fn with_transactions(mut self, trans_begin: bool, undo: Vec<TransableHold>) -> Self {
         self.trans_begin = trans_begin;
         self.undo_item = undo;
         self
@@ -160,7 +197,7 @@ impl Transaction for RunStub {
         self.trans_begin
     }
 
-    fn undo_hold(&self) -> Option<TransableHold> {
+    fn undo_hold(&self) -> Vec<TransableHold> {
         self.undo_item.clone()
     }
 }
@@ -173,7 +210,7 @@ impl ComponentMeta for RunStub {
 
 #[async_trait]
 impl AsyncRunnableTrait for RunStub {
-    async fn async_exec(&self, ctx: ExecContext, def: VarSpace) -> VTResult {
+    async fn async_exec(&self, ctx: ExecContext, def: VarSpace) -> TaskResult {
         // 先执行可能的副作用
         if let Some(effect) = &self.effect {
             effect();
@@ -242,11 +279,10 @@ mod tests {
         });
 
         // 配置事务
-        let step1 = stub_node("step1")
-            .with_transaction(true, Some(TransableHold::from(Arc::new(step1_undo))));
+        let step1 = stub_node("step1").with_transaction(true, TransableHold::from(step1_undo));
 
         let step2 = stub_node("step2")
-            .with_transaction(false, Some(TransableHold::from(Arc::new(step2_undo))))
+            .with_transaction(false, TransableHold::from(step2_undo))
             .with_should_fail(true); // 使第二步失败
 
         flow.append(AsyncComHold::from(step1));

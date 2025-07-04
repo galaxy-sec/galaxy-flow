@@ -34,7 +34,7 @@ pub fn gal_version(input: &mut &str) -> Result<RgVersion> {
             continue;
         }
         if key == "inc" {
-            debug!("version inc :{}", val);
+            debug!("version inc :{val}",);
             if val == "build" {
                 builder.verinc(VerInc::Build);
             }

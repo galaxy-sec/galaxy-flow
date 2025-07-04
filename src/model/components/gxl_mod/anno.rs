@@ -14,7 +14,7 @@ impl From<&str> for ModAnnFunc {
         match s {
             "gflow" => ModAnnFunc::GFlow,
             _ => {
-                warn!("UnImpl ModAnnFunc: {}", s);
+                warn!("UnImpl ModAnnFunc: {s}",);
                 ModAnnFunc::UnImpl
             }
         }

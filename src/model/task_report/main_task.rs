@@ -30,12 +30,12 @@ pub async fn create_main_task(task_name: String) {
     let mut now = String::new();
     match format {
         Ok(fmt) => now = datetime.format(&fmt).unwrap_or_default(),
-        Err(e) => info!("create main task time format error: {}", e),
+        Err(e) => info!("create main task time format error: {e}"),
     }
     let parent_id = datetime.unix_timestamp();
     let main_task = MainTask {
         id: parent_id,
-        maintask_name: format!("{} {}", task_name, now),
+        maintask_name: format!("{task_name} {now}",),
         worker_name: String::new(),
         description: Some(task_name.clone()),
         task_type: task_name,

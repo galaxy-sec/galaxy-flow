@@ -19,7 +19,7 @@ pub fn rg_sh(
     //let ee = EnvExpress::from_env();
     if !opt.secrecy {
         let lev = opt.log_lev.unwrap_or(log::Level::Debug);
-        log!(target: target, lev, "cmd : {}", sec_cmd);
+        log!(target: target, lev, "cmd : {sec_cmd}", );
         if !opt.quiet(scope) {
             show_cmd(&sec_cmd);
         }
@@ -45,7 +45,7 @@ pub fn rg_sh(
                     .map_err(|_| ExecReason::OsCmd(sec_cmd.clone(), code, err_desp.to_string()))?;
                 if code == 0 {
                     if let Some(ref suc_msg) = opt.suc {
-                        println!("{}", suc_msg);
+                        println!("{suc_msg}");
                     }
                     is_ok = true;
                 } else {
@@ -59,16 +59,16 @@ pub fn rg_sh(
                 let log_level = opt.log_lev.unwrap_or(log::Level::Debug);
                 if !opt.quiet(scope) {
                     if !out_msg.is_empty() {
-                        println!("{}", out_msg);
-                        log!(target: target, log_level, "out:\n{}", out_msg);
+                        println!("{out_msg}");
+                        log!(target: target, log_level, "out:\n{out_msg}", );
                     }
                     if !err_msg.is_empty() {
                         if is_ok {
                             println!("{}", err_msg.yellow());
-                            log!(target: target, log_level, "out:\n{}", err_msg);
+                            log!(target: target, log_level, "out:\n{err_msg}", );
                         } else {
                             println!("{}", err_msg.clone().red());
-                            log!(target: target, log_level, "err:\n{}", err_msg);
+                            log!(target: target, log_level, "err:\n{err_msg}", );
                         }
                     }
                 }
@@ -92,11 +92,11 @@ fn show_cmd(sec_cmd: &String) {
             let cmd_name = cmd_first.file_name().and_then(|x| x.to_str());
             if let Some(name) = cmd_name {
                 let simple_cmd = Vec::from(cmd_elements).join(" ");
-                println!(".../{} {}", name, simple_cmd);
+                println!(".../{name} {simple_cmd}",);
                 return;
             }
         }
-        println!("{}", sec_cmd);
+        println!("{sec_cmd}",);
     }
 }
 

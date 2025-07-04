@@ -11,7 +11,7 @@ pub trait ConfigLifecycle {
             match Self::load(path) {
                 Ok(conf) => Some(conf),
                 Err(e) => {
-                    warn!("load conf error: {}", e);
+                    warn!("load conf error: {e}");
                     None
                 }
             }

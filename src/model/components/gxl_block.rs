@@ -19,13 +19,13 @@ use crate::ability::GxUpLoad;
 use crate::ability::RgVersion;
 use crate::calculate::cond::CondExec;
 use crate::context::ExecContext;
-use crate::execution::runnable::VTResult;
+use crate::execution::runnable::TaskResult;
 use crate::execution::task::Task;
 use crate::task_report::task_rc_config::report_enable;
 
 use super::gxl_cond::GxlCond;
 use super::gxl_spc::GxlSpace;
-use super::gxl_var::GxlProp;
+use super::gxl_var::GxlVar;
 use std::io::Read;
 
 #[derive(Clone, Debug)]
@@ -47,7 +47,7 @@ pub enum BlockAction {
 
 #[derive(Clone, Getters, Default, Debug)]
 pub struct BlockNode {
-    props: Vec<GxlProp>,
+    props: Vec<GxlVar>,
     items: Vec<BlockAction>,
 }
 
@@ -62,13 +62,13 @@ impl BlockNode {
 
 #[async_trait]
 impl CondExec for BlockNode {
-    async fn cond_exec(&self, ctx: ExecContext, def: VarSpace) -> VTResult {
+    async fn cond_exec(&self, ctx: ExecContext, def: VarSpace) -> TaskResult {
         self.async_exec(ctx, def).await
     }
 }
 #[async_trait]
 impl AsyncRunnableTrait for BlockAction {
-    async fn async_exec(&self, ctx: ExecContext, dct: VarSpace) -> VTResult {
+    async fn async_exec(&self, ctx: ExecContext, dct: VarSpace) -> TaskResult {
         let (result, output) = match self {
             BlockAction::GxlRun(o) => (o.async_exec(ctx, dct).await, String::new()),
             _ => {
@@ -100,7 +100,7 @@ impl AsyncRunnableTrait for BlockAction {
 
 impl BlockAction {
     /// 执行具体动作
-    async fn execute_action(&self, ctx: ExecContext, dct: VarSpace) -> VTResult {
+    async fn execute_action(&self, ctx: ExecContext, dct: VarSpace) -> TaskResult {
         match self {
             BlockAction::Command(o) => o.async_exec(ctx, dct).await,
             BlockAction::Echo(o) => o.async_exec(ctx, dct).await,
@@ -121,7 +121,7 @@ impl BlockAction {
 
 #[async_trait]
 impl AsyncRunnableTrait for BlockNode {
-    async fn async_exec(&self, ctx: ExecContext, var_dict: VarSpace) -> VTResult {
+    async fn async_exec(&self, ctx: ExecContext, var_dict: VarSpace) -> TaskResult {
         //ctx.append("block");
         let mut task = Task::from("block");
         let mut cur_var_dict = var_dict;
@@ -168,13 +168,13 @@ impl DependTrait<&GxlSpace> for BlockNode {
     }
 }
 impl PropsTrait for BlockNode {
-    fn fetch_props(&self) -> &Vec<GxlProp> {
+    fn fetch_props(&self) -> &Vec<GxlVar> {
         &self.props
     }
 }
 
-impl AppendAble<GxlProp> for BlockNode {
-    fn append(&mut self, prop: GxlProp) {
+impl AppendAble<GxlVar> for BlockNode {
+    fn append(&mut self, prop: GxlVar) {
         self.props.push(prop);
     }
 }
@@ -202,7 +202,7 @@ mod tests {
     #[test]
     fn test_append() {
         let mut block = BlockNode::new();
-        let prop = GxlProp::new("test", "hello");
+        let prop = GxlVar::new("test", "hello");
         block.append(prop);
         assert_eq!(block.props.len(), 1);
     }
@@ -210,7 +210,7 @@ mod tests {
     #[tokio::test]
     async fn test_exec() {
         let mut block = BlockNode::new();
-        let prop = GxlProp::new("test", "hello");
+        let prop = GxlVar::new("test", "hello");
         block.append(prop);
         let ctx = ExecContext::new(Some(false), false);
         let def = VarSpace::default();

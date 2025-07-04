@@ -28,7 +28,7 @@ impl From<&str> for FlowAnnFunc {
             "transaction" => FlowAnnFunc::Transaction,
             "undo" => FlowAnnFunc::Undo,
             _ => {
-                warn!("UnImpl FlowAnnFunc: {}", s);
+                warn!("UnImpl FlowAnnFunc: {s}",);
                 FlowAnnFunc::UnImpl
             }
         }

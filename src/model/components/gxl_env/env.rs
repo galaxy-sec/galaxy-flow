@@ -1,7 +1,7 @@
-use crate::ability::prelude::{GxlProp, TaskValue};
+use crate::ability::prelude::{GxlVar, TaskValue};
 use crate::components::gxl_spc::GxlSpace;
 use crate::components::gxl_utls::mod_obj_name;
-use crate::components::GxlVars;
+use crate::components::GxlProps;
 use crate::data::{AnnDto, FunDto};
 use crate::model::components::prelude::*;
 
@@ -19,12 +19,13 @@ use super::meta::EnvMeta;
 #[derive(Clone, Getters, Debug, Default)]
 pub struct GxlEnv {
     meta: EnvMeta,
-    props: Vec<GxlProp>,
+    props: Vec<GxlVar>,
     items: Vec<EnvItem>,
+    assembled: bool,
 }
 #[derive(Clone, Debug)]
 pub enum EnvItem {
-    Var(GxlVars),
+    Var(GxlProps),
     Read(GxRead),
     //Vault(GxVault),
 }
@@ -37,21 +38,21 @@ impl GxlEnv {
             return Ok(link_env);
         }
         Err(AssembleError::from(AssembleReason::Miss(format!(
-            "mod : {} env {} : by {} , {} ",
-            mod_name, cur_mix, t_mod, env_name
+            "{mod_name}:{cur_mix}  by {t_mod},{env_name} ",
         ))))
     }
     fn assemble_impl(&self, mod_name: &str, src: &GxlSpace) -> AResult<Self> {
+        debug!(target : "assemble", "will assemble env {}" , self.meta().name() );
         let mut buffer = Vec::new();
         let mut mix_list = VecDeque::from(self.meta.mix().clone());
 
         let mut linked = false;
-        let target = if let Some(top) = mix_list.pop_front() {
+        let mut target = if let Some(top) = mix_list.pop_front() {
             let mut base = Self::get_env(mod_name, top.as_str(), src)?;
             for mix in mix_list {
                 let link_env = Self::get_env(mod_name, mix.as_str(), src)?;
                 base.merge(&link_env);
-                let _ = write!(&mut buffer, "{} | ", mix);
+                let _ = write!(&mut buffer, "{mix} | ");
                 linked = true;
             }
             base.merge(self);
@@ -69,6 +70,8 @@ impl GxlEnv {
                 String::from_utf8(buffer).unwrap()
             );
         }
+        target.assembled = true;
+        debug!(target : "assemble", "assemble env {} end!" , target.meta().name() );
         Ok(target)
     }
 }
@@ -83,8 +86,7 @@ impl From<&str> for GxlEnv {
     fn from(name: &str) -> Self {
         Self {
             meta: EnvMeta::build_env(name.to_string()),
-            props: Vec::new(),
-            items: Vec::new(),
+            ..Default::default()
         }
     }
 }
@@ -101,8 +103,7 @@ impl From<String> for GxlEnv {
     fn from(name: String) -> Self {
         Self {
             meta: EnvMeta::build_env(name),
-            props: Vec::new(),
-            items: Vec::new(),
+            ..Default::default()
         }
     }
 }
@@ -113,8 +114,7 @@ impl From<(String, Vec<String>)> for GxlEnv {
         meta.set_mix(value.1);
         Self {
             meta,
-            props: Vec::new(),
-            items: Vec::new(),
+            ..Default::default()
         }
     }
 }
@@ -150,7 +150,7 @@ impl GxlEnv {
 
 #[async_trait]
 impl AsyncRunnableTrait for GxlEnv {
-    async fn async_exec(&self, mut ctx: ExecContext, mut def: VarSpace) -> VTResult {
+    async fn async_exec(&self, mut ctx: ExecContext, mut def: VarSpace) -> TaskResult {
         let env_name = self.meta.name();
         ctx.append(env_name);
 
@@ -165,7 +165,7 @@ impl AsyncRunnableTrait for GxlEnv {
 }
 #[async_trait]
 impl AsyncRunnableTrait for EnvItem {
-    async fn async_exec(&self, ctx: ExecContext, dict: VarSpace) -> VTResult {
+    async fn async_exec(&self, ctx: ExecContext, dict: VarSpace) -> TaskResult {
         match self {
             EnvItem::Var(o) => o.async_exec(ctx, dict).await,
             EnvItem::Read(o) => o.async_exec(ctx, dict).await,
@@ -180,25 +180,25 @@ impl ComponentMeta for GxlEnv {
 }
 
 impl PropsTrait for GxlEnv {
-    fn fetch_props(&self) -> &Vec<GxlProp> {
+    fn fetch_props(&self) -> &Vec<GxlVar> {
         &self.props
     }
 }
 
 pub type GxlEnvHold = Arc<GxlEnv>;
-impl AppendAble<GxlProp> for GxlEnv {
-    fn append(&mut self, prop: GxlProp) {
+impl AppendAble<GxlVar> for GxlEnv {
+    fn append(&mut self, prop: GxlVar) {
         self.props.push(prop);
     }
 }
-impl AppendAble<Vec<GxlProp>> for GxlEnv {
-    fn append(&mut self, mut props: Vec<GxlProp>) {
+impl AppendAble<Vec<GxlVar>> for GxlEnv {
+    fn append(&mut self, mut props: Vec<GxlVar>) {
         self.props.append(&mut props)
     }
 }
 
-impl AppendAble<GxlVars> for GxlEnv {
-    fn append(&mut self, vars: GxlVars) {
+impl AppendAble<GxlProps> for GxlEnv {
+    fn append(&mut self, vars: GxlProps) {
         self.items.push(EnvItem::Var(vars))
     }
 }
@@ -216,7 +216,7 @@ mod tests {
     use orion_error::TestAssert;
 
     use crate::{
-        components::{code_spc::CodeSpace, gxl_spc::GxlSpace, gxl_var::GxlProp, GxlEnv},
+        components::{code_spc::CodeSpace, gxl_spc::GxlSpace, gxl_var::GxlVar, GxlEnv},
         infra::once_init_log,
         model::components::GxlMod,
         traits::{DependTrait, PropsTrait},
@@ -227,18 +227,18 @@ mod tests {
     fn test_assemble_com() -> AnyResult<()> {
         // Create a base RgEnv instance
         let mut base_env = GxlEnv::from("base_env");
-        base_env.append(GxlProp::new("base_prop1", "p1"));
-        base_env.append(GxlProp::new("base_prop2", "p2"));
+        base_env.append(GxlVar::new("base_prop1", "p1"));
+        base_env.append(GxlVar::new("base_prop2", "p2"));
 
         // Create a source RgMod with an RgEnv to be merged
         let mut src_mod = GxlMod::from("src_mod");
         let mut src_env = GxlEnv::from("src_env");
-        src_env.append(GxlProp::new("src_prop1", "s1"));
-        src_env.append(GxlProp::new("src_prop2", "s2"));
+        src_env.append(GxlVar::new("src_prop1", "s1"));
+        src_env.append(GxlVar::new("src_prop2", "s2"));
         src_mod.append(src_env);
         let mut raw_spc = CodeSpace::default();
         raw_spc.append(src_mod);
-        let work_spc = raw_spc.assemble_mix().assert();
+        let work_spc = raw_spc.assemble().assert();
 
         // Add the source environment to the base environment's mix
         base_env.meta_mut().set_mix(vec!["src_env".to_string()]);
@@ -261,19 +261,19 @@ mod tests {
         once_init_log();
         // Create a base RgEnv instance
         let mut base_env = GxlEnv::from("base_env");
-        base_env.append(GxlProp::new("base_prop1", "p1"));
+        base_env.append(GxlVar::new("base_prop1", "p1"));
 
         // Create a source RgMod with multiple RgEnv instances to be merged
         let mut src_mod = GxlMod::from("src_mod");
 
         // Add first source environment
         let mut src_env1 = GxlEnv::from("src_env1");
-        src_env1.append(GxlProp::new("src_prop1", "s1"));
+        src_env1.append(GxlVar::new("src_prop1", "s1"));
         src_mod.append(src_env1);
 
         // Add second source environment
         let mut src_env2 = GxlEnv::from("src_env2");
-        src_env2.append(GxlProp::new("src_prop2", "s2"));
+        src_env2.append(GxlVar::new("src_prop2", "s2"));
         src_mod.append(src_env2);
 
         // Add both source environments to the base environment's mix
@@ -283,7 +283,7 @@ mod tests {
 
         let mut spc = CodeSpace::default();
         spc.append(src_mod);
-        let w_spc = spc.assemble_mix().assert();
+        let w_spc = spc.assemble().assert();
         // Assemble the base environment with the source module
         let assembled_env = base_env.assemble("src_mod", &w_spc)?;
 
@@ -300,12 +300,12 @@ mod tests {
     fn test_assemble_com_with_no_mix() -> AnyResult<()> {
         // Create a base RgEnv instance
         let mut base_env = GxlEnv::from("base_env");
-        base_env.append(GxlProp::new("base_prop1", "p1"));
+        base_env.append(GxlVar::new("base_prop1", "p1"));
 
         // Create a source RgMod with an RgEnv, but do not add it to the mix
         let mut src_mod = GxlMod::from("src_mod");
         let mut src_env = GxlEnv::from("src_env");
-        src_env.append(GxlProp::new("src_prop1", "s1"));
+        src_env.append(GxlVar::new("src_prop1", "s1"));
         src_mod.append(src_env);
 
         let mut spc = GxlSpace::default();

@@ -24,7 +24,7 @@ pub async fn send_http_request<T: Serialize + Debug>(payload: T, url: &String) {
         .await
         .map_err(|e| {
             // Convert reqwest::Error to your ExecReason type, then into StructError
-            let exec_reason = ExecReason::NetWork(format!("HTTP request failed: {}", e));
+            let exec_reason = ExecReason::NetWork(format!("HTTP request failed: {e}"));
             StructError::<ExecReason>::from(exec_reason)
         });
 
@@ -41,12 +41,9 @@ pub async fn send_http_request<T: Serialize + Debug>(payload: T, url: &String) {
                 let text = resp.text().await.unwrap_or_default();
                 println!(
                     "{}",
-                    format!(
-                        "HTTP request to {} failed with status {}: {}",
-                        url, status, text
-                    )
-                    .yellow()
-                    .bold()
+                    format!("HTTP request to {url} failed with status {status}: {text}",)
+                        .yellow()
+                        .bold()
                 );
                 set_report_enable(false).await; // Disable reporting if the request fails
             }
@@ -54,7 +51,7 @@ pub async fn send_http_request<T: Serialize + Debug>(payload: T, url: &String) {
         Err(e) => {
             println!(
                 "{}",
-                format!("HTTP request to {} failed: {}", url, e)
+                format!("HTTP request to {url} failed: {e}",)
                     .yellow()
                     .bold()
             );

@@ -7,7 +7,7 @@ use crate::{
     components::{
         gxl_env::env::anns_from_option_dto,
         gxl_mod::{meta::ModMeta, ModItem},
-        gxl_var::GxlProp,
+        gxl_var::GxlVar,
         GxlMod,
     },
     meta::GxlType,
@@ -61,7 +61,7 @@ pub fn gal_stc_mod(input: &mut &str) -> Result<GxlMod> {
     meta.set_mix(head.mix().clone());
     let mut obj = GxlMod::from(meta);
     gal_block_beg.parse_next(input)?;
-    let props: Vec<GxlProp> = repeat(0.., gal_prop).parse_next(input)?;
+    let props: Vec<GxlVar> = repeat(0.., gal_prop).parse_next(input)?;
     obj.append(props);
     loop {
         skip_spaces_block.parse_next(input)?;
@@ -104,7 +104,7 @@ mod main{
 "#;
         let rgmod = run_gxl(gal_stc_mod, &mut data).assert();
         assert_eq!(data, "\n");
-        assert_eq!(rgmod.props().len(), 2);
+        assert_eq!(rgmod.props().items().len(), 2);
     }
 
     #[test]
@@ -124,7 +124,7 @@ mod main : mod_a {
 "#;
         let rgmod = run_gxl(gal_stc_mod, &mut data).assert();
         assert_eq!(data, "\n");
-        assert_eq!(rgmod.props().len(), 2);
+        assert_eq!(rgmod.props().items().len(), 2);
     }
 
     #[test]

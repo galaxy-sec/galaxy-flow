@@ -15,7 +15,7 @@ mod base_env {
       ROOT   = "./example";
     }
 }
-mod env : base_env {
+mod envs : base_env {
     #[usage(desp="default")]
     env default : cli ;
     env empty {}
@@ -47,9 +47,11 @@ mod main   {
   conf = "${ENV_ROOT}/conf" ;
 
   #[auto_load(entry)]
-  flow __into : other.def ;
+  flow __into  | other.def  {
+    other_val = "OTHER_DE1";
+  }
   #[auto_load(exit)]
-  flow __exit : other.def2 ;
+  flow __exit | other.def2 ;
   #[usage(desp="main")]
   flow assert_main {
     one= "one";
@@ -57,7 +59,7 @@ mod main   {
     gx.assert ( value : "${OTHER_VAL}" , expect : "OTHER_DEF" );
   }
 
-  flow assert_parent : base.define {
+  flow base.define | @assert_parent   {
     gx.assert ( value : "${MAIN_CONF}" , expect : "${ENV_ROOT}/conf" );
     gx.assert ( value : "${BASE_MOD_VAL}" , expect : "1" );
     gx.assert ( value : "${OTHER_VAL}" , expect : "OTHER_DEF" );

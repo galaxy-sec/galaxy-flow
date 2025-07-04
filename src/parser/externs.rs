@@ -122,8 +122,8 @@ impl ExternParser {
                 let git_url = exp.eval(git_addr.remote())?;
                 let cl_git_url = git_url.clone();
                 let (_, repo_name) = gal_git_path(&mut git_url.as_str()).owe_rule()?;
-                debug!("git url: {}", cl_git_url);
-                debug!("git repo : {}", repo_name);
+                debug!("git url: {cl_git_url}");
+                debug!("git repo : {repo_name}",);
                 git_builder.url(cl_git_url);
                 git_builder.repo(repo_name);
                 git_builder.tag(git_addr.channel().into());
@@ -220,7 +220,7 @@ mod tests {
             .assert();
         let mut expect = read_to_string("./_gal/tests/_all.gxl").assert();
         expect = expect.replace("@PATH", "./_gal/mods");
-        println!("{}", codes);
+        println!("{codes}",);
         assert_eq!(codes, expect);
     }
 }

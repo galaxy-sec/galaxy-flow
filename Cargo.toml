@@ -3,7 +3,7 @@
 authors = ["wukong<sec-wukong@outlook.com>"]
 edition = "2021"
 name = "galaxy_flow"
-version = "0.7.0"
+version = "0.7.1"
 
 
 [[bin]]
@@ -33,7 +33,7 @@ winnow = "0.7.11"
 orion-error = "~0.3"
 #orion-error = { path = "../orion-error" }
 #orion-syspec = { path = "../orion-syspec" }
-orion-syspec = { git = "https://github.com/galaxy-sec/orion-syspec.git", tag = "v0.7.4" }
+orion-syspec = { git = "https://github.com/galaxy-sec/orion-syspec.git", tag = "v0.8.0" }
 tokio = { version = "1.45", features = ["full"] }
 derive_more = { version = "2.0", features = ["full"] }
 async-trait = "0.1"
@@ -83,6 +83,7 @@ reqwest = { version = "0.12.11", features = ["json"] }
 time = { version = "0.3.41", features = ["formatting", "local-offset"] }
 serde_yaml = "0.9"
 gag = "1.0.0"
+contracts = "0.6"
 
 [features]
 res_depend_test = []

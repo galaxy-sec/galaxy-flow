@@ -30,7 +30,7 @@ pub struct GxDownLoad {
 
 #[async_trait]
 impl AsyncRunnableTrait for GxUpLoad {
-    async fn async_exec(&self, _ctx: ExecContext, vars_dict: VarSpace) -> VTResult {
+    async fn async_exec(&self, _ctx: ExecContext, vars_dict: VarSpace) -> TaskResult {
         let ex = EnvExpress::from_env_mix(vars_dict.global().clone());
         let mut addr = HttpAddr::from(ex.eval(self.svc_url())?);
         if let (Some(username), Some(password)) = (self.username(), self.password()) {
@@ -63,7 +63,7 @@ impl ComponentMeta for GxUpLoad {
 
 #[async_trait]
 impl AsyncRunnableTrait for GxDownLoad {
-    async fn async_exec(&self, _ctx: ExecContext, vars_dict: VarSpace) -> VTResult {
+    async fn async_exec(&self, _ctx: ExecContext, vars_dict: VarSpace) -> TaskResult {
         let ex = EnvExpress::from_env_mix(vars_dict.global().clone());
         let mut addr = HttpAddr::from(ex.eval(self.svc_url())?);
         if let (Some(username), Some(password)) = (self.username(), self.password()) {

@@ -1,18 +1,17 @@
 use crate::ability::delegate::Activity;
-use crate::ability::prelude::GxlProp;
+use crate::ability::prelude::GxlVar;
 use crate::ability::prelude::TaskValue;
-use crate::components::gxl_flow::runner::FlowRunner;
 use crate::components::gxl_spc::GxlSpace;
 use crate::components::GxlEnv;
 use crate::components::GxlFlow;
+use crate::components::GxlProps;
+use crate::execution::hold::TransableHold;
 use crate::model::components::prelude::*;
 
-use crate::annotation::is_auto_func;
-
-use crate::execution::job::Job;
 use crate::execution::runnable::ComponentMeta;
 use crate::menu::*;
 use crate::meta::*;
+use contracts::requires;
 use derive_getters::Getters;
 
 use std::collections::HashMap;
@@ -31,12 +30,15 @@ pub enum ModItem {
 #[derive(Clone, Getters, Default)]
 pub struct GxlMod {
     meta: ModMeta,
-    props: Vec<GxlProp>,
+    props: GxlProps,
     env_names: Vec<MenuItem>,
     flow_names: Vec<MenuItem>,
     envs: HashMap<String, GxlEnv>,
     flows: HashMap<String, GxlFlow>,
+    entrys: Vec<TransableHold>,
+    exits: Vec<TransableHold>,
     acts: HashMap<String, Activity>,
+    assembled: bool,
 }
 
 pub fn merge_mod(mut mixs: Vec<GxlMod>) -> Option<GxlMod> {
@@ -55,22 +57,44 @@ pub fn merge_mod(mut mixs: Vec<GxlMod>) -> Option<GxlMod> {
 }
 impl DependTrait<&GxlSpace> for GxlMod {
     fn assemble(self, _mod_name: &str, src: &GxlSpace) -> AResult<Self> {
+        debug!(target : "assemble", "will assemble mod {}" , self.meta().name() );
         let mod_name = &self.meta.name();
         let mut ins = GxlMod::from(self.meta().clone());
 
-        for p in self.props().iter() {
-            let x = p.clone();
-            ins.props.push(x);
-        }
+        ins.props = self.props().clone();
 
         for (k, env) in self.envs {
-            ins.envs.insert(k.clone(), env.assemble(mod_name, src)?);
+            let ass_env = env.assemble(mod_name, src)?;
+            debug_assert!(ass_env.assembled());
+            ins.envs.insert(k.clone(), ass_env);
         }
         for (k, flow) in self.flows {
-            ins.flows.insert(k.clone(), flow.assemble(mod_name, src)?);
+            let ass_flow = flow.assemble(mod_name, src)?;
+            debug_assert!(ass_flow.assembled());
+            if ass_flow.is_auto_entry() {
+                for pre in ass_flow.pre_flows() {
+                    ins.entrys.push(pre.clone().assemble(mod_name, src)?);
+                }
+                ins.entrys.push(TransableHold::from(ass_flow.clone()));
+                for pre in ass_flow.post_flows() {
+                    ins.entrys.push(pre.clone().assemble(mod_name, src)?);
+                }
+            }
+            if ass_flow.is_auto_exit() {
+                for pre in ass_flow.pre_flows() {
+                    ins.exits.push(pre.clone().assemble(mod_name, src)?);
+                }
+                ins.exits.push(TransableHold::from(ass_flow.clone()));
+                for pre in ass_flow.post_flows() {
+                    ins.exits.push(pre.clone().assemble(mod_name, src)?);
+                }
+            }
+            ins.flows.insert(k.clone(), ass_flow);
         }
         for (k, act) in self.acts {
-            ins.acts.insert(k.clone(), act.assemble(mod_name, src)?);
+            let ass_act = act.assemble(mod_name, src)?;
+            debug_assert!(ass_act.assembled());
+            ins.acts.insert(k.clone(), ass_act);
         }
         for item in self.flow_names {
             ins.flow_names.push(item.clone());
@@ -78,19 +102,22 @@ impl DependTrait<&GxlSpace> for GxlMod {
         for item in self.env_names {
             ins.env_names.push(item.clone());
         }
+        ins.assembled = true;
+        debug!(target : "assemble", "assemble mod {} end!" , ins.meta().name() );
 
         Ok(ins)
     }
 }
 impl PropsTrait for GxlMod {
-    fn fetch_props(&self) -> &Vec<GxlProp> {
-        &self.props
+    fn fetch_props(&self) -> &Vec<GxlVar> {
+        self.props.items()
     }
 }
 
 impl From<ModMeta> for GxlMod {
     fn from(meta: ModMeta) -> Self {
         Self {
+            props: GxlProps::mod_new(meta.name()),
             meta,
             ..Default::default()
         }
@@ -105,49 +132,26 @@ impl From<&str> for GxlMod {
 }
 
 impl GxlMod {
-    pub fn load_scope_flow(&self, name: &str) -> Option<FlowRunner> {
+    pub fn load_scope_flow(&self, name: &str) -> Vec<TransableHold> {
+        let mut run_hold: Vec<TransableHold> = Vec::new();
         if let Some(flow) = self.flows.get(name) {
-            debug!(target : "assmeble","load scope flow {}", name);
-            let props = self.props().clone();
-            let befores = self.get_auto_func("entry");
-            let afters = self.get_auto_func("exit");
-            Some(FlowRunner::new(
-                self.of_name(),
-                props,
-                flow.clone(),
-                befores,
-                afters,
-            ))
-        } else {
-            None
+            //todo:....
+            run_hold.push(TransableHold::from(self.props().clone()));
+            run_hold.push(TransableHold::from(flow.clone()));
         }
+        run_hold
     }
 
     fn up_meta(&mut self, meta: ModMeta) {
         self.meta = meta;
-    }
-
-    fn get_auto_func(&self, auto_arg: &str) -> Vec<GxlFlow> {
-        let mut found = Vec::new();
-        for flow in self.flows().values() {
-            if flow
-                .meta()
-                .annotations()
-                .iter()
-                .any(|x| is_auto_func(x, auto_arg))
-            {
-                //sequ.append(make_stc_hold(flow.clone()));
-                found.push(flow.clone());
-            }
-        }
-        found
     }
 }
 
 impl MergeTrait for GxlMod {
     fn merge(&mut self, other: &Self) {
         // Merge props using the existing append method for Vec<RgProp>
-        self.props.extend(other.props.clone());
+        //self.props.extend(other.props.clone());
+        self.props.merge(&other.props);
 
         // Merge envs, overriding existing entries with the other's content
         for (name, env) in &other.envs {
@@ -173,62 +177,16 @@ impl MergeTrait for GxlMod {
     }
 }
 
-#[derive(Clone, Getters)]
-pub struct ModRunner {
-    meta: ModMeta,
-    async_items: Vec<AsyncComHold>,
-}
-impl AppendAble<AsyncComHold> for ModRunner {
-    fn append(&mut self, now: AsyncComHold) {
-        self.async_items.push(now)
-    }
-}
-#[async_trait]
-impl AsyncRunnableTrait for ModRunner {
-    async fn async_exec(&self, mut ctx: ExecContext, mut dct: VarSpace) -> VTResult {
-        ctx.append(self.meta().name());
-        let mut job = Job::default();
-        for i in &self.async_items {
-            let TaskValue { vars, rec, .. } = i.async_exec(ctx.clone(), dct).await?;
-            dct = vars;
-            job.append(rec);
-        }
-        Ok(TaskValue::from((dct, ExecOut::Job(job))))
-    }
-}
-
-impl From<ModMeta> for ModRunner {
-    fn from(value: ModMeta) -> Self {
-        Self {
-            meta: value,
-            async_items: Vec::new(),
-        }
-    }
-}
-impl ComponentMeta for ModRunner {
-    fn com_meta(&self) -> GxlMeta {
-        GxlMeta::Mod(self.meta.clone())
-    }
-}
-
 impl ExecLoadTrait for GxlMod {
-    // 加载环境变量
+    #[requires(!self.props().meta().name().is_empty())]
     fn load_env(&self, mut ctx: ExecContext, sequ: &mut Sequence, args: &str) -> ExecResult<()> {
         // 将当前模块的名称添加到上下文中
         ctx.append(self.meta.name().as_str());
-        //info!(target:ctx.path(),"load env:{}", obj_path);
+        debug!(target:ctx.path(),"will load env:{}", args);
         // 如果环境变量中存在指定的参数
         if let Some(found) = self.envs.get(args) {
             // 创建一个模块运行器
-            let mut mr = ModRunner::from(self.meta().clone());
-            // 将当前模块添加到模块运行器中
-            mr.append(AsyncComHold::from(self.clone()));
-            // 打印加载环境变量的信息
-            info!( target: ctx.path(),"load env [{}.{}] suc!", self.meta.name(), args);
-            // 将找到的环境变量添加到模块运行器中
-            mr.append(AsyncComHold::from(found.clone()));
-            // 将模块运行器添加到序列中
-            sequ.append(AsyncComHold::from(mr));
+            sequ.append(AsyncComHold::from(found.clone()));
             // 返回成功
             return Ok(());
         }
@@ -236,17 +194,30 @@ impl ExecLoadTrait for GxlMod {
         Err(ExecError::from(ExecReason::Miss(args.into())))
     }
 
-    fn load_flow(&self, mut ctx: ExecContext, sequ: &mut Sequence, args: &str) -> ExecResult<()> {
+    #[requires(self.assembled)]
+    fn load_flow(&self, mut ctx: ExecContext, sequ: &mut Sequence, name: &str) -> ExecResult<()> {
         ctx.append(self.meta.name().as_str());
-        if let Some(found) = self.load_scope_flow(args) {
-            let pre_flows = found.flow().pre_flows().clone();
-            let post_flows = found.flow().post_flows().clone();
+
+        if let Some(found) = self.flows.get(name) {
+            debug_assert!(found.assembled());
+            debug_assert!(self.assembled());
+            sequ.append_mod_head(self.props.clone());
+            for x in self.entrys.iter() {
+                debug_assert!(x.assembled());
+                sequ.append_mod_entry(x.clone());
+            }
+            let pre_flows = found.clone_pre_flows();
+            let post_flows = found.clone_post_flows();
             for flow in pre_flows.into_iter() {
                 sequ.append(AsyncComHold::from(flow));
             }
-            sequ.append(AsyncComHold::from(found));
+            sequ.append(AsyncComHold::from(found.clone()));
             for flow in post_flows.into_iter() {
                 sequ.append(AsyncComHold::from(flow));
+            }
+            for x in self.exits().iter() {
+                debug_assert!(x.assembled());
+                sequ.append_mod_exit(x.clone());
             }
         }
         Ok(())
@@ -266,7 +237,8 @@ impl ExecLoadTrait for GxlMod {
     }
 }
 impl GxlMod {
-    fn exec_self(&self, ctx: ExecContext, mut def: VarSpace) -> VTResult {
+    #[requires(self.assembled)]
+    fn exec_self(&self, ctx: ExecContext, mut def: VarSpace) -> TaskResult {
         self.export_props(ctx, def.global_mut(), self.meta.name().as_str())?;
         Ok(TaskValue::from((def, ExecOut::Ignore)))
     }
@@ -274,7 +246,7 @@ impl GxlMod {
 
 #[async_trait]
 impl AsyncRunnableTrait for GxlMod {
-    async fn async_exec(&self, ctx: ExecContext, def: VarSpace) -> VTResult {
+    async fn async_exec(&self, ctx: ExecContext, def: VarSpace) -> TaskResult {
         self.exec_self(ctx, def)
     }
 }
@@ -284,16 +256,15 @@ impl ComponentMeta for GxlMod {
     }
 }
 
-impl AppendAble<GxlProp> for GxlMod {
-    fn append(&mut self, prop: GxlProp) {
-        self.props.push(prop);
+impl AppendAble<GxlVar> for GxlMod {
+    fn append(&mut self, prop: GxlVar) {
+        self.props.append(prop);
     }
 }
-impl AppendAble<Vec<GxlProp>> for GxlMod {
-    fn append(&mut self, prop_vec: Vec<GxlProp>) {
-        for prop in prop_vec {
-            self.props.push(prop);
-        }
+impl AppendAble<Vec<GxlVar>> for GxlMod {
+    fn append(&mut self, prop_vec: Vec<GxlVar>) {
+        self.props
+            .merge(&GxlProps::new(format!("{}.props", self.of_name())).with_vars(prop_vec));
     }
 }
 
@@ -342,11 +313,12 @@ impl AppendAble<ModItem> for GxlMod {
 mod test {
     use super::*;
     use orion_common::friendly::{MultiNew2, New2};
+    use orion_error::TestAssertWithMsg;
 
     use crate::{
         components::{
-            gxl_env::meta::EnvMeta, gxl_flow::meta::FlowMeta, gxl_spc::GxlSpace, gxl_var::GxlProp,
-            GxlEnv, GxlFlow, GxlMod, GxlVars,
+            gxl_env::meta::EnvMeta, gxl_flow::meta::FlowMeta, gxl_spc::GxlSpace, gxl_var::GxlVar,
+            GxlEnv, GxlFlow, GxlMod, GxlProps,
         },
         context::ExecContext,
         execution::sequence::Sequence,
@@ -375,11 +347,11 @@ mod test {
     fn test_merge_to_head_multiple() {
         let meta1 = ModMeta::build_mod("mod1");
         let mut mod1 = GxlMod::from(meta1.clone());
-        mod1.props.push(GxlProp::new("k1", "v1"));
+        mod1.append(GxlVar::new("k1", "v1"));
 
         let meta2 = ModMeta::new2(GxlType::Mod, "mod2".to_string());
         let mut mod2 = GxlMod::from(meta2);
-        mod2.props.push(GxlProp::new("k2", "v2"));
+        mod2.append(GxlVar::new("k2", "v2"));
 
         let mixs: Vec<GxlMod> = vec![mod1, mod2];
 
@@ -387,9 +359,17 @@ mod test {
         assert!(result.is_some());
         if let Some(target) = result {
             assert_eq!(target.meta.name(), "mod1");
-            assert_eq!(target.props.len(), 2);
-            assert!(target.props().iter().any(|x| x.key() == &"K1".to_string()));
-            assert!(target.props().iter().any(|x| x.key() == &"K2".to_string()));
+            assert_eq!(target.props().items().len(), 2);
+            assert!(target
+                .props()
+                .items()
+                .iter()
+                .any(|x| x.key() == &"K1".to_string()));
+            assert!(target
+                .props()
+                .items()
+                .iter()
+                .any(|x| x.key() == &"K2".to_string()));
             //assert_eq!(target.props.get("k1"), Some(&"v1".to_string()));
         }
     }
@@ -415,7 +395,7 @@ mod test {
         let meta_mod1 = ModMeta::build_mod(mod_name);
         let mut mod1 = GxlMod::from(meta_mod1.clone());
         let mut env1 = GxlEnv::from("env1");
-        env1.append(GxlProp::new("key1", "value1"));
+        env1.append(GxlVar::new("key1", "value1"));
         mod1.append(ModItem::Env(env1));
 
         // 创建 mod2 并引用 mod1 的环境变量
@@ -425,7 +405,7 @@ mod test {
 
         // 假设 mod2 添加了一个依赖于 mod1 的环境变量
         let mut env2 = GxlEnv::from(EnvMeta::build_env_mix("env2", vec!["mod1.env1"]));
-        env2.append(GxlProp::new("key2", "value2"));
+        env2.append(GxlVar::new("key2", "value2"));
         mod2.append(ModItem::Env(env2));
 
         let mut spc = GxlSpace::default();
@@ -453,18 +433,22 @@ mod test {
 
         // 添加一个环境变量
         let mut env1 = GxlEnv::from("env1");
-        env1.append(GxlProp::new("key1", "value1"));
-        let mut var = GxlVars::default();
+        env1.append(GxlVar::new("key1", "value1"));
+        let mut var = GxlProps::new("env");
         var.insert("key3", "value1");
         env1.append(var);
         mod1.append(env1);
-        mod1.append(GxlProp::new("key2", "value1"));
+        mod1.append(GxlVar::new("key2", "value1"));
+        let mut spc = GxlSpace::default();
+        spc.append(mod1);
+        spc = spc.assemble().assert("assemble");
 
         let ctx = ExecContext::default();
         let mut sequ = Sequence::from("exec");
+        //mod1.assemble(mod_name, src)
 
         // 调用 assemble_env 方法
-        mod1.load_env(ctx, &mut sequ, "env1")?;
+        spc.load_env(ctx, &mut sequ, "mod1.env1")?;
 
         let ctx = ExecContext::default();
         let vars = VarSpace::default();
@@ -476,7 +460,7 @@ mod test {
             Some(&SecVar::new(VarMeta::Normal, "value1".to_string()))
         );
         assert_eq!(
-            vars.global().maps().get(&"MOD1_KEY2".to_string()),
+            vars.global().maps().get(&"KEY3".to_string()),
             Some(&SecVar::new(VarMeta::Normal, "value1".to_string()))
         );
         Ok(())
@@ -487,12 +471,12 @@ mod test {
         once_init_log();
         let meta1 = ModMeta::build_mod("mod1");
         let mut mod1 = GxlMod::from(meta1);
-        mod1.append(GxlProp::new("k1", "v1"));
+        mod1.append(GxlVar::new("k1", "v1"));
         mod1.append(GxlFlow::from("flow1"));
 
         let meta2 = ModMeta::build_mod("mod2");
         let mut mod2 = GxlMod::from(meta2.clone());
-        mod2.append(GxlProp::new("k2", "v2"));
+        mod2.append(GxlVar::new("k2", "v2"));
 
         // 添加一个流程
         let flow1 = GxlFlow::from(FlowMeta::build_flow_pre("flow2", "mod1.flow1"));
@@ -503,7 +487,7 @@ mod test {
         let mut spc = GxlSpace::default();
         spc.append(mod1);
         spc.append(mod2);
-        let work_spc = spc.assemble_depend()?;
+        let work_spc = spc.assemble()?;
 
         let ctx = ExecContext::default();
         let mut sequ = Sequence::from("exec");

@@ -6,7 +6,7 @@ use crate::data::AnnDto;
 use crate::execution::hold::TransableHold;
 use crate::model::components::prelude::*;
 
-use crate::annotation::{ComUsage, Dryrunable, FlowHold, TaskMessage, Transaction};
+use crate::annotation::{ComUsage, Dryrunable, GetArgValue, TaskMessage, Transaction, FST_ARG_TAG};
 use crate::execution::runnable::AsyncRunnableTrait;
 use crate::execution::task::Task;
 use crate::task_report::task_notification::TaskNotice;
@@ -18,64 +18,74 @@ use crate::components::gxl_block::BlockNode;
 use crate::util::http_handle::{create_and_send_task_notice, send_http_request};
 use std::io::Write;
 
+use contracts::requires;
 use derive_getters::Getters;
 
 use super::anno::FlowAnnFunc;
 use super::meta::FlowMeta;
-use super::runner::FlowRunner;
 
-#[derive(Clone, Getters)]
+#[derive(Clone, Getters, Default)]
 pub struct GxlFlow {
     meta: FlowMeta,
-    pre_flows: Vec<FlowRunner>,
-    post_flows: Vec<FlowRunner>,
-    undo_flow_item: Option<TransableHold>,
-    dryrun_flow: Option<TransableHold>,
+    pre_flows: Vec<TransableHold>,
+    post_flows: Vec<TransableHold>,
+    undo_flow_item: Vec<TransableHold>,
+    dryrun_flow: Vec<TransableHold>,
     blocks: Vec<BlockNode>,
+    assembled: bool,
+}
+impl GxlFlow {
+    #[requires(self.assembled)]
+    pub fn clone_pre_flows(&self) -> Vec<TransableHold> {
+        self.pre_flows.clone()
+    }
+    #[requires(self.assembled)]
+    pub fn clone_post_flows(&self) -> Vec<TransableHold> {
+        self.post_flows.clone()
+    }
 }
 
 impl DependTrait<&GxlSpace> for GxlFlow {
     fn assemble(self, mod_name: &str, src: &GxlSpace) -> AResult<Self> {
+        debug!(target : "assemble", "will assemble flow {}" , self.meta().name() );
         let mut target = GxlFlow::from(self.meta().clone());
         let pre_order_flows = self.meta.preorder();
         let mut buffer = Vec::new();
         let mut linked = false;
         for flow_id in pre_order_flows {
             assemble_pipe(mod_name, flow_id, src, &mut target.pre_flows)?;
-            let _ = write!(&mut buffer, "{} | ", flow_id);
+            let _ = write!(&mut buffer, "{flow_id} | ");
             linked = true;
         }
 
-        let _ = write!(&mut buffer, "{} ", self.meta().name());
+        let _ = write!(&mut buffer, "@{}.{} ", mod_name, self.meta().name());
         let post_order_flows = self.meta.postorder();
-        for flow_id in post_order_flows {
-            assemble_pipe(mod_name, flow_id, src, &mut target.post_flows)?;
-            let _ = write!(&mut buffer, " | {} ", flow_id);
+        for flow_name in post_order_flows {
+            assemble_pipe(mod_name, flow_name, src, &mut target.post_flows)?;
+            let _ = write!(&mut buffer, " | {flow_name} ");
             linked = true;
         }
         if linked {
             info!(
                 target: "assemble",
-                "assemble flow {:>8}.{:<8}: {} ",
-                mod_name,
-                self.meta().name(),
+                "assemble flow  {} ",
                 String::from_utf8(buffer).unwrap()
             );
         }
         if let Some(undo_name) = self.meta().undo_flow_name() {
-            info!( target: "assemble", "undo flow {} ", undo_name );
-            let undo_flow = assemble_fetch(mod_name, undo_name.as_str(), src)?;
-            target.undo_flow_item = Some(TransableHold::from(FlowHold::new(undo_flow)));
+            info!( target: "assemble", "undo flow {undo_name} " );
+            target.undo_flow_item = assemble_fetch(mod_name, undo_name.as_str(), src)?;
         }
         if let Some(dryrun_name) = self.meta().dryrun_flow_name() {
-            info!( target: "assemble", "dryrun flow {} ", dryrun_name );
-            let dryrun_flow = assemble_fetch(mod_name, dryrun_name.as_str(), src)?;
-            target.dryrun_flow = Some(TransableHold::from(FlowHold::new(dryrun_flow)));
+            info!( target: "assemble", "dryrun flow {dryrun_name} " );
+            target.dryrun_flow = assemble_fetch(mod_name, dryrun_name.as_str(), src)?;
         }
         for block in self.blocks {
             let full_block = block.assemble(mod_name, src)?;
             target.append(full_block);
         }
+        target.assembled = true;
+        debug!(target : "assemble", "assemble flow {} end" , target.meta().name() );
         Ok(target)
     }
 }
@@ -84,42 +94,43 @@ fn assemble_pipe(
     m_name: &str,
     flow: &str,
     src: &GxlSpace,
-    target: &mut Vec<FlowRunner>,
+    target: &mut Vec<TransableHold>,
 ) -> AResult<()> {
     let (t_mod, flow_name) = mod_obj_name(m_name, flow);
-    if let Some(flow) = src.get(&t_mod).and_then(|m| m.load_scope_flow(&flow_name)) {
-        let linked_flow = flow.assemble(m_name, src)?;
-        target.push(linked_flow);
-        return Ok(());
+    if let Some(flows) = src.get(&t_mod).map(|m| m.load_scope_flow(&flow_name)) {
+        if !flows.is_empty() {
+            for item in flows {
+                //TODO： 这个需要确认是否还需要 assemble ?
+                let ass_item = item.assemble(m_name, src)?;
+                target.push(ass_item);
+            }
+            return Ok(());
+        }
     }
     Err(AssembleError::from(AssembleReason::Miss(format!(
-        "{}.{}",
-        m_name, flow
+        "{m_name}.{flow}",
     ))))
 }
 
-fn assemble_fetch(m_name: &str, flow: &str, src: &GxlSpace) -> AResult<FlowRunner> {
+fn assemble_fetch(m_name: &str, flow: &str, src: &GxlSpace) -> AResult<Vec<TransableHold>> {
+    let mut target: Vec<TransableHold> = Vec::new();
     let (t_mod, flow_name) = mod_obj_name(m_name, flow);
-    if let Some(flow) = src.get(&t_mod).and_then(|m| m.load_scope_flow(&flow_name)) {
-        let undo_flow = flow.assemble(m_name, src)?;
-
-        return Ok(undo_flow);
+    if let Some(flows) = src.get(&t_mod).map(|m| m.load_scope_flow(&flow_name)) {
+        //let undo_flow = flow.assemble(m_name, src)?;
+        for item in flows.into_iter() {
+            //TODO： 这个需要确认是否还需要 assemble ?
+            target.push(item.assemble(m_name, src)?);
+            //target.push(item);
+        }
     }
-    Err(AssembleError::from(AssembleReason::Miss(format!(
-        "{}.{}",
-        m_name, flow
-    ))))
+    Ok(target)
 }
 
 impl From<FlowMeta> for GxlFlow {
     fn from(meta: FlowMeta) -> Self {
         Self {
             meta,
-            pre_flows: Vec::new(),
-            post_flows: Vec::new(),
-            blocks: Vec::new(),
-            undo_flow_item: None,
-            dryrun_flow: None,
+            ..Default::default()
         }
     }
 }
@@ -129,11 +140,7 @@ impl From<&str> for GxlFlow {
         let meta = FlowMeta::build_flow(name);
         Self {
             meta,
-            pre_flows: Vec::new(),
-            post_flows: Vec::new(),
-            blocks: Vec::new(),
-            undo_flow_item: None,
-            dryrun_flow: None,
+            ..Default::default()
         }
     }
 }
@@ -145,17 +152,13 @@ impl GxlFlow {
     pub fn load_ins<S: Into<String>>(name: S) -> Self {
         Self {
             meta: FlowMeta::build_flow(name.into()),
-            pre_flows: Vec::new(),
-            post_flows: Vec::new(),
-            blocks: Vec::new(),
-            undo_flow_item: None,
-            dryrun_flow: None,
+            ..Default::default()
         }
     }
 }
 
 impl Dryrunable for GxlFlow {
-    fn dryrun_hold(&self) -> Option<TransableHold> {
+    fn dryrun_hold(&self) -> Vec<TransableHold> {
         self.dryrun_flow.clone()
     }
 }
@@ -163,7 +166,7 @@ impl Dryrunable for GxlFlow {
 impl Transaction for GxlFlow {
     fn is_transaction(&self) -> bool {
         for ann in self.meta().annotations() {
-            trace!("flow ann : {:?}", ann);
+            trace!("flow ann : {ann:?}",);
             if ann.func == FlowAnnFunc::Transaction {
                 debug!("flow have transaction lable");
                 return true;
@@ -172,12 +175,13 @@ impl Transaction for GxlFlow {
         false
     }
 
-    fn undo_hold(&self) -> Option<TransableHold> {
+    fn undo_hold(&self) -> Vec<TransableHold> {
         self.undo_flow_item.clone()
     }
 }
 impl GxlFlow {
-    async fn exec_self(&self, ctx: ExecContext, mut var_dict: VarSpace) -> VTResult {
+    #[requires(self.assembled )]
+    async fn exec_self(&self, ctx: ExecContext, mut var_dict: VarSpace) -> TaskResult {
         let task_description = self.task_description();
         let mut task = Task::from(self.meta.name());
         let mut task_notice = TaskNotice::new();
@@ -238,33 +242,40 @@ impl GxlFlow {
         }
         false
     }
+    pub fn is_auto_entry(&self) -> bool {
+        let annotation = self.meta.annotations();
+        for ann in annotation {
+            if ann.func == FlowAnnFunc::AutoLoad
+                && ann.get_arg(FST_ARG_TAG) == Some("entry".to_string())
+            {
+                return true;
+            }
+        }
+        false
+    }
+    pub fn is_auto_exit(&self) -> bool {
+        let annotation = self.meta.annotations();
+        for ann in annotation {
+            if ann.func == FlowAnnFunc::AutoLoad
+                && ann.get_arg(FST_ARG_TAG) == Some("exit".to_string())
+            {
+                return true;
+            }
+        }
+        false
+    }
 }
 #[async_trait]
 impl AsyncRunnableTrait for GxlFlow {
-    async fn async_exec(&self, mut ctx: ExecContext, mut var_dict: VarSpace) -> VTResult {
+    async fn async_exec(&self, mut ctx: ExecContext, mut var_dict: VarSpace) -> TaskResult {
         let des = self
             .task_description()
             .unwrap_or(self.meta.name().to_string());
         let mut job = Job::from(&des);
         ctx.append(self.meta.name());
-        //pre_flows,post_flows run in main sequence
-        /*
-        for pre in self.pre_flows() {
-            let TaskValue { vars, rec, .. } = pre.async_exec(ctx.clone(), var_dict).await?;
-            var_dict = vars;
-            job.append(rec);
-        }
-        */
         let TaskValue { vars, rec, .. } = self.exec_self(ctx.clone(), var_dict).await?;
         var_dict = vars;
         job.append(rec);
-        /*
-        for post in self.post_flows() {
-            let TaskValue { vars, rec, .. } = post.async_exec(ctx.clone(), var_dict).await?;
-            var_dict = vars;
-            job.append(rec);
-        }
-        */
         Ok(TaskValue::from((var_dict, ExecOut::Job(job))))
     }
 }
@@ -285,7 +296,7 @@ mod tests {
 
     use orion_error::TestAssert;
 
-    use crate::components::GxlMod;
+    use crate::{components::GxlMod, infra::once_init_log};
 
     use super::*;
 
@@ -309,6 +320,7 @@ mod tests {
 
     #[test]
     fn test_assemble_com_with_missing_dependencies() {
+        once_init_log();
         // 创建一个 RgMod 实例，包含部分依赖关系
         let mut gxl_mod = GxlMod::from("test_mod");
 
@@ -327,10 +339,12 @@ mod tests {
             .meta
             .set_postorder(vec!["flow2", "non_existent2"]);
 
+        gxl_mod.append(target_flow);
         let mut spc = GxlSpace::default();
         spc.append(gxl_mod);
+        assert!(spc.assemble().is_err());
         // 调用 assemble_com 方法
-        assert!(target_flow.assemble("test_mod", &spc).is_err());
+        //assert!(target_flow.assemble("test_mod", &spc).is_err());
     }
 
     #[test]
@@ -352,18 +366,32 @@ mod tests {
         let mut target_flow = GxlFlow::from("target_flow");
         target_flow.meta.set_preorder(vec!["flow1", "flow2"]);
         target_flow.meta.set_postorder(vec!["flow3"]);
+        //gxl_mod.append(target_flow.clone());
         let mut spc = GxlSpace::default();
         spc.append(gxl_mod);
+        spc = spc.assemble().assert();
 
         // 调用 assemble_com 方法
         let assembled_flow = target_flow.assemble("test_mod", &spc).assert();
 
         // 验证 pre_ows 和 post_ows 是否正确组装
-        assert_eq!(assembled_flow.pre_flows().len(), 2);
-        assert_eq!(assembled_flow.pre_flows()[0].flow().meta.name(), "flow1");
-        assert_eq!(assembled_flow.pre_flows()[1].flow().meta.name(), "flow2");
+        assert_eq!(assembled_flow.pre_flows().len(), 4);
+        assert_eq!(
+            assembled_flow.pre_flows()[0].com_meta().name(),
+            "test_mod.props"
+        );
+        assert_eq!(assembled_flow.pre_flows()[1].com_meta().name(), "flow1");
+        assert_eq!(
+            assembled_flow.pre_flows()[2].com_meta().name(),
+            "test_mod.props"
+        );
+        assert_eq!(assembled_flow.pre_flows()[3].com_meta().name(), "flow2");
 
-        assert_eq!(assembled_flow.post_flows().len(), 1);
-        assert_eq!(assembled_flow.post_flows()[0].flow().meta.name(), "flow3");
+        assert_eq!(assembled_flow.post_flows().len(), 2);
+        assert_eq!(
+            assembled_flow.post_flows()[0].com_meta().name(),
+            "test_mod.props"
+        );
+        assert_eq!(assembled_flow.post_flows()[1].com_meta().name(), "flow3");
     }
 }

@@ -19,7 +19,7 @@ pub fn gal_artifact(input: &mut &str) -> Result<GxArtifact> {
     match down.build() {
         Ok(o) => Ok(o),
         Err(e) => {
-            error!("{}", e);
+            error!("{e}");
             fail.context(wn_desc("gx.artifact")).parse_next(input)
         }
     }

@@ -21,12 +21,12 @@ pub fn task_local_report(out: ExecOut) {
     // report目录不存在则创建
     if !path.exists() {
         if let Err(e) = create_dir_all(path) {
-            println!("Failed to create directory '{}': {}", dir_path, e);
+            println!("Failed to create directory '{dir_path}': {e}",);
             return;
         }
     }
 
-    let file_name = format!("{}/task_{}.yaml", dir_path, now);
+    let file_name = format!("{dir_path}/task_{now}.yaml",);
 
     // 创建task结果存储文件
     match File::create(&file_name) {
@@ -37,18 +37,18 @@ pub fn task_local_report(out: ExecOut) {
 
             // 确保目录存在
             if let Err(e) = ensure_directory_exists(path) {
-                println!("Failed to ensure directory exists: {}", e);
+                println!("Failed to ensure directory exists: {e}",);
             };
 
             // 将 yaml 字符串写入文件
             if let Err(e) = std::fs::write(path, toml)
-                .with_context(|| format!("write toml file : {}", file_name))
+                .with_context(|| format!("write toml file : {file_name}",))
             {
-                println!("Failed to write toml file: {}", e);
+                println!("Failed to write toml file: {e}",);
             }
         }
         Err(_) => {
-            println!("Failed to create file: {}", file_name);
+            println!("Failed to create file: {file_name}",);
         }
     }
 }

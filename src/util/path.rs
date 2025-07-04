@@ -21,7 +21,7 @@ impl Drop for WorkDir {
     fn drop(&mut self) {
         info!("set current dir:{}", self.original_dir.display());
         if let Err(e) = env::set_current_dir(&self.original_dir) {
-            log::error!("Failed to restore directory: {}", e);
+            log::error!("Failed to restore directory: {e}",);
         }
     }
 }
@@ -49,7 +49,7 @@ impl Drop for WorkDirWithLock {
     fn drop(&mut self) {
         info!("set current dir:{}", self.original_dir.display());
         if let Err(e) = env::set_current_dir(&self.original_dir) {
-            log::error!("Failed to restore directory: {}", e);
+            log::error!("Failed to restore directory: {e}",);
         }
     }
 }

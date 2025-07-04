@@ -7,7 +7,7 @@ pub trait Mustable {
 impl Mustable for StrMap {
     fn must_get(&self, key: &str) -> &String {
         self.get(key)
-            .unwrap_or_else(|| panic!("not get {} value", key))
+            .unwrap_or_else(|| panic!("not get {key} value"))
     }
 }
 

@@ -55,7 +55,7 @@ pub fn take_var_ref_name(input: &mut &str) -> Result<String> {
 }
 //take ${var_name}
 pub fn take_var_ref_fmt(input: &mut &str) -> Result<String> {
-    take_var_ref_name(input).map(|x| format!("${{{}}}", x))
+    take_var_ref_name(input).map(|x| format!("${{{x}}}"))
 }
 
 pub fn spaced<'a, P, O>(parser: P) -> impl Parser<&'a str, O, ContextError>

@@ -8,7 +8,7 @@ use crate::{
 };
 
 use super::{
-    components::gxl_var::GxlProp, context::ExecContext, error::AResult,
+    components::gxl_var::GxlVar, context::ExecContext, error::AResult,
     execution::sequence::Sequence, var::VarDict, ExecResult,
 };
 
@@ -37,11 +37,11 @@ pub trait ExecLoadTrait {
 pub type AssembleHold = Arc<dyn ExecLoadTrait + 'static + Send + Sync>;
 
 pub trait PropsTrait {
-    fn fetch_props(&self) -> &Vec<GxlProp>;
+    fn fetch_props(&self) -> &Vec<GxlVar>;
     fn export_props(&self, ctx: ExecContext, dict: &mut VarDict, prefix: &str) -> ExecResult<()> {
         EnvVarTag::import(&dict.export());
         let key_maker = UpperKeyMaker::new(prefix);
-        debug!( target: ctx.path() ,"props export use prefix({})", prefix);
+        debug!( target: ctx.path() ,"props export use prefix({prefix})" );
         let mut exp = EnvExpress::from_env_mix(dict.clone());
         for prop in self.fetch_props() {
             let key = key_maker.make(prop.key());

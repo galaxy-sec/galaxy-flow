@@ -30,7 +30,7 @@ impl GxAssert {
 
 #[async_trait]
 impl AsyncRunnableTrait for GxAssert {
-    async fn async_exec(&self, mut ctx: ExecContext, vars_dict: VarSpace) -> VTResult {
+    async fn async_exec(&self, mut ctx: ExecContext, vars_dict: VarSpace) -> TaskResult {
         ctx.append("assert");
         let exp = EnvExpress::from_env_mix(vars_dict.global().clone());
         let value = exp.eval(&self.value)?;
@@ -46,13 +46,13 @@ impl AsyncRunnableTrait for GxAssert {
             if let Some(msg) = self.error.clone() {
                 err_msg = exp.eval(&msg)?;
             }
-            println!("{}", err_msg);
+            println!("{err_msg}");
             return Err(ExecError::from(ExecReason::Check(format!(
                 "assert fail! [{}], expect: {},\n value {}",
                 self.result, expect, value
             ))));
         } else {
-            println!("assert true : {}", value);
+            println!("assert true : {value}");
         }
         info!(target: ctx.path(), "value {} match exprect", value);
         Ok(TaskValue::from((vars_dict, ExecOut::Ignore)))

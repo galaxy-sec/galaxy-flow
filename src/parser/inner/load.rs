@@ -22,7 +22,7 @@ pub fn gal_download(input: &mut &str) -> Result<GxDownLoad> {
     match down.build() {
         Ok(o) => Ok(o),
         Err(e) => {
-            error!("{}", e);
+            error!("{e}",);
             fail.context(wn_desc("gx.download")).parse_next(input)
         }
     }
@@ -48,7 +48,7 @@ pub fn gal_upload(input: &mut &str) -> Result<GxUpLoad> {
     match down.build() {
         Ok(o) => Ok(o),
         Err(e) => {
-            error!("{}", e);
+            error!("{e}",);
             fail.context(wn_desc("gx.upload")).parse_next(input)
         }
     }

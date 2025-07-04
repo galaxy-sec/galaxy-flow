@@ -4,6 +4,7 @@ use crate::{
     util::task_report::task_local_report,
 };
 use colored::Colorize;
+use contracts::requires;
 use orion_error::ErrorConv;
 use std::{collections::HashMap, fmt::Display};
 
@@ -17,6 +18,7 @@ const ENVS_MOD: &str = "envs";
 pub struct GxlSpace {
     mods_name: Vec<String>,
     mods_store: HashMap<String, GxlMod>,
+    assembled: bool,
 }
 
 impl GxlSpace {
@@ -34,7 +36,7 @@ impl GxlSpace {
 
     pub fn main(&self) -> ExecResult<&GxlMod> {
         self.get(MAIN_MOD)
-            .ok_or_else(|| ExecReason::Args(format!("'{}' mod not found", MAIN_MOD)).into())
+            .ok_or_else(|| ExecReason::Args(format!("'{MAIN_MOD}' mod not found",)).into())
     }
 
     pub fn env(&self) -> ExecResult<&GxlMod> {
@@ -66,17 +68,23 @@ impl GxlSpace {
         Ok(())
     }
 
-    pub(crate) fn assemble_depend(&mut self) -> AResult<Self> {
+    pub fn assemble(&mut self) -> AResult<Self> {
         let mut spc = Self::default();
 
         for mod_name in &self.mods_name {
             if let Some(module) = self.get(mod_name) {
-                let updated = module.clone().assemble(mod_name, self)?;
-                spc.append(updated);
+                spc.append(module.clone());
+                let updated = module.clone().assemble(mod_name, &spc)?;
+                debug_assert!(updated.assembled());
+                spc.replace(updated);
             }
         }
-
+        spc.assembled = true;
         Ok(spc)
+    }
+
+    fn replace(&mut self, updated: GxlMod) {
+        self.mods_store.insert(updated.of_name(), updated);
     }
 }
 
@@ -92,11 +100,12 @@ impl TryFrom<CodeSpace> for GxlSpace {
     type Error = AssembleError;
 
     fn try_from(value: CodeSpace) -> AResult<Self> {
-        value.assemble_mix()?.assemble_depend()
+        value.assemble()
     }
 }
 
 impl ExecLoadTrait for GxlSpace {
+    #[requires(self.assembled)]
     fn load_env(&self, ctx: ExecContext, sequ: &mut Sequence, obj_path: &str) -> ExecResult<()> {
         let (mod_name, item_name) = parse_obj_path(obj_path)?;
 
@@ -106,6 +115,7 @@ impl ExecLoadTrait for GxlSpace {
             .load_env(ctx, sequ, item_name)
     }
 
+    #[requires(self.assembled)]
     fn load_flow(&self, ctx: ExecContext, sequ: &mut Sequence, obj_path: &str) -> ExecResult<()> {
         let (mod_name, item_name) = parse_obj_path(obj_path)?;
 
@@ -161,6 +171,7 @@ impl ExecOptions {
 }
 
 impl GxlSpace {
+    #[requires(self.assembled)]
     pub async fn exec<VS: Into<Vec<String>>>(
         &self,
         envs_name: VS,
@@ -190,6 +201,7 @@ impl GxlSpace {
         Ok(())
     }
 
+    #[requires(self.assembled)]
     async fn execute_flow(
         &self,
         main_ctx: &ExecContext,
@@ -231,7 +243,7 @@ impl GxlSpace {
         if name.contains('.') {
             name.to_string()
         } else {
-            format!("{}.{}", MAIN_MOD, name)
+            format!("{MAIN_MOD}.{name}",)
         }
     }
 
@@ -246,20 +258,20 @@ impl GxlSpace {
         for env in envs {
             let env_paths = [
                 env.as_str(),
-                &format!("{}.{}", MAIN_MOD, env),
-                &format!("{}.{}", ENVS_MOD, env),
-                &format!("{}.{}", ENV_MOD, env),
+                &format!("{MAIN_MOD}.{env}",),
+                &format!("{ENV_MOD}.{env}",),
+                &format!("{ENVS_MOD}.{env}",),
             ];
 
             if let Some(found) = env_paths
                 .iter()
                 .find(|path| self.load_env(ctx.clone(), exec_sequ, path).is_ok())
             {
-                info!("Loaded environment: {}", found);
+                info!("Loaded environment: {found}",);
                 continue;
             }
 
-            return Err(RunReason::Args(format!("Environment '{}' not found", env)).into());
+            return Err(RunReason::Args(format!("Environment '{env}' not found",)).into());
         }
 
         Ok(())
@@ -291,18 +303,18 @@ pub fn color_show<S: AsRef<str> + Display>(text: S, color: Option<&str>) {
         Some("black") => text.as_ref().black(),
         Some("white") => text.as_ref().white(),
         Some("purple") => text.as_ref().purple(),
-        _ => return println!("{}", text),
+        _ => return println!("{text}"),
     };
 
-    println!("{}", colored_text);
+    println!("{colored_text}");
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::{
-        ability::prelude::GxlProp,
-        components::{gxl_mod::meta::ModMeta, GxlEnv, GxlFlow, GxlMod, GxlVars},
+        ability::prelude::GxlVar,
+        components::{gxl_mod::meta::ModMeta, GxlEnv, GxlFlow, GxlMod, GxlProps},
         execution::exec_init_env,
         types::AnyResult,
     };
@@ -315,7 +327,7 @@ mod tests {
 
         // Create main module
         let mut main_mod = GxlMod::from(ModMeta::build_mod(MAIN_MOD));
-        main_mod.append(GxlProp::new("key1", "val1"));
+        main_mod.append(GxlVar::new("key1", "val1"));
 
         let flow = GxlFlow::load_ins("flow1");
         main_mod.append(flow);
@@ -324,10 +336,10 @@ mod tests {
         let mut env_mod = GxlMod::from(ModMeta::build_mod(ENV_MOD));
 
         let mut env = GxlEnv::from("env1");
-        env.append(GxlProp::new("key1", "val1"));
+        env.append(GxlVar::new("key1", "val1"));
 
-        let mut rg_vars = GxlVars::default();
-        rg_vars.append(GxlProp::new("key1", "val1"));
+        let mut rg_vars = GxlProps::default();
+        rg_vars.append(GxlVar::new("key1", "val1"));
         env.append(rg_vars);
 
         env_mod.append(env);
@@ -339,13 +351,13 @@ mod tests {
 
         // Execute
         let mut flow = Sequence::from("test");
-        let work_space = code_space.assemble_mix().assert();
+        let work_space = code_space.assemble().assert();
 
         work_space.load_env(ctx.clone(), &mut flow, "env.env1")?;
         work_space.load_flow(ctx.clone(), &mut flow, "main.flow1")?;
 
         let task_v = flow.test_execute(ctx, def).await.unwrap();
-        debug!("Job result: {:#?}", task_v);
+        debug!("Job result: {task_v:#?}",);
 
         work_space.show().unwrap();
         Ok(())

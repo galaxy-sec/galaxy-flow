@@ -5,7 +5,7 @@ use orion_parse::atom::take_env_var;
 use orion_parse::symbol::symbol_cmp;
 use winnow::combinator::repeat;
 
-use crate::ability::prelude::GxlProp;
+use crate::ability::prelude::GxlVar;
 use crate::calculate::cond::IFExpress;
 use crate::calculate::express::{BinExpress, EVarDef, ExpressEnum};
 use crate::components::gxl_block::{BlockAction, BlockNode};
@@ -24,7 +24,7 @@ pub fn gal_block(input: &mut &str) -> Result<BlockNode> {
     gal_block_beg
         .context(wn_desc("<block-beg>"))
         .parse_next(input)?;
-    let props: Vec<GxlProp> = repeat(0.., gal_prop).parse_next(input)?;
+    let props: Vec<GxlVar> = repeat(0.., gal_prop).parse_next(input)?;
     let sentens: Vec<BlockAction> = repeat(0.., gal_sentens_item)
         .context(wn_desc("<sentens>"))
         .parse_next(input)?;

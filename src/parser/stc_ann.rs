@@ -107,7 +107,7 @@ pub fn gal_ann(input: &mut &str) -> Result<AnnDto> {
     let _ = "]".parse_next(input)?;
 
     // Return the parsed annotation
-    funs.iter().for_each(|x| debug!(target: "parse","{}", x));
+    funs.iter().for_each(|x| debug!(target: "parse","{x}" ));
     Ok(AnnDto { funs })
 }
 
