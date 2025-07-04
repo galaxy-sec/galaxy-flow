@@ -198,29 +198,34 @@ impl ExecLoadTrait for GxlMod {
     fn load_flow(&self, mut ctx: ExecContext, sequ: &mut Sequence, name: &str) -> ExecResult<()> {
         ctx.append(self.meta.name().as_str());
 
-        if let Some(found) = self.flows.get(name) {
-            debug_assert!(found.assembled());
-            debug_assert!(self.assembled());
-            sequ.append_mod_head(self.props.clone());
-            for x in self.entrys.iter() {
-                debug_assert!(x.assembled());
-                sequ.append_mod_entry(x.clone());
+        match self.flows.get(name) {
+            Some(found) => {
+                debug!(target:ctx.path(),"will load flow:{}", name);
+                sequ.append(AsyncComHold::from(found.clone()));
+                debug_assert!(found.assembled());
+                debug_assert!(self.assembled());
+                sequ.append_mod_head(self.props.clone());
+                for x in self.entrys.iter() {
+                    debug_assert!(x.assembled());
+                    sequ.append_mod_entry(x.clone());
+                }
+                let pre_flows = found.clone_pre_flows();
+                let post_flows = found.clone_post_flows();
+                for flow in pre_flows.into_iter() {
+                    sequ.append(AsyncComHold::from(flow));
+                }
+                sequ.append(AsyncComHold::from(found.clone()));
+                for flow in post_flows.into_iter() {
+                    sequ.append(AsyncComHold::from(flow));
+                }
+                for x in self.exits().iter() {
+                    debug_assert!(x.assembled());
+                    sequ.append_mod_exit(x.clone());
+                }
+                Ok(())
             }
-            let pre_flows = found.clone_pre_flows();
-            let post_flows = found.clone_post_flows();
-            for flow in pre_flows.into_iter() {
-                sequ.append(AsyncComHold::from(flow));
-            }
-            sequ.append(AsyncComHold::from(found.clone()));
-            for flow in post_flows.into_iter() {
-                sequ.append(AsyncComHold::from(flow));
-            }
-            for x in self.exits().iter() {
-                debug_assert!(x.assembled());
-                sequ.append_mod_exit(x.clone());
-            }
+            None => Err(ExecError::from(ExecReason::Miss(name.into()))),
         }
-        Ok(())
     }
     fn menu(&self) -> ExecResult<GxMenu> {
         let mut menu = GxMenu::default();
