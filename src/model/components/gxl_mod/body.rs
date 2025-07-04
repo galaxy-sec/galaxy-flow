@@ -203,7 +203,7 @@ impl ExecLoadTrait for GxlMod {
             debug_assert!(self.assembled());
             sequ.append_mod_head(self.props.clone());
             for x in self.entrys.iter() {
-                //debug_assert!(x.assembled());
+                debug_assert!(x.assembled());
                 sequ.append_mod_entry(x.clone());
             }
             let pre_flows = found.clone_pre_flows();
@@ -216,7 +216,7 @@ impl ExecLoadTrait for GxlMod {
                 sequ.append(AsyncComHold::from(flow));
             }
             for x in self.exits().iter() {
-                //debug_assert!(x.assembled());
+                debug_assert!(x.assembled());
                 sequ.append_mod_exit(x.clone());
             }
         }

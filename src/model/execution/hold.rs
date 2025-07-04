@@ -48,6 +48,15 @@ impl From<TransableHold> for AsyncComHold {
         }
     }
 }
+impl TransableHold {
+    pub fn assembled(&self) -> bool {
+        match self {
+            TransableHold::Props(_) => true,
+            TransableHold::Flow(o) => *o.assembled(),
+            TransableHold::Stub(_) => true,
+        }
+    }
+}
 impl DependTrait<&GxlSpace> for TransableHold {
     fn assemble(self, mod_name: &str, src: &GxlSpace) -> crate::error::AResult<Self> {
         let obj = match self {

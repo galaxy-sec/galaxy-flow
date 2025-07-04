@@ -114,7 +114,7 @@ impl Sequence {
         }
     }
     pub fn append_mod_entry(&mut self, flow: TransableHold) {
-        //debug_assert!(flow.assembled());
+        debug_assert!(flow.assembled());
         if !self.mods_entry().contains_key(flow.com_meta().name()) {
             self.mods_entry
                 .insert(flow.com_meta().name().to_string(), true);
@@ -122,7 +122,7 @@ impl Sequence {
         }
     }
     pub fn append_mod_exit(&mut self, flow: TransableHold) {
-        //debug_assert!(flow.assembled());
+        debug_assert!(flow.assembled());
         if !self.mods_exits().contains_key(flow.com_meta().name()) {
             self.mods_exits.insert(flow.com_meta().name().into(), true);
             self.run_items.push(AsyncComHold::from(flow).into());
