@@ -42,7 +42,7 @@ impl GxCmd {
     fn execute_impl(&self, cmd: &String, mut ctx: ExecContext, vars_dict: VarSpace) -> TaskResult {
         ctx.append("gx.cmd");
         let mut action = Action::from("gx.cmd");
-        trace!(target:ctx.path(),"cmd:{}", cmd);
+        trace!(target:ctx.path(),"cmd:{cmd}", );
         let exp = EnvExpress::from_env_mix(vars_dict.global().clone());
         let exe_cmd = exp.eval(cmd)?;
 

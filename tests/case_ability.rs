@@ -75,12 +75,12 @@ fn prj_init_test() -> RunResult<()> {
     let mut gx = GxLoader::new();
     let repo =
         ModRepo::new("https://galaxy-sec.org/free/loader/rg-tpl.git", "stable").err_conv()?;
-    let rg_root = "./tmp/test";
-    if std::path::Path::new(rg_root).exists() {
-        remove_dir_all(rg_root).expect(rg_root);
+    let gxl_root = "./tmp/test";
+    if std::path::Path::new(gxl_root).exists() {
+        remove_dir_all(gxl_root).expect(gxl_root);
     }
-    gx.init(repo, rg_root, true, "open_pages", sh_opt.clone())?;
-    let rg_conf = format!("{}/_rg/work.gxl", rg_root);
+    gx.init(repo, gxl_root, true, "open_pages", sh_opt.clone())?;
+    let rg_conf = format!("{gxl_root}/_rg/work.gxl",);
     gx.parse_file(rg_conf.as_str(), false, sh_opt.clone(), &vars)?;
 
     Ok(())

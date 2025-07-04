@@ -83,9 +83,9 @@ impl GxAdm {
             ConfCmd::Init(_init_args) => {
                 if conf_path().is_none() {
                     conf_init()?;
-                    println!("init {}  success!", CONFIG_FILE);
+                    println!("init {CONFIG_FILE}  success!",);
                 } else {
-                    println!("{} exists!", CONFIG_FILE);
+                    println!("{CONFIG_FILE} exists!",);
                 }
             }
         }
@@ -100,7 +100,7 @@ impl GxAdm {
         println!("Version: {}", info.version());
         println!("Bitness: {}", info.bitness());
         if let Some(arch) = info.architecture() {
-            println!("Architecture: {}", arch);
+            println!("Architecture: {arch}");
         }
         println!("evn path:{}", env!("PATH"));
         let gtools = GitTools::new(false).err_conv()?;

@@ -36,7 +36,7 @@ impl GxlSpace {
 
     pub fn main(&self) -> ExecResult<&GxlMod> {
         self.get(MAIN_MOD)
-            .ok_or_else(|| ExecReason::Args(format!("'{}' mod not found", MAIN_MOD)).into())
+            .ok_or_else(|| ExecReason::Args(format!("'{MAIN_MOD}' mod not found",)).into())
     }
 
     pub fn env(&self) -> ExecResult<&GxlMod> {
@@ -267,11 +267,11 @@ impl GxlSpace {
                 .iter()
                 .find(|path| self.load_env(ctx.clone(), exec_sequ, path).is_ok())
             {
-                info!("Loaded environment: {}", found);
+                info!("Loaded environment: {found}",);
                 continue;
             }
 
-            return Err(RunReason::Args(format!("Environment '{}' not found", env)).into());
+            return Err(RunReason::Args(format!("Environment '{env}' not found",)).into());
         }
 
         Ok(())

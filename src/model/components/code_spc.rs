@@ -42,7 +42,7 @@ impl AppendAble<GxlMod> for CodeSpace {
         let key = gxl_mod.of_name();
         let mix = gxl_mod.meta().mix().clone();
         if let Some(_vec) = self.store.get(&key) {
-            warn!(target: "stc","重复 mod  {}", key);
+            warn!(target: "stc","重复 mod  {key}", );
         } else {
             let mut mod_vec = vec![gxl_mod];
             for item in &mix {

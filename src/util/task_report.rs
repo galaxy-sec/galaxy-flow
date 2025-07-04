@@ -21,12 +21,12 @@ pub fn task_local_report(out: ExecOut) {
     // report目录不存在则创建
     if !path.exists() {
         if let Err(e) = create_dir_all(path) {
-            println!("Failed to create directory '{}': {}", dir_path, e);
+            println!("Failed to create directory '{dir_path}': {e}",);
             return;
         }
     }
 
-    let file_name = format!("{}/task_{}.yaml", dir_path, now);
+    let file_name = format!("{dir_path}/task_{now}.yaml",);
 
     // 创建task结果存储文件
     match File::create(&file_name) {

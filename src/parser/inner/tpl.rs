@@ -34,7 +34,7 @@ pub fn gal_tpl(input: &mut &str) -> ModalResult<GxTpl> {
     match builder.build() {
         Ok(dto) => Ok(GxTpl::from(dto)),
         Err(e) => {
-            error!(target: "parse", "{}",e);
+            error!(target: "parse", "{e}");
             //println!("{}", e);
             fail.context(wn_desc("gx.tpl build")).parse_next(input)
         }

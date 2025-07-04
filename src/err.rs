@@ -63,7 +63,7 @@ pub fn report_gxl_error(e: RunError) {
     println!("Galaxy Flow Parse Error (Code: {})", e.error_code());
     println!("--------------------------");
     if let Some(target) = e.target() {
-        println!("[TARGET]:\n{}\n", target);
+        println!("[TARGET]:\n{target}\n",);
     }
     println!("[REASON]:");
     match e.reason() {

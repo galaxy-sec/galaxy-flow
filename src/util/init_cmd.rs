@@ -31,7 +31,7 @@ impl ModRepo {
             self.tag.as_str(),
             opt,
         ) {
-            return Err(ExecReason::Depend(format!("git pull fail: {}", e)).into());
+            return Err(ExecReason::Depend(format!("git pull fail: {e}",)).into());
         }
         Ok(())
     }

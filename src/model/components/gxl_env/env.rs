@@ -38,8 +38,7 @@ impl GxlEnv {
             return Ok(link_env);
         }
         Err(AssembleError::from(AssembleReason::Miss(format!(
-            "{}:{}  by {},{} ",
-            mod_name, cur_mix, t_mod, env_name
+            "{mod_name}:{cur_mix}  by {t_mod},{env_name} ",
         ))))
     }
     fn assemble_impl(&self, mod_name: &str, src: &GxlSpace) -> AResult<Self> {

@@ -172,7 +172,7 @@ impl Getter<&String, SecVar> for VarDict {
         if let Some(val) = self.maps.get(key) {
             val
         } else {
-            panic!("un get key {}", key);
+            panic!("un get key {key}",);
         }
     }
     fn get(&self, key: &String) -> Option<&SecVar> {

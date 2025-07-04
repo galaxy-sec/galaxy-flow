@@ -108,8 +108,7 @@ fn assemble_pipe(
         }
     }
     Err(AssembleError::from(AssembleReason::Miss(format!(
-        "{}.{}",
-        m_name, flow
+        "{m_name}.{flow}",
     ))))
 }
 
@@ -167,7 +166,7 @@ impl Dryrunable for GxlFlow {
 impl Transaction for GxlFlow {
     fn is_transaction(&self) -> bool {
         for ann in self.meta().annotations() {
-            trace!("flow ann : {:?}", ann);
+            trace!("flow ann : {ann:?}",);
             if ann.func == FlowAnnFunc::Transaction {
                 debug!("flow have transaction lable");
                 return true;

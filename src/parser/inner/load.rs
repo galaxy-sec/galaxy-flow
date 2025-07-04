@@ -48,7 +48,7 @@ pub fn gal_upload(input: &mut &str) -> ModalResult<GxUpLoad> {
     match down.build() {
         Ok(o) => Ok(o),
         Err(e) => {
-            error!("{}", e);
+            error!("{e}",);
             fail.context(wn_desc("gx.upload")).parse_next(input)
         }
     }

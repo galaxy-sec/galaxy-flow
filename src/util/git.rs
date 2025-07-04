@@ -76,7 +76,7 @@ impl GitTools {
     pub fn check_run(&self) -> ExecResult<()> {
         self.build_check_shell()?;
         let cmd = format!("{}/{}", self.gxl_root, "git_check.sh");
-        debug!(target:"sys", "cmd:{}", cmd);
+        debug!(target:"sys", "cmd:{cmd}", );
         let sh_opt = ShellOption {
             quiet: true,
             inner_print: true,
@@ -123,13 +123,13 @@ pub fn build_shell(sh_root: &str, sh_name: &str, sh_code: &str, sh_path: &str) -
     permissions.set_mode(0o755);
     file.set_permissions(permissions).owe_res()?;
     if !std::path::Path::new(sh_path).exists() {
-        return Err(ExecReason::Depend(format!("create shell fail: {}", sh_path)).into());
+        return Err(ExecReason::Depend(format!("create shell fail: {sh_path}",)).into());
     }
     if let Ok(metadata) = fs::metadata(sh_path) {
         if metadata.is_file() && metadata.permissions().mode() & 0o111 != 0 {
-            info!(target: "sys","git shell is ready! exists and execute:{}", sh_path);
+            info!(target: "sys","git shell is ready! exists and execute:{sh_path}", );
             return Ok(());
         }
     }
-    Err(ExecReason::Depend(format!("shell is bad: {}", sh_path)).into())
+    Err(ExecReason::Depend(format!("shell is bad: {sh_path}",)).into())
 }
