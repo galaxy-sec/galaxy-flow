@@ -26,6 +26,15 @@ pub enum ModItem {
     Flow(GxlFlow),
     Actv(Activity),
 }
+impl ModItem {
+    pub(crate) fn bind(&mut self, mod_meta: ModMeta) {
+        match self {
+            ModItem::Env(o) => o.bind(mod_meta),
+            ModItem::Flow(o) => o.bind(mod_meta),
+            ModItem::Actv(o) => o.bind(mod_meta),
+        }
+    }
+}
 
 #[derive(Clone, Getters, Default)]
 pub struct GxlMod {
@@ -243,7 +252,8 @@ impl ExecLoadTrait for GxlMod {
 }
 impl GxlMod {
     #[requires(self.assembled)]
-    fn exec_self(&self, ctx: ExecContext, mut def: VarSpace) -> TaskResult {
+    fn exec_self(&self, mut ctx: ExecContext, mut def: VarSpace) -> TaskResult {
+        ctx.append(self.of_name());
         self.export_props(ctx, def.global_mut(), self.meta.name().as_str())?;
         Ok(TaskValue::from((def, ExecOut::Ignore)))
     }

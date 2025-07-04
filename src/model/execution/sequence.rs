@@ -16,7 +16,7 @@ use crate::execution::runnable::ComponentMeta;
 use crate::execution::runnable::{AsyncRunnableTrait, ExecOut, TaskResult};
 use crate::execution::task::Task;
 use crate::execution::VarSpace;
-use crate::meta::GxlMeta;
+use crate::meta::{GxlMeta, MetaInfo};
 use crate::ExecError;
 
 use super::hold::TransableHold;
@@ -58,7 +58,7 @@ impl Sequence {
 
         let mut transaction_begin = false;
         for (index, item) in self.run_items.iter().enumerate() {
-            debug!(target: ctx.path(), "executing item {}: {} ", index, item.com_meta().name());
+            info!(target: ctx.path(), "executing item {}: {} ", index, item.com_meta().full_name());
             if item.is_transaction() {
                 transaction_begin = true;
                 warn!(target: ctx.path(), "transaction begin")

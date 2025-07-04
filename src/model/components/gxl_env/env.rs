@@ -1,4 +1,5 @@
 use crate::ability::prelude::{GxlVar, TaskValue};
+use crate::components::gxl_mod::meta::ModMeta;
 use crate::components::gxl_spc::GxlSpace;
 use crate::components::gxl_utls::mod_obj_name;
 use crate::components::GxlProps;
@@ -73,6 +74,10 @@ impl GxlEnv {
         target.assembled = true;
         debug!(target : "assemble", "assemble env {} end!" , target.meta().name() );
         Ok(target)
+    }
+
+    pub(crate) fn bind(&mut self, mod_meta: ModMeta) {
+        self.meta.with_host(mod_meta);
     }
 }
 

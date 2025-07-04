@@ -45,7 +45,8 @@ pub struct FileDTO {
 }
 
 impl FileDTO {
-    fn impl_ini(&self, ctx: ExecContext, file_path: &Path) -> ExecResult<VarDict> {
+    fn impl_ini(&self, mut ctx: ExecContext, file_path: &Path) -> ExecResult<VarDict> {
+        ctx.append("gx.read_ini");
         let file = Ini::load_from_file(file_path).map_err(|e| {
             ExecReason::Args(format!(
                 "load ini file:[{}] error: {}",

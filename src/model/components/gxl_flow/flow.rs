@@ -1,5 +1,6 @@
 use crate::ability::prelude::TaskValue;
 use crate::components::gxl_env::env::anns_from_option_dto;
+use crate::components::gxl_mod::meta::ModMeta;
 use crate::components::gxl_spc::GxlSpace;
 use crate::components::gxl_utls::mod_obj_name;
 use crate::data::AnnDto;
@@ -42,6 +43,10 @@ impl GxlFlow {
     #[requires(self.assembled)]
     pub fn clone_post_flows(&self) -> Vec<TransableHold> {
         self.post_flows.clone()
+    }
+
+    pub(crate) fn bind(&self, mod_meta: ModMeta) {
+        self.meta.set_host(mod_meta);
     }
 }
 

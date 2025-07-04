@@ -1,6 +1,10 @@
 use orion_common::friendly::MultiNew2;
 
-use crate::{annotation::ComUsage, meta::GxlType};
+use crate::{
+    annotation::ComUsage,
+    components::gxl_mod::meta::ModMeta,
+    meta::{GxlType, MetaInfo},
+};
 use std::fmt::Debug;
 
 use super::anno::{DryrunAnno, FlowAnnotation, TransAnno};
@@ -8,6 +12,7 @@ use super::anno::{DryrunAnno, FlowAnnotation, TransAnno};
 pub struct FlowMeta {
     class: GxlType,
     name: String,
+    host: Option<ModMeta>,
     annotations: Vec<FlowAnnotation>,
     preorder: Vec<String>,
     postorder: Vec<String>,
@@ -21,6 +26,19 @@ impl Debug for FlowMeta {
             .finish()
     }
 }
+
+const UNKNOW: String = String::new();
+impl MetaInfo for FlowMeta {
+    fn full_name(&self) -> String {
+        let mod_name = self
+            .host()
+            .as_ref()
+            .map(|x| x.name().clone())
+            .unwrap_or(UNKNOW);
+        format!("[flow]:{mod_name}.{}", self.name)
+    }
+}
+
 impl FlowMeta {
     pub fn build_flow<S: Into<String>>(name: S) -> Self {
         Self {
@@ -71,30 +89,15 @@ impl FlowMeta {
         None
     }
 }
-impl MultiNew2<GxlType, String> for FlowMeta {
-    fn new2(cls: GxlType, name: String) -> Self {
-        Self {
-            class: cls,
-            name,
-            annotations: Vec::new(),
-            preorder: Vec::new(),
-            postorder: Vec::new(),
-        }
-    }
-}
-impl MultiNew2<GxlType, &str> for FlowMeta {
-    fn new2(cls: GxlType, name: &str) -> Self {
+
+impl FlowMeta {
+    pub fn new<S: Into<String>>(cls: GxlType, name: S) -> Self {
         Self {
             class: cls,
             name: name.into(),
-            annotations: Vec::new(),
-            preorder: Vec::new(),
-            postorder: Vec::new(),
+            ..Default::default()
         }
     }
-}
-
-impl FlowMeta {
     pub fn with_annotate(mut self, ann: FlowAnnotation) -> Self {
         self.annotations.push(ann);
         self
@@ -102,6 +105,9 @@ impl FlowMeta {
     pub fn with_annotates(mut self, anns: Vec<FlowAnnotation>) -> Self {
         self.annotations = anns;
         self
+    }
+    pub fn set_host(&mut self, mod_meta: ModMeta) {
+        self.host = Some(mod_meta);
     }
     pub fn set_annotates(&mut self, anns: Vec<FlowAnnotation>) {
         self.annotations = anns;

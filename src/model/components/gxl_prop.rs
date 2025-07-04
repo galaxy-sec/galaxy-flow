@@ -5,7 +5,7 @@ use orion_common::friendly::{AppendAble, New2};
 
 use crate::{
     ability::prelude::{Action, TaskValue},
-    meta::{GxlMeta, GxlType},
+    meta::{GxlMeta, GxlType, MetaInfo},
     traits::PropsTrait,
 };
 
@@ -19,6 +19,12 @@ pub struct PropMeta {
     class: GxlType,
     name: String,
 }
+impl MetaInfo for PropMeta {
+    fn full_name(&self) -> String {
+        format!("[props]:{}", self.name.clone())
+    }
+}
+
 impl PropMeta {
     pub fn new<S: Into<String>>(name: S) -> Self {
         Self {
@@ -103,7 +109,8 @@ impl PropsTrait for GxlProps {
 
 #[async_trait]
 impl AsyncRunnableTrait for GxlProps {
-    async fn async_exec(&self, ctx: ExecContext, mut def: VarSpace) -> TaskResult {
+    async fn async_exec(&self, mut ctx: ExecContext, mut def: VarSpace) -> TaskResult {
+        ctx.append("props");
         let action = Action::from("rg vars setting");
         self.export_props(ctx, def.global_mut(), self.host.as_str())?;
         Ok(TaskValue::from((def, ExecOut::Action(action))))

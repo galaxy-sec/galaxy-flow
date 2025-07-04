@@ -59,14 +59,15 @@ pub fn gal_stc_mod(input: &mut &str) -> ModalResult<GxlMod> {
         .parse_next(input)?;
     let mut meta = ModMeta::new2(GxlType::Mod, head.name().clone()).with_annotates(anns);
     meta.set_mix(head.mix().clone());
-    let mut obj = GxlMod::from(meta);
+    let mut obj = GxlMod::from(meta.clone());
     gal_block_beg.parse_next(input)?;
     let props: Vec<GxlVar> = repeat(0.., gal_prop).parse_next(input)?;
     obj.append(props);
     loop {
         skip_spaces_block.parse_next(input)?;
         if starts_with((multispace0, alt(("activity", "env", "flow", "#["))), input) {
-            let item = gal_stc_mod_item.parse_next(input)?;
+            let mut item = gal_stc_mod_item.parse_next(input)?;
+            item.bind(meta.clone());
             obj.append(item);
         } else {
             break;

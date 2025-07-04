@@ -1,4 +1,8 @@
-use crate::{annotation::ComUsage, meta::GxlType};
+use crate::{
+    annotation::ComUsage,
+    components::gxl_mod::meta::ModMeta,
+    meta::{GxlType, MetaInfo},
+};
 use orion_common::friendly::MultiNew2;
 use std::fmt::Debug;
 
@@ -8,6 +12,7 @@ use super::anno::EnvAnnotation;
 pub struct EnvMeta {
     class: GxlType,
     name: String,
+    host: Option<ModMeta>,
     mix: Vec<String>,
     annotations: Vec<EnvAnnotation>,
 }
@@ -20,6 +25,12 @@ impl Debug for EnvMeta {
             .finish()
     }
 }
+impl MetaInfo for EnvMeta {
+    fn full_name(&self) -> String {
+        format!("[env]:{}:{}", self.name, self.mix.join(","))
+    }
+}
+
 impl EnvMeta {
     pub fn build_env<S: Into<String>>(name: S) -> Self {
         Self::new2(GxlType::Env, name.into())
@@ -51,14 +62,17 @@ impl EnvMeta {
         }
         None
     }
+
+    pub(crate) fn with_host(&self, mod_meta: crate::components::gxl_mod::meta::ModMeta) -> _ {
+        todo!()
+    }
 }
 impl MultiNew2<GxlType, String> for EnvMeta {
     fn new2(cls: GxlType, name: String) -> Self {
         Self {
             class: cls,
             name,
-            annotations: Vec::new(),
-            mix: Vec::new(),
+            ..Default::default()
         }
     }
 }
@@ -67,8 +81,7 @@ impl MultiNew2<GxlType, &str> for EnvMeta {
         Self {
             class: cls,
             name: name.into(),
-            annotations: Vec::new(),
-            mix: Vec::new(),
+            ..Default::default()
         }
     }
 }
@@ -81,6 +94,9 @@ impl EnvMeta {
     pub fn with_annotates(mut self, anns: Vec<EnvAnnotation>) -> Self {
         self.annotations = anns;
         self
+    }
+    pub fn set_host(&mut self, host: ModMeta) {
+        self.host = Some(host);
     }
     pub fn set_annotates(&mut self, anns: Vec<EnvAnnotation>) {
         self.annotations = anns;

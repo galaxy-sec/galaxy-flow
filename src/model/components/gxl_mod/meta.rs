@@ -3,7 +3,7 @@ use std::fmt::Debug;
 
 use orion_common::friendly::MultiNew2;
 
-use crate::meta::GxlType;
+use crate::meta::{GxlType, MetaInfo};
 
 use super::anno::ModAnnotation;
 
@@ -21,6 +21,11 @@ impl Debug for ModMeta {
             .field("class", &self.class)
             .field("name", &self.name)
             .finish()
+    }
+}
+impl MetaInfo for ModMeta {
+    fn full_name(&self) -> String {
+        format!("[mod]:{}", self.name.clone())
     }
 }
 impl ModMeta {
