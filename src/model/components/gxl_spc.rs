@@ -259,7 +259,7 @@ impl GxlSpace {
             let env_paths = [
                 env.as_str(),
                 &format!("{MAIN_MOD}.{env}",),
-                &format!("{ENVS_MOD}.{env}",),
+                &format!("{ENV_MOD}.{env}",),
                 &format!("{ENVS_MOD}.{env}",),
             ];
 
