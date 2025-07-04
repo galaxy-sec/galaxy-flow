@@ -41,7 +41,7 @@ pub trait PropsTrait {
     fn export_props(&self, ctx: ExecContext, dict: &mut VarDict, prefix: &str) -> ExecResult<()> {
         EnvVarTag::import(&dict.export());
         let key_maker = UpperKeyMaker::new(prefix);
-        debug!( target: ctx.path() ,"props export use prefix({})", prefix);
+        debug!( target: ctx.path() ,"props export use prefix({prefix})" );
         let mut exp = EnvExpress::from_env_mix(dict.clone());
         for prop in self.fetch_props() {
             let key = key_maker.make(prop.key());

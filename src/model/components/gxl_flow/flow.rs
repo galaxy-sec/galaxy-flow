@@ -54,15 +54,15 @@ impl DependTrait<&GxlSpace> for GxlFlow {
         let mut linked = false;
         for flow_id in pre_order_flows {
             assemble_pipe(mod_name, flow_id, src, &mut target.pre_flows)?;
-            let _ = write!(&mut buffer, "{} | ", flow_id);
+            let _ = write!(&mut buffer, "{flow_id} | ");
             linked = true;
         }
 
         let _ = write!(&mut buffer, "@{}.{} ", mod_name, self.meta().name());
         let post_order_flows = self.meta.postorder();
-        for flow_id in post_order_flows {
-            assemble_pipe(mod_name, flow_id, src, &mut target.post_flows)?;
-            let _ = write!(&mut buffer, " | {} ", flow_id);
+        for flow_name in post_order_flows {
+            assemble_pipe(mod_name, flow_name, src, &mut target.post_flows)?;
+            let _ = write!(&mut buffer, " | {flow_name} ");
             linked = true;
         }
         if linked {
@@ -73,11 +73,11 @@ impl DependTrait<&GxlSpace> for GxlFlow {
             );
         }
         if let Some(undo_name) = self.meta().undo_flow_name() {
-            info!( target: "assemble", "undo flow {} ", undo_name );
+            info!( target: "assemble", "undo flow {undo_name} " );
             target.undo_flow_item = assemble_fetch(mod_name, undo_name.as_str(), src)?;
         }
         if let Some(dryrun_name) = self.meta().dryrun_flow_name() {
-            info!( target: "assemble", "dryrun flow {} ", dryrun_name );
+            info!( target: "assemble", "dryrun flow {dryrun_name} " );
             target.dryrun_flow = assemble_fetch(mod_name, dryrun_name.as_str(), src)?;
         }
         for block in self.blocks {

@@ -24,7 +24,7 @@ pub fn gal_tpl(input: &mut &str) -> ModalResult<GxTpl> {
             if let Ok(engine) = TPlEngineType::from_str(val.as_str()) {
                 builder.engine(engine);
             } else {
-                error!(target: "parse", "unknow engine :{}",val);
+                error!(target: "parse", "unknow engine :{val}",);
                 return fail.context(wn_desc("gx.tpl build")).parse_next(input);
             }
         } else if key == "file" {

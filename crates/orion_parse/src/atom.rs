@@ -110,7 +110,7 @@ fn inner_parentheses_val(data: &mut &str, depth: &mut u32) -> ModalResult<String
         Ok(_) => {
             *depth += 1;
             let val = inner_parentheses_val(data, depth)?;
-            target_val.push_str(&format!("({}", val));
+            target_val.push_str(&format!("({val}"));
         }
         Err(_) => {
             if *depth != 0 {

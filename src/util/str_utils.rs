@@ -41,7 +41,7 @@ impl UpperKeyMaker {
         let mut key = name.into();
         key.make_ascii_uppercase();
         if let Some(prefix) = &self.prefix {
-            format!("{}_{}", prefix, key)
+            format!("{prefix}_{key}",)
         } else {
             key
         }

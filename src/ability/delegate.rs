@@ -46,10 +46,9 @@ impl DependTrait<&GxlSpace> for ActCall {
         if let Some(act) = src.get(&t_mod).and_then(|m| m.acts().get(&act_name)) {
             Ok(self.clone_from(act, t_mod))
         } else {
-            error!("activity not found: {}.{}", t_mod, act_name);
+            error!("activity not found: {t_mod}.{act_name}");
             Err(AssembleError::from(AssembleReason::Miss(format!(
-                "activity: {}.{}",
-                t_mod, act_name
+                "activity: {t_mod}.{act_name}"
             ))))
         }
     }

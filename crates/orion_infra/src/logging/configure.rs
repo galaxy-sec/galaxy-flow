@@ -131,7 +131,7 @@ fn log_format_position(
     write!(
         w,
         "{:8} < {:20}> {:<15} {}",
-        style(level).paint(format!("{:<8}", level)),
+        style(level).paint(format!("{level:<8}")),
         style(level).paint(format!("{:<20}", get_position(record))),
         style(level).paint(format!("{:<15}", get_target(record, 12))),
         style(level).paint(get_content(record)),
@@ -147,7 +147,7 @@ fn log_format_normal(
     write!(
         w,
         "{:<8}-{:<25} {}",
-        style(level).paint(format!("{:<8}", level)),
+        style(level).paint(format!("{level:<8}")),
         style(level).paint(format!("{:<25}", get_target(record, 20))),
         style(level).paint(get_content(record)),
     )
@@ -163,7 +163,7 @@ fn get_position(record: &Record) -> String {
     };
 
     if let Some(line) = record.line() {
-        target = format!("{}:{}", target, line);
+        target = format!("{target}:{line}");
     }
 
     target
@@ -183,12 +183,12 @@ fn get_target(record: &Record, max: usize) -> String {
             }
         }
     }
-    format!("[{}]", target)
+    format!("[{target}]")
 }
 
 fn get_content(record: &Record) -> String {
     let data = record.args().to_string();
     let head = data.chars().take(MAX_LOG).collect::<String>();
     let others = data.chars().skip(MAX_LOG).collect::<String>();
-    format!("{}{}", head, others)
+    format!("{head}{others}")
 }

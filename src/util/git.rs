@@ -41,7 +41,7 @@ impl GitTools {
             self.gxl_root, SH_NAME, url, repo, tag, tag, update, self.vendor_root
         );
 
-        debug!(target:"sys/mod", "mod update cmd:{}", cmd);
+        debug!(target:"sys/mod", "mod update cmd:{cmd}" );
         gxl_sh!(
             LogicScope::Inner,
             "cmd:pull-mod",
@@ -59,7 +59,7 @@ impl GitTools {
             self.gxl_root, SH_NAME, url, repo, tag, update, self.gxl_root
         );
 
-        debug!(target:"sys/mod", "mod update cmd:{}", cmd);
+        debug!(target:"sys/mod", "mod update cmd:{cmd}", );
         gxl_sh!(LogicScope::Inner, "cmd:init", &cmd, opt, &self.exp_engine)?;
         Ok(())
     }
@@ -113,7 +113,7 @@ pub fn build_shell(sh_root: &str, sh_name: &str, sh_code: &str, sh_path: &str) -
     if std::path::Path::new(sh_path).exists() {
         return Ok(());
     }
-    warn!(target: "sys","will create {} to {}", sh_name,sh_path);
+    warn!(target: "sys","will create {sh_name} to {sh_path}", );
 
     std::fs::create_dir_all(sh_root).owe_res()?;
     let mut file = File::create(sh_path).owe_res()?;

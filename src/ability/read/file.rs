@@ -58,7 +58,7 @@ impl FileDTO {
             for (k, v) in prop.iter() {
                 let str_k = k.trim().to_string();
                 let str_v = v.trim().to_string();
-                debug!(target: ctx.path() , "ini import {}:{}", str_k, str_v);
+                debug!(target: ctx.path() , "ini import {str_k}:{str_v}" );
                 vars.append(GxlVar::new(str_k, str_v));
             }
         }
@@ -136,11 +136,11 @@ impl FileDTO {
                         serde_json::Value::Null => todo!(),
                         serde_json::Value::Bool(_) => todo!(),
                         serde_json::Value::Number(v) => {
-                            debug!(target: ctx.path() , "json import {}:{}", k, v);
+                            debug!(target: ctx.path() , "json import {k}:{v}");
                             dict.set(k.to_string(), v.to_string());
                         }
                         serde_json::Value::String(v) => {
-                            debug!(target: ctx.path() , "json import {}:{}", k, v);
+                            debug!(target: ctx.path() , "json import {k}:{v}" );
                             dict.set(k.to_string(), v.clone());
                         }
                         serde_json::Value::Array(_) => todo!(),

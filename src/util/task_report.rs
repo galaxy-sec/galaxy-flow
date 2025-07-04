@@ -37,18 +37,18 @@ pub fn task_local_report(out: ExecOut) {
 
             // 确保目录存在
             if let Err(e) = ensure_directory_exists(path) {
-                println!("Failed to ensure directory exists: {}", e);
+                println!("Failed to ensure directory exists: {e}",);
             };
 
             // 将 yaml 字符串写入文件
             if let Err(e) = std::fs::write(path, toml)
-                .with_context(|| format!("write toml file : {}", file_name))
+                .with_context(|| format!("write toml file : {file_name}",))
             {
-                println!("Failed to write toml file: {}", e);
+                println!("Failed to write toml file: {e}",);
             }
         }
         Err(_) => {
-            println!("Failed to create file: {}", file_name);
+            println!("Failed to create file: {file_name}",);
         }
     }
 }

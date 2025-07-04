@@ -118,7 +118,7 @@ impl AsyncRunnableTrait for RgVersion {
         debug!(target: ctx.path(),"version file:{}", file_path);
         let data = fs::read_to_string(file_path.as_str())
             .owe_biz()
-            .with(format!("version file ({}) ", file_path))?;
+            .with(format!("version file ({file_path}) "))?;
         if let Ok((a, b, c, d)) = take_version(&mut data.as_str()) {
             let mut ver = Version::new(a, b, c, d);
             ver.auto(&self.verinc);

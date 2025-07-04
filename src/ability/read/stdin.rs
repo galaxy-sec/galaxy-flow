@@ -18,7 +18,7 @@ impl StdinDTO {
         let msg = self.prompt.clone();
         let name = self.name.clone();
         let msg = exp.eval(&msg)?;
-        println!("{}", msg);
+        println!("{msg}");
         let mut buffer = String::new();
         let stdin = io::stdin(); // We get `Stdin` here.
         stdin.read_line(&mut buffer).owe_data()?;

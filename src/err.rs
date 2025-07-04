@@ -69,49 +69,49 @@ pub fn report_gxl_error(e: RunError) {
     match e.reason() {
         RunReason::Uvs(uvs_reason) => match uvs_reason {
             UvsReason::LogicError(e) => {
-                println!("LOGIC ERROR: {}\n", e);
+                println!("LOGIC ERROR: {e}\n",);
             }
             UvsReason::BizError(e) => {
-                println!("BIZ ERROR: {}\n", e);
+                println!("BIZ ERROR: {e}\n",);
             }
             UvsReason::DataError(e, _) => {
-                println!("DATA ERROR: {}\n", e);
+                println!("DATA ERROR: {e}\n",);
             }
             UvsReason::SysError(e) => {
-                println!("SYS ERROR: {}\n", e);
+                println!("SYS ERROR: {e}\n",);
             }
             UvsReason::ResError(e) => {
-                println!("RES ERROR: {}\n", e);
+                println!("RES ERROR: {e}\n",);
             }
             UvsReason::ConfError(e) => {
-                println!("CONF ERROR: {}\n", e);
+                println!("CONF ERROR: {e}\n",);
             }
             UvsReason::RuleError(e) => {
-                println!("RULE ERROR: {}\n", e);
+                println!("RULE ERROR: {e}\n",);
             }
             UvsReason::PrivacyError(e) => {
-                println!("PRIVACY ERROR: {}\n", e);
+                println!("PRIVACY ERROR: {e}\n",);
             }
         },
         RunReason::Gxl(e) => {
-            println!("GXL ERROR: {}\n", e);
+            println!("GXL ERROR: {e}\n",);
         }
         RunReason::Exec(e) => {
-            println!("EXEC ERROR: {}\n", e);
+            println!("EXEC ERROR: {e}\n",);
         }
         RunReason::Args(e) => {
-            println!("ARGS ERROR: {}\n", e);
+            println!("ARGS ERROR: {e}\n",);
         }
     }
     if let Some(pos) = e.position() {
-        println!("\n[POSITION]:\n{}", pos);
+        println!("\n[POSITION]:\n{pos}",);
     }
     if let Some(detail) = e.detail() {
-        println!("\n[DETAIL]:\n{}", detail);
+        println!("\n[DETAIL]:\n{detail}",);
     }
     println!("\n[CONTEXT]:\n");
     for x in e.context() {
-        println!("{}", x)
+        println!("{x}")
     }
 }
 

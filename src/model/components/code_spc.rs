@@ -102,7 +102,7 @@ mod tests {
         work_spc.load_env(ctx.clone(), &mut flow, "env.env1")?;
         work_spc.load_flow(ctx.clone(), &mut flow, "main.flow1")?;
         let job = flow.test_execute(ctx, def).await;
-        debug!("job {:#?}", job);
+        debug!("job {job:#?}");
         work_spc.show().unwrap();
         Ok(())
     }

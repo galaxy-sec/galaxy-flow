@@ -30,7 +30,7 @@ pub fn gal_run(input: &mut &str) -> ModalResult<GxRun> {
     match builder.build() {
         Ok(obj) => Ok(obj),
         Err(e) => {
-            error!("{}", e);
+            error!("{e}");
             fail.context(wn_desc("gx.run-build")).parse_next(input)
         }
     }

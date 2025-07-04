@@ -22,7 +22,7 @@ impl ModRepo {
                 repo_name: repo_name.into(),
             });
         }
-        Err(ExecReason::Args(format!("repo url :{} error", repo_url)).into())
+        Err(ExecReason::Args(format!("repo url :{repo_url} error")).into())
     }
     pub fn pull(&self, tools: &GitTools, opt: &ShellOption) -> NER {
         if let Err(e) = tools.pull_init(

@@ -9,7 +9,7 @@ impl Display for FunDto {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "ann-fun : {}(", self.keyword)?;
         for (k, v) in &self.args {
-            write!(f, "{}:{},", k, v)?;
+            write!(f, "{k}:{v},")?;
         }
         write!(f, ")",)?;
         Ok(())

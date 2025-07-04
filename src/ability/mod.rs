@@ -43,9 +43,7 @@ pub fn parse_suc_code(suc: &str) -> Vec<i32> {
         let i = i.trim();
         let mut val = 0;
         if !i.is_empty() {
-            val = i
-                .parse::<i32>()
-                .unwrap_or_else(|_| panic!("bad number{}", i));
+            val = i.parse::<i32>().unwrap_or_else(|_| panic!("bad number{i}"));
         }
         expect_vec.push(val);
     }

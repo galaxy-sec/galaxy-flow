@@ -53,7 +53,7 @@ impl GxlEnv {
             for mix in mix_list {
                 let link_env = Self::get_env(mod_name, mix.as_str(), src)?;
                 base.merge(&link_env);
-                let _ = write!(&mut buffer, "{} | ", mix);
+                let _ = write!(&mut buffer, "{mix} | ");
                 linked = true;
             }
             base.merge(self);

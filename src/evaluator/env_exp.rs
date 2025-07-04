@@ -58,14 +58,14 @@ impl EnvExpress {
             val.clone()
         } else {
             //error!("{}", self.data);
-            format!("__NO[{}]__", key)
+            format!("__NO[{key}]__")
         }
     }
     pub fn sec_eval_val(&self, key: &str) -> String {
         if let Some(val) = self.sec_val(key) {
             return val.clone();
         }
-        format!("__NO[{}]__", key)
+        format!("__NO[{key}]__",)
     }
 }
 

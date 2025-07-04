@@ -54,7 +54,7 @@ pub fn gal_git_path(input: &mut &str) -> ModalResult<(String, String)> {
 pub fn gal_mix_item(input: &mut &str) -> ModalResult<String> {
     alt((
         take_var_name,
-        take_var_ref_name.map(|x| format!("${{{}}}", x)),
+        take_var_ref_name.map(|x| format!("${{{x}}}")),
     ))
     .parse_next(input)
 }

@@ -51,7 +51,7 @@ impl GxLoader {
         sh_opt: ShellOption,
         vars_space: &VarSpace,
     ) -> RunResult<CodeSpace> {
-        info!(target:"parse", "parse file: {}", conf);
+        info!(target:"parse", "parse file: {conf}" );
         let mut wc = WithContext::want("parse gxl file");
         wc.with("conf", conf);
         let code = read_to_string(conf).owe_conf().with(&wc)?;
@@ -112,7 +112,7 @@ impl GxLoader {
 pub fn err_code_prompt(code: &str) -> String {
     let take_len = if code.len() > 200 { 200 } else { code.len() };
     if let Some((left, _right)) = code.split_at_checked(take_len) {
-        return format!("{}...", left);
+        return format!("{left}...");
     }
     "".to_string()
 }

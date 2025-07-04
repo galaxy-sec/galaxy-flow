@@ -19,8 +19,8 @@ impl CmdDTO {
         let name = self.name.clone();
         let cmd = exp.eval(&cmd)?;
         let (data, _) = gxl_sh!(LogicScope::Outer, ctx.path(), &cmd, &self.expect, &exp)?;
-        let data_str = String::from_utf8(data)
-            .map_err(|msg| ExecReason::Exp(format!("bad result {}", msg)))?;
+        let data_str =
+            String::from_utf8(data).map_err(|msg| ExecReason::Exp(format!("bad result {msg}")))?;
         let mut vars = GxlProps::new("cmd");
         vars.append(GxlVar::new(name, data_str.trim().to_string()));
         vars.export_props(ctx, vars_dict.global_mut(), "")?;

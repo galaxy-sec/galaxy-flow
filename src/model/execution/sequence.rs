@@ -89,7 +89,7 @@ impl Sequence {
                         job.append(rec);
                     }
                     Err(e) => {
-                        warn!("Sequence aborted at step {}: {}", index, e);
+                        warn!("Sequence aborted at step {index}: {e}");
                         warn!("will execute undo :{}", undo_stack.len());
                         self.undo_transactions(ctx.clone(), undo_stack).await;
                         return Err(e);

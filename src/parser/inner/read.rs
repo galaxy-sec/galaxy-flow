@@ -32,7 +32,7 @@ pub fn gal_read_file(input: &mut &str) -> ModalResult<GxRead> {
     match builder.build() {
         Ok(dto) => Ok(GxRead::from(ReadMode::from(dto))),
         Err(e) => {
-            error!(target: "parse", "{}",e);
+            error!(target: "parse", "{e}",);
             fail.context(wn_desc("read")).parse_next(input)
         }
     }
@@ -78,7 +78,7 @@ pub fn gal_read_cmd(input: &mut &str) -> ModalResult<GxRead> {
     match builder.build() {
         Ok(dto) => Ok(GxRead::from(ReadMode::from(dto))),
         Err(e) => {
-            error!(target: "parse", "{}",e);
+            error!(target: "parse", "{e}");
             fail.context(wn_desc("read_cmd")).parse_next(input)
         }
     }

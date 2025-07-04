@@ -22,7 +22,7 @@ pub fn gal_download(input: &mut &str) -> ModalResult<GxDownLoad> {
     match down.build() {
         Ok(o) => Ok(o),
         Err(e) => {
-            error!("{}", e);
+            error!("{e}",);
             fail.context(wn_desc("gx.download")).parse_next(input)
         }
     }

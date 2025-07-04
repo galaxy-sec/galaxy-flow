@@ -243,7 +243,7 @@ impl GxlSpace {
         if name.contains('.') {
             name.to_string()
         } else {
-            format!("{}.{}", MAIN_MOD, name)
+            format!("{MAIN_MOD}.{name}",)
         }
     }
 
@@ -258,9 +258,9 @@ impl GxlSpace {
         for env in envs {
             let env_paths = [
                 env.as_str(),
-                &format!("{}.{}", MAIN_MOD, env),
-                &format!("{}.{}", ENVS_MOD, env),
-                &format!("{}.{}", ENV_MOD, env),
+                &format!("{MAIN_MOD}.{env}",),
+                &format!("{ENVS_MOD}.{env}",),
+                &format!("{ENVS_MOD}.{env}",),
             ];
 
             if let Some(found) = env_paths
@@ -303,10 +303,10 @@ pub fn color_show<S: AsRef<str> + Display>(text: S, color: Option<&str>) {
         Some("black") => text.as_ref().black(),
         Some("white") => text.as_ref().white(),
         Some("purple") => text.as_ref().purple(),
-        _ => return println!("{}", text),
+        _ => return println!("{text}"),
     };
 
-    println!("{}", colored_text);
+    println!("{colored_text}");
 }
 
 #[cfg(test)]
@@ -357,7 +357,7 @@ mod tests {
         work_space.load_flow(ctx.clone(), &mut flow, "main.flow1")?;
 
         let task_v = flow.test_execute(ctx, def).await.unwrap();
-        debug!("Job result: {:#?}", task_v);
+        debug!("Job result: {task_v:#?}",);
 
         work_space.show().unwrap();
         Ok(())

@@ -27,7 +27,7 @@ impl Display for WinnowErrorEx {
         context_vec.reverse();
         writeln!(f, "parse syntax :",)?;
         for context in context_vec {
-            write!(f, "{}::", context)?;
+            write!(f, "{context}::")?;
         }
         Ok(())
     }

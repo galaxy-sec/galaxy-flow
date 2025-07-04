@@ -169,7 +169,7 @@ mod tests {
                 assert_eq!(dto.after, ["a_flow1", "a_flow2"]);
             }
             Err(err) => {
-                println!("Error: {:?}", err);
+                println!("Error: {err:?}");
                 panic!();
             }
         };
@@ -190,7 +190,7 @@ mod tests {
                 assert_eq!(dto.after, ["a_flow1", "a_flow2"]);
             }
             Err(err) => {
-                println!("Error: {:?}", err);
+                println!("Error: {err:?}");
                 panic!();
             }
         };
@@ -211,7 +211,7 @@ mod tests {
                 assert_eq!(dto.after, ["a_flow1", "a_flow2"]);
             }
             Err(err) => {
-                println!("Error: {:?}", err);
+                println!("Error: {err:?}");
                 panic!();
             }
         };
@@ -230,7 +230,7 @@ mod tests {
                 assert!(dto.after.is_empty());
             }
             Err(err) => {
-                println!("Error: {:?}", err);
+                println!("Error: {err:?}");
                 panic!();
             }
         };
@@ -247,7 +247,7 @@ mod tests {
                 assert_eq!(dto.after, ["rust_flow.lint"]);
             }
             Err(err) => {
-                println!("Error: {:?}", err);
+                println!("Error: {err:?}");
                 panic!();
             }
         };

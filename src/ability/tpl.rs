@@ -36,7 +36,7 @@ impl Display for TPlEngineType {
             TPlEngineType::Handlebars => "handlebars",
             TPlEngineType::Helm => "helm",
         };
-        write!(f, "{}", msg)
+        write!(f, "{msg}")
     }
 }
 
@@ -75,7 +75,7 @@ impl Display for TplDTO {
 
 impl GxTpl {
     pub fn render_path(&self, ctx: ExecContext, dto: &TplDTO, dict: VarSpace) -> ExecResult<()> {
-        info!(target: ctx.path(), "gx.tpl : {}", dto);
+        info!(target: ctx.path(), "gx.tpl : {dto}" );
         let exp = EnvExpress::from_env_mix(dict.global().clone());
         let tpl = PathBuf::from(exp.eval(dto.tpl.as_str())?);
         let dst = PathBuf::from(exp.eval(dto.dst.as_str())?);
@@ -295,9 +295,9 @@ mod tests {
         //use ValueDict
         let (context, def) = ability_env_init();
         let root = format!("{}/examples/template/conf", context.cur_path());
-        let tpl = format!("{}/tpls", root);
-        let dst = format!("{}/used", root);
-        let file = format!("{}/value.json", root);
+        let tpl = format!("{root}/tpls",);
+        let dst = format!("{root}/used",);
+        let file = format!("{root}/value.json",);
 
         let dto = TplDTO {
             tpl: tpl.clone(),
@@ -309,12 +309,12 @@ mod tests {
         let conf_tpl = GxTpl::new_by_dto(dto);
         conf_tpl.async_exec(context.clone(), def).await.unwrap();
 
-        let ngx_dst = format!("{}/used/nginx.conf", root);
-        let ngx_xpt = format!("{}/expect/nginx.conf", root);
+        let ngx_dst = format!("{root}/used/nginx.conf",);
+        let ngx_xpt = format!("{root}/expect/nginx.conf",);
         assert!(files_identical(ngx_dst.as_str(), ngx_xpt.as_str()).unwrap());
 
-        let sys_dst = format!("{}/used/sys.toml", root);
-        let sys_tpl = format!("{}/tpls/sys.toml", root);
+        let sys_dst = format!("{root}/used/sys.toml",);
+        let sys_tpl = format!("{root}/tpls/sys.toml",);
         assert!(files_identical(sys_dst.as_str(), sys_tpl.as_str()).unwrap());
     }
 

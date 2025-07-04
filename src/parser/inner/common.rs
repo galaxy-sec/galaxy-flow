@@ -92,8 +92,8 @@ where
     match gal_fn(input) {
         Ok(v) => Ok(v),
         Err(e) => {
-            println!("{}", e);
-            println!("input@:> _{}", input);
+            println!("{e}");
+            println!("input@:> _{input}");
             Err(e)
         }
     }
