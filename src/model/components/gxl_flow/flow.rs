@@ -23,26 +23,21 @@ use contracts::requires;
 use derive_getters::Getters;
 
 use super::anno::FlowAnnFunc;
-use super::meta::FlowMeta;
+use super::meta::{FlowMeta, FlowMetaHold};
 
 #[derive(Clone, Getters, Default)]
 pub struct GxlFlow {
     meta: FlowMeta,
-    pre_flows: Vec<TransableHold>,
-    post_flows: Vec<TransableHold>,
-    undo_flow_item: Vec<TransableHold>,
-    dryrun_flow: Vec<TransableHold>,
+    //pre_flows: Vec<GxlFlow>,
+    //post_flows: Vec<GxlFlow>,
+    //undo_flow_item: Vec<GxlFlow>,
+    //dryrun_flow: Vec<GxlFlow>,
     blocks: Vec<BlockNode>,
     assembled: bool,
 }
 impl GxlFlow {
-    #[requires(self.assembled)]
-    pub fn clone_pre_flows(&self) -> Vec<TransableHold> {
-        self.pre_flows.clone()
-    }
-    #[requires(self.assembled)]
-    pub fn clone_post_flows(&self) -> Vec<TransableHold> {
-        self.post_flows.clone()
+    pub fn meta_mut(&mut self) -> &mut FlowMeta {
+        &mut self.meta
     }
 
     pub(crate) fn bind(&mut self, mod_meta: ModMeta) {
@@ -58,7 +53,8 @@ impl DependTrait<&GxlSpace> for GxlFlow {
         let mut buffer = Vec::new();
         let mut linked = false;
         for flow_id in pre_order_flows {
-            assemble_pipe(mod_name, flow_id, src, &mut target.pre_flows)?;
+            let meta = assemble_flow_meta(mod_name, flow_id, src)?;
+            target.meta_mut().pre_metas_mut().push(meta);
             let _ = write!(&mut buffer, "{flow_id} | ");
             linked = true;
         }
@@ -66,7 +62,8 @@ impl DependTrait<&GxlSpace> for GxlFlow {
         let _ = write!(&mut buffer, "@{}.{} ", mod_name, self.meta().name());
         let post_order_flows = self.meta.postorder();
         for flow_name in post_order_flows {
-            assemble_pipe(mod_name, flow_name, src, &mut target.post_flows)?;
+            let meta = assemble_flow_meta(mod_name, flow_name, src)?;
+            target.meta_mut().pos_metas_mut().push(meta);
             let _ = write!(&mut buffer, " | {flow_name} ");
             linked = true;
         }
@@ -79,11 +76,13 @@ impl DependTrait<&GxlSpace> for GxlFlow {
         }
         if let Some(undo_name) = self.meta().undo_flow_name() {
             info!( target: "assemble", "undo flow {undo_name} " );
-            target.undo_flow_item = assemble_fetch(mod_name, undo_name.as_str(), src)?;
+            let meta = assemble_flow_meta(mod_name, undo_name.as_str(), src)?;
+            target.meta_mut().set_undo(meta);
         }
         if let Some(dryrun_name) = self.meta().dryrun_flow_name() {
             info!( target: "assemble", "dryrun flow {dryrun_name} " );
-            target.dryrun_flow = assemble_fetch(mod_name, dryrun_name.as_str(), src)?;
+            let meta = assemble_flow_meta(mod_name, dryrun_name.as_str(), src)?;
+            target.meta_mut().set_dryrun(meta);
         }
         for block in self.blocks {
             let full_block = block.assemble(mod_name, src)?;
@@ -95,42 +94,16 @@ impl DependTrait<&GxlSpace> for GxlFlow {
     }
 }
 
-fn assemble_pipe(
-    m_name: &str,
-    flow: &str,
-    src: &GxlSpace,
-    target: &mut Vec<TransableHold>,
-) -> AResult<()> {
+fn assemble_flow_meta(m_name: &str, flow: &str, src: &GxlSpace) -> AResult<FlowMeta> {
     let (t_mod, flow_name) = mod_obj_name(m_name, flow);
     debug!(target:"assemble", " find flow by {t_mod}.{flow_name}" );
-    if let Some(flows) = src.get(&t_mod).map(|m| m.load_scope_flow(&flow_name)) {
+    if let Some(flow) = src.get(&t_mod).and_then(|m| m.load_scope_flow(&flow_name)) {
         debug!(target:"assemble", "found flow by {t_mod}.{flow_name}" );
-        if !flows.is_empty() {
-            for item in flows {
-                //TODO： 这个需要确认是否还需要 assemble ?
-                let ass_item = item.assemble(m_name, src)?;
-                target.push(ass_item);
-            }
-            return Ok(());
-        }
+        return Ok(flow.meta.clone());
     }
     Err(AssembleError::from(AssembleReason::Miss(format!(
         "{m_name}.{flow}",
     ))))
-}
-
-fn assemble_fetch(m_name: &str, flow: &str, src: &GxlSpace) -> AResult<Vec<TransableHold>> {
-    let mut target: Vec<TransableHold> = Vec::new();
-    let (t_mod, flow_name) = mod_obj_name(m_name, flow);
-    if let Some(flows) = src.get(&t_mod).map(|m| m.load_scope_flow(&flow_name)) {
-        //let undo_flow = flow.assemble(m_name, src)?;
-        for item in flows.into_iter() {
-            //TODO： 这个需要确认是否还需要 assemble ?
-            target.push(item.assemble(m_name, src)?);
-            //target.push(item);
-        }
-    }
-    Ok(target)
 }
 
 impl From<FlowMeta> for GxlFlow {
@@ -165,8 +138,8 @@ impl GxlFlow {
 }
 
 impl Dryrunable for GxlFlow {
-    fn dryrun_hold(&self) -> Vec<TransableHold> {
-        self.dryrun_flow.clone()
+    fn dryrun_hold(&self) -> Option<FlowMetaHold> {
+        self.meta().dryrun_meta().clone()
     }
 }
 
@@ -182,8 +155,8 @@ impl Transaction for GxlFlow {
         false
     }
 
-    fn undo_hold(&self) -> Vec<TransableHold> {
-        self.undo_flow_item.clone()
+    fn undo_hold(&self) -> Option<FlowMetaHold> {
+        self.meta().undo_meta().clone()
     }
 }
 impl GxlFlow {
@@ -321,8 +294,8 @@ mod tests {
         let assembled_flow = target_flow.assemble("test_mod", &spc).assert();
 
         // 验证 pre_ows 和 post_ows 是否为空
-        assert_eq!(assembled_flow.pre_flows().len(), 0);
-        assert_eq!(assembled_flow.post_flows().len(), 0);
+        assert_eq!(assembled_flow.meta().pre_metas().len(), 0);
+        assert_eq!(assembled_flow.meta().pos_metas().len(), 0);
     }
 
     #[test]
@@ -382,23 +355,23 @@ mod tests {
         let assembled_flow = target_flow.assemble("test_mod", &spc).assert();
 
         // 验证 pre_ows 和 post_ows 是否正确组装
-        assert_eq!(assembled_flow.pre_flows().len(), 4);
+        assert_eq!(assembled_flow.meta().pre_metas().len(), 4);
         assert_eq!(
-            assembled_flow.pre_flows()[0].com_meta().name(),
+            assembled_flow.meta().pre_metas()[0].name(),
             "test_mod.props"
         );
-        assert_eq!(assembled_flow.pre_flows()[1].com_meta().name(), "flow1");
+        assert_eq!(assembled_flow.meta().pre_metas()[1].name(), "flow1");
         assert_eq!(
-            assembled_flow.pre_flows()[2].com_meta().name(),
+            assembled_flow.meta().pre_metas()[2].name(),
             "test_mod.props"
         );
-        assert_eq!(assembled_flow.pre_flows()[3].com_meta().name(), "flow2");
+        assert_eq!(assembled_flow.meta().pre_metas()[3].name(), "flow2");
 
-        assert_eq!(assembled_flow.post_flows().len(), 2);
+        assert_eq!(assembled_flow.meta().pos_metas().len(), 2);
         assert_eq!(
-            assembled_flow.post_flows()[0].com_meta().name(),
+            assembled_flow.meta().pos_metas()[0].name(),
             "test_mod.props"
         );
-        assert_eq!(assembled_flow.post_flows()[1].com_meta().name(), "flow3");
+        assert_eq!(assembled_flow.meta().pos_metas()[1].name(), "flow3");
     }
 }

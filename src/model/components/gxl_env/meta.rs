@@ -31,6 +31,10 @@ impl MetaInfo for EnvMeta {
         let names: Vec<String> = self.mix_meta.iter().map(Self::long_name).collect();
         format!("[env]:{}:{}", self.name, names.join(","))
     }
+    fn long_name(&self) -> String {
+        let names: Vec<String> = self.mix_meta.iter().map(Self::long_name).collect();
+        format!("{}:{}", self.name, names.join(","))
+    }
 }
 
 impl EnvMeta {

@@ -5,6 +5,7 @@ use derive_more::From;
 
 use crate::ability::GxRead;
 use crate::annotation::{Dryrunable, Transaction};
+use crate::components::gxl_flow::meta::{FlowMeta, FlowMetaHold};
 use crate::components::gxl_spc::GxlSpace;
 use crate::components::{GxlEnv, GxlFlow, GxlMod, GxlProps};
 use crate::context::ExecContext;
@@ -85,14 +86,14 @@ impl Transaction for AsyncComHold {
         trans
     }
 
-    fn undo_hold(&self) -> Vec<TransableHold> {
+    fn undo_hold(&self) -> Option<FlowMetaHold> {
         match self {
             AsyncComHold::Flow(h) => h.undo_hold(),
             AsyncComHold::Stub(h) => h.undo_hold(),
             AsyncComHold::Read(_)
             | AsyncComHold::Env(_)
             | AsyncComHold::Props(_)
-            | AsyncComHold::Mox(_) => Vec::new(),
+            | AsyncComHold::Mox(_) => None,
         }
     }
 }
@@ -114,7 +115,7 @@ impl Transaction for ComHold {
         }
     }
 
-    fn undo_hold(&self) -> Vec<TransableHold> {
+    fn undo_hold(&self) -> Option<FlowMetaHold> {
         match self {
             ComHold::Conduction(h) => h.undo_hold(),
             ComHold::Isolation(h) => h.undo_hold(),
@@ -122,7 +123,7 @@ impl Transaction for ComHold {
     }
 }
 impl Dryrunable for ComHold {
-    fn dryrun_hold(&self) -> Vec<TransableHold> {
+    fn dryrun_hold(&self) -> Option<FlowMetaHold> {
         match self {
             ComHold::Conduction(h) => h.dryrun_hold(),
             ComHold::Isolation(h) => h.dryrun_hold(),
@@ -134,25 +135,25 @@ impl Transaction for IsolationHold {
         self.hold.is_transaction()
     }
 
-    fn undo_hold(&self) -> Vec<TransableHold> {
+    fn undo_hold(&self) -> Option<FlowMetaHold> {
         self.hold.undo_hold()
     }
 }
 impl Dryrunable for IsolationHold {
-    fn dryrun_hold(&self) -> Vec<TransableHold> {
+    fn dryrun_hold(&self) -> Option<FlowMetaHold> {
         self.hold.dryrun_hold()
     }
 }
 
 impl Dryrunable for AsyncComHold {
-    fn dryrun_hold(&self) -> Vec<TransableHold> {
+    fn dryrun_hold(&self) -> Option<FlowMetaHold> {
         match self {
             AsyncComHold::Flow(h) => h.dryrun_hold(),
             AsyncComHold::Stub(_)
             | AsyncComHold::Read(_)
             | AsyncComHold::Env(_)
             | AsyncComHold::Props(_)
-            | AsyncComHold::Mox(_) => Vec::new(),
+            | AsyncComHold::Mox(_) => None,
         }
     }
 }

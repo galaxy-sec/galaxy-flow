@@ -23,6 +23,9 @@ impl MetaInfo for PropMeta {
     fn full_name(&self) -> String {
         format!("[props]:{}", self.name.clone())
     }
+    fn long_name(&self) -> String {
+        format!("{}", self.name.clone())
+    }
 }
 
 impl PropMeta {

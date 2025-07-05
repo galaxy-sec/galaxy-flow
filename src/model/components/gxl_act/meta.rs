@@ -26,6 +26,10 @@ impl MetaInfo for ActivityMeta {
         let mod_name = self.host().as_ref().map_or(UNKNOW, |x| x.name().clone());
         format!("[activity]:{mod_name}.{}", self.name)
     }
+    fn long_name(&self) -> String {
+        let mod_name = self.host().as_ref().map_or(UNKNOW, |x| x.name().clone());
+        format!("{mod_name}.{}", self.name)
+    }
 }
 
 impl ActivityMeta {

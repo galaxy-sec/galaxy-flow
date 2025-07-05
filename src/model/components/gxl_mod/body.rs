@@ -1,6 +1,7 @@
 use crate::ability::prelude::GxlVar;
 use crate::ability::prelude::TaskValue;
 use crate::components::gxl_act::activity::Activity;
+use crate::components::gxl_flow::meta::FlowMeta;
 use crate::components::gxl_spc::GxlSpace;
 use crate::components::GxlEnv;
 use crate::components::GxlFlow;
@@ -44,8 +45,8 @@ pub struct GxlMod {
     flow_names: Vec<MenuItem>,
     envs: HashMap<String, GxlEnv>,
     flows: HashMap<String, GxlFlow>,
-    entrys: Vec<TransableHold>,
-    exits: Vec<TransableHold>,
+    entrys: Vec<FlowMeta>,
+    exits: Vec<FlowMeta>,
     acts: HashMap<String, Activity>,
     assembled: bool,
 }
@@ -81,21 +82,21 @@ impl DependTrait<&GxlSpace> for GxlMod {
             let ass_flow = flow.assemble(mod_name, src)?;
             debug_assert!(ass_flow.assembled());
             if ass_flow.is_auto_entry() {
-                for pre in ass_flow.pre_flows() {
-                    ins.entrys.push(pre.clone().assemble(mod_name, src)?);
+                for pre in ass_flow.meta().pre_metas() {
+                    ins.entrys.push(pre.clone());
                 }
-                ins.entrys.push(TransableHold::from(ass_flow.clone()));
-                for pre in ass_flow.post_flows() {
-                    ins.entrys.push(pre.clone().assemble(mod_name, src)?);
+                ins.entrys.push(ass_flow.meta().clone());
+                for pos in ass_flow.meta().pos_metas() {
+                    ins.entrys.push(pos.clone());
                 }
             }
             if ass_flow.is_auto_exit() {
-                for pre in ass_flow.pre_flows() {
-                    ins.exits.push(pre.clone().assemble(mod_name, src)?);
+                for pre in ass_flow.meta().pre_metas() {
+                    ins.exits.push(pre.clone());
                 }
-                ins.exits.push(TransableHold::from(ass_flow.clone()));
-                for pre in ass_flow.post_flows() {
-                    ins.exits.push(pre.clone().assemble(mod_name, src)?);
+                ins.exits.push(ass_flow.meta().clone());
+                for pos in ass_flow.meta().pos_metas() {
+                    ins.exits.push(pos.clone());
                 }
             }
             ins.flows.insert(k.clone(), ass_flow);
@@ -141,14 +142,11 @@ impl From<&str> for GxlMod {
 }
 
 impl GxlMod {
-    pub fn load_scope_flow(&self, name: &str) -> Vec<TransableHold> {
-        let mut run_hold: Vec<TransableHold> = Vec::new();
+    pub fn load_scope_flow(&self, name: &str) -> Option<GxlFlow> {
         if let Some(flow) = self.flows.get(name) {
-            //todo:....
-            run_hold.push(TransableHold::from(self.props().clone()));
-            run_hold.push(TransableHold::from(flow.clone()));
+            return Some(flow.clone());
         }
-        run_hold
+        None
     }
 
     fn up_meta(&mut self, meta: ModMeta) {
@@ -198,7 +196,11 @@ impl ExecLoadTrait for GxlMod {
         // 如果没有找到指定的环境变量，返回错误
         Err(ExecError::from(ExecReason::Miss(args.into())))
     }
+    fn load_flow(&self, mut ctx: ExecContext, sequ: &mut Sequence, name: &str) -> ExecResult<()> {
+        todo!();
+    }
 
+    /*
     #[requires(self.assembled)]
     fn load_flow(&self, mut ctx: ExecContext, sequ: &mut Sequence, name: &str) -> ExecResult<()> {
         ctx.append(self.meta.name().as_str());
@@ -212,7 +214,7 @@ impl ExecLoadTrait for GxlMod {
                 sequ.append_mod_head(self.props.clone());
                 for x in self.entrys.iter() {
                     debug_assert!(x.assembled());
-                    sequ.append_mod_entry(x.clone());
+                    sequ.append_mod_entry(TransableHold::from(x.clone()));
                 }
                 let pre_flows = found.clone_pre_flows();
                 let post_flows = found.clone_post_flows();
@@ -225,13 +227,14 @@ impl ExecLoadTrait for GxlMod {
                 }
                 for x in self.exits().iter() {
                     debug_assert!(x.assembled());
-                    sequ.append_mod_exit(x.clone());
+                    sequ.append_mod_exit(TransableHold::from(x.clone()));
                 }
                 Ok(())
             }
             None => Err(ExecError::from(ExecReason::Miss(name.into()))),
         }
     }
+    */
     fn menu(&self) -> ExecResult<GxMenu> {
         let mut menu = GxMenu::default();
         let mut cur = GxMenuBuilder::default()
@@ -463,7 +466,7 @@ mod test {
 
         let ctx = ExecContext::default();
         let vars = VarSpace::default();
-        let TaskValue { vars, .. } = sequ.execute(ctx, vars.clone()).await.unwrap();
+        let TaskValue { vars, .. } = sequ.execute(ctx, vars.clone(), &spc).await.unwrap();
 
         println!("{:?}", vars.global().maps());
         assert_eq!(
@@ -508,7 +511,7 @@ mod test {
 
         let ctx = ExecContext::default();
         let vars = VarSpace::default();
-        let TaskValue { vars, .. } = sequ.execute(ctx, vars).await.unwrap();
+        let TaskValue { vars, .. } = sequ.execute(ctx, vars, &work_spc).await.unwrap();
 
         println!("{:?}", vars.global().maps());
         assert_eq!(

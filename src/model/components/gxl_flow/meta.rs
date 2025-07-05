@@ -3,7 +3,7 @@ use crate::{
     components::gxl_mod::meta::ModMeta,
     meta::{GxlType, MetaInfo},
 };
-use std::fmt::Debug;
+use std::{fmt::Debug, sync::Arc};
 
 use super::anno::{DryrunAnno, FlowAnnotation, TransAnno};
 #[derive(Clone, Getters, Default)]
@@ -14,7 +14,12 @@ pub struct FlowMeta {
     annotations: Vec<FlowAnnotation>,
     preorder: Vec<String>,
     postorder: Vec<String>,
+    pre_metas: Vec<FlowMeta>,
+    pos_metas: Vec<FlowMeta>,
+    undo_meta: Option<Arc<FlowMeta>>,
+    dryrun_meta: Option<Arc<FlowMeta>>,
 }
+pub type FlowMetaHold = Arc<FlowMeta>;
 
 impl Debug for FlowMeta {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -34,6 +39,14 @@ impl MetaInfo for FlowMeta {
             .map(|x| x.name().clone())
             .unwrap_or(UNKNOW);
         format!("[flow]:{mod_name}.{}", self.name)
+    }
+    fn long_name(&self) -> String {
+        let mod_name = self
+            .host()
+            .as_ref()
+            .map(|x| x.name().clone())
+            .unwrap_or(UNKNOW);
+        format!("{mod_name}.{}", self.name)
     }
 }
 
@@ -85,6 +98,19 @@ impl FlowMeta {
             }
         }
         None
+    }
+    pub fn pre_metas_mut(&mut self) -> &mut Vec<FlowMeta> {
+        &mut self.pre_metas
+    }
+    pub fn pos_metas_mut(&mut self) -> &mut Vec<FlowMeta> {
+        &mut self.pos_metas
+    }
+
+    pub fn set_undo(&mut self, undo: FlowMeta) {
+        self.undo_meta.replace(Arc::new(undo));
+    }
+    pub fn set_dryrun(&mut self, dryrun: FlowMeta) {
+        self.dryrun_meta.replace(Arc::new(dryrun));
     }
 }
 

@@ -1,6 +1,12 @@
-use super::{code_spc::CodeSpace, prelude::*};
+use super::{code_spc::CodeSpace, gxl_flow::meta::FlowMeta, prelude::*, GxlFlow};
 use crate::{
-    ability::prelude::TaskValue, execution::sequence::Sequence, menu::*,
+    ability::prelude::TaskValue,
+    execution::{
+        hold::TransableHold,
+        sequence::{LableGuard, RunLable, Sequence},
+    },
+    menu::*,
+    meta::MetaInfo,
     util::task_report::task_local_report,
 };
 use colored::Colorize;
@@ -119,10 +125,13 @@ impl ExecLoadTrait for GxlSpace {
     fn load_flow(&self, ctx: ExecContext, sequ: &mut Sequence, obj_path: &str) -> ExecResult<()> {
         let (mod_name, item_name) = parse_obj_path(obj_path)?;
 
-        self.mods_store
+        let mox = self
+            .mods_store
             .get(mod_name)
-            .ok_or(ExecReason::Miss(mod_name.to_string()))?
-            .load_flow(ctx, sequ, item_name)
+            .ok_or(ExecReason::Miss(mod_name.to_string()))?;
+        self.mod_load_flow(mox, item_name, &LableGuard::from_flow(), sequ);
+        Ok(())
+        //.load_flow(ctx, sequ, item_name)
     }
 
     fn of_name(&self) -> String {
@@ -224,7 +233,7 @@ impl GxlSpace {
         let exec_ctx = main_ctx.clone().with_subcontext("exec");
 
         match exec_sequ
-            .execute(exec_ctx, var_space.clone())
+            .execute(exec_ctx, var_space.clone(), self)
             .await
             .err_conv()
         {
@@ -275,6 +284,59 @@ impl GxlSpace {
         }
 
         Ok(())
+    }
+
+    #[requires(self.assembled)]
+    pub fn load_flow_by(&self, meta: &FlowMeta, sequ: &mut Sequence) -> ExecResult<()> {
+        self.guard_load_flow(meta, &LableGuard::from_flow(), sequ)
+    }
+    fn guard_load_flow(
+        &self,
+        meta: &FlowMeta,
+        guard: &LableGuard,
+        sequ: &mut Sequence,
+    ) -> ExecResult<()> {
+        if let Some(mod_meta) = meta.host() {
+            if let Some(mox) = self.mods_store.get(mod_meta.name()) {
+                return self.mod_load_flow(mox, meta.name(), guard, sequ);
+            }
+        }
+        Err(ExecError::from(ExecReason::Miss(meta.long_name())))
+    }
+    fn mod_load_flow(
+        &self,
+        mox: &GxlMod,
+        name: &str,
+        guard: &LableGuard,
+        sequ: &mut Sequence,
+    ) -> ExecResult<()> {
+        match mox.flows().get(name) {
+            Some(found) => {
+                sequ.append(AsyncComHold::from(found.clone()));
+                debug_assert!(found.assembled());
+                debug_assert!(mox.assembled());
+                sequ.append_trans_hold(&LableGuard::from_mod(mox.meta()), mox.props().clone());
+                for x in mox.entrys().iter() {
+                    let guard = LableGuard::from_entry(x);
+                    self.guard_load_flow(x, &guard, sequ);
+                }
+                let pre_flows = found.meta().pre_metas();
+                let post_flows = found.meta().pos_metas();
+                for flow in pre_flows.into_iter() {
+                    self.guard_load_flow(flow, guard, sequ);
+                }
+                sequ.append_trans_hold(guard, found.clone());
+                for flow in post_flows.into_iter() {
+                    self.guard_load_flow(flow, guard, sequ);
+                }
+                for x in mox.exits().iter() {
+                    let guard = LableGuard::from_exit(x);
+                    self.guard_load_flow(x, &guard, sequ);
+                }
+                Ok(())
+            }
+            None => Err(ExecError::from(ExecReason::Miss(name.into()))),
+        }
     }
 }
 
@@ -356,7 +418,7 @@ mod tests {
         work_space.load_env(ctx.clone(), &mut flow, "env.env1")?;
         work_space.load_flow(ctx.clone(), &mut flow, "main.flow1")?;
 
-        let task_v = flow.test_execute(ctx, def).await.unwrap();
+        let task_v = flow.test_execute(ctx, def, &work_space).await.unwrap();
         debug!("Job result: {task_v:#?}",);
 
         work_space.show().unwrap();

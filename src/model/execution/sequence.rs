@@ -2,12 +2,15 @@ use std::collections::{HashMap, VecDeque};
 use std::sync::Arc;
 
 use async_trait::async_trait;
+use derive_more::{Deref, From};
 use orion_common::friendly::AppendAble;
-use orion_error::UvsSysFrom;
+use orion_error::{ErrorConv, UvsSysFrom};
 
 use crate::ability::prelude::TaskValue;
 use crate::annotation::{Dryrunable, Transaction};
-use crate::components::GxlProps;
+use crate::components::gxl_flow::meta::{FlowMeta, FlowMetaHold};
+use crate::components::gxl_mod::meta::ModMeta;
+use crate::components::gxl_spc::GxlSpace;
 use crate::context::ExecContext;
 use crate::execution::hold::AsyncComHold;
 use crate::execution::hold::{ComHold, IsolationHold};
@@ -20,38 +23,92 @@ use crate::meta::{GxlMeta, MetaInfo};
 use crate::ExecError;
 
 use super::hold::TransableHold;
+#[derive(Debug, Clone, Getters)]
+pub struct LableGuard {
+    lable: RunLable,
+    open: bool,
+}
+impl Drop for LableGuard {
+    fn drop(&mut self) {
+        self.open = false;
+    }
+}
+impl LableGuard {
+    pub fn from_entry(value: &FlowMeta) -> Self {
+        Self {
+            lable: RunLable::Entry(value.long_name()),
+            open: true,
+        }
+    }
 
-#[derive(Clone, Getters)]
+    pub fn from_exit(value: &FlowMeta) -> Self {
+        Self {
+            lable: RunLable::Exist(value.long_name()),
+            open: false,
+        }
+    }
+    pub fn from_mod(value: &ModMeta) -> Self {
+        Self {
+            lable: RunLable::ModProp(value.long_name()),
+            open: false,
+        }
+    }
+    pub fn from_flow() -> Self {
+        Self {
+            lable: RunLable::Flow,
+            open: false,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum RunLable {
+    Entry(String),
+    Exist(String),
+    ModProp(String),
+    Flow,
+}
+#[derive(Clone, Getters, Default)]
 pub struct Sequence {
     name: String,
-    mods_entry: HashMap<String, bool>,
-    mods_exits: HashMap<String, bool>,
-    mods_head: HashMap<String, bool>,
+    only_items: HashMap<RunLable, bool>,
+    run_items: Vec<ComHold>,
+}
+
+#[derive(Clone, Getters, Default, Deref)]
+pub struct ExecUnit {
     run_items: Vec<ComHold>,
 }
 
 impl From<&str> for Sequence {
     fn from(name: &str) -> Self {
         Self {
-            mods_entry: HashMap::new(),
-            mods_exits: HashMap::new(),
-            mods_head: HashMap::new(),
             name: name.to_string(),
-            run_items: Vec::new(),
+            ..Default::default()
         }
     }
 }
 
 impl Sequence {
-    pub async fn execute(&self, ctx: ExecContext, def: VarSpace) -> TaskResult {
-        self.execute_sequence(ctx, def).await
+    pub async fn execute(&self, ctx: ExecContext, def: VarSpace, spc: &GxlSpace) -> TaskResult {
+        self.execute_sequence(ctx, def, spc).await
     }
 
-    pub async fn test_execute(&self, ctx: ExecContext, def: VarSpace) -> TaskResult {
-        self.execute_sequence(ctx, def).await
+    pub async fn test_execute(
+        &self,
+        ctx: ExecContext,
+        def: VarSpace,
+        spc: &GxlSpace,
+    ) -> TaskResult {
+        self.execute_sequence(ctx, def, spc).await
     }
 
-    async fn execute_sequence(&self, ctx: ExecContext, mut def: VarSpace) -> TaskResult {
+    async fn execute_sequence(
+        &self,
+        ctx: ExecContext,
+        mut def: VarSpace,
+        spc: &GxlSpace,
+    ) -> TaskResult {
         let mut job = Job::from(&self.name);
         let mut undo_stack = VecDeque::new();
         warn!(target: ctx.path(), "sequence size: {}  dryrun: {}", self.run_items().len(), ctx.dryrun());
@@ -64,20 +121,27 @@ impl Sequence {
                 warn!(target: ctx.path(), "transaction begin")
             }
             if transaction_begin {
-                for undo in item.undo_hold() {
-                    info!(target: ctx.path(), "regist undo {}", undo.com_meta().name());
-                    undo_stack.push_back((undo, def.clone()));
+                if let Some(undo) = item.undo_hold() {
+                    let mut sequ = Sequence::default();
+                    spc.load_flow_by(&undo, &mut sequ).err_conv()?;
+                    for undo in sequ.run_items() {
+                        info!(target: ctx.path(), "regist undo {}", undo.com_meta().name());
+                        undo_stack.push_back((undo.clone(), def.clone()));
+                    }
                 }
             }
             let mut sub_queue = VecDeque::new();
 
             if *ctx.dryrun() {
-                if item.dryrun_hold().is_empty() {
-                    sub_queue.push_back(item.clone());
-                } else {
-                    for dryrun in item.dryrun_hold() {
-                        sub_queue.push_back(ComHold::from(AsyncComHold::from(dryrun)));
+                if let Some(dryrun_meta) = item.dryrun_hold() {
+                    let mut sequ = Sequence::default();
+                    spc.load_flow_by(&dryrun_meta, &mut sequ).err_conv()?;
+                    for dryrun in sequ.run_items() {
+                        info!(target: ctx.path(), "regist undo {}", dryrun.com_meta().name());
+                        sub_queue.push_back(dryrun.clone());
                     }
+                } else {
+                    sub_queue.push_back(item.clone());
                 }
             } else {
                 sub_queue.push_back(item.clone());
@@ -104,7 +168,7 @@ impl Sequence {
     async fn undo_transactions(
         &self,
         ctx: ExecContext,
-        mut undo_stack: VecDeque<(TransableHold, VarSpace)>,
+        mut undo_stack: VecDeque<(ComHold, VarSpace)>,
     ) {
         while let Some((undo, dict)) = undo_stack.pop_back() {
             match undo.async_exec(ctx.clone(), dict).await {
@@ -113,29 +177,13 @@ impl Sequence {
             }
         }
     }
-    pub fn append_mod_entry(&mut self, hold: TransableHold) {
-        debug_assert!(hold.assembled());
-        if !self.mods_entry().contains_key(hold.com_meta().name()) {
-            info!(target:"exec/sque", "mod_entry :{}", hold.com_meta().full_name());
-            self.mods_entry
-                .insert(hold.com_meta().name().to_string(), true);
-            self.run_items.push(AsyncComHold::from(hold).into());
-        }
-    }
-    pub fn append_mod_exit(&mut self, hold: TransableHold) {
-        debug_assert!(hold.assembled());
-        if !self.mods_exits().contains_key(hold.com_meta().name()) {
-            info!(target:"exec/sque", "mod_exit:{}", hold.com_meta().full_name());
-            self.mods_exits.insert(hold.com_meta().name().into(), true);
-            self.run_items.push(AsyncComHold::from(hold).into());
-        }
-    }
-
-    pub fn append_mod_head(&mut self, props: GxlProps) {
-        if !self.mods_head().contains_key(props.meta().name()) {
-            debug!(target: "exec/sque", "append mod prop {}", props.meta().full_name() );
-            self.mods_head.insert(props.meta().name().clone(), true);
-            self.run_items.push(AsyncComHold::from(props).into());
+    pub fn append_trans_hold<H: Into<TransableHold>>(&mut self, guard: &LableGuard, hold: H) {
+        let trans_hold = hold.into();
+        debug_assert!(trans_hold.assembled());
+        if !self.only_items().contains_key(guard.lable()) && *guard.open() {
+            info!(target:"exec/sque", "only_item :{}", trans_hold.com_meta().full_name());
+            self.only_items.insert(guard.lable().clone(), true);
+            self.run_items.push(AsyncComHold::from(trans_hold).into());
         }
     }
 }
@@ -201,8 +249,9 @@ impl Transaction for RunStub {
         self.trans_begin
     }
 
-    fn undo_hold(&self) -> Vec<TransableHold> {
-        self.undo_item.clone()
+    fn undo_hold(&self) -> Option<FlowMetaHold> {
+        //self.undo_item.clone()
+        todo!();
     }
 }
 
@@ -251,7 +300,8 @@ mod tests {
         flow.append(AsyncComHold::from(stub_node("step1")));
         flow.append(AsyncComHold::from(stub_node("step2")));
 
-        let TaskValue { rec, .. } = flow.execute(ctx, def).await.unwrap();
+        let spc = GxlSpace::default();
+        let TaskValue { rec, .. } = flow.execute(ctx, def, &spc).await.unwrap();
 
         if let ExecOut::Job(job) = rec {
             assert_eq!(job.tasks().len(), 2);
@@ -293,7 +343,8 @@ mod tests {
         flow.append(AsyncComHold::from(step2));
 
         // 执行并验证
-        let result = flow.execute(ctx, def).await;
+        let spc = GxlSpace::default();
+        let result = flow.execute(ctx, def, &spc).await;
         assert!(result.is_err(), "Execution should fail");
 
         // 检查 undo 是否执行

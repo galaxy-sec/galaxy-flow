@@ -27,6 +27,9 @@ impl MetaInfo for ModMeta {
     fn full_name(&self) -> String {
         format!("[mod]:{}", self.name.clone())
     }
+    fn long_name(&self) -> String {
+        format!("{}", self.name.clone())
+    }
 }
 impl ModMeta {
     pub fn build_mod<S: Into<String>>(name: S) -> Self {

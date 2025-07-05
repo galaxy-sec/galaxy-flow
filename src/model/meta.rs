@@ -35,6 +35,7 @@ pub enum GxlMeta {
 }
 pub trait MetaInfo {
     fn full_name(&self) -> String;
+    fn long_name(&self) -> String;
 }
 
 impl GxlMeta {
@@ -55,6 +56,15 @@ impl MetaInfo for GxlMeta {
             GxlMeta::Env(m) => m.full_name(),
             GxlMeta::Flow(m) => m.full_name(),
             GxlMeta::Mod(m) => m.full_name(),
+            GxlMeta::Simple(m) => m.clone(),
+        }
+    }
+    fn long_name(&self) -> String {
+        match self {
+            GxlMeta::Prop(m) => m.long_name(),
+            GxlMeta::Env(m) => m.long_name(),
+            GxlMeta::Flow(m) => m.long_name(),
+            GxlMeta::Mod(m) => m.long_name(),
             GxlMeta::Simple(m) => m.clone(),
         }
     }
