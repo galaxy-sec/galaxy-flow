@@ -2,7 +2,7 @@ use std::collections::{HashMap, VecDeque};
 use std::sync::Arc;
 
 use async_trait::async_trait;
-use derive_more::{Deref, From};
+use derive_more::Deref;
 use orion_common::friendly::AppendAble;
 use orion_error::{ErrorConv, UvsSysFrom};
 
@@ -44,19 +44,19 @@ impl LableGuard {
     pub fn from_exit(value: &FlowMeta) -> Self {
         Self {
             lable: RunLable::Exist(value.long_name()),
-            open: false,
+            open: true,
         }
     }
     pub fn from_mod(value: &ModMeta) -> Self {
         Self {
             lable: RunLable::ModProp(value.long_name()),
-            open: false,
+            open: true,
         }
     }
     pub fn from_flow() -> Self {
         Self {
             lable: RunLable::Flow,
-            open: false,
+            open: true,
         }
     }
 }
@@ -180,7 +180,8 @@ impl Sequence {
     pub fn append_trans_hold<H: Into<TransableHold>>(&mut self, guard: &LableGuard, hold: H) {
         let trans_hold = hold.into();
         debug_assert!(trans_hold.assembled());
-        if !self.only_items().contains_key(guard.lable()) && *guard.open() {
+        debug!(target:"exec/sque", "only_item :{:?}", guard.lable());
+        if !self.only_items().contains_key(guard.lable()) || *guard.open() {
             info!(target:"exec/sque", "only_item :{}", trans_hold.com_meta().full_name());
             self.only_items.insert(guard.lable().clone(), true);
             self.run_items.push(AsyncComHold::from(trans_hold).into());

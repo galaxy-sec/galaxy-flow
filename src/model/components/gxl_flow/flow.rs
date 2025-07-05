@@ -4,7 +4,6 @@ use crate::components::gxl_mod::meta::ModMeta;
 use crate::components::gxl_spc::GxlSpace;
 use crate::components::gxl_utls::mod_obj_name;
 use crate::data::AnnDto;
-use crate::execution::hold::TransableHold;
 use crate::model::components::prelude::*;
 
 use crate::annotation::{ComUsage, Dryrunable, GetArgValue, TaskMessage, Transaction, FST_ARG_TAG};
@@ -28,10 +27,6 @@ use super::meta::{FlowMeta, FlowMetaHold};
 #[derive(Clone, Getters, Default)]
 pub struct GxlFlow {
     meta: FlowMeta,
-    //pre_flows: Vec<GxlFlow>,
-    //post_flows: Vec<GxlFlow>,
-    //undo_flow_item: Vec<GxlFlow>,
-    //dryrun_flow: Vec<GxlFlow>,
     blocks: Vec<BlockNode>,
     assembled: bool,
 }
@@ -42,6 +37,10 @@ impl GxlFlow {
 
     pub(crate) fn bind(&mut self, mod_meta: ModMeta) {
         self.meta.set_host(mod_meta);
+    }
+    pub fn with_mod(mut self, meta: ModMeta) -> Self {
+        self.meta.set_host(meta);
+        self
     }
 }
 

@@ -1,3 +1,5 @@
+use contracts::requires;
+
 use crate::{
     annotation::ComUsage,
     components::gxl_mod::meta::ModMeta,
@@ -32,6 +34,7 @@ impl Debug for FlowMeta {
 
 const UNKNOW: String = String::new();
 impl MetaInfo for FlowMeta {
+    #[requires(self.host.is_some())]
     fn full_name(&self) -> String {
         let mod_name = self
             .host()
@@ -40,6 +43,7 @@ impl MetaInfo for FlowMeta {
             .unwrap_or(UNKNOW);
         format!("[flow]:{mod_name}.{}", self.name)
     }
+    #[requires(self.host.is_some())]
     fn long_name(&self) -> String {
         let mod_name = self
             .host()
@@ -82,6 +86,7 @@ impl FlowMeta {
         }
         None
     }
+    #[requires(self.host.is_some())]
     pub fn undo_flow_name(&self) -> Option<String> {
         for ann in &self.annotations {
             if ann.undo_flow_name().is_some() {
@@ -91,6 +96,7 @@ impl FlowMeta {
         None
     }
 
+    #[requires(self.host.is_some())]
     pub(crate) fn dryrun_flow_name(&self) -> Option<String> {
         for ann in &self.annotations {
             if ann.dryrun_flow_name().is_some() {

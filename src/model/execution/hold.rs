@@ -5,7 +5,7 @@ use derive_more::From;
 
 use crate::ability::GxRead;
 use crate::annotation::{Dryrunable, Transaction};
-use crate::components::gxl_flow::meta::{FlowMeta, FlowMetaHold};
+use crate::components::gxl_flow::meta::FlowMetaHold;
 use crate::components::gxl_spc::GxlSpace;
 use crate::components::{GxlEnv, GxlFlow, GxlMod, GxlProps};
 use crate::context::ExecContext;

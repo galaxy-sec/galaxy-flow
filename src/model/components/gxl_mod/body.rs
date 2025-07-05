@@ -6,7 +6,6 @@ use crate::components::gxl_spc::GxlSpace;
 use crate::components::GxlEnv;
 use crate::components::GxlFlow;
 use crate::components::GxlProps;
-use crate::execution::hold::TransableHold;
 use crate::model::components::prelude::*;
 
 use crate::execution::runnable::ComponentMeta;
@@ -196,7 +195,12 @@ impl ExecLoadTrait for GxlMod {
         // 如果没有找到指定的环境变量，返回错误
         Err(ExecError::from(ExecReason::Miss(args.into())))
     }
-    fn load_flow(&self, mut ctx: ExecContext, sequ: &mut Sequence, name: &str) -> ExecResult<()> {
+    fn load_flow(
+        &self,
+        mut _ctx: ExecContext,
+        _sequ: &mut Sequence,
+        _name: &str,
+    ) -> ExecResult<()> {
         todo!();
     }
 
@@ -304,6 +308,7 @@ impl AppendAble<GxlEnv> for GxlMod {
 
 impl AppendAble<GxlFlow> for GxlMod {
     fn append(&mut self, hold: GxlFlow) {
+        let hold = hold.with_mod(self.meta.clone());
         let meta = hold.meta();
         debug!(target:format!("stc/mod({})",self.meta.name()).as_str(), "append {:#?} {} ",meta.class(), meta.name());
         let desp = meta.desp();

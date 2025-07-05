@@ -1,10 +1,7 @@
-use super::{code_spc::CodeSpace, gxl_flow::meta::FlowMeta, prelude::*, GxlFlow};
+use super::{code_spc::CodeSpace, gxl_flow::meta::FlowMeta, prelude::*};
 use crate::{
     ability::prelude::TaskValue,
-    execution::{
-        hold::TransableHold,
-        sequence::{LableGuard, RunLable, Sequence},
-    },
+    execution::sequence::{LableGuard, Sequence},
     menu::*,
     meta::MetaInfo,
     util::task_report::task_local_report,
@@ -122,16 +119,14 @@ impl ExecLoadTrait for GxlSpace {
     }
 
     #[requires(self.assembled)]
-    fn load_flow(&self, ctx: ExecContext, sequ: &mut Sequence, obj_path: &str) -> ExecResult<()> {
+    fn load_flow(&self, _ctx: ExecContext, sequ: &mut Sequence, obj_path: &str) -> ExecResult<()> {
         let (mod_name, item_name) = parse_obj_path(obj_path)?;
 
         let mox = self
             .mods_store
             .get(mod_name)
             .ok_or(ExecReason::Miss(mod_name.to_string()))?;
-        self.mod_load_flow(mox, item_name, &LableGuard::from_flow(), sequ);
-        Ok(())
-        //.load_flow(ctx, sequ, item_name)
+        self.mod_load_flow(mox, item_name, &LableGuard::from_flow(), sequ)
     }
 
     fn of_name(&self) -> String {
@@ -312,26 +307,25 @@ impl GxlSpace {
     ) -> ExecResult<()> {
         match mox.flows().get(name) {
             Some(found) => {
-                sequ.append(AsyncComHold::from(found.clone()));
                 debug_assert!(found.assembled());
                 debug_assert!(mox.assembled());
                 sequ.append_trans_hold(&LableGuard::from_mod(mox.meta()), mox.props().clone());
                 for x in mox.entrys().iter() {
                     let guard = LableGuard::from_entry(x);
-                    self.guard_load_flow(x, &guard, sequ);
+                    self.guard_load_flow(x, &guard, sequ)?;
                 }
                 let pre_flows = found.meta().pre_metas();
                 let post_flows = found.meta().pos_metas();
                 for flow in pre_flows.into_iter() {
-                    self.guard_load_flow(flow, guard, sequ);
+                    self.guard_load_flow(flow, guard, sequ)?;
                 }
                 sequ.append_trans_hold(guard, found.clone());
                 for flow in post_flows.into_iter() {
-                    self.guard_load_flow(flow, guard, sequ);
+                    self.guard_load_flow(flow, guard, sequ)?;
                 }
                 for x in mox.exits().iter() {
                     let guard = LableGuard::from_exit(x);
-                    self.guard_load_flow(x, &guard, sequ);
+                    self.guard_load_flow(x, &guard, sequ)?;
                 }
                 Ok(())
             }

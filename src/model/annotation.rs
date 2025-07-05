@@ -1,12 +1,6 @@
-use std::{collections::HashMap, sync::Arc};
+use std::collections::HashMap;
 
-use super::{
-    components::{
-        gxl_flow::meta::{FlowMeta, FlowMetaHold},
-        gxl_spc::GxlSpace,
-    },
-    execution::hold::TransableHold,
-};
+use super::components::gxl_flow::meta::FlowMetaHold;
 
 #[derive(Clone, Default, Debug, PartialEq)]
 pub struct Annotation<T> {
