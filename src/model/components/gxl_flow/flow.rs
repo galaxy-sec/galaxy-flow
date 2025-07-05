@@ -45,7 +45,7 @@ impl GxlFlow {
         self.post_flows.clone()
     }
 
-    pub(crate) fn bind(&self, mod_meta: ModMeta) {
+    pub(crate) fn bind(&mut self, mod_meta: ModMeta) {
         self.meta.set_host(mod_meta);
     }
 }

@@ -45,22 +45,20 @@ impl GxlEnv {
     fn assemble_impl(&self, mod_name: &str, src: &GxlSpace) -> AResult<Self> {
         debug!(target : "assemble", "will assemble env {}" , self.meta().name() );
         let mut buffer = Vec::new();
-        let mut mix_list = VecDeque::from(self.meta.mix().clone());
+        let mix_list = VecDeque::from(self.meta.mix_name().clone());
 
         let mut linked = false;
-        let mut target = if let Some(top) = mix_list.pop_front() {
-            let mut base = Self::get_env(mod_name, top.as_str(), src)?;
-            for mix in mix_list {
-                let link_env = Self::get_env(mod_name, mix.as_str(), src)?;
-                base.merge(&link_env);
-                let _ = write!(&mut buffer, "{mix} | ");
-                linked = true;
-            }
-            base.merge(self);
-            base
-        } else {
-            self.clone()
-        };
+        let mut target = self.clone();
+        for mix in mix_list {
+            let link_env = Self::get_env(mod_name, mix.as_str(), src)?;
+            target.merge(&link_env);
+            target
+                .meta_mut()
+                .mix_meta_mut()
+                .push(link_env.meta().clone());
+            let _ = write!(&mut buffer, "{mix} | ");
+            linked = true;
+        }
         let _ = write!(&mut buffer, "{} ", self.meta().name());
         if linked {
             info!(
@@ -77,7 +75,7 @@ impl GxlEnv {
     }
 
     pub(crate) fn bind(&mut self, mod_meta: ModMeta) {
-        self.meta.with_host(mod_meta);
+        self.meta.set_host(mod_meta);
     }
 }
 

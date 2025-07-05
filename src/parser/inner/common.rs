@@ -134,7 +134,7 @@ mod tests {
                 Property::from(("keep", "ture")),
             ],
         ));
-        assert_eq!(found, expect);
+        assert_eq!(found.props, expect.props);
         assert_eq!(data, "");
     }
 }

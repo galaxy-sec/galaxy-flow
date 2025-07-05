@@ -96,7 +96,7 @@ impl Transaction for AsyncComHold {
         }
     }
 }
-#[derive(Clone, From)]
+#[derive(Clone, From, Getters)]
 pub struct IsolationHold {
     hold: AsyncComHold,
 }

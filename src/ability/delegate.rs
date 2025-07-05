@@ -7,7 +7,7 @@ use crate::model::components::gxl_utls::mod_obj_name;
 use crate::traits::DependTrait;
 use crate::types::Property;
 
-#[derive(Clone, Debug, Default, Builder, PartialEq)]
+#[derive(Clone, Debug, Default, Builder)]
 pub struct ActCall {
     pub name: String,
     pub sudo: bool,

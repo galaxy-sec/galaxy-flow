@@ -113,25 +113,27 @@ impl Sequence {
             }
         }
     }
-    pub fn append_mod_entry(&mut self, flow: TransableHold) {
-        debug_assert!(flow.assembled());
-        if !self.mods_entry().contains_key(flow.com_meta().name()) {
+    pub fn append_mod_entry(&mut self, hold: TransableHold) {
+        debug_assert!(hold.assembled());
+        if !self.mods_entry().contains_key(hold.com_meta().name()) {
+            info!(target:"exec/sque", "mod_entry :{}", hold.com_meta().full_name());
             self.mods_entry
-                .insert(flow.com_meta().name().to_string(), true);
-            self.run_items.push(AsyncComHold::from(flow).into());
+                .insert(hold.com_meta().name().to_string(), true);
+            self.run_items.push(AsyncComHold::from(hold).into());
         }
     }
-    pub fn append_mod_exit(&mut self, flow: TransableHold) {
-        debug_assert!(flow.assembled());
-        if !self.mods_exits().contains_key(flow.com_meta().name()) {
-            self.mods_exits.insert(flow.com_meta().name().into(), true);
-            self.run_items.push(AsyncComHold::from(flow).into());
+    pub fn append_mod_exit(&mut self, hold: TransableHold) {
+        debug_assert!(hold.assembled());
+        if !self.mods_exits().contains_key(hold.com_meta().name()) {
+            info!(target:"exec/sque", "mod_exit:{}", hold.com_meta().full_name());
+            self.mods_exits.insert(hold.com_meta().name().into(), true);
+            self.run_items.push(AsyncComHold::from(hold).into());
         }
     }
 
     pub fn append_mod_head(&mut self, props: GxlProps) {
         if !self.mods_head().contains_key(props.meta().name()) {
-            debug!(target: "assemble", "append mod {}", props.meta().name() );
+            debug!(target: "exec/sque", "append mod prop {}", props.meta().full_name() );
             self.mods_head.insert(props.meta().name().clone(), true);
             self.run_items.push(AsyncComHold::from(props).into());
         }
@@ -140,12 +142,14 @@ impl Sequence {
 
 impl AppendAble<AsyncComHold> for Sequence {
     fn append(&mut self, node: AsyncComHold) {
+        debug!(target: "exec/sque", "append {}", node.com_meta().full_name() );
         self.run_items.push(node.into());
     }
 }
 
 impl AppendAble<IsolationHold> for Sequence {
     fn append(&mut self, node: IsolationHold) {
+        debug!(target: "exec/sque", "append {}", node.hold().com_meta().full_name() );
         self.run_items.push(node.into());
     }
 }

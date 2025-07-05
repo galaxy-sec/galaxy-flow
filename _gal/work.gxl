@@ -62,7 +62,7 @@ mod main   {
 
   #[task(name="build")]
   flow ver.use | conf | rust_flow.build | @build | pub_local {
-      //gx.echo(  "${MAIN_HOME_BIN}" );
+      gx.echo(  "${MAIN_HOME_BIN}" );
       //os.path (  "${MAIN_HOME_BIN}" );
   }
   #[usage(desp="lint code")]

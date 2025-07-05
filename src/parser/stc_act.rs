@@ -1,8 +1,10 @@
 use super::{inner::sentence_body, prelude::*};
 use winnow::{combinator::fail, ModalResult, Parser};
 
-use crate::ability::delegate::*;
-use crate::types::*;
+use crate::{
+    components::gxl_act::activity::{Activity, ActivityDTO},
+    types::*,
+};
 
 use super::{domain::parse_log, stc_base::gal_act_head};
 

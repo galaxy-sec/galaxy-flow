@@ -21,7 +21,7 @@ use crate::{
 
 use super::meta::ActivityMeta;
 
-#[derive(Debug, Default, Builder, Clone, Getters)]
+#[derive(Debug, Default, Builder, Clone, Getters, PartialEq)]
 pub struct Activity {
     meta: ActivityMeta,
     host: String,

@@ -1,13 +1,10 @@
-use orion_common::friendly::MultiNew2;
-
 use crate::{
-    annotation::ComUsage,
     components::gxl_mod::meta::ModMeta,
     meta::{GxlType, MetaInfo},
 };
 use std::fmt::Debug;
 
-#[derive(Clone, Getters, Default)]
+#[derive(Clone, Getters, Default, PartialEq)]
 pub struct ActivityMeta {
     class: GxlType,
     name: String,

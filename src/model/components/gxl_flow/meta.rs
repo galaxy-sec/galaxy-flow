@@ -1,5 +1,3 @@
-use orion_common::friendly::MultiNew2;
-
 use crate::{
     annotation::ComUsage,
     components::gxl_mod::meta::ModMeta,

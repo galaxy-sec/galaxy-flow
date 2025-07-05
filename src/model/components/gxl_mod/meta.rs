@@ -7,7 +7,7 @@ use crate::meta::{GxlType, MetaInfo};
 
 use super::anno::ModAnnotation;
 
-#[derive(Clone, Getters, Default)]
+#[derive(Clone, Getters, Default, PartialEq)]
 pub struct ModMeta {
     class: GxlType,
     name: String,

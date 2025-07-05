@@ -1,6 +1,6 @@
-use crate::ability::delegate::Activity;
 use crate::ability::prelude::GxlVar;
 use crate::ability::prelude::TaskValue;
+use crate::components::gxl_act::activity::Activity;
 use crate::components::gxl_spc::GxlSpace;
 use crate::components::GxlEnv;
 use crate::components::GxlFlow;
@@ -189,14 +189,10 @@ impl MergeTrait for GxlMod {
 impl ExecLoadTrait for GxlMod {
     #[requires(!self.props().meta().name().is_empty())]
     fn load_env(&self, mut ctx: ExecContext, sequ: &mut Sequence, args: &str) -> ExecResult<()> {
-        // 将当前模块的名称添加到上下文中
         ctx.append(self.meta.name().as_str());
         debug!(target:ctx.path(),"will load env:{}", args);
-        // 如果环境变量中存在指定的参数
         if let Some(found) = self.envs.get(args) {
-            // 创建一个模块运行器
             sequ.append(AsyncComHold::from(found.clone()));
-            // 返回成功
             return Ok(());
         }
         // 如果没有找到指定的环境变量，返回错误

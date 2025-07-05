@@ -13,7 +13,8 @@ pub struct EnvMeta {
     class: GxlType,
     name: String,
     host: Option<ModMeta>,
-    mix: Vec<String>,
+    mix_meta: Vec<EnvMeta>,
+    mix_name: Vec<String>,
     annotations: Vec<EnvAnnotation>,
 }
 
@@ -27,13 +28,26 @@ impl Debug for EnvMeta {
 }
 impl MetaInfo for EnvMeta {
     fn full_name(&self) -> String {
-        format!("[env]:{}:{}", self.name, self.mix.join(","))
+        let names: Vec<String> = self.mix_meta.iter().map(Self::long_name).collect();
+        format!("[env]:{}:{}", self.name, names.join(","))
     }
 }
 
 impl EnvMeta {
     pub fn build_env<S: Into<String>>(name: S) -> Self {
         Self::new2(GxlType::Env, name.into())
+    }
+    pub fn mix_meta_mut(&mut self) -> &mut Vec<EnvMeta> {
+        &mut self.mix_meta
+    }
+    pub fn long_name(&self) -> String {
+        format!(
+            "{}:{}",
+            self.host
+                .as_ref()
+                .map_or("unknow", |ref x| x.name().as_str()),
+            self.name
+        )
     }
     pub fn build_env_mix<S: Into<String> + Clone>(name: S, mix: Vec<S>) -> Self {
         let mut mix_string: Vec<String> = Vec::new();
@@ -42,7 +56,7 @@ impl EnvMeta {
         Self {
             class: GxlType::Env,
             name: name.into(),
-            mix: mix_string,
+            mix_name: mix_string,
             ..Default::default()
         }
     }
@@ -61,10 +75,6 @@ impl EnvMeta {
             }
         }
         None
-    }
-
-    pub(crate) fn with_host(&self, mod_meta: crate::components::gxl_mod::meta::ModMeta) -> _ {
-        todo!()
     }
 }
 impl MultiNew2<GxlType, String> for EnvMeta {
@@ -105,6 +115,6 @@ impl EnvMeta {
         self.annotations.push(ann);
     }
     pub fn set_mix(&mut self, mix: Vec<String>) {
-        self.mix = mix;
+        self.mix_name = mix;
     }
 }
