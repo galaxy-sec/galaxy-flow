@@ -1,7 +1,10 @@
 use super::{code_spc::CodeSpace, gxl_flow::meta::FlowMeta, prelude::*};
 use crate::{
     ability::prelude::TaskValue,
-    execution::sequence::{LableGuard, RunLable, Sequence},
+    execution::{
+        sequence::{ExecSequence, SequAppender, SequLoader},
+        unit::{RunUnitGuard, RunUnitLable},
+    },
     menu::*,
     meta::MetaInfo,
     util::task_report::task_local_report,
@@ -91,6 +94,12 @@ impl GxlSpace {
     }
 }
 
+impl SequLoader for GxlSpace {
+    fn find_flow(&self, meta: &FlowMeta, sequ: &mut impl SequAppender) -> ExecResult<()> {
+        self.guard_load_flow(meta, &RunUnitGuard::from_flow(), sequ)
+    }
+}
+
 impl AppendAble<GxlMod> for GxlSpace {
     fn append(&mut self, module: GxlMod) {
         let name = module.of_name();
@@ -109,7 +118,12 @@ impl TryFrom<CodeSpace> for GxlSpace {
 
 impl ExecLoadTrait for GxlSpace {
     #[requires(self.assembled)]
-    fn load_env(&self, ctx: ExecContext, sequ: &mut Sequence, obj_path: &str) -> ExecResult<()> {
+    fn load_env(
+        &self,
+        ctx: ExecContext,
+        sequ: &mut ExecSequence,
+        obj_path: &str,
+    ) -> ExecResult<()> {
         let (mod_name, item_name) = parse_obj_path(obj_path)?;
 
         self.mods_store
@@ -119,14 +133,19 @@ impl ExecLoadTrait for GxlSpace {
     }
 
     #[requires(self.assembled)]
-    fn load_flow(&self, _ctx: ExecContext, sequ: &mut Sequence, obj_path: &str) -> ExecResult<()> {
+    fn load_flow(
+        &self,
+        _ctx: ExecContext,
+        sequ: &mut ExecSequence,
+        obj_path: &str,
+    ) -> ExecResult<()> {
         let (mod_name, item_name) = parse_obj_path(obj_path)?;
 
         let mox = self
             .mods_store
             .get(mod_name)
             .ok_or(ExecReason::Miss(mod_name.to_string()))?;
-        self.mod_load_flow(mox, item_name, &LableGuard::from_flow(), sequ)
+        self.mod_load_flow(mox, item_name, &RunUnitGuard::from_flow(), sequ)
     }
 
     fn of_name(&self) -> String {
@@ -216,7 +235,7 @@ impl GxlSpace {
         let flow_name = self.normalize_flow_name(flow_name);
         println!("execute flow: {}", flow_name);
 
-        let mut exec_sequ = Sequence::from("flow");
+        let mut exec_sequ = ExecSequence::from("flow");
         let mut ctx = main_ctx.clone();
 
         self.load_envs(&mut ctx, envs, &mut exec_sequ)?;
@@ -255,7 +274,7 @@ impl GxlSpace {
         &self,
         ctx: &mut ExecContext,
         envs: &[String],
-        exec_sequ: &mut Sequence,
+        exec_sequ: &mut ExecSequence,
     ) -> RunResult<()> {
         ctx.append("env");
 
@@ -281,15 +300,11 @@ impl GxlSpace {
         Ok(())
     }
 
-    #[requires(self.assembled)]
-    pub fn load_flow_by(&self, meta: &FlowMeta, sequ: &mut Sequence) -> ExecResult<()> {
-        self.guard_load_flow(meta, &LableGuard::from_flow(), sequ)
-    }
     fn guard_load_flow(
         &self,
         meta: &FlowMeta,
-        guard: &LableGuard,
-        sequ: &mut Sequence,
+        guard: &RunUnitGuard,
+        sequ: &mut impl SequAppender,
     ) -> ExecResult<()> {
         if let Some(mod_meta) = meta.host() {
             if let Some(mox) = self.mods_store.get(mod_meta.name()) {
@@ -302,17 +317,17 @@ impl GxlSpace {
         &self,
         mox: &GxlMod,
         name: &str,
-        guard: &LableGuard,
-        sequ: &mut Sequence,
+        guard: &RunUnitGuard,
+        sequ: &mut impl SequAppender,
     ) -> ExecResult<()> {
         match mox.flows().get(name) {
             Some(found) => {
                 debug_assert!(found.assembled());
                 debug_assert!(mox.assembled());
-                sequ.append_trans_hold(&LableGuard::from_mod(mox.meta()), mox.props().clone());
-                if let RunLable::Flow = guard.lable() {
+                sequ.append_hold(&RunUnitGuard::from_mod(mox.meta()), mox.props().clone());
+                if let RunUnitLable::Flow = guard.lable() {
                     for x in mox.entrys().iter() {
-                        let guard = LableGuard::from_entry(x);
+                        let guard = RunUnitGuard::from_entry(x);
                         self.guard_load_flow(x, &guard, sequ)?;
                     }
                 }
@@ -321,13 +336,13 @@ impl GxlSpace {
                 for flow in pre_flows.iter() {
                     self.guard_load_flow(flow, guard, sequ)?;
                 }
-                sequ.append_trans_hold(guard, found.clone());
+                sequ.append_hold(guard, found.clone());
                 for flow in post_flows.iter() {
                     self.guard_load_flow(flow, guard, sequ)?;
                 }
-                if let RunLable::Flow = guard.lable() {
+                if let RunUnitLable::Flow = guard.lable() {
                     for x in mox.exits().iter() {
-                        let guard = LableGuard::from_exit(x);
+                        let guard = RunUnitGuard::from_exit(x);
                         self.guard_load_flow(x, &guard, sequ)?;
                     }
                 }
@@ -410,7 +425,7 @@ mod tests {
         code_space.append(main_mod);
 
         // Execute
-        let mut flow = Sequence::from("test");
+        let mut flow = ExecSequence::from("test");
         let work_space = code_space.assemble().assert();
 
         work_space.load_env(ctx.clone(), &mut flow, "env.env1")?;

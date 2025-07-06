@@ -65,7 +65,7 @@ mod tests {
     use crate::components::gxl_var::GxlVar;
     use crate::components::{GxlEnv, GxlFlow, GxlMod, GxlProps};
     use crate::execution::exec_init_env;
-    use crate::execution::sequence::Sequence;
+    use crate::execution::sequence::ExecSequence;
     use crate::types::AnyResult;
 
     use super::*;
@@ -97,7 +97,7 @@ mod tests {
         gxl_space.append(gxl_mod_env);
         gxl_space.append(gxl_mod);
 
-        let mut flow = Sequence::from("test");
+        let mut flow = ExecSequence::from("test");
         let work_spc = gxl_space.assemble().assert();
         work_spc.load_env(ctx.clone(), &mut flow, "env.env1")?;
         work_spc.load_flow(ctx.clone(), &mut flow, "main.flow1")?;

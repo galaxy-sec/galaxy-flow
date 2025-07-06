@@ -62,6 +62,14 @@ impl DependTrait<&GxlSpace> for TransableHold {
         Ok(obj)
     }
 }
+impl Dryrunable for TransableHold {
+    fn dryrun_hold(&self) -> Option<FlowMetaHold> {
+        match self {
+            TransableHold::Props(_) => None,
+            TransableHold::Flow(o) => o.dryrun_hold(),
+        }
+    }
+}
 
 impl Transaction for AsyncComHold {
     fn is_transaction(&self) -> bool {

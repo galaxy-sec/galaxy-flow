@@ -26,8 +26,16 @@ where
     }
 
     pub fn begin_transaction(&mut self) {
+        warn!(target: "trans", "transaction begin");
         self.in_transaction = true;
     }
+    pub fn in_transaction_trigger(&mut self, flag: bool) -> bool {
+        if flag {
+            self.begin_transaction();
+        }
+        self.in_transaction
+    }
+
     pub fn in_transaction(&self) -> bool {
         self.in_transaction
     }

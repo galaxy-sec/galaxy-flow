@@ -23,7 +23,7 @@ pub use crate::ExecResult;
 pub use crate::err::{RunError, RunReason, RunResult};
 
 pub use crate::execution::hold::AsyncComHold;
-pub use crate::execution::sequence::Sequence;
+pub use crate::execution::sequence::ExecSequence;
 
 pub use async_trait::async_trait;
 

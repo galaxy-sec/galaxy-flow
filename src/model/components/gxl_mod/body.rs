@@ -185,7 +185,12 @@ impl MergeTrait for GxlMod {
 
 impl ExecLoadTrait for GxlMod {
     #[requires(!self.props().meta().name().is_empty())]
-    fn load_env(&self, mut ctx: ExecContext, sequ: &mut Sequence, args: &str) -> ExecResult<()> {
+    fn load_env(
+        &self,
+        mut ctx: ExecContext,
+        sequ: &mut ExecSequence,
+        args: &str,
+    ) -> ExecResult<()> {
         ctx.append(self.meta.name().as_str());
         debug!(target:ctx.path(),"will load env:{}", args);
         if let Some(found) = self.envs.get(args) {
@@ -198,7 +203,7 @@ impl ExecLoadTrait for GxlMod {
     fn load_flow(
         &self,
         mut _ctx: ExecContext,
-        _sequ: &mut Sequence,
+        _sequ: &mut ExecSequence,
         _name: &str,
     ) -> ExecResult<()> {
         todo!();
@@ -340,7 +345,7 @@ mod test {
             GxlEnv, GxlFlow, GxlMod, GxlProps,
         },
         context::ExecContext,
-        execution::sequence::Sequence,
+        execution::sequence::ExecSequence,
         infra::{init_env, once_init_log},
         traits::{DependTrait, ExecLoadTrait},
         types::AnyResult,
@@ -463,7 +468,7 @@ mod test {
         spc = spc.assemble().assert("assemble");
 
         let ctx = ExecContext::default();
-        let mut sequ = Sequence::from("exec");
+        let mut sequ = ExecSequence::from("exec");
         //mod1.assemble(mod_name, src)
 
         // 调用 assemble_env 方法
@@ -509,7 +514,7 @@ mod test {
         let work_spc = spc.assemble()?;
 
         let ctx = ExecContext::default();
-        let mut sequ = Sequence::from("exec");
+        let mut sequ = ExecSequence::from("exec");
 
         // 调用 assemble_flow 方法
         work_spc.load_flow(ctx, &mut sequ, "mod2.flow2")?;
