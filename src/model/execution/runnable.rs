@@ -76,7 +76,7 @@ pub trait RunnableTrait {
 }
 
 pub trait ComponentMeta {
-    fn com_meta(&self) -> GxlMeta;
+    fn gxl_meta(&self) -> GxlMeta;
 }
 pub trait MetaInfo: AsyncRunnableTrait {
     fn meta(&self) -> GxlMeta;

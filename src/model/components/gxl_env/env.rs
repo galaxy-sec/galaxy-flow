@@ -177,7 +177,7 @@ impl AsyncRunnableTrait for EnvItem {
     }
 }
 impl ComponentMeta for GxlEnv {
-    fn com_meta(&self) -> GxlMeta {
+    fn gxl_meta(&self) -> GxlMeta {
         GxlMeta::Env(self.meta.clone())
     }
 }

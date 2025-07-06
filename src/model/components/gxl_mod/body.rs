@@ -269,7 +269,7 @@ impl AsyncRunnableTrait for GxlMod {
     }
 }
 impl ComponentMeta for GxlMod {
-    fn com_meta(&self) -> GxlMeta {
+    fn gxl_meta(&self) -> GxlMeta {
         GxlMeta::Mod(self.meta.clone())
     }
 }
@@ -288,7 +288,7 @@ impl AppendAble<Vec<GxlVar>> for GxlMod {
 
 impl AppendAble<Activity> for GxlMod {
     fn append(&mut self, hold: Activity) {
-        self.acts.insert(hold.com_meta().name().to_string(), hold);
+        self.acts.insert(hold.gxl_meta().name().to_string(), hold);
     }
 }
 

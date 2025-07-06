@@ -63,7 +63,7 @@ impl AsyncRunnableTrait for GxRun {
     }
 }
 impl ComponentMeta for GxRun {
-    fn com_meta(&self) -> GxlMeta {
+    fn gxl_meta(&self) -> GxlMeta {
         GxlMeta::from("gx.gxl")
     }
 }

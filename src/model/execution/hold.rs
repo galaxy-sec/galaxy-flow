@@ -73,7 +73,7 @@ impl Transaction for AsyncComHold {
             | AsyncComHold::Mox(_) => false,
         };
         info!(target:"trans",
-            "{} is transaction :{}", self.com_meta().name(), trans);
+            "{} is transaction :{}", self.gxl_meta().name(), trans);
         trans
     }
 
@@ -171,10 +171,10 @@ impl AsyncRunnableTrait for TransableHold {
 }
 
 impl ComponentMeta for TransableHold {
-    fn com_meta(&self) -> GxlMeta {
+    fn gxl_meta(&self) -> GxlMeta {
         match self {
-            TransableHold::Props(h) => h.com_meta(),
-            TransableHold::Flow(h) => h.com_meta(),
+            TransableHold::Props(h) => h.gxl_meta(),
+            TransableHold::Flow(h) => h.gxl_meta(),
         }
     }
 }
@@ -200,22 +200,22 @@ impl AsyncRunnableTrait for ComHold {
 }
 
 impl ComponentMeta for ComHold {
-    fn com_meta(&self) -> GxlMeta {
+    fn gxl_meta(&self) -> GxlMeta {
         match self {
-            ComHold::Conduction(h) => h.com_meta(),
-            ComHold::Isolation(h) => h.hold.com_meta(),
+            ComHold::Conduction(h) => h.gxl_meta(),
+            ComHold::Isolation(h) => h.hold.gxl_meta(),
         }
     }
 }
 
 impl ComponentMeta for AsyncComHold {
-    fn com_meta(&self) -> GxlMeta {
+    fn gxl_meta(&self) -> GxlMeta {
         match self {
-            Self::Props(obj) => obj.com_meta(),
-            Self::Flow(obj) => obj.com_meta(),
-            Self::Read(obj) => obj.com_meta(),
-            Self::Env(obj) => obj.com_meta(),
-            Self::Mox(obj) => obj.com_meta(),
+            Self::Props(obj) => obj.gxl_meta(),
+            Self::Flow(obj) => obj.gxl_meta(),
+            Self::Read(obj) => obj.gxl_meta(),
+            Self::Env(obj) => obj.gxl_meta(),
+            Self::Mox(obj) => obj.gxl_meta(),
         }
     }
 }

@@ -57,7 +57,7 @@ impl AsyncRunnableTrait for Activity {
     }
 }
 impl ComponentMeta for Activity {
-    fn com_meta(&self) -> GxlMeta {
+    fn gxl_meta(&self) -> GxlMeta {
         GxlMeta::from(self.dto.name.as_str())
     }
 }

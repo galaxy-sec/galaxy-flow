@@ -17,6 +17,7 @@ use crate::execution::job::Job;
 use crate::execution::runnable::ComponentMeta;
 use crate::execution::runnable::{AsyncRunnableTrait, ExecOut, TaskResult};
 use crate::execution::task::Task;
+use crate::execution::trans::{ComTrans, TransactionManager};
 use crate::execution::VarSpace;
 use crate::meta::{GxlMeta, MetaInfo};
 
@@ -108,23 +109,23 @@ impl Sequence {
         spc: &GxlSpace,
     ) -> TaskResult {
         let mut job = Job::from(&self.name);
-        let mut undo_stack = VecDeque::new();
         warn!(target: ctx.path(), "sequence size: {}  dryrun: {}", self.run_items().len(), ctx.dryrun());
 
-        let mut transaction_begin = false;
+        let mut trans_manage = ComTrans::new();
         for (index, item) in self.run_items.iter().enumerate() {
-            info!(target: ctx.path(), "executing item {}: {} ", index, item.com_meta().full_name());
+            info!(target: ctx.path(), "executing item {}: {} ", index, item.gxl_meta().full_name());
             if item.is_transaction() {
-                transaction_begin = true;
+                trans_manage.begin_transaction();
                 warn!(target: ctx.path(), "transaction begin")
             }
-            if transaction_begin {
+            if trans_manage.in_transaction() {
                 if let Some(undo) = item.undo_hold() {
                     let mut sequ = Sequence::default();
                     spc.load_flow_by(&undo, &mut sequ).err_conv()?;
                     for undo in sequ.run_items() {
-                        info!(target: ctx.path(), "regist undo {}", undo.com_meta().name());
-                        undo_stack.push_back((undo.clone(), def.clone()));
+                        info!(target: ctx.path(), "regist undo {}", undo.gxl_meta().name());
+                        trans_manage.add_undo_task(undo.clone(), def.clone());
+                        //undo_stack.push_back((undo.clone(), def.clone()));
                     }
                 }
             }
@@ -135,7 +136,7 @@ impl Sequence {
                     let mut sequ = Sequence::default();
                     spc.load_flow_by(&dryrun_meta, &mut sequ).err_conv()?;
                     for dryrun in sequ.run_items() {
-                        info!(target: ctx.path(), "regist undo {}", dryrun.com_meta().name());
+                        info!(target: ctx.path(), "regist undo {}", dryrun.gxl_meta().name());
                         sub_queue.push_back(dryrun.clone());
                     }
                 } else {
@@ -152,8 +153,8 @@ impl Sequence {
                     }
                     Err(e) => {
                         warn!("Sequence aborted at step {index}: {e}");
-                        warn!("will execute undo :{}", undo_stack.len());
-                        self.undo_transactions(ctx.clone(), undo_stack).await;
+                        //self.undo_transactions(ctx.clone(), undo_stack).await;
+                        trans_manage.rollback(&ctx).await;
                         return Err(e);
                     }
                 }
@@ -163,24 +164,12 @@ impl Sequence {
         Ok(TaskValue::from((def, ExecOut::Job(job))))
     }
 
-    async fn undo_transactions(
-        &self,
-        ctx: ExecContext,
-        mut undo_stack: VecDeque<(ComHold, VarSpace)>,
-    ) {
-        while let Some((undo, dict)) = undo_stack.pop_back() {
-            match undo.async_exec(ctx.clone(), dict).await {
-                Ok(_) => warn!("Undo successful for {}", undo.com_meta().name()),
-                Err(e) => error!("Undo failed for {}: {}", undo.com_meta().name(), e),
-            }
-        }
-    }
     pub fn append_trans_hold<H: Into<TransableHold>>(&mut self, guard: &LableGuard, hold: H) {
         let trans_hold = hold.into();
         debug_assert!(trans_hold.assembled());
         debug!(target:"exec/sque", "only_item :{:?}", guard.lable());
         if !self.only_items().contains_key(guard.lable()) || *guard.open() {
-            info!(target:"exec/sque", "only_item :{}", trans_hold.com_meta().full_name());
+            info!(target:"exec/sque", "only_item :{}", trans_hold.gxl_meta().full_name());
             self.only_items.insert(guard.lable().clone(), true);
             self.run_items.push(AsyncComHold::from(trans_hold).into());
         }
@@ -189,14 +178,14 @@ impl Sequence {
 
 impl AppendAble<AsyncComHold> for Sequence {
     fn append(&mut self, node: AsyncComHold) {
-        debug!(target: "exec/sque", "append {}", node.com_meta().full_name() );
+        debug!(target: "exec/sque", "append {}", node.gxl_meta().full_name() );
         self.run_items.push(node.into());
     }
 }
 
 impl AppendAble<IsolationHold> for Sequence {
     fn append(&mut self, node: IsolationHold) {
-        debug!(target: "exec/sque", "append {}", node.hold().com_meta().full_name() );
+        debug!(target: "exec/sque", "append {}", node.hold().gxl_meta().full_name() );
         self.run_items.push(node.into());
     }
 }
@@ -213,7 +202,7 @@ impl StubAction {
 }
 
 impl ComponentMeta for StubAction {
-    fn com_meta(&self) -> GxlMeta {
+    fn gxl_meta(&self) -> GxlMeta {
         GxlMeta::from("stub")
     }
 }

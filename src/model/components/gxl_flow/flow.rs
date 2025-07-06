@@ -263,7 +263,7 @@ impl AsyncRunnableTrait for GxlFlow {
     }
 }
 impl ComponentMeta for GxlFlow {
-    fn com_meta(&self) -> GxlMeta {
+    fn gxl_meta(&self) -> GxlMeta {
         GxlMeta::Flow(self.meta.clone())
     }
 }

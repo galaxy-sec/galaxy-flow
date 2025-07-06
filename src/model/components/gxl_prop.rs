@@ -120,7 +120,7 @@ impl AsyncRunnableTrait for GxlProps {
     }
 }
 impl ComponentMeta for GxlProps {
-    fn com_meta(&self) -> GxlMeta {
+    fn gxl_meta(&self) -> GxlMeta {
         GxlMeta::from(self.meta().clone())
     }
 }
