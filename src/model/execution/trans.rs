@@ -5,7 +5,7 @@ use crate::{ability::prelude::ComponentMeta, context::ExecContext};
 use super::{hold::ComHold, runnable::AsyncRunnableTrait, VarSpace};
 
 // 事务管理器，跟踪事务状态和撤销任务
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct TransactionManager<T>
 where
     T: AsyncRunnableTrait,

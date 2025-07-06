@@ -80,6 +80,7 @@ mod main   {
     gx.cmd ( "RUST_LOG=debug cargo test ${GXL_CMD_ARG} -- --nocapture ", log : "1" , out:"true"  );
   }
 
+  #[task(name="pub to local")]
   flow pub_local   {
 
     AP = "${ENV_AFT_PREFIX}";
