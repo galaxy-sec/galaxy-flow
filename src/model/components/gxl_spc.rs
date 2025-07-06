@@ -1,7 +1,7 @@
 use super::{code_spc::CodeSpace, gxl_flow::meta::FlowMeta, prelude::*};
 use crate::{
     ability::prelude::TaskValue,
-    execution::sequence::{LableGuard, Sequence},
+    execution::sequence::{LableGuard, RunLable, Sequence},
     menu::*,
     meta::MetaInfo,
     util::task_report::task_local_report,
@@ -310,22 +310,26 @@ impl GxlSpace {
                 debug_assert!(found.assembled());
                 debug_assert!(mox.assembled());
                 sequ.append_trans_hold(&LableGuard::from_mod(mox.meta()), mox.props().clone());
-                for x in mox.entrys().iter() {
-                    let guard = LableGuard::from_entry(x);
-                    self.guard_load_flow(x, &guard, sequ)?;
+                if let RunLable::Flow = guard.lable() {
+                    for x in mox.entrys().iter() {
+                        let guard = LableGuard::from_entry(x);
+                        self.guard_load_flow(x, &guard, sequ)?;
+                    }
                 }
                 let pre_flows = found.meta().pre_metas();
                 let post_flows = found.meta().pos_metas();
-                for flow in pre_flows.into_iter() {
+                for flow in pre_flows.iter() {
                     self.guard_load_flow(flow, guard, sequ)?;
                 }
                 sequ.append_trans_hold(guard, found.clone());
-                for flow in post_flows.into_iter() {
+                for flow in post_flows.iter() {
                     self.guard_load_flow(flow, guard, sequ)?;
                 }
-                for x in mox.exits().iter() {
-                    let guard = LableGuard::from_exit(x);
-                    self.guard_load_flow(x, &guard, sequ)?;
+                if let RunLable::Flow = guard.lable() {
+                    for x in mox.exits().iter() {
+                        let guard = LableGuard::from_exit(x);
+                        self.guard_load_flow(x, &guard, sequ)?;
+                    }
                 }
                 Ok(())
             }

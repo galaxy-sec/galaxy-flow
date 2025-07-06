@@ -24,7 +24,7 @@ impl MetaInfo for PropMeta {
         format!("[props]:{}", self.name.clone())
     }
     fn long_name(&self) -> String {
-        format!("{}", self.name.clone())
+        self.name.clone().to_string()
     }
 }
 

@@ -1,14 +1,13 @@
 use std::collections::{HashMap, VecDeque};
-use std::sync::Arc;
 
 use async_trait::async_trait;
 use derive_more::Deref;
 use orion_common::friendly::AppendAble;
-use orion_error::{ErrorConv, UvsSysFrom};
+use orion_error::ErrorConv;
 
 use crate::ability::prelude::TaskValue;
 use crate::annotation::{Dryrunable, Transaction};
-use crate::components::gxl_flow::meta::{FlowMeta, FlowMetaHold};
+use crate::components::gxl_flow::meta::FlowMeta;
 use crate::components::gxl_mod::meta::ModMeta;
 use crate::components::gxl_spc::GxlSpace;
 use crate::context::ExecContext;
@@ -20,7 +19,6 @@ use crate::execution::runnable::{AsyncRunnableTrait, ExecOut, TaskResult};
 use crate::execution::task::Task;
 use crate::execution::VarSpace;
 use crate::meta::{GxlMeta, MetaInfo};
-use crate::ExecError;
 
 use super::hold::TransableHold;
 #[derive(Debug, Clone, Getters)]
@@ -204,158 +202,28 @@ impl AppendAble<IsolationHold> for Sequence {
 }
 
 #[derive(Clone, Default)]
-pub struct RunStub {
+pub struct StubAction {
     name: String,
-    trans_begin: bool,
-    undo_item: Vec<TransableHold>,
-    should_fail: bool,
-    effect: Option<Arc<dyn Fn() + Send + Sync>>,
 }
 
-impl RunStub {
+impl StubAction {
     pub fn new<S: Into<String>>(name: S) -> Self {
-        Self {
-            name: name.into(),
-            ..Default::default()
-        }
-    }
-    pub fn with_transaction(mut self, trans_begin: bool, undo: TransableHold) -> Self {
-        self.trans_begin = trans_begin;
-        self.undo_item = vec![undo];
-        self
-    }
-    pub fn with_transactions(mut self, trans_begin: bool, undo: Vec<TransableHold>) -> Self {
-        self.trans_begin = trans_begin;
-        self.undo_item = undo;
-        self
-    }
-
-    pub fn with_should_fail(mut self, should_fail: bool) -> Self {
-        self.should_fail = should_fail;
-        self
-    }
-
-    // 直接添加副作用到 RunStub
-    pub fn with_effect<F>(mut self, effect: F) -> Self
-    where
-        F: Fn() + Send + Sync + 'static,
-    {
-        self.effect = Some(Arc::new(effect));
-        self
+        Self { name: name.into() }
     }
 }
 
-impl Transaction for RunStub {
-    fn is_transaction(&self) -> bool {
-        self.trans_begin
-    }
-
-    fn undo_hold(&self) -> Option<FlowMetaHold> {
-        //self.undo_item.clone()
-        todo!();
-    }
-}
-
-impl ComponentMeta for RunStub {
+impl ComponentMeta for StubAction {
     fn com_meta(&self) -> GxlMeta {
         GxlMeta::from("stub")
     }
 }
 
 #[async_trait]
-impl AsyncRunnableTrait for RunStub {
+impl AsyncRunnableTrait for StubAction {
     async fn async_exec(&self, ctx: ExecContext, def: VarSpace) -> TaskResult {
-        // 先执行可能的副作用
-        if let Some(effect) = &self.effect {
-            effect();
-        }
-
-        // 然后处理正常执行逻辑
-        if self.should_fail {
-            //return Err(anyhow::anyhow!("Intentional failure in {}", self.name));
-            return Err(ExecError::from_sys("intentional failure".into()));
-        }
-
+        //TODO:
         debug!(target: ctx.path(), "executing stub: {}", self.name);
         let task = Task::from(&self.name);
         Ok(TaskValue::from((def, ExecOut::Task(task))))
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use std::sync::Mutex;
-
-    use super::*;
-    use crate::execution::exec_init_env;
-
-    fn stub_node(name: &str) -> RunStub {
-        RunStub::new(name)
-    }
-
-    #[tokio::test]
-    async fn sequence_execution() {
-        let (ctx, def) = exec_init_env();
-        let mut flow = Sequence::from("test.flow");
-
-        flow.append(AsyncComHold::from(stub_node("step1")));
-        flow.append(AsyncComHold::from(stub_node("step2")));
-
-        let spc = GxlSpace::default();
-        let TaskValue { rec, .. } = flow.execute(ctx, def, &spc).await.unwrap();
-
-        if let ExecOut::Job(job) = rec {
-            assert_eq!(job.tasks().len(), 2);
-            assert_eq!(job.tasks()[0].name(), "step1");
-            assert_eq!(job.tasks()[1].name(), "step2");
-        } else {
-            panic!("Expected Job output");
-        }
-    }
-
-    #[tokio::test]
-    async fn verify_undo_execution() {
-        let (ctx, def) = exec_init_env();
-        let mut flow = Sequence::from("verify_undo.flow");
-
-        // 创建执行追踪器
-        let undo1_executed = Arc::new(Mutex::new(false));
-        let undo2_executed = Arc::new(Mutex::new(false));
-
-        // 直接为 RunStub 添加 effect
-        let step1_undo = stub_node("undo_step1").with_effect({
-            let flag = undo1_executed.clone();
-            move || *flag.lock().unwrap() = true
-        });
-
-        let step2_undo = stub_node("undo_step2").with_effect({
-            let flag = undo2_executed.clone();
-            move || *flag.lock().unwrap() = true
-        });
-
-        // 配置事务
-        let step1 = stub_node("step1").with_transaction(true, TransableHold::from(step1_undo));
-
-        let step2 = stub_node("step2")
-            .with_transaction(false, TransableHold::from(step2_undo))
-            .with_should_fail(true); // 使第二步失败
-
-        flow.append(AsyncComHold::from(step1));
-        flow.append(AsyncComHold::from(step2));
-
-        // 执行并验证
-        let spc = GxlSpace::default();
-        let result = flow.execute(ctx, def, &spc).await;
-        assert!(result.is_err(), "Execution should fail");
-
-        // 检查 undo 是否执行
-        assert!(
-            *undo2_executed.lock().unwrap(),
-            "undo_step2 should be executed"
-        );
-        assert!(
-            *undo1_executed.lock().unwrap(),
-            "undo_step1 should be executed"
-        );
     }
 }

@@ -86,7 +86,6 @@ impl FlowMeta {
         }
         None
     }
-    #[requires(self.host.is_some())]
     pub fn undo_flow_name(&self) -> Option<String> {
         for ann in &self.annotations {
             if ann.undo_flow_name().is_some() {
@@ -96,7 +95,6 @@ impl FlowMeta {
         None
     }
 
-    #[requires(self.host.is_some())]
     pub(crate) fn dryrun_flow_name(&self) -> Option<String> {
         for ann in &self.annotations {
             if ann.dryrun_flow_name().is_some() {

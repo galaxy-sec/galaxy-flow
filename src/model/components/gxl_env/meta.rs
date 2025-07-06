@@ -47,9 +47,7 @@ impl EnvMeta {
     pub fn long_name(&self) -> String {
         format!(
             "{}:{}",
-            self.host
-                .as_ref()
-                .map_or("unknow", |ref x| x.name().as_str()),
+            self.host.as_ref().map_or("unknow", |x| x.name().as_str()),
             self.name
         )
     }

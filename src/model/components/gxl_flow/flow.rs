@@ -42,6 +42,10 @@ impl GxlFlow {
         self.meta.set_host(meta);
         self
     }
+    pub fn with_code(mut self, block: BlockNode) -> Self {
+        self.blocks.push(block);
+        self
+    }
 }
 
 impl DependTrait<&GxlSpace> for GxlFlow {
@@ -275,7 +279,7 @@ mod tests {
 
     use orion_error::TestAssert;
 
-    use crate::{components::GxlMod, infra::once_init_log};
+    use crate::{components::GxlMod, infra::once_init_log, meta::MetaInfo};
 
     use super::*;
 
@@ -354,23 +358,20 @@ mod tests {
         let assembled_flow = target_flow.assemble("test_mod", &spc).assert();
 
         // 验证 pre_ows 和 post_ows 是否正确组装
-        assert_eq!(assembled_flow.meta().pre_metas().len(), 4);
+        assert_eq!(assembled_flow.meta().pre_metas().len(), 2);
         assert_eq!(
-            assembled_flow.meta().pre_metas()[0].name(),
-            "test_mod.props"
+            assembled_flow.meta().pre_metas()[0].long_name(),
+            "test_mod.flow1"
         );
-        assert_eq!(assembled_flow.meta().pre_metas()[1].name(), "flow1");
         assert_eq!(
-            assembled_flow.meta().pre_metas()[2].name(),
-            "test_mod.props"
+            assembled_flow.meta().pre_metas()[1].long_name(),
+            "test_mod.flow2"
         );
-        assert_eq!(assembled_flow.meta().pre_metas()[3].name(), "flow2");
 
-        assert_eq!(assembled_flow.meta().pos_metas().len(), 2);
+        assert_eq!(assembled_flow.meta().pos_metas().len(), 1);
         assert_eq!(
-            assembled_flow.meta().pos_metas()[0].name(),
-            "test_mod.props"
+            assembled_flow.meta().pos_metas()[0].long_name(),
+            "test_mod.flow3"
         );
-        assert_eq!(assembled_flow.meta().pos_metas()[1].name(), "flow3");
     }
 }

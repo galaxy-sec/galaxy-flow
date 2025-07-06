@@ -28,7 +28,7 @@ use super::gxl_spc::GxlSpace;
 use super::gxl_var::GxlVar;
 use std::io::Read;
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub enum BlockAction {
     Command(GxCmd),
     GxlRun(GxRun),
@@ -38,14 +38,14 @@ pub enum BlockAction {
     Assert(GxAssert),
     Version(RgVersion),
     Read(GxRead),
-    Delegate(ActCall),
+    Delegate(Box<ActCall>),
     Tpl(GxTpl),
     Artifact(GxArtifact),
     DownLoad(GxDownLoad),
     UpLoad(GxUpLoad),
 }
 
-#[derive(Clone, Getters, Default, Debug)]
+#[derive(Clone, Getters, Default)]
 pub struct BlockNode {
     props: Vec<GxlVar>,
     items: Vec<BlockAction>,
@@ -157,7 +157,9 @@ impl DependTrait<&GxlSpace> for BlockNode {
                 BlockAction::Version(v) => BlockAction::Version(v.clone()),
                 BlockAction::Command(v) => BlockAction::Command(v.clone()),
                 BlockAction::GxlRun(v) => BlockAction::GxlRun(v.clone()),
-                BlockAction::Delegate(v) => BlockAction::Delegate(v.assemble(mod_name, src)?),
+                BlockAction::Delegate(v) => {
+                    BlockAction::Delegate(Box::new(v.assemble(mod_name, src)?))
+                }
                 BlockAction::Artifact(v) => BlockAction::Artifact(v.clone()),
                 BlockAction::DownLoad(v) => BlockAction::DownLoad(v.clone()),
                 BlockAction::UpLoad(v) => BlockAction::UpLoad(v.clone()),
