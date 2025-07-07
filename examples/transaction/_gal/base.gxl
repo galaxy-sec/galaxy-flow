@@ -1,0 +1,19 @@
+mod base {
+    #[undo(base_step1_undo)]
+    flow base_step1  | base_step2 {
+        gx.echo (" base_step1 ");
+    }
+    flow base_step1_undo {
+        gx.echo (" undo base_step1 ");
+    }
+
+    #[undo(base_step2_undo)]
+    flow base_step2 {
+        gx.echo (" base_step2 ");
+        gx.assert ( value : "true" , expect : "false" );
+    }
+    flow base_step2_undo {
+        gx.echo (" undo base_step2 ");
+    }
+
+}
