@@ -71,6 +71,7 @@ impl AsyncRunnableTrait for BlockAction {
     async fn async_exec(&self, ctx: ExecContext, dct: VarSpace) -> TaskResult {
         let (result, output) = match self {
             BlockAction::GxlRun(o) => (o.async_exec(ctx, dct).await, String::new()),
+            BlockAction::Loop(o) => (o.async_exec(ctx, dct).await, String::new()),
             _ => {
                 let need_report = report_enable().await;
                 if need_report {
@@ -107,7 +108,6 @@ impl BlockAction {
             BlockAction::Echo(o) => o.async_exec(ctx, dct).await,
             BlockAction::Assert(o) => o.async_exec(ctx, dct).await,
             BlockAction::Cond(o) => o.async_exec(ctx, dct).await,
-            BlockAction::Loop(o) => o.async_exec(ctx, dct).await,
             BlockAction::Tpl(o) => o.async_exec(ctx, dct).await,
             BlockAction::Delegate(o) => o.async_exec(ctx, dct).await,
             BlockAction::Version(o) => o.async_exec(ctx, dct).await,
