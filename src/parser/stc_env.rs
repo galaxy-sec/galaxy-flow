@@ -100,21 +100,21 @@ mod tests {
                y = "${PRJ_ROOT}/test/main.py" ;
         };"#;
         let env = run_gxl(gal_stc_env, &mut data).assert();
-        assert_eq!(env.props().len(), 2);
+        assert_eq!(env.props().items().len(), 2);
         assert_eq!(data, "");
     }
     #[test]
     fn env_empty() {
         let mut data = r#" env  base { };"#;
         let env = run_gxl(gal_stc_env, &mut data).assert();
-        assert_eq!(env.props().len(), 0);
+        assert_eq!(env.props().items().len(), 0);
         assert_eq!(data, "");
     }
     #[test]
     fn env_mix() {
         let mut data = r#" env  dev : base;"#;
         let env = run_gxl(gal_stc_env, &mut data).assert();
-        assert_eq!(env.props().len(), 0);
+        assert_eq!(env.props().items().len(), 0);
         assert_eq!(data, "");
     }
     #[test]

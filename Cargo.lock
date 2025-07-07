@@ -1210,6 +1210,7 @@ dependencies = [
  "handlebars",
  "http-types",
  "include_dir",
+ "indexmap",
  "lazy_static",
  "log",
  "mockall",

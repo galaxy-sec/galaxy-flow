@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use async_trait::async_trait;
+use indexmap::IndexMap;
 use orion_common::friendly::{AppendAble, New2};
 
 use crate::{
@@ -13,6 +14,33 @@ use super::{
     gxl_var::GxlVar,
     prelude::{AsyncRunnableTrait, ComponentMeta, ExecContext, ExecOut, TaskResult, VarSpace},
 };
+
+pub trait MapKeyable {
+    fn map_key(&self) -> String;
+}
+pub trait Vec2Mapable<T> {
+    fn from_vec(vec: Vec<T>) -> Self;
+    fn export_vec(&self) -> Vec<T>;
+}
+
+impl<T> Vec2Mapable<T> for IndexMap<String, T>
+where
+    T: MapKeyable + Clone,
+{
+    fn from_vec(value: Vec<T>) -> Self {
+        let mut items: IndexMap<String, T> = IndexMap::new();
+        value.into_iter().for_each(|x| {
+            items.insert(x.map_key(), x);
+        });
+        items
+    }
+
+    fn export_vec(&self) -> Vec<T> {
+        let mut data: Vec<T> = Vec::new();
+        self.values().for_each(|x| data.push(x.clone()));
+        data
+    }
+}
 
 #[derive(Clone, Getters, PartialEq, Debug)]
 pub struct PropMeta {
@@ -49,7 +77,7 @@ impl Default for PropMeta {
 pub struct GxlProps {
     meta: PropMeta,
     host: String,
-    items: Vec<GxlVar>,
+    items: IndexMap<String, GxlVar>,
 }
 pub type VarsHold = Arc<GxlProps>;
 
@@ -58,7 +86,7 @@ impl From<Vec<GxlVar>> for GxlProps {
         Self {
             meta: PropMeta::new(""),
             host: "".to_string(),
-            items: value,
+            items: IndexMap::from_vec(value),
         }
     }
 }
@@ -66,8 +94,7 @@ impl GxlProps {
     pub fn new<S: Into<String>>(name: S) -> Self {
         Self {
             meta: PropMeta::new(name),
-            host: "".to_string(),
-            items: Vec::new(),
+            ..Default::default()
         }
     }
     pub fn mod_new<S: Into<String>>(name: S) -> GxlProps {
@@ -75,38 +102,44 @@ impl GxlProps {
         Self {
             meta: PropMeta::new(format!("{}.props", name_string.clone())),
             host: name_string,
-            items: Vec::new(),
+            ..Default::default()
         }
     }
     pub fn with_vars(mut self, vars: Vec<GxlVar>) -> Self {
-        self.items = vars;
+        self.items = IndexMap::from_vec(vars);
         self
     }
     pub fn insert<S: Into<String>>(&mut self, key: S, val: S) {
-        self.items.push(GxlVar::new(key.into(), val.into()));
+        let key_string = key.into();
+        self.items
+            .insert(key_string.clone(), GxlVar::new(key_string, val.into()));
     }
-    /*
-    pub fn load(map: StrMap) -> Self {
-        let mut obj = Self { items: Vec::new() };
-        for (key, val) in map {
-            obj.append(GxlVar::new(key, val));
+    pub fn merge(&mut self, mut other: Self) {
+        self.items.append(&mut other.items);
+    }
+    pub fn miss_merge(&mut self, other: Self) {
+        for (k, v) in other.items {
+            if !self.items.contains_key(&k) {
+                self.items.insert(k, v);
+            }
         }
-        obj
-    }
-    */
-    pub fn merge(&mut self, other: &Self) {
-        self.items.append(&mut other.items().clone());
     }
 }
 impl AppendAble<GxlVar> for GxlProps {
     fn append(&mut self, prop: GxlVar) {
-        self.items.push(prop);
+        self.items.insert(prop.key().clone(), prop);
+    }
+}
+impl AppendAble<Vec<GxlVar>> for GxlProps {
+    fn append(&mut self, props: Vec<GxlVar>) {
+        let mut target = IndexMap::from_vec(props);
+        self.items.append(&mut target);
     }
 }
 
 impl PropsTrait for GxlProps {
-    fn fetch_props(&self) -> &Vec<GxlVar> {
-        &self.items
+    fn fetch_props(&self) -> Vec<GxlVar> {
+        self.items.export_vec()
     }
 }
 

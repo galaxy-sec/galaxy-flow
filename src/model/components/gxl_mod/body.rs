@@ -2,6 +2,7 @@ use crate::ability::prelude::GxlVar;
 use crate::ability::prelude::TaskValue;
 use crate::components::gxl_act::activity::Activity;
 use crate::components::gxl_flow::meta::FlowMeta;
+use crate::components::gxl_prop::Vec2Mapable;
 use crate::components::gxl_spc::GxlSpace;
 use crate::components::GxlEnv;
 use crate::components::GxlFlow;
@@ -118,8 +119,8 @@ impl DependTrait<&GxlSpace> for GxlMod {
     }
 }
 impl PropsTrait for GxlMod {
-    fn fetch_props(&self) -> &Vec<GxlVar> {
-        self.props.items()
+    fn fetch_props(&self) -> Vec<GxlVar> {
+        self.props.items().export_vec()
     }
 }
 
@@ -155,9 +156,7 @@ impl GxlMod {
 
 impl MergeTrait for GxlMod {
     fn merge(&mut self, other: &Self) {
-        // Merge props using the existing append method for Vec<RgProp>
-        //self.props.extend(other.props.clone());
-        self.props.merge(&other.props);
+        self.props.miss_merge(other.props.clone());
 
         // Merge envs, overriding existing entries with the other's content
         for (name, env) in &other.envs {
@@ -286,8 +285,7 @@ impl AppendAble<GxlVar> for GxlMod {
 }
 impl AppendAble<Vec<GxlVar>> for GxlMod {
     fn append(&mut self, prop_vec: Vec<GxlVar>) {
-        self.props
-            .merge(&GxlProps::new(format!("{}.props", self.of_name())).with_vars(prop_vec));
+        self.props.append(prop_vec);
     }
 }
 
@@ -382,18 +380,19 @@ mod test {
         let result = merge_mod(mixs);
         assert!(result.is_some());
         if let Some(target) = result {
+            //println!("{:?}", target.props());
             assert_eq!(target.meta.name(), "mod1");
             assert_eq!(target.props().items().len(), 2);
             assert!(target
                 .props()
                 .items()
                 .iter()
-                .any(|x| x.key() == &"K1".to_string()));
+                .any(|(_, x)| x.key() == &"k1".to_string()));
             assert!(target
                 .props()
                 .items()
                 .iter()
-                .any(|x| x.key() == &"K2".to_string()));
+                .any(|(_, x)| x.key() == &"k2".to_string()));
             //assert_eq!(target.props.get("k1"), Some(&"v1".to_string()));
         }
     }
@@ -442,8 +441,8 @@ mod test {
         // 断言检查：验证 mod2 是否包含了 mod1 的环境变量
         assert!(assembled_mod2.envs.contains_key("env2"));
         if let Some(env) = assembled_mod2.envs.get("env2") {
-            assert!(env.props().iter().any(|x| x.key() == "KEY1"));
-            assert!(env.props().iter().any(|x| x.key() == "KEY2"));
+            assert!(env.props().items().iter().any(|(_, x)| x.key() == "key1"));
+            assert!(env.props().items().iter().any(|(_, x)| x.key() == "key2"));
         }
         Ok(())
     }
@@ -484,7 +483,7 @@ mod test {
             Some(&SecVar::new(VarMeta::Normal, "value1".to_string()))
         );
         assert_eq!(
-            vars.global().maps().get(&"KEY3".to_string()),
+            vars.global().maps().get(&"ENV_KEY3".to_string()),
             Some(&SecVar::new(VarMeta::Normal, "value1".to_string()))
         );
         Ok(())

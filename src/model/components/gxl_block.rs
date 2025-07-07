@@ -171,8 +171,8 @@ impl DependTrait<&GxlSpace> for BlockNode {
     }
 }
 impl PropsTrait for BlockNode {
-    fn fetch_props(&self) -> &Vec<GxlVar> {
-        &self.props
+    fn fetch_props(&self) -> Vec<GxlVar> {
+        self.props.clone()
     }
 }
 
