@@ -97,7 +97,6 @@ mod main   {
   flow pub_dysec  | _pub_gflow | _pub_gprj ;
 
 
-  #[dryrun(_pub_dryrun)]
   flow ver.use | @_pub_dysec {
     gx.echo (  "pub ${UP_TARGET} to dysec " );
     gx.upload (

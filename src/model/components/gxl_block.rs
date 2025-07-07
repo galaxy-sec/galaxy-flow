@@ -79,6 +79,7 @@ impl AsyncRunnableTrait for BlockAction {
 
                     let mut captured_output = String::new();
                     let _ = redirect.read_to_string(&mut captured_output);
+                    redirect.into_inner();
                     (action_res, captured_output)
                 } else {
                     let action_res = self.execute_action(ctx, dct).await;
