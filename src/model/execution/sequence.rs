@@ -132,23 +132,9 @@ impl ExecSequence {
         spc: &impl SequLoader,
         item: &ComHold,
     ) -> TaskResult {
-        let mut sub_queue = VecDeque::new();
         let mut job = Job::from(&self.name);
-        if *ctx.dryrun() {
-            if let Some(dryrun_meta) = item.dryrun_hold() {
-                let mut sequ = ExecSequence::default();
-                spc.find_flow(&dryrun_meta, &mut sequ).err_conv()?;
-                for dryrun in sequ.run_items() {
-                    info!(target: ctx.path(), "regist undo {}", dryrun.gxl_meta().name());
-                    sub_queue.push_back(dryrun.clone());
-                }
-            } else {
-                sub_queue.push_back(item.clone());
-            }
-        } else {
-            sub_queue.push_back(item.clone());
-        };
-        while let Some(item) = sub_queue.pop_back() {
+        let mut exec_queue = build_exec_queue(ctx, spc, item)?;
+        while let Some(item) = exec_queue.pop_back() {
             let TaskValue { vars, rec, .. } = item.async_exec(ctx.clone(), def.clone()).await?;
             *def = vars;
             job.append(rec);
@@ -159,6 +145,27 @@ impl ExecSequence {
             ExecOut::Job(job),
         ))
     }
+}
+
+fn build_exec_queue(
+    ctx: &ExecContext,
+    spc: &impl SequLoader,
+    item: &ComHold,
+) -> ExecResult<VecDeque<ComHold>> {
+    let mut sub_queue = VecDeque::new();
+    if *ctx.dryrun() {
+        if let Some(dryrun_meta) = item.dryrun_hold() {
+            let mut sequ = ExecSequence::default();
+            spc.find_flow(&dryrun_meta, &mut sequ).err_conv()?;
+            for dryrun in sequ.run_items() {
+                info!(target: ctx.path(), "regist undo {}", dryrun.gxl_meta().name());
+                sub_queue.push_back(dryrun.clone());
+            }
+            return Ok(sub_queue);
+        }
+    }
+    sub_queue.push_back(item.clone());
+    Ok(sub_queue)
 }
 
 impl SequAppender for ExecSequence {

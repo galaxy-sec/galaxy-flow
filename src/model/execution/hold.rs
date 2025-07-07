@@ -3,7 +3,6 @@ use std::sync::Arc;
 use async_trait::async_trait;
 use derive_more::From;
 
-use crate::ability::GxRead;
 use crate::annotation::{Dryrunable, Transaction};
 use crate::components::gxl_flow::meta::FlowMetaHold;
 use crate::components::gxl_spc::GxlSpace;
@@ -18,8 +17,6 @@ use super::VarSpace;
 pub enum AsyncComHold {
     #[from(GxlFlow)]
     Flow(Arc<GxlFlow>),
-    #[from(GxRead)]
-    Read(Arc<GxRead>),
     #[from(GxlEnv)]
     Env(Arc<GxlEnv>),
     #[from(GxlMod)]
@@ -75,10 +72,7 @@ impl Transaction for AsyncComHold {
     fn is_transaction(&self) -> bool {
         let trans = match self {
             AsyncComHold::Flow(h) => h.is_transaction(),
-            AsyncComHold::Read(_)
-            | AsyncComHold::Env(_)
-            | AsyncComHold::Props(_)
-            | AsyncComHold::Mox(_) => false,
+            AsyncComHold::Env(_) | AsyncComHold::Props(_) | AsyncComHold::Mox(_) => false,
         };
         info!(target:"trans",
             "{} is transaction :{}", self.gxl_meta().name(), trans);
@@ -88,10 +82,7 @@ impl Transaction for AsyncComHold {
     fn undo_hold(&self) -> Option<FlowMetaHold> {
         match self {
             AsyncComHold::Flow(h) => h.undo_hold(),
-            AsyncComHold::Read(_)
-            | AsyncComHold::Env(_)
-            | AsyncComHold::Props(_)
-            | AsyncComHold::Mox(_) => None,
+            AsyncComHold::Env(_) | AsyncComHold::Props(_) | AsyncComHold::Mox(_) => None,
         }
     }
 }
@@ -147,10 +138,7 @@ impl Dryrunable for AsyncComHold {
     fn dryrun_hold(&self) -> Option<FlowMetaHold> {
         match self {
             AsyncComHold::Flow(h) => h.dryrun_hold(),
-            AsyncComHold::Read(_)
-            | AsyncComHold::Env(_)
-            | AsyncComHold::Props(_)
-            | AsyncComHold::Mox(_) => None,
+            AsyncComHold::Env(_) | AsyncComHold::Props(_) | AsyncComHold::Mox(_) => None,
         }
     }
 }
@@ -161,7 +149,6 @@ impl AsyncRunnableTrait for AsyncComHold {
         match self {
             Self::Props(obj) => obj.async_exec(ctx, dct).await,
             Self::Flow(obj) => obj.async_exec(ctx, dct).await,
-            Self::Read(obj) => obj.async_exec(ctx, dct).await,
             Self::Env(obj) => obj.async_exec(ctx, dct).await,
             Self::Mox(obj) => obj.async_exec(ctx, dct).await,
         }
@@ -221,7 +208,6 @@ impl ComponentMeta for AsyncComHold {
         match self {
             Self::Props(obj) => obj.gxl_meta(),
             Self::Flow(obj) => obj.gxl_meta(),
-            Self::Read(obj) => obj.gxl_meta(),
             Self::Env(obj) => obj.gxl_meta(),
             Self::Mox(obj) => obj.gxl_meta(),
         }
