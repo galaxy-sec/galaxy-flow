@@ -1,6 +1,5 @@
 extern crate galaxy_flow;
 
-use galaxy_flow::components::gxl_spc::GxlSpace;
 use galaxy_flow::execution::VarSpace;
 use galaxy_flow::expect::ShellOption;
 use galaxy_flow::infra::once_init_log;
@@ -17,13 +16,10 @@ async fn conf_simple_test() -> AnyResult<()> {
         quiet: false,
         ..Default::default()
     };
-    let spc = GxlSpace::try_from(loader.parse_file(
-        "./tests/material/case_simple.gxl",
-        false,
-        opt,
-        &vars,
-    )?)
-    .assert();
+    let spc = loader
+        .parse_file("./tests/material/case_simple.gxl", false, opt, &vars)?
+        .assemble()
+        .assert();
     spc.exec(
         vec!["dev".into()],
         vec!["api".into()],
@@ -45,13 +41,10 @@ async fn conf_cond_test() -> RunResult<()> {
         quiet: false,
         ..Default::default()
     };
-    let spc = GxlSpace::try_from(loader.parse_file(
-        "./tests/material/case_cond.gxl",
-        false,
-        opt,
-        &vars,
-    )?)
-    .assert();
+    let spc = loader
+        .parse_file("./tests/material/case_cond.gxl", false, opt, &vars)?
+        .assemble()
+        .assert();
     spc.exec(
         vec!["dev".into()],
         vec!["api".into(), "start".into()],

@@ -1,12 +1,12 @@
 extern crate galaxy_flow;
 
 use galaxy_flow::err::RunResult;
+use galaxy_flow::execution::VarSpace;
 use galaxy_flow::expect::ShellOption;
 use galaxy_flow::infra::once_init_log;
 use galaxy_flow::types::AnyResult;
 use galaxy_flow::util::ModRepo;
 use galaxy_flow::GxLoader;
-use galaxy_flow::{components::gxl_spc::GxlSpace, execution::VarSpace};
 use orion_error::{ErrorConv, TestAssert};
 use std::fs::remove_dir_all;
 
@@ -19,13 +19,10 @@ async fn conf_base_test() -> AnyResult<()> {
         quiet: false,
         ..Default::default()
     };
-    let spc = GxlSpace::try_from(loader.parse_file(
-        "./tests/material/ability.gxl",
-        false,
-        expect,
-        &vars,
-    )?)
-    .assert();
+    let spc = loader
+        .parse_file("./tests/material/ability.gxl", false, expect, &vars)?
+        .assemble()
+        .assert();
     spc.exec(
         vec!["default".into()],
         vec!["test".into()],
@@ -46,12 +43,11 @@ async fn conf_web_test() {
         quiet: false,
         ..Default::default()
     };
-    let spc = GxlSpace::try_from(
-        loader
-            .parse_file("./tests/material/run_web.gxl", false, sh_opt, &vars)
-            .unwrap(),
-    )
-    .assert();
+    let spc = loader
+        .parse_file("./tests/material/run_web.gxl", false, sh_opt, &vars)
+        .unwrap()
+        .assemble()
+        .assert();
     spc.exec(
         vec!["dev".into()],
         vec!["api".into(), "api2".into()],

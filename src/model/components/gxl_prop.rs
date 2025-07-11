@@ -97,6 +97,9 @@ impl GxlProps {
             ..Default::default()
         }
     }
+    pub fn get<S: Into<String>>(&self, key: S) -> Option<&GxlVar> {
+        self.items.get(&key.into())
+    }
     pub fn mod_new<S: Into<String>>(name: S) -> GxlProps {
         let name_string = name.into();
         Self {

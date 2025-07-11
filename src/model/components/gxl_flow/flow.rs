@@ -105,7 +105,7 @@ fn assemble_flow_meta(m_name: &str, flow: &str, src: &GxlSpace) -> AResult<FlowM
         return Ok(flow.meta.clone());
     }
     Err(AssembleError::from(AssembleReason::Miss(format!(
-        "{m_name}.{flow}",
+        "{t_mod}.{flow}",
     ))))
 }
 

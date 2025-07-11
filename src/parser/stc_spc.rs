@@ -1,5 +1,7 @@
 use std::fmt::Display;
 
+use crate::components::gxl_spc::GxlSpace;
+
 use super::prelude::*;
 use winnow::{
     ascii::multispace0,
@@ -7,8 +9,6 @@ use winnow::{
     error::{ContextError, ErrMode},
     ModalResult, Parser,
 };
-
-use crate::components::code_spc::CodeSpace;
 
 use super::stc_mod::gal_stc_mod;
 
@@ -56,9 +56,9 @@ impl From<ErrMode<ContextError>> for WinnowErrorEx {
     }
 }
 
-pub fn gal_stc_spc(input: &mut &str) -> ModalResult<CodeSpace> {
+pub fn gal_stc_spc(input: &mut &str) -> ModalResult<GxlSpace> {
     skip_spaces_block(input)?;
-    let mut spc = CodeSpace::default();
+    let mut spc = GxlSpace::default();
     let mut items = Vec::new();
     loop {
         skip_spaces_block.parse_next(input)?;

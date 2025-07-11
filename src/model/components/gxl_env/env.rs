@@ -222,7 +222,7 @@ mod tests {
     use orion_error::TestAssert;
 
     use crate::{
-        components::{code_spc::CodeSpace, gxl_spc::GxlSpace, gxl_var::GxlVar, GxlEnv},
+        components::{gxl_spc::GxlSpace, gxl_var::GxlVar, GxlEnv},
         infra::once_init_log,
         model::components::GxlMod,
         traits::{DependTrait, PropsTrait},
@@ -242,7 +242,7 @@ mod tests {
         src_env.append(GxlVar::new("src_prop1", "s1"));
         src_env.append(GxlVar::new("src_prop2", "s2"));
         src_mod.append(src_env);
-        let mut raw_spc = CodeSpace::default();
+        let mut raw_spc = GxlSpace::default();
         raw_spc.append(src_mod);
         let work_spc = raw_spc.assemble().assert();
 
@@ -287,7 +287,7 @@ mod tests {
             .meta_mut()
             .set_mix(vec!["src_env1".to_string(), "src_env2".to_string()]);
 
-        let mut spc = CodeSpace::default();
+        let mut spc = GxlSpace::default();
         spc.append(src_mod);
         let w_spc = spc.assemble().assert();
         // Assemble the base environment with the source module

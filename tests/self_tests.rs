@@ -1,6 +1,5 @@
 extern crate galaxy_flow;
 
-use galaxy_flow::components::gxl_spc::GxlSpace;
 use galaxy_flow::execution::VarSpace;
 use galaxy_flow::expect::ShellOption;
 use galaxy_flow::infra::once_init_log;
@@ -17,8 +16,10 @@ async fn prj_conf() -> AnyResult<()> {
         ..Default::default()
     };
     let vars = VarSpace::sys_init().assert();
-    let spc =
-        GxlSpace::try_from(loader.parse_file("./_gal/work.gxl", false, expect, &vars)?).assert();
+    let spc = loader
+        .parse_file("./_gal/work.gxl", false, expect, &vars)?
+        .assemble()
+        .assert();
     spc.exec(
         vec!["default".into()],
         vec!["conf".into()],

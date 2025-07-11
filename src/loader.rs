@@ -1,5 +1,4 @@
-use crate::components::code_spc::CodeSpace;
-
+use crate::components::gxl_spc::GxlSpace;
 use crate::execution::VarSpace;
 use crate::parser::comment::ignore_comment;
 use crate::parser::externs::ExternParser;
@@ -50,7 +49,7 @@ impl GxLoader {
         update: bool,
         sh_opt: ShellOption,
         vars_space: &VarSpace,
-    ) -> RunResult<CodeSpace> {
+    ) -> RunResult<GxlSpace> {
         info!(target:"parse", "parse file: {conf}" );
         let mut wc = WithContext::want("parse gxl file");
         wc.with("conf", conf);
@@ -64,7 +63,7 @@ impl GxLoader {
         update: bool,
         sh_opt: ShellOption,
         vars_space: &VarSpace,
-    ) -> RunResult<CodeSpace> {
+    ) -> RunResult<GxlSpace> {
         let e_parser = ExternParser::new();
         let git_tools = GitTools::new(update).unwrap();
         let mut target_code = code.to_string();
@@ -120,12 +119,7 @@ pub fn err_code_prompt(code: &str) -> String {
 #[cfg(test)]
 mod tests {
 
-    use orion_error::TestAssert;
-
-    use crate::{
-        components::gxl_spc::GxlSpace, execution::VarSpace, expect::ShellOption,
-        infra::once_init_log, types::AnyResult,
-    };
+    use crate::{execution::VarSpace, expect::ShellOption, infra::once_init_log, types::AnyResult};
 
     use super::GxLoader;
 
@@ -140,7 +134,7 @@ mod tests {
             ..Default::default()
         };
         let vars = VarSpace::sys_init()?;
-        let spc = GxlSpace::try_from(loader.parse_file(conf, false, sh_opt, &vars)?).assert();
+        let spc = loader.parse_file(conf, false, sh_opt, &vars)?.assemble()?;
         info!("test begin");
         spc.show()?;
         println!("mods:{}", spc.len());
