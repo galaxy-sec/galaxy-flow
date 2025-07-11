@@ -201,7 +201,6 @@ impl ExecLoadTrait for GxlMod {
         match self.flows.get(name) {
             Some(found) => {
                 debug!(target:ctx.path(),"will load flow:{}", name);
-                sequ.append(AsyncComHold::from(found.clone()));
                 debug_assert!(found.assembled());
                 debug_assert!(self.assembled());
                 sequ.append_mod_head(self.props.clone());
