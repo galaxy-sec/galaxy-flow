@@ -42,8 +42,8 @@ impl ModItem {
 pub struct GxlMod {
     meta: ModMeta,
     props: GxlProps,
-    env_names: Vec<MenuItem>,
-    flow_names: Vec<MenuItem>,
+    env_names: IndexMap<String, MenuItem>,
+    flow_names: IndexMap<String, MenuItem>,
     envs: IndexMap<String, GxlEnv>,
     flows: IndexMap<String, GxlFlow>,
     entrys: Vec<FlowMeta>,
@@ -193,8 +193,8 @@ impl MergeTrait for GxlMod {
             }
         }
 
-        self.env_names.extend(other.env_names.clone());
-        self.flow_names.extend(other.flow_names.clone());
+        self.env_names.append(&mut other.env_names.clone());
+        self.flow_names.append(&mut other.flow_names.clone());
     }
 }
 
@@ -226,12 +226,12 @@ impl ExecLoadTrait for GxlMod {
 
     fn menu(&self) -> ExecResult<GxMenu> {
         let mut menu = GxMenu::default();
-        let mut cur = GxMenuBuilder::default()
-            .envs(self.env_names.clone())
-            .flows(self.flow_names.clone())
-            .build()
-            .unwrap();
-        menu.merge(&mut cur);
+        self.env_names()
+            .values()
+            .for_each(|x| menu.envs.push(x.clone()));
+        self.flow_names()
+            .values()
+            .for_each(|x| menu.flows.push(x.clone()));
         Ok(menu)
     }
     fn of_name(&self) -> String {
@@ -281,11 +281,10 @@ impl AppendAble<GxlEnv> for GxlMod {
         let meta = hold.meta();
         debug!(target:format!("stc/mod({})",self.meta.name()).as_str(),
             "append {:#?} {}, ",meta.class(), meta.name());
-        self.env_names.push(MenuItem::new(
+        self.env_names.insert(
             meta.name().clone(),
-            meta.desp(),
-            meta.color(),
-        ));
+            MenuItem::new(meta.name().clone(), meta.desp(), meta.color()),
+        );
         self.envs.insert(meta.name().clone(), hold);
     }
 }
@@ -296,8 +295,10 @@ impl AppendAble<GxlFlow> for GxlMod {
         let meta = hold.meta();
         debug!(target:format!("stc/mod({})",self.meta.name()).as_str(), "append {:#?} {} ",meta.class(), meta.name());
         let desp = meta.desp();
-        self.flow_names
-            .push(MenuItem::new(meta.name().clone(), desp, meta.color()));
+        self.flow_names.insert(
+            meta.name().clone(),
+            MenuItem::new(meta.name().clone(), desp, meta.color()),
+        );
         self.flows.insert(meta.name().clone(), hold);
     }
 }
