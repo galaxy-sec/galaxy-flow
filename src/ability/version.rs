@@ -141,7 +141,7 @@ pub fn parse_version(data: &str) -> ExecResult<Version> {
 }
 
 impl ComponentMeta for RgVersion {
-    fn com_meta(&self) -> GxlMeta {
+    fn gxl_meta(&self) -> GxlMeta {
         GxlMeta::from("gx.ver")
     }
 }

@@ -1,5 +1,4 @@
 use crate::{
-    components::gxl_spc::GxlSpace,
     err::{RunError, RunResult},
     execution::VarSpace,
     infra::DfxArgsGetter,
@@ -22,7 +21,9 @@ impl GxlRunner {
                 quiet: cmd.quiet.unwrap_or(false),
                 ..Default::default()
             };
-            let spc = GxlSpace::try_from(loader.parse_file(conf.as_str(), false, expect, &vars)?)
+            let spc = loader
+                .parse_file(conf.as_str(), false, expect, &vars)?
+                .assemble()
                 .err_conv()?;
             if cmd.flow.is_empty() {
                 spc.show().err_conv()?;

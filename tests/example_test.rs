@@ -4,10 +4,7 @@ mod tests {
     use galaxy_flow::err::report_gxl_error;
     use galaxy_flow::execution::VarSpace;
     use galaxy_flow::util::path::WorkDirWithLock;
-    use galaxy_flow::{
-        components::gxl_spc::GxlSpace, err::RunResult, expect::ShellOption, infra::once_init_log,
-        GxLoader,
-    };
+    use galaxy_flow::{err::RunResult, expect::ShellOption, infra::once_init_log, GxLoader};
     use orion_error::TestAssert;
 
     fn test_opt() -> ShellOption {
@@ -23,9 +20,10 @@ mod tests {
         let _dir = WorkDirWithLock::change("./examples/read");
         let vars = VarSpace::sys_init().assert();
         let mut loader = GxLoader::new();
-        let spc =
-            GxlSpace::try_from(loader.parse_file("./_gal/work.gxl", false, test_opt(), &vars)?)
-                .assert();
+        let spc = loader
+            .parse_file("./_gal/work.gxl", false, test_opt(), &vars)?
+            .assemble()
+            .assert();
         spc.exec(
             vec!["default".into()],
             vec!["conf".into()],
@@ -43,9 +41,10 @@ mod tests {
         let _dir = WorkDirWithLock::change("./examples/assert");
         let vars = VarSpace::sys_init().assert();
         let mut loader = GxLoader::new();
-        let spc =
-            GxlSpace::try_from(loader.parse_file("./_gal/work.gxl", false, test_opt(), &vars)?)
-                .assert();
+        let spc = loader
+            .parse_file("./_gal/work.gxl", false, test_opt(), &vars)?
+            .assemble()
+            .assert();
         spc.exec(
             vec!["default".into()],
             vec!["assert_main".into()],
@@ -62,9 +61,10 @@ mod tests {
         let _dir = WorkDirWithLock::change("./examples/template");
         let mut loader = GxLoader::new();
         let vars = VarSpace::sys_init().assert();
-        let spc =
-            GxlSpace::try_from(loader.parse_file("./_gal/work.gxl", false, test_opt(), &vars)?)
-                .assert();
+        let spc = loader
+            .parse_file("./_gal/work.gxl", false, test_opt(), &vars)?
+            .assemble()
+            .assert();
         spc.exec(
             vec!["default".into()],
             vec!["conf".into()],
@@ -82,9 +82,10 @@ mod tests {
         let _dir = WorkDirWithLock::change("./examples/transaction");
         let mut loader = GxLoader::new();
         let vars = VarSpace::sys_init().assert();
-        let spc =
-            GxlSpace::try_from(loader.parse_file("./_gal/work.gxl", false, test_opt(), &vars)?)
-                .assert();
+        let spc = loader
+            .parse_file("./_gal/work.gxl", false, test_opt(), &vars)?
+            .assemble()
+            .assert();
         let result = spc
             .exec(
                 vec!["default".into()],
@@ -111,9 +112,10 @@ mod tests {
         let _dir = WorkDirWithLock::change("./examples/dryrun");
         let mut loader = GxLoader::new();
         let vars = VarSpace::sys_init().assert();
-        let spc =
-            GxlSpace::try_from(loader.parse_file("./_gal/work.gxl", false, test_opt(), &vars)?)
-                .assert();
+        let spc = loader
+            .parse_file("./_gal/work.gxl", false, test_opt(), &vars)?
+            .assemble()
+            .assert();
         let dryrun = true;
         spc.exec(
             vec!["default".into()],

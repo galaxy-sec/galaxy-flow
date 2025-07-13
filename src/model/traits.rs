@@ -9,7 +9,7 @@ use crate::{
 
 use super::{
     components::gxl_var::GxlVar, context::ExecContext, error::AResult,
-    execution::sequence::Sequence, var::VarDict, ExecResult,
+    execution::sequence::ExecSequence, var::VarDict, ExecResult,
 };
 
 pub trait DependTrait<T>: Sized {
@@ -28,8 +28,8 @@ pub trait Getter<K, T> {
 }
 
 pub trait ExecLoadTrait {
-    fn load_env(&self, ctx: ExecContext, sequ: &mut Sequence, env: &str) -> ExecResult<()>;
-    fn load_flow(&self, ctx: ExecContext, sequ: &mut Sequence, flow: &str) -> ExecResult<()>;
+    fn load_env(&self, ctx: ExecContext, sequ: &mut ExecSequence, env: &str) -> ExecResult<()>;
+    fn load_flow(&self, ctx: ExecContext, sequ: &mut ExecSequence, flow: &str) -> ExecResult<()>;
     fn menu(&self) -> ExecResult<GxMenu>;
     fn of_name(&self) -> String;
 }
@@ -37,7 +37,7 @@ pub trait ExecLoadTrait {
 pub type AssembleHold = Arc<dyn ExecLoadTrait + 'static + Send + Sync>;
 
 pub trait PropsTrait {
-    fn fetch_props(&self) -> &Vec<GxlVar>;
+    fn fetch_props(&self) -> Vec<GxlVar>;
     fn export_props(&self, ctx: ExecContext, dict: &mut VarDict, prefix: &str) -> ExecResult<()> {
         EnvVarTag::import(&dict.export());
         let key_maker = UpperKeyMaker::new(prefix);

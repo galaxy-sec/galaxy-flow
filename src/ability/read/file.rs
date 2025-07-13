@@ -45,7 +45,8 @@ pub struct FileDTO {
 }
 
 impl FileDTO {
-    fn impl_ini(&self, ctx: ExecContext, file_path: &Path) -> ExecResult<VarDict> {
+    fn impl_ini(&self, mut ctx: ExecContext, file_path: &Path) -> ExecResult<VarDict> {
+        ctx.append("gx.read_ini");
         let file = Ini::load_from_file(file_path).map_err(|e| {
             ExecReason::Args(format!(
                 "load ini file:[{}] error: {}",
@@ -134,7 +135,10 @@ impl FileDTO {
                 for (k, jv) in map.iter() {
                     match jv {
                         serde_json::Value::Null => todo!(),
-                        serde_json::Value::Bool(_) => todo!(),
+                        serde_json::Value::Bool(v) => match v {
+                            true => dict.set(k, "true".to_string()),
+                            false => dict.set(k, "false".to_string()),
+                        },
                         serde_json::Value::Number(v) => {
                             debug!(target: ctx.path() , "json import {k}:{v}");
                             dict.set(k.to_string(), v.to_string());

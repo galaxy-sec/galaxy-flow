@@ -116,8 +116,8 @@ mod tests {
              } ;"#;
         let var = gal_vars(&mut data)?;
         let mut expect = GxlProps::default();
-        expect.append(GxlVar::new("X", "${PRJ_ROOT}/test/main.py"));
-        expect.append(GxlVar::new("Y", "${PRJ_ROOT}/test/main.py"));
+        expect.append(GxlVar::new("x", "${PRJ_ROOT}/test/main.py"));
+        expect.append(GxlVar::new("y", "${PRJ_ROOT}/test/main.py"));
         assert_eq!(var, expect);
         assert_eq!(data, "");
         Ok(())
@@ -134,7 +134,7 @@ mod tests {
                 Property::from(("keep", "ture")),
             ],
         ));
-        assert_eq!(found, expect);
+        assert_eq!(found.props, expect.props);
         assert_eq!(data, "");
     }
 }

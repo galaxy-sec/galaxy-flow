@@ -110,7 +110,7 @@ pub fn gal_sentens_item(input: &mut &str) -> Result<BlockAction> {
 
     gal_call
         .context(wn_desc("<flow-call>"))
-        .map(BlockAction::Delegate)
+        .map(|x| BlockAction::Delegate(Box::new(x)))
         .parse_next(input)
 }
 pub fn gal_else_if(input: &mut &str) -> Result<GxlCond> {

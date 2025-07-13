@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use super::execution::hold::TransableHold;
+use super::components::gxl_flow::meta::FlowMetaHold;
 
 #[derive(Clone, Default, Debug, PartialEq)]
 pub struct Annotation<T> {
@@ -39,9 +39,9 @@ pub trait ComUsage {
 
 pub trait Transaction {
     fn is_transaction(&self) -> bool;
-    fn undo_hold(&self) -> Vec<TransableHold>;
+    fn undo_hold(&self) -> Option<FlowMetaHold>;
 }
 
 pub trait Dryrunable {
-    fn dryrun_hold(&self) -> Vec<TransableHold>;
+    fn dryrun_hold(&self) -> Option<FlowMetaHold>;
 }

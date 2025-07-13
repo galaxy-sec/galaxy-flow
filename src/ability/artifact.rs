@@ -47,7 +47,7 @@ impl AsyncRunnableTrait for GxArtifact {
 }
 
 impl ComponentMeta for GxArtifact {
-    fn com_meta(&self) -> GxlMeta {
+    fn gxl_meta(&self) -> GxlMeta {
         GxlMeta::from("gx.artifact")
     }
 }

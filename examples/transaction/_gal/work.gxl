@@ -1,10 +1,11 @@
+extern mod base { path = "./_gal/"; }
 mod envs {
     env default {};
 }
 mod main   {
 
 
-  flow trans1 | step1 | step2 | step3 ;
+  flow trans1 | step1 | step2 | base.base_step1 | step3;
   flow trans2 | step1 | step3 | step2 ;
 
   #[transaction,undo(_undo_step1)]

@@ -59,7 +59,7 @@ impl AsyncRunnableTrait for GxAssert {
     }
 }
 impl ComponentMeta for GxAssert {
-    fn com_meta(&self) -> GxlMeta {
+    fn gxl_meta(&self) -> GxlMeta {
         GxlMeta::from("gx.assert")
     }
 }

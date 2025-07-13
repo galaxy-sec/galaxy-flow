@@ -61,8 +61,9 @@ mod main   {
   flow coverage : rust_flow.coverage ;
 
   #[task(name="build")]
-  flow build: ver.use ,conf , rust_flow.build : pub_local {
-      os.path (  "${MAIN_HOME_BIN}" );
+  flow ver.use | conf | rust_flow.build | @build | pub_local {
+      gx.echo(  "${MAIN_HOME_BIN}" );
+      //os.path (  "${MAIN_HOME_BIN}" );
   }
   #[usage(desp="lint code")]
   flow lint | rust_flow.lint {} ;
@@ -79,6 +80,7 @@ mod main   {
     gx.cmd ( "RUST_LOG=debug cargo test ${GXL_CMD_ARG} -- --nocapture ", log : "1" , out:"true"  );
   }
 
+  #[task(name="pub to local")]
   flow pub_local   {
 
     AP = "${ENV_AFT_PREFIX}";
@@ -96,7 +98,6 @@ mod main   {
   flow pub_dysec  | _pub_gflow | _pub_gprj ;
 
 
-  #[dryrun(_pub_dryrun)]
   flow ver.use | @_pub_dysec {
     gx.echo (  "pub ${UP_TARGET} to dysec " );
     gx.upload (

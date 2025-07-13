@@ -1,17 +1,27 @@
-use orion_common::friendly::MultiNew2;
+use contracts::requires;
 
-use crate::{annotation::ComUsage, meta::GxlType};
-use std::fmt::Debug;
+use crate::{
+    annotation::ComUsage,
+    components::gxl_mod::meta::ModMeta,
+    meta::{GxlType, MetaInfo},
+};
+use std::{fmt::Debug, sync::Arc};
 
 use super::anno::{DryrunAnno, FlowAnnotation, TransAnno};
 #[derive(Clone, Getters, Default)]
 pub struct FlowMeta {
     class: GxlType,
     name: String,
+    host: Option<ModMeta>,
     annotations: Vec<FlowAnnotation>,
     preorder: Vec<String>,
     postorder: Vec<String>,
+    pre_metas: Vec<FlowMeta>,
+    pos_metas: Vec<FlowMeta>,
+    undo_meta: Option<Arc<FlowMeta>>,
+    dryrun_meta: Option<Arc<FlowMeta>>,
 }
+pub type FlowMetaHold = Arc<FlowMeta>;
 
 impl Debug for FlowMeta {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -21,6 +31,29 @@ impl Debug for FlowMeta {
             .finish()
     }
 }
+
+const UNKNOW: String = String::new();
+impl MetaInfo for FlowMeta {
+    #[requires(self.host.is_some())]
+    fn full_name(&self) -> String {
+        let mod_name = self
+            .host()
+            .as_ref()
+            .map(|x| x.name().clone())
+            .unwrap_or(UNKNOW);
+        format!("[flow]:{mod_name}.{}", self.name)
+    }
+    #[requires(self.host.is_some())]
+    fn long_name(&self) -> String {
+        let mod_name = self
+            .host()
+            .as_ref()
+            .map(|x| x.name().clone())
+            .unwrap_or(UNKNOW);
+        format!("{mod_name}.{}", self.name)
+    }
+}
+
 impl FlowMeta {
     pub fn build_flow<S: Into<String>>(name: S) -> Self {
         Self {
@@ -70,31 +103,29 @@ impl FlowMeta {
         }
         None
     }
-}
-impl MultiNew2<GxlType, String> for FlowMeta {
-    fn new2(cls: GxlType, name: String) -> Self {
-        Self {
-            class: cls,
-            name,
-            annotations: Vec::new(),
-            preorder: Vec::new(),
-            postorder: Vec::new(),
-        }
+    pub fn pre_metas_mut(&mut self) -> &mut Vec<FlowMeta> {
+        &mut self.pre_metas
     }
-}
-impl MultiNew2<GxlType, &str> for FlowMeta {
-    fn new2(cls: GxlType, name: &str) -> Self {
-        Self {
-            class: cls,
-            name: name.into(),
-            annotations: Vec::new(),
-            preorder: Vec::new(),
-            postorder: Vec::new(),
-        }
+    pub fn pos_metas_mut(&mut self) -> &mut Vec<FlowMeta> {
+        &mut self.pos_metas
+    }
+
+    pub fn set_undo(&mut self, undo: FlowMeta) {
+        self.undo_meta.replace(Arc::new(undo));
+    }
+    pub fn set_dryrun(&mut self, dryrun: FlowMeta) {
+        self.dryrun_meta.replace(Arc::new(dryrun));
     }
 }
 
 impl FlowMeta {
+    pub fn new<S: Into<String>>(cls: GxlType, name: S) -> Self {
+        Self {
+            class: cls,
+            name: name.into(),
+            ..Default::default()
+        }
+    }
     pub fn with_annotate(mut self, ann: FlowAnnotation) -> Self {
         self.annotations.push(ann);
         self
@@ -102,6 +133,9 @@ impl FlowMeta {
     pub fn with_annotates(mut self, anns: Vec<FlowAnnotation>) -> Self {
         self.annotations = anns;
         self
+    }
+    pub fn set_host(&mut self, mod_meta: ModMeta) {
+        self.host = Some(mod_meta);
     }
     pub fn set_annotates(&mut self, anns: Vec<FlowAnnotation>) {
         self.annotations = anns;

@@ -23,7 +23,7 @@ impl AsyncRunnableTrait for GxCmd {
     }
 }
 impl ComponentMeta for GxCmd {
-    fn com_meta(&self) -> GxlMeta {
+    fn gxl_meta(&self) -> GxlMeta {
         GxlMeta::from("gx.cmd")
     }
 }

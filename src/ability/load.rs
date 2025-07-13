@@ -56,7 +56,7 @@ impl AsyncRunnableTrait for GxUpLoad {
 }
 
 impl ComponentMeta for GxUpLoad {
-    fn com_meta(&self) -> GxlMeta {
+    fn gxl_meta(&self) -> GxlMeta {
         GxlMeta::from("gx.upload")
     }
 }
@@ -90,7 +90,7 @@ impl AsyncRunnableTrait for GxDownLoad {
 }
 
 impl ComponentMeta for GxDownLoad {
-    fn com_meta(&self) -> GxlMeta {
+    fn gxl_meta(&self) -> GxlMeta {
         GxlMeta::from("gx.donwload")
     }
 }

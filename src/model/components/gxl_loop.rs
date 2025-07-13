@@ -5,7 +5,7 @@ use crate::{ability::prelude::TaskValue, execution::task::Task, traits::Setter};
 
 use super::gxl_block::BlockNode;
 
-#[derive(Clone, Getters, Debug)]
+#[derive(Clone, Getters)]
 pub struct GxlLoop {
     cur_name: String,
     dct_name: String,

@@ -1,3 +1,4 @@
+mod base {}
 mod env : base {
   env e1 {
     X="1" ;
