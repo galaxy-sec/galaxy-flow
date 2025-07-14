@@ -22,13 +22,13 @@ impl FnDefined {
 
 impl Evaluation for FnDefined {
     fn decide(&self, _ctx: ExecContext, args: &VarSpace) -> DecideResult {
-        if args.global().contains_key(&&self.name()) {
+        if args.global().contains_key(self.name()) {
             return Ok(true);
         }
         if env::vars().any(|x| x.0.as_str() == self.name()) {
             return Ok(true);
         }
-        return Ok(false);
+        Ok(false)
     }
 }
 
