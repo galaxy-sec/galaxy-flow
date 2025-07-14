@@ -38,7 +38,7 @@ impl ModDto {
     }
 }
 
-pub fn gal_env_head(input: &mut &str) -> ModalResult<EnvHeadDto> {
+pub fn gal_env_head(input: &mut &str) -> Result<EnvHeadDto> {
     // Parse the keyword (e.g., "flow")
     spaced_desc("env", "<keyword:env>").parse_next(input)?;
     let first = take_var_name.parse_next(input)?;
@@ -61,7 +61,7 @@ pub fn gal_env_head(input: &mut &str) -> ModalResult<EnvHeadDto> {
     }
 }
 
-pub fn gal_mod_head(input: &mut &str) -> ModalResult<ModDto> {
+pub fn gal_mod_head(input: &mut &str) -> Result<ModDto> {
     // Parse the keyword (e.g., "flow")
     spaced_desc("mod", "<keyword:mod>").parse_next(input)?;
     let first = take_var_name(input)?;
@@ -79,7 +79,7 @@ pub fn gal_mod_head(input: &mut &str) -> ModalResult<ModDto> {
     }
 }
 
-pub fn gal_act_head(act: &'static str, input: &mut &str) -> ModalResult<String> {
+pub fn gal_act_head(act: &'static str, input: &mut &str) -> Result<String> {
     spaced_desc(act, act).parse_next(input)?;
 
     let key = take_var_name(input)?;

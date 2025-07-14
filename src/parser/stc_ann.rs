@@ -13,7 +13,7 @@ use winnow::combinator::delimited;
 use winnow::token::take_while;
 
 /// Parse a key-value assignment (e.g., `x = 1`, `x= "A"`, `1`, `"A"`).
-pub fn gal_fun_arg_item(input: &mut &str) -> ModalResult<(Option<String>, String)> {
+pub fn gal_fun_arg_item(input: &mut &str) -> Result<(Option<String>, String)> {
     // Parse the key (optional)
     multispace0.parse_next(input)?;
     let key = opt((
@@ -44,7 +44,7 @@ pub fn gal_fun_arg_item(input: &mut &str) -> ModalResult<(Option<String>, String
 
 /// Parse function arguments from a string and return a HashMap.
 /// If a key is missing, it is replaced with a placeholder like `_1`, `_2`, etc.
-pub fn gal_fun_args_map(input: &mut &str) -> ModalResult<HashMap<String, String>> {
+pub fn gal_fun_args_map(input: &mut &str) -> Result<HashMap<String, String>> {
     // Parse the arguments list enclosed in parentheses
     let args: Vec<(Option<String>, String)> = delimited(
         ('(', multispace0), // Start with '('
@@ -72,7 +72,7 @@ pub fn gal_fun_args_map(input: &mut &str) -> ModalResult<HashMap<String, String>
 }
 
 /// Parse a function call into a `FunDto`.
-pub fn gal_fun(input: &mut &str) -> ModalResult<FunDto> {
+pub fn gal_fun(input: &mut &str) -> Result<FunDto> {
     // Parse the function name
     let keyword = take_var_name.parse_next(input)?;
     //let keyword = ident1.parse_next(input)?;
@@ -91,12 +91,12 @@ pub fn gal_fun(input: &mut &str) -> ModalResult<FunDto> {
     })
 }
 
-pub fn gal_fun_vec(input: &mut &str) -> ModalResult<Vec<FunDto>> {
+pub fn gal_fun_vec(input: &mut &str) -> Result<Vec<FunDto>> {
     separated(0.., gal_fun, (multispace0, ",", multispace0)).parse_next(input)
 }
 
 /// Parse an annotation into an `AnnDto`.
-pub fn gal_ann(input: &mut &str) -> ModalResult<AnnDto> {
+pub fn gal_ann(input: &mut &str) -> Result<AnnDto> {
     // Parse the annotation prefix `#[`
     let _ = (multispace0, "#", "[").parse_next(input)?;
 

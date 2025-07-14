@@ -6,7 +6,7 @@ use crate::{
     parser::domain::gal_keyword,
 };
 
-pub fn gal_run(input: &mut &str) -> ModalResult<GxRun> {
+pub fn gal_run(input: &mut &str) -> Result<GxRun> {
     let mut builder = GxRunBuilder::default();
     gal_keyword("gx.run", input)?;
     let props = action_call_args.parse_next(input)?;

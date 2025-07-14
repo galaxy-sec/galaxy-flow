@@ -5,7 +5,7 @@ use winnow::combinator::fail;
 use crate::ability::assert::*;
 use crate::parser::domain::gal_keyword_alt;
 
-pub fn gal_assert(input: &mut &str) -> ModalResult<GxAssert> {
+pub fn gal_assert(input: &mut &str) -> Result<GxAssert> {
     let mut builder = GxAssertBuilder::default();
     gal_keyword_alt("gx.assert", "rg.assert", input)?;
     let props = action_call_args.parse_next(input)?;

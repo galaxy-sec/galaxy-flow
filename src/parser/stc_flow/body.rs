@@ -7,7 +7,7 @@ use crate::parser::stc_blk::gal_block;
 
 use super::head::galaxy_flow_head;
 
-pub fn gal_stc_flow_body(input: &mut &str) -> ModalResult<GxlFlow> {
+pub fn gal_stc_flow_body(input: &mut &str) -> Result<GxlFlow> {
     let head = galaxy_flow_head
         .context(wn_desc("<flow-head>"))
         .parse_next(input)?;
@@ -23,7 +23,7 @@ pub fn gal_stc_flow_body(input: &mut &str) -> ModalResult<GxlFlow> {
     let _ = opt(symbol_semicolon).parse_next(input)?;
     Ok(obj)
 }
-pub fn gal_stc_flow(input: &mut &str) -> ModalResult<GxlFlow> {
+pub fn gal_stc_flow(input: &mut &str) -> Result<GxlFlow> {
     skip_spaces_block(input)?;
     let ann = opt(gal_ann).parse_next(input)?;
     let mut flow = gal_stc_flow_body.parse_next(input)?;

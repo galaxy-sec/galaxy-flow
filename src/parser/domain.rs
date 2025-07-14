@@ -34,12 +34,12 @@ pub fn parse_log(pair: (&str, &str)) -> log::Level {
     log::Level::Info
 }
 
-pub fn ext_meta_names(input: &mut &str) -> ModalResult<String> {
+pub fn ext_meta_names(input: &mut &str) -> Result<String> {
     let fst = take_var_name(input)?;
     Ok(fst)
 }
 
-pub fn gal_git_path(input: &mut &str) -> ModalResult<(String, String)> {
+pub fn gal_git_path(input: &mut &str) -> Result<(String, String)> {
     let _ = alt(("git@", "https://")).parse_next(input)?;
     let host = take_host.parse_next(input)?;
     let _ = alt((":", "/")).parse_next(input)?;
@@ -51,20 +51,20 @@ pub fn gal_git_path(input: &mut &str) -> ModalResult<(String, String)> {
 }
 
 //take :  key, or ${key}
-pub fn gal_mix_item(input: &mut &str) -> ModalResult<String> {
+pub fn gal_mix_item(input: &mut &str) -> Result<String> {
     alt((
         take_var_name,
         take_var_ref_name.map(|x| format!("${{{x}}}")),
     ))
     .parse_next(input)
 }
-pub fn gal_mix_in(input: &mut &str) -> ModalResult<Vec<String>> {
+pub fn gal_mix_in(input: &mut &str) -> Result<Vec<String>> {
     (multispace0, symbol_colon).parse_next(input)?;
     let found: Vec<String> = separated(0.., gal_mix_item, ",").parse_next(input)?;
     Ok(found)
 }
 
-pub fn take_version(input: &mut &str) -> ModalResult<(i32, i32, i32, Option<i32>)> {
+pub fn take_version(input: &mut &str) -> Result<(i32, i32, i32, Option<i32>)> {
     let (a, _, b, _, c) = (digit1, ".", digit1, ".", digit1).parse_next(input)?;
     let build = opt((".", digit1)).parse_next(input)?;
     let a = a.parse::<i32>().unwrap();
@@ -74,7 +74,7 @@ pub fn take_version(input: &mut &str) -> ModalResult<(i32, i32, i32, Option<i32>
     Ok((a, b, c, d))
 }
 
-pub fn gal_var_assign(input: &mut &str) -> ModalResult<(String, String)> {
+pub fn gal_var_assign(input: &mut &str) -> Result<(String, String)> {
     let _ = multispace0.parse_next(input)?;
     let key = take_while(1.., ('0'..='9', 'A'..='Z', 'a'..='z', ['_', '.']))
         .context(wn_desc("<var-name>"))
@@ -89,7 +89,7 @@ pub fn gal_var_assign(input: &mut &str) -> ModalResult<(String, String)> {
     Ok((key.to_string(), val.to_string()))
 }
 
-pub fn gal_var_input(input: &mut &str) -> ModalResult<(String, String)> {
+pub fn gal_var_input(input: &mut &str) -> Result<(String, String)> {
     let _ = multispace0.parse_next(input)?;
     let key_opt = opt(
         take_while(1.., ('0'..='9', 'A'..='Z', 'a'..='z', ['_', '.']))
@@ -109,7 +109,7 @@ pub fn gal_var_input(input: &mut &str) -> ModalResult<(String, String)> {
     Ok((key.to_string(), val.to_string()))
 }
 
-pub fn gal_call_beg(input: &mut &str) -> ModalResult<()> {
+pub fn gal_call_beg(input: &mut &str) -> Result<()> {
     skip_spaces_block
         .context(wn_desc("<space-line>"))
         .parse_next(input)?;
@@ -121,7 +121,7 @@ pub fn gal_call_beg(input: &mut &str) -> ModalResult<()> {
         .parse_next(input)?;
     Ok(())
 }
-pub fn gal_call_end(input: &mut &str) -> ModalResult<()> {
+pub fn gal_call_end(input: &mut &str) -> Result<()> {
     skip_spaces_block.parse_next(input)?;
     symbol_bracket_end
         .context(wn_desc("<call-end>"))
@@ -132,7 +132,7 @@ pub fn gal_call_end(input: &mut &str) -> ModalResult<()> {
     Ok(())
 }
 
-pub fn gal_sentence_beg(input: &mut &str) -> ModalResult<()> {
+pub fn gal_sentence_beg(input: &mut &str) -> Result<()> {
     skip_spaces_block
         .context(wn_desc("<space-line>"))
         .parse_next(input)?;
@@ -142,7 +142,7 @@ pub fn gal_sentence_beg(input: &mut &str) -> ModalResult<()> {
         .parse_next(input)?;
     Ok(())
 }
-pub fn gal_sentence_end(input: &mut &str) -> ModalResult<()> {
+pub fn gal_sentence_end(input: &mut &str) -> Result<()> {
     skip_spaces_block.parse_next(input)?;
     symbol_brace_end.parse_next(input)?;
     skip_spaces_block.parse_next(input)?;
@@ -150,7 +150,7 @@ pub fn gal_sentence_end(input: &mut &str) -> ModalResult<()> {
     Ok(())
 }
 
-pub fn gal_block_beg(input: &mut &str) -> ModalResult<()> {
+pub fn gal_block_beg(input: &mut &str) -> Result<()> {
     skip_spaces_block
         .context(wn_desc("<space-line>"))
         .parse_next(input)?;
@@ -161,14 +161,14 @@ pub fn gal_block_beg(input: &mut &str) -> ModalResult<()> {
     Ok(())
 }
 
-pub fn gal_block_end(input: &mut &str) -> ModalResult<()> {
+pub fn gal_block_end(input: &mut &str) -> Result<()> {
     skip_spaces_block.parse_next(input)?;
     symbol_brace_end.parse_next(input)?;
     skip_spaces_block.parse_next(input)?;
     Ok(())
 }
 
-pub fn gal_keyword(keyword: &'static str, input: &mut &str) -> ModalResult<()> {
+pub fn gal_keyword(keyword: &'static str, input: &mut &str) -> Result<()> {
     (multispace0, keyword)
         .context(wn_desc(keyword))
         .parse_next(input)?;
@@ -179,14 +179,14 @@ pub fn gal_keyword_alt(
     keyword: &'static str,
     keyword2: &'static str,
     input: &mut &str,
-) -> ModalResult<()> {
+) -> Result<()> {
     (multispace0, alt((keyword, keyword2)), multispace0)
         .context(wn_desc(keyword))
         .parse_next(input)?;
     Ok(())
 }
 
-pub fn parse_mod_addr(input: &mut &str) -> ModalResult<ModAddr> {
+pub fn parse_mod_addr(input: &mut &str) -> Result<ModAddr> {
     if starts_with(
         ("{", multispace0, "git", multispace0, "=", multispace0),
         input,
@@ -197,7 +197,7 @@ pub fn parse_mod_addr(input: &mut &str) -> ModalResult<ModAddr> {
     }
 }
 
-fn parse_git_addr(input: &mut &str) -> ModalResult<ModAddr> {
+fn parse_git_addr(input: &mut &str) -> Result<ModAddr> {
     ("{", multispace0, "git", multispace0, "=", multispace0)
         .context(wn_desc("{ git = "))
         .parse_next(input)?;
@@ -223,7 +223,7 @@ fn parse_git_addr(input: &mut &str) -> ModalResult<ModAddr> {
 }
 
 // 解析本地路径模式
-fn parse_local_addr(input: &mut &str) -> ModalResult<ModAddr> {
+fn parse_local_addr(input: &mut &str) -> Result<ModAddr> {
     ("{", multispace0, "path", multispace0, "=", multispace0).parse_next(input)?;
 
     let path = delimited("\"", take_while(1.., |c: char| c != '"'), "\"").parse_next(input)?;
@@ -232,7 +232,7 @@ fn parse_local_addr(input: &mut &str) -> ModalResult<ModAddr> {
 }
 
 // 解析 extern mod
-pub fn gal_extern_mod(input: &mut &str) -> ModalResult<ModRef> {
+pub fn gal_extern_mod(input: &mut &str) -> Result<ModRef> {
     // 解析 "extern mod"
     let _ = (multispace0, "extern", multispace0, "mod", multispace0)
         .context(wn_desc("extern mod "))

@@ -7,7 +7,7 @@ pub use winnow::{
     ascii::{line_ending, till_line_ending},
     combinator::{fail, opt},
     token::{take_till, take_until, take_while},
-    ModalResult, Parser,
+    Parser, Result,
 };
 
 pub use orion_parse::atom::gal_raw_string;

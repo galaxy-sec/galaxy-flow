@@ -9,7 +9,7 @@ enum DslStatus {
     RawData,
     RawBlock,
 }
-fn ignore_comment_line(status: &mut DslStatus, input: &mut &str) -> ModalResult<String> {
+fn ignore_comment_line(status: &mut DslStatus, input: &mut &str) -> Result<String> {
     //let mut status = DslStatus::Code;
     let mut out = String::new();
     loop {
@@ -105,7 +105,7 @@ fn ignore_comment_line(status: &mut DslStatus, input: &mut &str) -> ModalResult<
     Ok(out)
 }
 
-pub fn ignore_comment(input: &mut &str) -> ModalResult<String> {
+pub fn ignore_comment(input: &mut &str) -> Result<String> {
     let mut status = DslStatus::Code;
     let mut out = String::new();
     loop {

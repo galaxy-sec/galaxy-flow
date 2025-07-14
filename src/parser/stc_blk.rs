@@ -19,7 +19,7 @@ use super::inner::{
     gal_read_file, gal_read_stdin, gal_tpl, gal_upload, gal_version,
 };
 
-pub fn gal_block(input: &mut &str) -> ModalResult<BlockNode> {
+pub fn gal_block(input: &mut &str) -> Result<BlockNode> {
     let mut block = BlockNode::new();
     gal_block_beg
         .context(wn_desc("<block-beg>"))
@@ -38,7 +38,7 @@ pub fn gal_block(input: &mut &str) -> ModalResult<BlockNode> {
     Ok(block)
 }
 
-pub fn gal_block_code(input: &mut &str) -> ModalResult<BlockNode> {
+pub fn gal_block_code(input: &mut &str) -> Result<BlockNode> {
     let mut block = BlockNode::new();
     loop {
         skip_spaces_block.parse_next(input)?;
@@ -54,7 +54,7 @@ pub fn gal_block_code(input: &mut &str) -> ModalResult<BlockNode> {
     //Ok(block)
 }
 
-pub fn gal_sentens_item(input: &mut &str) -> ModalResult<BlockAction> {
+pub fn gal_sentens_item(input: &mut &str) -> Result<BlockAction> {
     multispace0(input)?;
     if starts_with("if", input) {
         return gal_cond.map(BlockAction::Cond).parse_next(input);
@@ -113,7 +113,7 @@ pub fn gal_sentens_item(input: &mut &str) -> ModalResult<BlockAction> {
         .map(|x| BlockAction::Delegate(Box::new(x)))
         .parse_next(input)
 }
-pub fn gal_else_if(input: &mut &str) -> ModalResult<GxlCond> {
+pub fn gal_else_if(input: &mut &str) -> Result<GxlCond> {
     skip_spaces_block(input)?;
     gal_keyword("else", input)?;
     gal_keyword("if", input)?;
@@ -134,7 +134,7 @@ pub fn gal_else_if(input: &mut &str) -> ModalResult<GxlCond> {
     Ok(GxlCond::new(ctrl_express))
 }
 
-pub fn gal_cond(input: &mut &str) -> ModalResult<GxlCond> {
+pub fn gal_cond(input: &mut &str) -> Result<GxlCond> {
     skip_spaces_block(input)?;
     gal_keyword("if", input)?;
 
@@ -164,7 +164,7 @@ pub fn gal_cond(input: &mut &str) -> ModalResult<GxlCond> {
     Ok(GxlCond::new(ctrl_express))
 }
 
-pub fn gal_loop(input: &mut &str) -> ModalResult<GxlLoop> {
+pub fn gal_loop(input: &mut &str) -> Result<GxlLoop> {
     //if val == 1
     skip_spaces_block(input)?;
     gal_keyword("for", input)?;

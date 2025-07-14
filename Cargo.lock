@@ -1240,7 +1240,7 @@ dependencies = [
  "url",
  "walkdir",
  "wildmatch",
- "winnow 0.6.26",
+ "winnow 0.7.11",
 ]
 
 [[package]]
@@ -2350,7 +2350,7 @@ name = "orion_parse"
 version = "1.0.0"
 dependencies = [
  "orion_common 1.0.0",
- "winnow 0.6.26",
+ "winnow 0.7.11",
 ]
 
 [[package]]

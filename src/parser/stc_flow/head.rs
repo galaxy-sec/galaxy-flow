@@ -17,7 +17,7 @@ pub struct FlowHeadDto {
 }
 
 /// 解析流头部声明
-pub fn galaxy_flow_head(input: &mut &str) -> ModalResult<FlowHeadDto> {
+pub fn galaxy_flow_head(input: &mut &str) -> Result<FlowHeadDto> {
     spaced_desc("flow", "<keyword:flow>").parse_next(input)?;
 
     // 解析初始管道分隔列表
@@ -43,7 +43,7 @@ enum SyntaxType {
 }
 
 /// 解析初始的管道分隔列表
-fn parse_initial_list(input: &mut &str) -> ModalResult<Vec<String>> {
+fn parse_initial_list(input: &mut &str) -> Result<Vec<String>> {
     separated(
         0..,
         alt((take_var_path, take_var_ref_fmt)),
@@ -57,7 +57,7 @@ fn parse_initial_list(input: &mut &str) -> ModalResult<Vec<String>> {
 fn parse_flow_name(
     input: &mut &str,
     initial_list: &mut Vec<String>,
-) -> ModalResult<(String, SyntaxType)> {
+) -> Result<(String, SyntaxType)> {
     Ok(if starts_with("@", input) {
         let (_, name) = spaced_desc(("@", take_var_name), "<flow-name>").parse_next(input)?;
         (name, SyntaxType::New)
@@ -75,7 +75,7 @@ fn parse_flow_name(
 }
 
 /// 从列表中安全取出第一个元素或返回错误
-fn pop_first_or_fail(list: &mut Vec<String>, context: &'static str) -> ModalResult<String> {
+fn pop_first_or_fail(list: &mut Vec<String>, context: &'static str) -> Result<String> {
     if !list.is_empty() {
         return Ok(list.remove(0));
     }
@@ -88,14 +88,14 @@ fn parse_new_syntax(
     input: &mut &str,
     flow_name: String,
     before: Vec<String>,
-) -> ModalResult<FlowHeadDto> {
+) -> Result<FlowHeadDto> {
     multispace0(input)?;
     let after = parse_pipe_separated_list(input, "<next-flow>")?;
     Ok(build_dto(flow_name, before, after))
 }
 
 /// 解析旧语法（冒号分隔）的后续部分
-fn parse_old_syntax(input: &mut &str, flow_name: String) -> ModalResult<FlowHeadDto> {
+fn parse_old_syntax(input: &mut &str, flow_name: String) -> Result<FlowHeadDto> {
     let before = parse_colon_separated_list(input, "<pre-flow>")?;
     multispace0(input)?;
     let after = parse_colon_separated_list(input, "<next-flow>")?;
@@ -103,7 +103,7 @@ fn parse_old_syntax(input: &mut &str, flow_name: String) -> ModalResult<FlowHead
 }
 
 /// 解析管道分隔的列表
-fn parse_pipe_separated_list(input: &mut &str, context: &'static str) -> ModalResult<Vec<String>> {
+fn parse_pipe_separated_list(input: &mut &str, context: &'static str) -> Result<Vec<String>> {
     if starts_with("|", input) {
         preceded(
             ('|', multispace0),
@@ -121,7 +121,7 @@ fn parse_pipe_separated_list(input: &mut &str, context: &'static str) -> ModalRe
 }
 
 /// 解析冒号分隔的列表
-fn parse_colon_separated_list(input: &mut &str, context: &'static str) -> ModalResult<Vec<String>> {
+fn parse_colon_separated_list(input: &mut &str, context: &'static str) -> Result<Vec<String>> {
     if starts_with(":", input) {
         preceded(
             (multispace0, ':', multispace0),

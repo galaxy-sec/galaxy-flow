@@ -6,7 +6,7 @@ use crate::ability::echo::*;
 use crate::ability::version::*;
 use crate::parser::domain::gal_keyword_alt;
 
-pub fn gal_echo(input: &mut &str) -> ModalResult<GxEcho> {
+pub fn gal_echo(input: &mut &str) -> Result<GxEcho> {
     let mut watcher = GxEcho::default();
     gal_keyword_alt("gx.echo", "rg.echo", input)?;
     let props = action_call_args.parse_next(input)?;
@@ -18,7 +18,7 @@ pub fn gal_echo(input: &mut &str) -> ModalResult<GxEcho> {
     Ok(watcher)
 }
 
-pub fn gal_version(input: &mut &str) -> ModalResult<RgVersion> {
+pub fn gal_version(input: &mut &str) -> Result<RgVersion> {
     let mut builder = RgVersionBuilder::default();
     builder.verinc(VerInc::Build);
     builder.export("VERSION".into());
@@ -67,7 +67,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn echo_test_args() -> ModalResult<()> {
+    fn echo_test_args() -> Result<()> {
         let mut data = r#"
              gx.echo ( value : "${PRJ_ROOT}/test/main.py" ) ;"#;
         let found = run_gxl(gal_echo, &mut data)?;
@@ -78,7 +78,7 @@ mod tests {
         Ok(())
     }
     #[test]
-    fn echo_test_default() -> ModalResult<()> {
+    fn echo_test_default() -> Result<()> {
         let mut data = r#"
              gx.echo ( "${PRJ_ROOT}/test/main.py" ) ;"#;
         let found = run_gxl(gal_echo, &mut data)?;

@@ -6,7 +6,7 @@ use crate::{
     parser::domain::gal_keyword,
 };
 
-fn gal_defined(input: &mut &str) -> ModalResult<FnDefined> {
+fn gal_defined(input: &mut &str) -> Result<FnDefined> {
     let mut builder = FnDefinedBuilder::default();
     gal_keyword("defined", input)?;
     let props = action_call_args.parse_next(input)?;

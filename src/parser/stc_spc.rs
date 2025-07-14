@@ -6,24 +6,17 @@ use super::prelude::*;
 use winnow::{
     ascii::multispace0,
     combinator::{alt, fail, opt},
-    error::{ContextError, ErrMode},
-    ModalResult, Parser,
+    error::ContextError,
+    Parser, Result,
 };
 
 use super::stc_mod::gal_stc_mod;
 
-pub struct WinnowErrorEx(ErrMode<ContextError>);
+pub struct WinnowErrorEx(ContextError);
 
 impl Display for WinnowErrorEx {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let mut context_vec: Vec<String> = match &self.0 {
-            ErrMode::Incomplete(_) => {
-                write!(f, "Incomplete input:",)?;
-                Vec::new()
-            }
-            ErrMode::Backtrack(err) => collect_context(err),
-            ErrMode::Cut(err) => collect_context(err),
-        };
+        let mut context_vec: Vec<String> = collect_context(&self.0);
         context_vec.reverse();
         writeln!(f, "parse syntax :",)?;
         for context in context_vec {
@@ -50,13 +43,13 @@ fn collect_context(err: &ContextError) -> Vec<String> {
     }
     context_vec
 }
-impl From<ErrMode<ContextError>> for WinnowErrorEx {
-    fn from(err: ErrMode<ContextError>) -> Self {
+impl From<ContextError> for WinnowErrorEx {
+    fn from(err: ContextError) -> Self {
         WinnowErrorEx(err)
     }
 }
 
-pub fn gal_stc_spc(input: &mut &str) -> ModalResult<GxlSpace> {
+pub fn gal_stc_spc(input: &mut &str) -> Result<GxlSpace> {
     skip_spaces_block(input)?;
     let mut spc = GxlSpace::default();
     let mut items = Vec::new();

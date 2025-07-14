@@ -1,5 +1,5 @@
 use super::{inner::sentence_body, prelude::*};
-use winnow::{combinator::fail, ModalResult, Parser};
+use winnow::{combinator::fail, Parser, Result};
 
 use crate::{
     components::gxl_act::activity::{Activity, ActivityDTO},
@@ -8,7 +8,7 @@ use crate::{
 
 use super::{domain::parse_log, stc_base::gal_act_head};
 
-pub fn gal_activity(input: &mut &str) -> ModalResult<Activity> {
+pub fn gal_activity(input: &mut &str) -> Result<Activity> {
     let name = gal_act_head("activity", input)?;
 
     let props = sentence_body

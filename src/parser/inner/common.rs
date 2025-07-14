@@ -11,7 +11,7 @@ use crate::parser::domain::{
 };
 use crate::types::Property;
 
-pub fn gal_vars(input: &mut &str) -> ModalResult<GxlProps> {
+pub fn gal_vars(input: &mut &str) -> Result<GxlProps> {
     let mut vars = GxlProps::default();
     gal_keyword("gx.vars", input)?;
     let founds = sentence_body.parse_next(input)?;
@@ -20,7 +20,7 @@ pub fn gal_vars(input: &mut &str) -> ModalResult<GxlProps> {
     }
     Ok(vars)
 }
-pub fn action_call_args(input: &mut &str) -> ModalResult<Vec<(String, String)>> {
+pub fn action_call_args(input: &mut &str) -> Result<Vec<(String, String)>> {
     gal_call_beg.parse_next(input)?;
     let props: Vec<(String, String)> =
         separated(0.., gal_var_input, symbol_comma).parse_next(input)?;
@@ -29,7 +29,7 @@ pub fn action_call_args(input: &mut &str) -> ModalResult<Vec<(String, String)>> 
     Ok(props)
 }
 
-pub fn sentence_body(input: &mut &str) -> ModalResult<Vec<(String, String)>> {
+pub fn sentence_body(input: &mut &str) -> Result<Vec<(String, String)>> {
     gal_sentence_beg.parse_next(input)?;
     let props: Vec<(String, String)> =
         separated(0.., gal_var_assign, alt((symbol_comma, symbol_semicolon))).parse_next(input)?;
@@ -64,7 +64,7 @@ pub fn shell_opt_setting(key: String, value: String, expect: &mut ShellOption) {
     }
 }
 
-pub fn gal_call(input: &mut &str) -> ModalResult<ActCall> {
+pub fn gal_call(input: &mut &str) -> Result<ActCall> {
     let name = take_var_path
         .context(wn_desc("<call-name>"))
         .parse_next(input)?;
@@ -77,7 +77,7 @@ pub fn gal_call(input: &mut &str) -> ModalResult<ActCall> {
     Ok(dto)
 }
 
-pub fn gal_prop(input: &mut &str) -> ModalResult<GxlVar> {
+pub fn gal_prop(input: &mut &str) -> Result<GxlVar> {
     skip_spaces_block.parse_next(input)?;
     let prop = gal_var_assign.parse_next(input)?;
     alt((symbol_comma, symbol_semicolon)).parse_next(input)?;
@@ -85,9 +85,9 @@ pub fn gal_prop(input: &mut &str) -> ModalResult<GxlVar> {
     Ok(vars)
 }
 
-pub fn run_gxl<T, F>(gal_fn: F, input: &mut &str) -> ModalResult<T>
+pub fn run_gxl<T, F>(gal_fn: F, input: &mut &str) -> Result<T>
 where
-    F: Fn(&mut &str) -> ModalResult<T>,
+    F: Fn(&mut &str) -> Result<T>,
 {
     match gal_fn(input) {
         Ok(v) => Ok(v),
@@ -108,7 +108,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn vars_test() -> ModalResult<()> {
+    fn vars_test() -> Result<()> {
         let mut data = r#"
              gx.vars {
              x = "${PRJ_ROOT}/test/main.py" ;

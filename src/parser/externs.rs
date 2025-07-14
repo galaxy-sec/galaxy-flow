@@ -76,7 +76,7 @@ impl ExternParser {
     pub fn new() -> Self {
         ExternParser {}
     }
-    pub fn parse_code(input: &mut &str) -> ModalResult<(String, DslStatus)> {
+    pub fn parse_code(input: &mut &str) -> Result<(String, DslStatus)> {
         let mut out = String::new();
 
         loop {
