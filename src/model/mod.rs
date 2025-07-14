@@ -9,4 +9,5 @@ pub mod meta;
 pub mod traits;
 pub mod var;
 pub use error::{ExecError, ExecReason, ExecResult};
+pub mod primitive;
 pub mod task_report;

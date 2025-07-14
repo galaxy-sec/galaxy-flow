@@ -1,6 +1,8 @@
 use super::prelude::*;
 use orion_parse::{
-    atom::{gal_raw_string, skip_spaces_block, starts_with, take_string, take_var_name},
+    atom::{
+        gal_raw_string, skip_spaces_block, starts_with, take_env_var, take_string, take_var_name,
+    },
     symbol::{
         symbol_assign, symbol_brace_beg, symbol_brace_end, symbol_bracket_beg, symbol_bracket_end,
         symbol_colon, symbol_semicolon, wn_desc,
@@ -8,7 +10,10 @@ use orion_parse::{
 };
 use winnow::combinator::{delimited, repeat, separated};
 
-use crate::components::gxl_extend::{ModAddr, ModGitAddr, ModLocAddr, ModRef};
+use crate::{
+    components::gxl_extend::{ModAddr, ModGitAddr, ModLocAddr, ModRef},
+    primitive::{GxlArg, GxlValue},
+};
 
 use super::atom::{take_filename, take_filename_body, take_host, take_var_ref_name};
 
@@ -107,6 +112,28 @@ pub fn gal_var_input(input: &mut &str) -> Result<(String, String)> {
     let key = key_opt.unwrap_or("default");
     //(multispace0, alt((symbol_comma, symbol_semicolon))).parse_next(input)?;
     Ok((key.to_string(), val.to_string()))
+}
+
+pub fn fun_arg(input: &mut &str) -> Result<GxlArg> {
+    let _ = multispace0.parse_next(input)?;
+    let key_opt = opt(
+        take_while(1.., ('0'..='9', 'A'..='Z', 'a'..='z', ['_', '.']))
+            .context(wn_desc("<var-name>")),
+    )
+    .parse_next(input)?;
+    if key_opt.is_some() {
+        symbol_colon.parse_next(input)?;
+    }
+    let _ = multispace0.parse_next(input)?;
+    let val = alt((
+        take_env_var.map(GxlValue::VarRef),
+        take_string.map(GxlValue::Value),
+        //gal_raw_string,
+    ))
+    .context(wn_desc("<var-val>"))
+    .parse_next(input)?;
+    multispace0(input)?;
+    Ok(GxlArg::new(key_opt.unwrap_or("default"), val))
 }
 
 pub fn gal_call_beg(input: &mut &str) -> Result<()> {

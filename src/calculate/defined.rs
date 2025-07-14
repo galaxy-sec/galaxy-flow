@@ -43,7 +43,7 @@ impl Evaluation for BoolBinFn {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{context::ExecContext, execution::VarSpace, traits::Setter, var::VarDict};
+    use crate::{context::ExecContext, execution::VarSpace, traits::Setter};
 
     #[test]
     fn test_defined_in_global_vars() {

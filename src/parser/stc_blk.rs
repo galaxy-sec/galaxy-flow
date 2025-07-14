@@ -1,4 +1,5 @@
 use super::inner::cmd::gal_cmd_block;
+use super::inner::funs::gal_defined;
 use super::inner::gxl::gal_run;
 use super::prelude::*;
 use orion_parse::atom::take_env_var;
@@ -134,16 +135,31 @@ pub fn gal_else_if(input: &mut &str) -> Result<GxlCond> {
     Ok(GxlCond::new(ctrl_express))
 }
 
-pub fn gal_cond(input: &mut &str) -> Result<GxlCond> {
-    skip_spaces_block(input)?;
-    gal_keyword("if", input)?;
-
+pub fn gal_exp_bin_r(input: &mut &str) -> Result<ExpressEnum> {
+    //BinExpress<EVarDef, String>> {
     let (name, cmp, value) = (
         spaced(take_env_var).context(wn_desc("<env-var>")),
         spaced(symbol_cmp).context(wn_desc("operator")),
         spaced(take_string).context(wn_desc("<value-str>")),
     )
         .parse_next(input)?;
+    Ok(ExpressEnum::GxlStr(BinExpress::from_op(
+        cmp,
+        EVarDef::new(name),
+        value,
+    )))
+}
+
+pub fn gal_exp_fun(input: &mut &str) -> Result<ExpressEnum> {
+    let defined = gal_defined.parse_next(input)?;
+    Ok(ExpressEnum::from(defined))
+}
+
+pub fn gal_cond(input: &mut &str) -> Result<GxlCond> {
+    skip_spaces_block(input)?;
+    gal_keyword("if", input)?;
+
+    let exp = alt((gal_exp_bin_r, gal_exp_fun)).parse_next(input)?;
     let true_block = gal_block.parse_next(input)?;
     skip_spaces_block(input)?;
     let elseif_conds: Vec<GxlCond> = repeat(0.., gal_else_if).parse_next(input)?;
@@ -155,12 +171,7 @@ pub fn gal_cond(input: &mut &str) -> Result<GxlCond> {
     } else {
         None
     };
-    let ctrl_express = IFExpress::new(
-        ExpressEnum::GxlStr(BinExpress::from_op(cmp, EVarDef::new(name), value)),
-        true_block,
-        elseif_conds,
-        false_block,
-    );
+    let ctrl_express = IFExpress::new(exp, true_block, elseif_conds, false_block);
     Ok(GxlCond::new(ctrl_express))
 }
 
@@ -186,12 +197,9 @@ mod tests {
 
     use orion_error::TestAssert;
 
-    use crate::{
-        calculate::express::BinRelation,
-        parser::{
-            inner::run_gxl,
-            stc_blk::{gal_block, gal_cond, gal_loop},
-        },
+    use crate::parser::{
+        inner::run_gxl,
+        stc_blk::{gal_block, gal_cond, gal_loop},
     };
 
     #[test]
@@ -245,6 +253,21 @@ mod tests {
         let mut data = r#"
         {
             if ${val} == "1" {
+                gx.echo ( value  : "${PRJ_ROOT}/test/main.py"  );
+             }
+             else {
+                gx.echo ( value  : "${PRJ_ROOT}/test/main.py"  );
+             }
+        }"#;
+        let _ = run_gxl(gal_block, &mut data).assert();
+        assert_eq!(data, "");
+    }
+
+    #[test]
+    fn test_block_if_4() {
+        let mut data = r#"
+        {
+            if defined(${val}) {
                 gx.echo ( value  : "${PRJ_ROOT}/test/main.py"  );
              }
              else {

@@ -1,19 +1,23 @@
-use super::super::prelude::*;
-use super::common::action_call_args;
+use super::{super::prelude::*, fun_call_args};
 
+use crate::primitive::GxlValue;
 use crate::{
     calculate::defined::{FnDefined, FnDefinedBuilder},
     parser::domain::gal_keyword,
 };
 
-fn gal_defined(input: &mut &str) -> Result<FnDefined> {
+pub fn gal_defined(input: &mut &str) -> Result<FnDefined> {
     let mut builder = FnDefinedBuilder::default();
     gal_keyword("defined", input)?;
-    let props = action_call_args.parse_next(input)?;
+    let props = fun_call_args.parse_next(input)?;
     for one in props {
-        let key = one.0.to_lowercase();
+        let key = one.name().to_lowercase();
         if key == "default" || key == "var" {
-            builder.name(one.1);
+            if let GxlValue::VarRef(vref) = one.value() {
+                builder.name(vref.clone());
+            } else {
+                return fail.context(wn_desc("defined(not var)")).parse_next(input);
+            }
         }
     }
 
@@ -36,11 +40,18 @@ mod tests {
     use super::*;
 
     #[test]
-    fn cmd_test() {
+    fn defined_correct() {
         once_init_log();
         let mut data = r#"
              defined(${HOME}) ;"#;
         let obj = gal_defined(&mut data).assert();
-        assert_eq!(obj.name(), "${HOME}");
+        assert_eq!(obj.name(), "HOME");
+    }
+    #[test]
+    fn defined_wrong() {
+        once_init_log();
+        let mut data = r#"
+             defined("HOME") ;"#;
+        assert!(gal_defined(&mut data).is_err());
     }
 }

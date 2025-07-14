@@ -196,6 +196,15 @@ pub enum ExpressEnum {
     BinFun(BoolBinFn),
 }
 
+impl<T> From<T> for ExpressEnum
+where
+    T: Into<BoolBinFn>,
+{
+    fn from(value: T) -> Self {
+        ExpressEnum::BinFun(value.into())
+    }
+}
+
 impl Evaluation for ExpressEnum {
     fn decide(&self, ctx: ExecContext, args: &VarSpace) -> DecideResult {
         match self {
