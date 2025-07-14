@@ -1,5 +1,5 @@
 use super::super::prelude::*;
-use super::common::sentence_call_args;
+use super::common::action_call_args;
 use winnow::combinator::fail;
 
 use crate::ability::assert::*;
@@ -8,7 +8,7 @@ use crate::parser::domain::gal_keyword_alt;
 pub fn gal_assert(input: &mut &str) -> ModalResult<GxAssert> {
     let mut builder = GxAssertBuilder::default();
     gal_keyword_alt("gx.assert", "rg.assert", input)?;
-    let props = sentence_call_args.parse_next(input)?;
+    let props = action_call_args.parse_next(input)?;
     builder.result(true);
     builder.error(None);
     for (key, val) in props {

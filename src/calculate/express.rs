@@ -4,6 +4,7 @@ use wildmatch::WildMatch;
 use crate::context::ExecContext;
 use crate::execution::VarSpace;
 
+use super::defined::BoolBinFn;
 use super::dynval::{EnvVarTag, EvalError, MocVarTag, ValueEval, VarDef};
 use std::fmt::Debug;
 use std::num::ParseIntError;
@@ -189,31 +190,24 @@ pub type EVarDef = VarDef<String, EnvVarTag>;
 #[derive(Clone, Debug)]
 pub enum ExpressEnum {
     EU32(BinExpress<VarDef<u32, EnvVarTag>, u32>),
-    EStr(BinExpress<VarDef<String, EnvVarTag>, String>),
-    MU32(BinExpress<VarDef<u32, MocVarTag>, u32>),
-    MStr(BinExpress<VarDef<String, MocVarTag>, String>),
+    GxlStr(BinExpress<VarDef<String, EnvVarTag>, String>),
+    MocU32(BinExpress<VarDef<u32, MocVarTag>, u32>),
+    MocStr(BinExpress<VarDef<String, MocVarTag>, String>),
+    BinFun(BoolBinFn),
 }
 
 impl Evaluation for ExpressEnum {
     fn decide(&self, ctx: ExecContext, args: &VarSpace) -> DecideResult {
         match self {
-            ExpressEnum::MU32(x) => x.decide(ctx, args),
-            ExpressEnum::MStr(x) => x.decide(ctx, args),
+            ExpressEnum::MocU32(x) => x.decide(ctx, args),
+            ExpressEnum::MocStr(x) => x.decide(ctx, args),
             ExpressEnum::EU32(x) => x.decide(ctx, args),
-            ExpressEnum::EStr(x) => x.decide(ctx, args),
+            ExpressEnum::GxlStr(x) => x.decide(ctx, args),
+            ExpressEnum::BinFun(x) => x.decide(ctx, args),
         }
     }
 }
-impl ExpressEnum {
-    pub fn relation(&self) -> &BinRelation {
-        match self {
-            ExpressEnum::MU32(x) => &x.relation,
-            ExpressEnum::MStr(x) => &x.relation,
-            ExpressEnum::EU32(x) => &x.relation,
-            ExpressEnum::EStr(x) => &x.relation,
-        }
-    }
-}
+impl ExpressEnum {}
 
 #[cfg(test)]
 mod tests {

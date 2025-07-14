@@ -126,7 +126,7 @@ pub fn gal_else_if(input: &mut &str) -> ModalResult<GxlCond> {
     let true_block = gal_block.parse_next(input)?;
     skip_spaces_block(input)?;
     let ctrl_express = IFExpress::new(
-        ExpressEnum::EStr(BinExpress::from_op(cmp, EVarDef::new(name), value)),
+        ExpressEnum::GxlStr(BinExpress::from_op(cmp, EVarDef::new(name), value)),
         true_block,
         Vec::new(),
         None,
@@ -156,7 +156,7 @@ pub fn gal_cond(input: &mut &str) -> ModalResult<GxlCond> {
         None
     };
     let ctrl_express = IFExpress::new(
-        ExpressEnum::EStr(BinExpress::from_op(cmp, EVarDef::new(name), value)),
+        ExpressEnum::GxlStr(BinExpress::from_op(cmp, EVarDef::new(name), value)),
         true_block,
         elseif_conds,
         false_block,
@@ -288,8 +288,7 @@ mod tests {
                 }
              }
         "#;
-        let cond = run_gxl(gal_cond, &mut data).assert();
-        assert_eq!(cond.cond.express().relation(), &BinRelation::WE);
+        let _cond = run_gxl(gal_cond, &mut data).assert();
         assert_eq!(data, "");
     }
 }

@@ -20,7 +20,7 @@ pub fn gal_vars(input: &mut &str) -> ModalResult<GxlProps> {
     }
     Ok(vars)
 }
-pub fn sentence_call_args(input: &mut &str) -> ModalResult<Vec<(String, String)>> {
+pub fn action_call_args(input: &mut &str) -> ModalResult<Vec<(String, String)>> {
     gal_call_beg.parse_next(input)?;
     let props: Vec<(String, String)> =
         separated(0.., gal_var_input, symbol_comma).parse_next(input)?;
@@ -68,7 +68,7 @@ pub fn gal_call(input: &mut &str) -> ModalResult<ActCall> {
     let name = take_var_path
         .context(wn_desc("<call-name>"))
         .parse_next(input)?;
-    let var_props = sentence_call_args.parse_next(input)?;
+    let var_props = action_call_args.parse_next(input)?;
     let mut props = Vec::new();
     for v_prop in var_props {
         props.push(Property::from(v_prop))

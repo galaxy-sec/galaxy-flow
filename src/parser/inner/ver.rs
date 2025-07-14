@@ -1,5 +1,5 @@
 use super::super::prelude::*;
-use super::common::sentence_call_args;
+use super::common::action_call_args;
 use winnow::combinator::fail;
 
 use crate::ability::echo::*;
@@ -9,7 +9,7 @@ use crate::parser::domain::gal_keyword_alt;
 pub fn gal_echo(input: &mut &str) -> ModalResult<GxEcho> {
     let mut watcher = GxEcho::default();
     gal_keyword_alt("gx.echo", "rg.echo", input)?;
-    let props = sentence_call_args.parse_next(input)?;
+    let props = action_call_args.parse_next(input)?;
     for (k, v) in props {
         if k == "value" || k == "default" {
             watcher.set(v.as_str());
@@ -23,7 +23,7 @@ pub fn gal_version(input: &mut &str) -> ModalResult<RgVersion> {
     builder.verinc(VerInc::Build);
     builder.export("VERSION".into());
     gal_keyword_alt("gx.ver", "rg.ver", input)?;
-    let props = sentence_call_args.parse_next(input)?;
+    let props = action_call_args.parse_next(input)?;
     for (key, val) in props {
         if key == "file" {
             builder.file(val);

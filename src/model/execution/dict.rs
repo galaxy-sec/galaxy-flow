@@ -66,8 +66,8 @@ pub enum DictUse {
 mod tests {
     use crate::{
         execution::{dict::sec_value_default_path, global::load_secfile},
+        model::execution::dict::VarSpace,
         traits::Getter,
-        var::VarDict,
     };
 
     use orion_error::TestAssertWithMsg;
@@ -88,19 +88,19 @@ mod tests {
         writeln!(file, "key1: value1\nkey2: value2").unwrap();
 
         // 创建 VarSpace 实例并加载文件
-        let mut var_dict = VarDict::new("test");
+        let mut var_space = VarSpace::default();
 
         // 临时修改路径指向我们的测试文件
         let original_path = sec_value_default_path();
         std::env::set_var("GAL_SEC_FILE_PATH", file_path.to_str().unwrap());
 
-        load_secfile(&mut var_dict).assert("load secfile");
+        load_secfile(&mut var_space.inherited).assert("load secfile");
 
         // 验证全局变量
-        assert!(var_dict.contains_key("SEC_KEY1"));
-        assert!(var_dict.contains_key("SEC_KEY2"));
+        assert!(var_space.inherited.contains_key("SEC_KEY1"));
+        assert!(var_space.inherited.contains_key("SEC_KEY2"));
         assert_eq!(
-            format!("{}", var_dict.get("SEC_KEY1").unwrap()),
+            format!("{}", var_space.inherited.get("SEC_KEY1").unwrap()),
             "******".to_string()
         );
         // 清理
