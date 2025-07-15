@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::fmt::{Debug, Display};
 
+use indexmap::IndexMap;
 use orion_syspec::vars::{ValueDict, ValueType};
 
 use super::execution::DictUse;
@@ -29,7 +30,7 @@ impl SecVar {
 #[derive(Debug, Clone, Default, Getters, PartialEq)]
 pub struct VarDict {
     useage: DictUse,
-    maps: HashMap<String, SecVar>,
+    maps: IndexMap<String, SecVar>,
 }
 
 impl From<ValueDict> for VarDict {
@@ -104,13 +105,13 @@ impl VarDict {
     pub fn global_new() -> Self {
         VarDict {
             useage: DictUse::Global,
-            maps: HashMap::new(),
+            maps: IndexMap::new(),
         }
     }
     pub fn new<S: Into<String>>(name: S) -> Self {
         VarDict {
             useage: DictUse::Named(name.into()),
-            maps: HashMap::new(),
+            maps: IndexMap::new(),
         }
     }
 
