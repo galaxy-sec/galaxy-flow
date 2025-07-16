@@ -1,19 +1,21 @@
 use duct_sh;
-use std::collections::VecDeque;
+use std::collections::{HashMap, VecDeque};
 
 use crate::evaluator::{EnvExpress, Parser};
 use crate::expect::LogicScope;
 use crate::expect::ShellOption;
+use crate::var::{VarDict, VarMeta};
 use crate::{ExecReason, ExecResult};
 
 use colored::*;
 #[allow(clippy::result_large_err)]
-pub fn rg_sh(
+pub fn os_sh(
     scope: LogicScope,
     target: &str,
     cmd: &str,
     opt: &ShellOption,
     exp: &EnvExpress,
+    env: &VarDict,
 ) -> ExecResult<(Vec<u8>, Vec<u8>)> {
     let sec_cmd = exp.sec_eval(cmd)?;
     //let ee = EnvExpress::from_env();
@@ -25,11 +27,14 @@ pub fn rg_sh(
         }
     }
     let exe_cmd = exp.eval(cmd)?;
-    //use unchecked() not return error
+    let env_map: HashMap<_, _> = std::env::vars().collect();
+    let mut run_env = env.clone();
+    run_env.merge(VarMeta::Normal, env_map);
     let output = duct_sh::sh_dangerous(exe_cmd)
         .unchecked()
         .stdout_capture()
         .stderr_capture()
+        .full_env(run_env.export())
         .run();
     let fail_msg = opt.err.clone().unwrap_or(sec_cmd.clone());
     let fail_msg = exp.eval(fail_msg.as_str())?;
@@ -124,7 +129,7 @@ mod tests {
             ..Default::default()
         };
         let cmd = "echo ${SEC_KEY}".to_string();
-        let (stdout, _stderr) = rg_sh(LogicScope::Outer, "gx.sh", &cmd, &opt, &exp).unwrap();
+        let (stdout, _stderr) = os_sh(LogicScope::Outer, "gx.sh", &cmd, &opt, &exp).unwrap();
         assert_eq!(stdout, b"galaxy\n");
     }
 }
