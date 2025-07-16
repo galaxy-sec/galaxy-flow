@@ -6,7 +6,7 @@ use crate::expect::ShellOption;
 use crate::parser::domain::gal_keyword;
 use crate::util::OptionFrom;
 
-fn gal_shell(input: &mut &str) -> Result<GxShell> {
+pub fn gal_shell(input: &mut &str) -> Result<GxShell> {
     let mut shell = GxShell::default();
     gal_keyword("gx.shell", input)?;
     let props = sentence_call_args.parse_next(input)?;

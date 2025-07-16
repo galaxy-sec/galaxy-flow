@@ -8,6 +8,7 @@ use super::prelude::*;
 use crate::ability::artifact::GxArtifact;
 use crate::ability::delegate::ActCall;
 use crate::ability::prelude::TaskValue;
+use crate::ability::shell::GxShell;
 use crate::ability::GxAssert;
 use crate::ability::GxCmd;
 use crate::ability::GxDownLoad;
@@ -30,6 +31,7 @@ use std::io::Read;
 
 #[derive(Clone)]
 pub enum BlockAction {
+    Shell(GxShell),
     Command(GxCmd),
     GxlRun(GxRun),
     Cond(GxlCond),
@@ -104,6 +106,7 @@ impl BlockAction {
     /// 执行具体动作
     async fn execute_action(&self, ctx: ExecContext, dct: VarSpace) -> TaskResult {
         match self {
+            BlockAction::Shell(o) => o.async_exec(ctx, dct).await,
             BlockAction::Command(o) => o.async_exec(ctx, dct).await,
             BlockAction::Echo(o) => o.async_exec(ctx, dct).await,
             BlockAction::Assert(o) => o.async_exec(ctx, dct).await,
@@ -157,6 +160,7 @@ impl DependTrait<&GxlSpace> for BlockNode {
                 BlockAction::Assert(v) => BlockAction::Assert(v.clone()),
                 BlockAction::Version(v) => BlockAction::Version(v.clone()),
                 BlockAction::Command(v) => BlockAction::Command(v.clone()),
+                BlockAction::Shell(v) => BlockAction::Shell(v.clone()),
                 BlockAction::GxlRun(v) => BlockAction::GxlRun(v.clone()),
                 BlockAction::Delegate(v) => {
                     BlockAction::Delegate(Box::new(v.assemble(mod_name, src)?))

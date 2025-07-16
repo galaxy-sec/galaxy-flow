@@ -1,5 +1,6 @@
 use super::inner::cmd::gal_cmd_block;
 use super::inner::gxl::gal_run;
+use super::inner::shell::gal_shell;
 use super::prelude::*;
 use orion_parse::atom::take_env_var;
 use orion_parse::symbol::symbol_cmp;
@@ -65,6 +66,10 @@ pub fn gal_sentens_item(input: &mut &str) -> Result<BlockAction> {
     if starts_with("gx.cmd", input) {
         return gal_cmd.map(BlockAction::Command).parse_next(input);
     }
+    if starts_with("gx.shell", input) {
+        return gal_shell.map(BlockAction::Shell).parse_next(input);
+    }
+
     if starts_with("gx.run", input) {
         return gal_run.map(BlockAction::GxlRun).parse_next(input);
     }
