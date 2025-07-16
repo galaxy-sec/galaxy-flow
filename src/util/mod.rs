@@ -12,3 +12,5 @@ pub use crate::util::git::GitTools;
 pub use crate::util::init_cmd::init_cmd;
 pub use crate::util::init_cmd::ModRepo;
 pub use crate::util::shell::os_sh;
+pub mod opt;
+pub use crate::util::opt::OptionFrom;

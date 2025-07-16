@@ -1,5 +1,6 @@
 use super::*;
 use crate::expect::LogicScope;
+use crate::var::VarDict;
 use crate::{err::*, expect::ShellOption};
 use crate::{gxl_sh, ExecReason, ExecResult};
 use std::path::Path;
@@ -58,7 +59,8 @@ pub fn init_cmd(
         "cmd:init",
         &cmd,
         &sh_opt,
-        tools.exp_engine()
+        tools.exp_engine(),
+        &VarDict::default()
     )?;
     println!("init success!");
     Ok(())

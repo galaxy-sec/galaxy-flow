@@ -57,7 +57,8 @@ impl GxCmd {
             ctx.tag_path("cmd").as_str(),
             &exe_cmd,
             &expect,
-            &exp
+            &exp,
+            vars_dict.global()
         );
         match res {
             Ok((stdout, stderr)) => {

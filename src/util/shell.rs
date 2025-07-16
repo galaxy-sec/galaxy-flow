@@ -123,13 +123,13 @@ mod tests {
     fn rg_sh_test() {
         let mut dict = VarDict::global_new();
         dict.sec_set("SEC_KEY", "galaxy");
-        let exp = EnvExpress::from_env_mix(dict);
+        let exp = EnvExpress::from_env_mix(dict.clone());
         let opt = ShellOption {
             quiet: true,
             ..Default::default()
         };
         let cmd = "echo ${SEC_KEY}".to_string();
-        let (stdout, _stderr) = os_sh(LogicScope::Outer, "gx.sh", &cmd, &opt, &exp).unwrap();
+        let (stdout, _stderr) = os_sh(LogicScope::Outer, "gx.sh", &cmd, &opt, &exp, &dict).unwrap();
         assert_eq!(stdout, b"galaxy\n");
     }
 }

@@ -4,6 +4,7 @@ use crate::err::*;
 use crate::evaluator::*;
 use crate::expect::{LogicScope, ShellOption};
 use crate::gxl_sh;
+use crate::var::VarDict;
 use crate::ExecReason;
 use crate::ExecResult;
 use std::fs;
@@ -47,7 +48,8 @@ impl GitTools {
             "cmd:pull-mod",
             &cmd,
             opt,
-            &self.exp_engine
+            &self.exp_engine,
+            &VarDict::default()
         )?;
         Ok(())
     }
@@ -60,7 +62,14 @@ impl GitTools {
         );
 
         debug!(target:"sys/mod", "mod update cmd:{cmd}", );
-        gxl_sh!(LogicScope::Inner, "cmd:init", &cmd, opt, &self.exp_engine)?;
+        gxl_sh!(
+            LogicScope::Inner,
+            "cmd:init",
+            &cmd,
+            opt,
+            &self.exp_engine,
+            &VarDict::default()
+        )?;
         Ok(())
     }
     fn build_remote_git(&self) -> NER {
@@ -87,17 +96,33 @@ impl GitTools {
             "cmd",
             "echo $PATH",
             &sh_opt,
-            &self.exp_engine
+            &self.exp_engine,
+            &VarDict::default()
         )?;
-        gxl_sh!(LogicScope::Outer, "cmd", "pwd", &sh_opt, &self.exp_engine)?;
+        gxl_sh!(
+            LogicScope::Outer,
+            "cmd",
+            "pwd",
+            &sh_opt,
+            &self.exp_engine,
+            &VarDict::default()
+        )?;
         gxl_sh!(
             LogicScope::Outer,
             "cmd",
             "ls -l ${HOME}/.galaxy",
             &sh_opt,
-            &self.exp_engine
+            &self.exp_engine,
+            &VarDict::default()
         )?;
-        gxl_sh!(LogicScope::Outer, "cmd", &cmd, &sh_opt, &self.exp_engine)?;
+        gxl_sh!(
+            LogicScope::Outer,
+            "cmd",
+            &cmd,
+            &sh_opt,
+            &self.exp_engine,
+            &VarDict::default()
+        )?;
         Ok(())
     }
     fn build_check_shell(&self) -> NER {

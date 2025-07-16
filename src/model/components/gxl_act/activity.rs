@@ -128,7 +128,15 @@ impl Activity {
             opt.quiet = quiet;
         }
 
-        gxl_sh!(LogicScope::Outer, ctx.path(), &cmd, &opt, &exp).with(&r_with)?;
+        gxl_sh!(
+            LogicScope::Outer,
+            ctx.path(),
+            &cmd,
+            &opt,
+            &exp,
+            vars_dict.global()
+        )
+        .with(&r_with)?;
         action.finish();
         Ok(TaskValue::from((vars_dict, ExecOut::Action(action))))
     }

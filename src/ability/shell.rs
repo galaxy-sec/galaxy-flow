@@ -1,17 +1,17 @@
-use std::{
-    ffi::OsStr,
-    path::{Path, PathBuf},
-};
+use std::path::PathBuf;
 
 use crate::{ability::prelude::*, expect::LogicScope, traits::Setter, var::VarDict};
 use getset::{Getters, MutGetters, Setters, WithSetters};
 use orion_syspec::{types::JsonAble, vars::ValueDict};
 #[derive(Clone, Debug, Default, PartialEq, Getters, Setters, WithSetters, MutGetters)]
 pub struct GxShell {
+    #[getset(get = "pub", set = "pub", get_mut, set_with)]
     arg_file: Option<PathBuf>,
-    #[getset(get, set, get_mut, set_with)]
+    #[getset(get = "pub", set = "pub", get_mut, set_with)]
     out_var: Option<String>,
+    #[getset(get = "pub", set = "pub", get_mut, set_with)]
     shell: String,
+    #[getset(get, set = "pub", get_mut, set_with)]
     expect: ShellOption,
 }
 #[async_trait]
@@ -47,7 +47,8 @@ impl GxShell {
         }
         if let Some(arg_file) = &self.arg_file {
             if arg_file.extension() == PathBuf::from("data.json").extension() {
-                let dict = ValueDict::from_json(arg_file);
+                let dict = ValueDict::from_json(arg_file).owe_data()?;
+                vars_dict.global_mut().merge_dict(VarDict::from(dict));
             }
         }
         let res = if let Some(out_var) = self.out_var.clone() {
@@ -66,7 +67,8 @@ impl GxShell {
                 ctx.tag_path("cmd").as_str(),
                 &exe_cmd,
                 &expect,
-                &exp
+                &exp,
+                vars_dict.global()
             );
             let file_out =
                 std::fs::read_to_string(&fifo_path).map_err(|e| ExecReason::Io(e.to_string()))?;
@@ -80,7 +82,8 @@ impl GxShell {
                 ctx.tag_path("cmd").as_str(),
                 &ext_cmd,
                 &expect,
-                &exp
+                &exp,
+                vars_dict.global()
             )
         };
 
@@ -113,6 +116,7 @@ mod tests {
     use crate::{
         ability::*,
         traits::{Getter, Setter},
+        util::OptionFrom,
     };
 
     #[tokio::test]
@@ -120,13 +124,14 @@ mod tests {
         let (context, mut def) = ability_env_init();
         def.global_mut()
             .set("CONF_ROOT", "${GXL_PRJ_ROOT}/tests/material");
-        let res =
-            GxShell::new("./tests/material/demo.sh sys app").with_out_var(Some("key".to_string()));
+        let res = GxShell::new("./tests/material/demo.sh sys app")
+            .with_out_var("key".to_opt())
+            .with_arg_file("./tests/material/env_args.json".to_opt());
 
         let TaskValue { vars, .. } = res.async_exec(context, def).await.assert("dryrun");
         assert_eq!(
             vars.global().get("key").map(|x| x.value()),
-            Some(&"DATA".to_string())
+            Some(&"DATA\ngalaxy".to_string())
         )
     }
 }

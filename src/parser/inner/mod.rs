@@ -4,6 +4,7 @@ pub mod cmd;
 pub mod common;
 pub mod gxl;
 pub mod read;
+pub mod shell;
 pub mod tpl;
 pub mod ver;
 
