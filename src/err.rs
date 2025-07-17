@@ -1,6 +1,6 @@
 use crate::{error::AssembleReason, ExecReason, ExecResult};
-use orion_error::{ErrorCode, StructError, UvsBizFrom, UvsReason};
-use orion_syspec::error::SpecReason;
+use orion_error::{ErrorCode, StructError, UvsReason};
+
 use serde::Serialize;
 use thiserror::Error;
 
@@ -138,6 +138,7 @@ impl From<AssembleReason> for RunReason {
     }
 }
 
+/*
 impl From<SpecReason> for RunReason {
     fn from(value: SpecReason) -> Self {
         match value {
@@ -148,3 +149,5 @@ impl From<SpecReason> for RunReason {
         }
     }
 }
+
+*/

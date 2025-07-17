@@ -1,12 +1,8 @@
 use std::path::PathBuf;
 
-use orion_error::ErrorConv;
-use orion_syspec::{
-    artifact::ArtifactPackage,
-    error::ToErr,
-    types::{AsyncUpdateable, Configable},
-    update::UpdateOptions,
-};
+use orion_common::serde::Configable;
+use orion_error::{ErrorConv, ToStructError};
+use orion_variate::{ext::ArtifactPackage, types::LocalUpdate, update::UpdateOptions};
 
 use crate::{ability::prelude::*, execution::runnable::TaskValue};
 
@@ -29,17 +25,17 @@ impl AsyncRunnableTrait for GxArtifact {
         let dst_file = exp.eval(self.dst_path())?;
         info!(target: ctx.path(), "task_file :{} ", pkg_file);
         let artifact_pkg = if pkg_file.ends_with("yml") {
-            ArtifactPackage::from_conf(&PathBuf::from(pkg_file)).err_conv()?
+            ArtifactPackage::from_conf(&PathBuf::from(pkg_file)).owe_data()?
         } else {
             return ExecReason::Bug("only yml format support".into()).err_result();
         };
         let dst_path = PathBuf::from(dst_file);
         for artifact in artifact_pkg.iter() {
             artifact
-                .addr()
-                .update_rename(&dst_path, artifact.local(), &UpdateOptions::default())
+                .deployment_repo()
+                .update_local_rename(&dst_path, artifact.local(), &UpdateOptions::default())
                 .await
-                .err_conv()?;
+                .owe_res()?;
         }
 
         Ok(TaskValue::from((vars_dict, ExecOut::Ignore)))

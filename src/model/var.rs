@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::fmt::{Debug, Display};
 
-use orion_syspec::vars::{ValueDict, ValueType};
+use orion_variate::vars::{ValueDict, ValueType};
 
 use super::execution::DictUse;
 use super::traits::{Getter, Setter};
@@ -47,7 +47,7 @@ impl From<ValueDict> for VarDict {
                     let str_v = v.to_string();
                     dict.set(str_k, str_v);
                 }
-                ValueType::Int(v) => {
+                ValueType::Number(v) => {
                     let str_k = k.clone();
                     let str_v = v.to_string();
                     dict.set(str_k, str_v);
@@ -57,6 +57,7 @@ impl From<ValueDict> for VarDict {
                     let str_v = v.to_string();
                     dict.set(str_k, str_v);
                 }
+                ValueType::Ip(_ip_addr) => todo!(),
             }
         }
         dict

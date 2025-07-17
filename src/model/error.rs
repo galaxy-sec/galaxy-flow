@@ -1,6 +1,5 @@
 use derive_more::From;
 use orion_error::{ErrorCode, StructError, UvsReason};
-use orion_syspec::error::SpecReason;
 use serde::Serialize;
 use thiserror::Error;
 
@@ -69,6 +68,7 @@ impl From<reqwest::Error> for ExecReason {
 pub type ExecError = StructError<ExecReason>;
 pub type ExecResult<T> = Result<T, ExecError>;
 
+/*
 impl From<SpecReason> for ExecReason {
     fn from(value: SpecReason) -> Self {
         match value {
@@ -79,3 +79,5 @@ impl From<SpecReason> for ExecReason {
         }
     }
 }
+
+*/

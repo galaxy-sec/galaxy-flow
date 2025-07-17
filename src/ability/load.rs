@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
-use orion_error::ErrorConv;
-use orion_syspec::{addr::HttpAddr, error::ToErr, update::UpdateOptions};
+use orion_error::{ErrorConv, ToStructError};
+use orion_variate::{addr::HttpAddr, update::UpdateOptions};
 
 use crate::ability::prelude::*;
 
@@ -43,7 +43,7 @@ impl AsyncRunnableTrait for GxUpLoad {
         let local_file_path = PathBuf::from(&local_file);
         let method = ex.eval(self.method())?.to_uppercase();
         if local_file_path.exists() {
-            addr.upload(&local_file_path, &method).await.err_conv()?;
+            addr.upload(&local_file_path, &method).await.owe_res()?;
             action.finish();
             Ok(TaskValue::from((vars_dict, ExecOut::Action(action))))
         } else {
