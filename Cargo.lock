@@ -1193,6 +1193,7 @@ version = "0.7.4"
 dependencies = [
  "anyhow",
  "async-trait",
+ "chrono",
  "clap",
  "colored",
  "contracts",
@@ -1222,6 +1223,7 @@ dependencies = [
  "orion_parse",
  "os_info",
  "pretty_env_logger",
+ "rand 0.8.5",
  "regex",
  "reqwest",
  "rstest",

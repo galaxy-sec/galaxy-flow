@@ -1,8 +1,14 @@
+use chrono::Local;
+use rand::Rng;
 use std::path::PathBuf;
 
 use crate::{ability::prelude::*, expect::LogicScope, traits::Setter, var::VarDict};
 use getset::{Getters, MutGetters, Setters, WithSetters};
-use orion_syspec::{types::JsonAble, vars::ValueDict};
+use orion_error::UvsLogicFrom;
+use orion_syspec::{
+    types::{IniAble, JsonAble, Tomlable, Yamlable},
+    vars::ValueDict,
+};
 #[derive(Clone, Debug, Default, PartialEq, Getters, Setters, WithSetters, MutGetters)]
 pub struct GxShell {
     #[getset(get = "pub", set = "pub", get_mut, set_with)]
@@ -46,22 +52,40 @@ impl GxShell {
             expect.quiet = quiet;
         }
         if let Some(arg_file) = &self.arg_file {
-            if arg_file.extension() == PathBuf::from("data.json").extension() {
-                let dict = ValueDict::from_json(arg_file).owe_data()?;
-                vars_dict.global_mut().merge_dict(VarDict::from(dict));
-            }
+            let dict = if arg_file.extension() == PathBuf::from("data.json").extension() {
+                ValueDict::from_json(arg_file).owe_data()?
+            } else if arg_file.extension() == PathBuf::from("data.yml").extension() {
+                ValueDict::from_yml(arg_file).owe_data()?
+            } else if arg_file.extension() == PathBuf::from("data.yaml").extension() {
+                ValueDict::from_yml(arg_file).owe_data()?
+            } else if arg_file.extension() == PathBuf::from("data.toml").extension() {
+                ValueDict::from_toml(arg_file).owe_data()?
+            } else if arg_file.extension() == PathBuf::from("data.ini").extension() {
+                ValueDict::from_ini(arg_file).owe_data()?
+            } else {
+                return ExecError::from_logic(format!(
+                    "unsupport this format {}",
+                    arg_file.display()
+                ))
+                .err();
+            };
+            vars_dict.global_mut().merge_dict(VarDict::from(dict));
         }
         let res = if let Some(out_var) = self.out_var.clone() {
-            // 创建 FIFO 文件
-            let fifo_path = PathBuf::from(format!("/tmp/gx_out_{out_var}"));
-            if fifo_path.exists() {
-                std::fs::remove_file(&fifo_path).map_err(|e| ExecReason::Io(e.to_string()))?;
+            let out_data_path = PathBuf::from(format!(
+                "/tmp/gx_out_{out_var}_{}_{}",
+                Local::now().format("%Y%m%d_%H%M%S"),
+                rand::thread_rng().gen::<u32>()
+            ));
+
+            if out_data_path.exists() {
+                std::fs::remove_file(&out_data_path).map_err(|e| ExecReason::Io(e.to_string()))?;
             }
-            std::fs::create_dir_all(fifo_path.parent().unwrap())
+            std::fs::create_dir_all(out_data_path.parent().unwrap())
                 .map_err(|e| ExecReason::Io(e.to_string()))?;
-            std::fs::File::create(&fifo_path).map_err(|e| ExecReason::Io(e.to_string()))?;
+            std::fs::File::create(&out_data_path).map_err(|e| ExecReason::Io(e.to_string()))?;
             // 修改命令以将输出写入 FIFO
-            let exe_cmd = format!("export OUT_FILE={} ; {}", fifo_path.display(), ext_cmd);
+            let exe_cmd = format!("export {out_var}={} ; {}", out_data_path.display(), ext_cmd);
             let res = gxl_sh!(
                 LogicScope::Outer,
                 ctx.tag_path("cmd").as_str(),
@@ -70,11 +94,12 @@ impl GxShell {
                 &exp,
                 vars_dict.global()
             );
-            let file_out =
-                std::fs::read_to_string(&fifo_path).map_err(|e| ExecReason::Io(e.to_string()))?;
+            let file_out = std::fs::read_to_string(&out_data_path)
+                .map_err(|e| ExecReason::Io(e.to_string()))?;
             vars_dict
                 .global_mut()
                 .set(out_var.as_str(), file_out.trim());
+            std::fs::remove_file(out_data_path).owe_logic()?;
             res
         } else {
             gxl_sh!(
@@ -120,17 +145,33 @@ mod tests {
     };
 
     #[tokio::test]
-    async fn cmd_test() {
+    async fn shell_args_json() {
         let (context, mut def) = ability_env_init();
         def.global_mut()
             .set("CONF_ROOT", "${GXL_PRJ_ROOT}/tests/material");
-        let res = GxShell::new("./tests/material/demo.sh sys app")
-            .with_out_var("key".to_opt())
-            .with_arg_file("./tests/material/env_args.json".to_opt());
+        let res = GxShell::new("./tests/material/gx_shell/demo.sh sys app")
+            .with_out_var("OUT_FILE".to_opt())
+            .with_arg_file("./tests/material/gx_shell/env_args.json".to_opt());
 
         let TaskValue { vars, .. } = res.async_exec(context, def).await.assert("dryrun");
         assert_eq!(
-            vars.global().get("key").map(|x| x.value()),
+            vars.global().get("OUT_FILE").map(|x| x.value()),
+            Some(&"DATA\ngalaxy".to_string())
+        )
+    }
+
+    #[tokio::test]
+    async fn shell_args_yml() {
+        let (context, mut def) = ability_env_init();
+        def.global_mut()
+            .set("CONF_ROOT", "${GXL_PRJ_ROOT}/tests/material");
+        let res = GxShell::new("./tests/material/gx_shell/demo.sh sys app")
+            .with_out_var("OUT_FILE".to_opt())
+            .with_arg_file("./tests/material/gx_shell/env_args.yml".to_opt());
+
+        let TaskValue { vars, .. } = res.async_exec(context, def).await.assert("dryrun");
+        assert_eq!(
+            vars.global().get("OUT_FILE").map(|x| x.value()),
             Some(&"DATA\ngalaxy".to_string())
         )
     }
