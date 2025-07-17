@@ -1,14 +1,12 @@
 use chrono::Local;
+use orion_common::serde::*;
 use rand::Rng;
 use std::path::PathBuf;
 
 use crate::{ability::prelude::*, expect::LogicScope, traits::Setter, var::VarDict};
 use getset::{Getters, MutGetters, Setters, WithSetters};
 use orion_error::UvsLogicFrom;
-use orion_syspec::{
-    types::{IniAble, JsonAble, Tomlable, Yamlable},
-    vars::ValueDict,
-};
+use orion_variate::vars::ValueDict;
 #[derive(Clone, Debug, Default, PartialEq, Getters, Setters, WithSetters, MutGetters)]
 pub struct GxShell {
     #[getset(get = "pub", set = "pub", get_mut, set_with)]

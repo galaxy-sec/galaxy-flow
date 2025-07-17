@@ -1,10 +1,8 @@
 use std::{env::current_dir, path::PathBuf};
 
+use orion_common::serde::Configable;
 use orion_error::{ErrorConv, ErrorOwe, ErrorWith};
-use orion_syspec::{
-    types::Configable,
-    vars::{ValueDict, ValueType},
-};
+use orion_variate::vars::{ValueDict, ValueType};
 
 use crate::{
     traits::Setter,
@@ -56,12 +54,12 @@ pub fn load_secfile(vars_dict: &mut VarDict) -> ExecResult<()> {
     let default = sec_value_default_path();
     let path = env_path.unwrap_or(default);
     if path.exists() {
-        let dict = ValueDict::from_conf(&path).err_conv()?;
+        let dict = ValueDict::from_conf(&path).owe_logic()?;
         info!(target: "exec","  load {}", path.display());
         for (k, v) in dict.iter() {
             vars_dict.set(
                 format!("SEC_{}", k.to_uppercase()),
-                SecVar::sec_value(v.to_string()),
+                SecVar::sec_value(v.clone()),
             );
         }
     } else {
@@ -71,7 +69,7 @@ pub fn load_secfile(vars_dict: &mut VarDict) -> ExecResult<()> {
         if !dot_path.exists() {
             std::fs::create_dir_all(dot_path).owe_res()?;
         }
-        default.save_conf(&path).err_conv()?;
+        default.save_conf(&path).owe_res()?;
     }
     Ok(())
 }

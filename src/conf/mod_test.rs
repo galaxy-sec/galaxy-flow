@@ -1,7 +1,8 @@
 #[cfg(test)]
 mod tests {
+    use orion_common::serde::Tomlable;
     use orion_error::TestAssertWithMsg;
-    use orion_syspec::{tools::make_clean_path, types::Tomlable};
+    use orion_infra::path::make_clean_path;
     use std::path::PathBuf;
 
     use crate::conf::gxlconf::GxlConf;

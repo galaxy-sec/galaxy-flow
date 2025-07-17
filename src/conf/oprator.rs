@@ -1,5 +1,6 @@
-use orion_error::{ErrorConv, UvsSysFrom};
-use orion_syspec::{tools::ensure_path, types::Tomlable};
+use orion_common::serde::Tomlable;
+use orion_error::{ErrorOwe, UvsSysFrom};
+use orion_infra::path::ensure_path;
 use std::path::PathBuf;
 
 use crate::{
@@ -55,10 +56,10 @@ pub fn conf_path() -> Option<PathBuf> {
 pub fn conf_init() -> RunResult<()> {
     if let Some(home_dir) = dirs::home_dir() {
         let galaxy_root = home_dir.join(".galaxy");
-        ensure_path(&galaxy_root).err_conv()?;
+        ensure_path(&galaxy_root).owe_logic()?;
         let conf_file = galaxy_root.join("conf.toml");
         let conf = GxlConf::new(ReportCenterConf::local(), true);
-        conf.save_toml(&conf_file).err_conv()?;
+        conf.save_toml(&conf_file).owe_res()?;
         return Ok(());
     }
     Err(RunError::from_sys("get home dir failed!".to_string()))

@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::fmt::{Debug, Display};
 
-use orion_syspec::vars::{ValueDict, ValueType};
+use orion_variate::vars::{ValueDict, ValueType};
 
 use super::execution::DictUse;
 use super::traits::{Getter, Setter};
@@ -15,13 +15,13 @@ pub enum VarMeta {
 #[derive(Clone, PartialEq)]
 pub struct SecVar {
     meta: VarMeta,
-    value: String,
+    value: ValueType,
 }
 impl SecVar {
-    pub fn sec_value<S: Into<String>>(val: S) -> Self {
+    pub fn sec_value(value: ValueType) -> Self {
         SecVar {
             meta: VarMeta::Security,
-            value: val.into(),
+            value,
         }
     }
 }
@@ -35,38 +35,20 @@ pub struct VarDict {
 impl From<ValueDict> for VarDict {
     fn from(data: ValueDict) -> Self {
         let mut dict = Self::default();
-        for (k, var_def) in data.dict() {
-            match var_def {
-                ValueType::String(v) => {
-                    let str_k = k.clone();
-                    let str_v = v.clone();
-                    dict.set(str_k, str_v);
-                }
-                ValueType::Bool(v) => {
-                    let str_k = k.clone();
-                    let str_v = v.to_string();
-                    dict.set(str_k, str_v);
-                }
-                ValueType::Int(v) => {
-                    let str_k = k.clone();
-                    let str_v = v.to_string();
-                    dict.set(str_k, str_v);
-                }
-                ValueType::Float(v) => {
-                    let str_k = k.clone();
-                    let str_v = v.to_string();
-                    dict.set(str_k, str_v);
-                }
-            }
+        for (k, var_def) in data.dict().clone() {
+            dict.set(k, var_def)
         }
         dict
     }
 }
 impl SecVar {
     pub fn new(meta: VarMeta, value: String) -> Self {
-        SecVar { meta, value }
+        SecVar {
+            meta,
+            value: ValueType::String(value),
+        }
     }
-    pub fn value(&self) -> &String {
+    pub fn value(&self) -> &ValueType {
         &self.value
     }
 }
@@ -114,6 +96,7 @@ impl VarDict {
         }
     }
 
+    /*
     pub fn export(&self) -> HashMap<String, String> {
         let mut map = HashMap::new();
         for (k, v) in &self.maps {
@@ -121,6 +104,7 @@ impl VarDict {
         }
         map
     }
+    */
     pub fn merge(&mut self, meta: VarMeta, map: HashMap<String, String>) {
         for (k, v) in map {
             self.maps.insert(
@@ -137,12 +121,12 @@ impl VarDict {
             self.maps.insert(k, v);
         }
     }
-    pub fn sec_set<S: Into<String>>(&mut self, key: &str, val: S) {
+    pub fn sec_set<S: Into<String>>(&mut self, key: &str, val: ValueType) {
         self.maps.insert(
             key.to_string(),
             SecVar {
                 meta: VarMeta::Security,
-                value: val.into(),
+                value: val,
             },
         );
     }
@@ -199,7 +183,7 @@ impl Setter<&String, String> for VarDict {
             key.to_string(),
             SecVar {
                 meta: VarMeta::Normal,
-                value: val,
+                value: ValueType::from(val),
             },
         );
     }
@@ -211,7 +195,18 @@ impl Setter<String, String> for VarDict {
             key,
             SecVar {
                 meta: VarMeta::Normal,
-                value: val,
+                value: ValueType::String(val),
+            },
+        );
+    }
+}
+impl Setter<String, ValueType> for VarDict {
+    fn set(&mut self, key: String, value: ValueType) {
+        self.maps.insert(
+            key,
+            SecVar {
+                meta: VarMeta::Normal,
+                value,
             },
         );
     }
@@ -223,7 +218,7 @@ impl Setter<&str, String> for VarDict {
             key.to_string(),
             SecVar {
                 meta: VarMeta::Normal,
-                value: val,
+                value: ValueType::String(val),
             },
         );
     }
@@ -246,7 +241,7 @@ impl Setter<&str, &str> for VarDict {
             key.to_string(),
             SecVar {
                 meta: VarMeta::Normal,
-                value: val.to_string(),
+                value: ValueType::String(val.to_string()),
             },
         );
     }
@@ -262,7 +257,7 @@ mod tests {
         def.set("dst", "hello dst");
         let src = def.must_get("src");
         let dst = def.must_get("dst");
-        assert_eq!(*src.value, String::from("hello src"));
-        assert_eq!(*dst.value, String::from("hello dst"));
+        assert_eq!(*src.value.to_string(), String::from("hello src"));
+        assert_eq!(*dst.value.to_string(), String::from("hello dst"));
     }
 }

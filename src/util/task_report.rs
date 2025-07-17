@@ -4,7 +4,7 @@ use std::{
 };
 
 use anyhow::Context;
-use orion_common::conf::ensure_directory_exists;
+use orion_infra::path::ensure_path;
 //use orion_common::conf::ensure_directory_exists;
 use time::{format_description, OffsetDateTime};
 
@@ -36,7 +36,7 @@ pub fn task_local_report(out: ExecOut) {
             let path = Path::new(&file_name);
 
             // 确保目录存在
-            if let Err(e) = ensure_directory_exists(path) {
+            if let Err(e) = ensure_path(path) {
                 println!("Failed to ensure directory exists: {e}",);
             };
 

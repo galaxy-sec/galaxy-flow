@@ -16,12 +16,7 @@ path = "app/gprj/main.rs"
 
 
 [workspace]
-members = [
-    ".",
-    "crates/orion_common",
-    "crates/orion_parse",
-    "crates/orion_infra",
-]
+members = [".", "crates/orion_parse"]
 
 [workspace.package]
 version = "1.0.0"
@@ -31,17 +26,20 @@ license = "Apache-2.0"
 [workspace.dependencies]
 winnow = "0.7.11"
 orion-error = "~0.3"
+orion_common = { git = "https://github.com/galaxy-sec/orion-common.git", branch = "main" }
+orion_infra = { git = "https://github.com/galaxy-sec/orion-infra", branch = "main" }
+orion_variate = { git = "https://github.com/galaxy-sec/orion-variate", branch = "main" }
 #orion-error = { path = "../orion-error" }
 #orion-syspec = { path = "../orion-syspec" }
-orion-syspec = { git = "https://github.com/galaxy-sec/orion-syspec.git", tag = "v0.8.0" }
 tokio = { version = "1.45", features = ["full"] }
 derive_more = { version = "2.0", features = ["full"] }
 async-trait = "0.1"
 
 [dependencies]
-orion_common = { path = "crates/orion_common" }
+orion_common = { workspace = true }
+orion_infra = { workspace = true }
 orion_parse = { path = "crates/orion_parse" }
-orion_infra = { path = "crates/orion_infra" }
+orion_variate = { workspace = true }
 derive-getters = "0.5"
 derive_builder = "0.20"
 derive_setters = "0.1"
@@ -79,7 +77,6 @@ wildmatch = "~2.4"
 dirs = "3.0"
 indexmap = "2.10"
 orion-error = { workspace = true }
-orion-syspec = { workspace = true }
 tokio = { workspace = true }
 derive_more = { workspace = true }
 async-trait = { workspace = true }

@@ -38,9 +38,9 @@ impl ComponentMeta for GxRead {
 impl GxRead {
     fn execute_impl(&self, ctx: ExecContext, dict: VarSpace) -> TaskResult {
         match &self.imp {
-            ReadMode::CMD(cmd_dto) => cmd_dto.execute(ctx, dict),
-            ReadMode::FILE(ini_dto) => ini_dto.execute(ctx, dict),
-            ReadMode::STDIN(stdin_dto) => stdin_dto.execute(ctx, dict),
+            ReadMode::CMD(o) => o.execute(ctx, dict),
+            ReadMode::FILE(o) => o.execute(ctx, dict),
+            ReadMode::STDIN(o) => o.execute(ctx, dict),
             _ => Err(ExecReason::Exp(String::from("not implementation")).into()),
         }
     }

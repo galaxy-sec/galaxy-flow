@@ -10,10 +10,12 @@ use crate::var::VarDict;
 
 use derive_more::{Display, From};
 use ini::Ini;
-use orion_common::friendly::New2;
-use orion_error::WithContext;
-use orion_syspec::vars::ValueDict;
-use orion_syspec::{error::ToErr, system::ModulesList, types::Configable};
+use orion_common::{
+    friendly::New2,
+    serde::{Configable, IniAble, JsonAble, Tomlable, Yamlable},
+};
+use orion_error::{ToStructError, UvsDataFrom, WithContext};
+use orion_variate::vars::{ValueDict, ValueType, ValueVec};
 
 #[derive(Clone, Debug, PartialEq, From, Display)]
 //#[display("Java EE: {}")]
@@ -72,29 +74,38 @@ impl FileDTO {
         let exp = EnvExpress::from_env_mix(vars_dict.global().clone());
         let file = self.file.clone();
         let file_path = PathBuf::from(exp.eval(&file)?);
-        let mut cur_dict = if file_path.extension() == PathBuf::from("*.ini").extension() {
-            self.impl_ini(ctx, &file_path)?
+        let mut values = if file_path.extension() == PathBuf::from("*.ini").extension() {
+            ValueType::from_ini(&file_path).owe_data()?
+            //self.impl_ini(ctx, &file_path)?
         } else if file_path.extension() == PathBuf::from("*.json").extension() {
-            self.impl_json(ctx, &file_path)?
+            ValueType::from_json(&file_path).owe_data()?
+            //self.impl_json(ctx, &file_path)?
         } else if file_path.extension() == PathBuf::from("*.yml").extension() {
-            self.impl_entity(ctx, &file_path)?
+            ValueType::from_yml(&file_path).owe_data()?
+            //self.impl_entity(ctx, &file_path)?
         } else {
             return ExecReason::Args(format!("not support format :{}", file_path.display()))
                 .err_result();
         };
+        todo!();
         if let Some(name) = &self.name {
-            cur_dict.set_name(name);
-            vars_dict.nameds_mut().insert(name.clone(), cur_dict);
+            //cur_dict.set_name(name);
+            //let dict = VarDict::from(values);
+            //vars_dict.nameds_mut().insert(name.clone(), values);
         } else {
-            vars_dict.global_mut().merge_dict(cur_dict);
+            // vars_dict.global_mut().merge_dict(values);
         }
         Ok(TaskValue::from((vars_dict, ExecOut::Ignore)))
     }
 
-    fn impl_toml_mlist(&self, _ctx: ExecContext, file_path: &Path) -> ExecResult<VarDict> {
-        let data: ModulesList = ModulesList::from_conf(file_path).owe_data()?;
-        let x = data.export();
-        Ok(VarDict::from(x))
+    fn impl_toml_mlist(&self, _ctx: ExecContext, file_path: &Path) -> ExecResult<ValueVec> {
+        //let data: ModulesList = ModulesList::from_conf(file_path).owe_data()?;
+        //let decoded: ValueType = serde_yaml::from_str(file_path)?;
+        let decoded = ValueType::from_toml(file_path).owe_data()?;
+        if let ValueType::List(mods) = decoded {
+            return Ok(mods);
+        }
+        ExecError::from_data("not value list data!".into(), None).err()
     }
 
     fn impl_toml_vdict(&self, _ctx: ExecContext, file_path: &Path) -> ExecResult<VarDict> {
@@ -102,19 +113,6 @@ impl FileDTO {
         Ok(VarDict::from(data))
     }
 
-    fn impl_entity(&self, ctx: ExecContext, file_path: &PathBuf) -> ExecResult<VarDict> {
-        let mut err_ctx = WithContext::want("load toml exchange data");
-        err_ctx.with_path("path", file_path);
-        if let Some(x) = &self.entity {
-            let entity = ReadEntity::from_str(x.as_str()).owe_data()?;
-            match entity {
-                ReadEntity::MList => self.impl_toml_mlist(ctx, file_path),
-                ReadEntity::VDict => self.impl_toml_vdict(ctx, file_path),
-            }
-        } else {
-            ExecReason::Miss("entity".into()).err_result()
-        }
-    }
     fn impl_json(&self, ctx: ExecContext, file_path: &PathBuf) -> ExecResult<VarDict> {
         let mut err_ctx = WithContext::want("load toml exchange data");
         err_ctx.with_path("path", file_path);

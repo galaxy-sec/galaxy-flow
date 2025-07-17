@@ -1,4 +1,4 @@
-use orion_syspec::error::ToErr;
+use orion_error::ToStructError;
 
 use super::prelude::*;
 use crate::{ability::prelude::TaskValue, execution::task::Task, traits::Setter};
