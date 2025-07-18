@@ -5,6 +5,9 @@ pub struct GxEcho {
     value: String,
 }
 impl GxEcho {
+    pub fn new<S: Into<String>>(val: S) -> Self {
+        Self { value: val.into() }
+    }
     pub fn set(&mut self, val: &str) {
         self.value = val.to_string();
     }

@@ -1,12 +1,13 @@
 use std::{env::current_dir, path::PathBuf};
 
 use orion_common::serde::Configable;
-use orion_error::{ErrorConv, ErrorOwe, ErrorWith};
+use orion_error::{ErrorOwe, ErrorWith};
 use orion_variate::vars::{ValueDict, ValueType};
 
 use crate::{
+    sec::{SecFrom, SecValueType},
     traits::Setter,
-    var::{SecVar, VarDict},
+    var::VarDict,
     ExecResult,
 };
 
@@ -59,7 +60,7 @@ pub fn load_secfile(vars_dict: &mut VarDict) -> ExecResult<()> {
         for (k, v) in dict.iter() {
             vars_dict.set(
                 format!("SEC_{}", k.to_uppercase()),
-                SecVar::sec_value(v.clone()),
+                SecValueType::sec_from(v.clone()),
             );
         }
     } else {

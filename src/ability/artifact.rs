@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use orion_common::serde::Configable;
-use orion_error::{ErrorConv, ToStructError};
+use orion_error::ToStructError;
 use orion_variate::{ext::ArtifactPackage, types::LocalUpdate, update::UpdateOptions};
 
 use crate::{ability::prelude::*, execution::runnable::TaskValue};

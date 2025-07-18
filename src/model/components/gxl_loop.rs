@@ -1,14 +1,16 @@
 use orion_error::ToStructError;
 
 use super::prelude::*;
-use crate::{ability::prelude::TaskValue, execution::task::Task, traits::Setter};
+use crate::{
+    ability::prelude::TaskValue, execution::task::Task, sec::SecValueType, traits::Setter,
+};
 
 use super::gxl_block::BlockNode;
 
 #[derive(Clone, Getters)]
 pub struct GxlLoop {
     cur_name: String,
-    dct_name: String,
+    var_name: String,
     body: BlockNode,
 }
 
@@ -16,7 +18,7 @@ impl GxlLoop {
     pub fn new(cur_name: String, dct_name: String, body: BlockNode) -> Self {
         Self {
             cur_name,
-            dct_name,
+            var_name: dct_name,
             body,
         }
     }
@@ -26,27 +28,56 @@ impl GxlLoop {
 impl AsyncRunnableTrait for GxlLoop {
     async fn async_exec(&self, ctx: ExecContext, dict: VarSpace) -> TaskResult {
         let mut task = Task::from("loop");
-        if let Some(named_dict) = dict.nameds().get(self.dct_name()) {
-            let mut cur_dict = dict.clone();
-            for (_k, v) in named_dict.maps().iter() {
-                cur_dict
-                    .global_mut()
-                    .set(self.cur_name().as_str(), v.clone());
-                let TaskValue { vars, rec, .. } =
-                    self.body.async_exec(ctx.clone(), cur_dict).await?;
-                cur_dict = vars;
-                task.append(rec);
+        let mut cur_dict = dict.clone();
+        if let Some(found) = dict.get(self.var_name()) {
+            match found {
+                SecValueType::Obj(obj) => {
+                    for (_k, v) in obj.iter() {
+                        cur_dict
+                            .global_mut()
+                            .set(self.cur_name().clone(), v.clone());
+                        let TaskValue { vars, rec, .. } =
+                            self.body.async_exec(ctx.clone(), cur_dict).await?;
+                        cur_dict = vars;
+                        task.append(rec);
+                    }
+                }
+                SecValueType::List(list) => {
+                    for i in list.iter() {
+                        cur_dict
+                            .global_mut()
+                            .set(self.cur_name().clone(), i.clone());
+                        let TaskValue { vars, rec, .. } =
+                            self.body.async_exec(ctx.clone(), cur_dict).await?;
+                        cur_dict = vars;
+                        task.append(rec);
+                    }
+                }
+                _ => {
+                    return ExecReason::Bug(format!(
+                        "loop only support obj,list {}",
+                        self.var_name()
+                    ))
+                    .err_result()
+                }
             }
             return Ok(TaskValue::from((cur_dict, ExecOut::Task(task))));
         }
-        ExecReason::Miss(self.dct_name().into()).err_result()
+        ExecReason::Miss(self.var_name().into()).err_result()
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{model::components::gxl_block::BlockNode, traits::Getter, var::VarDict};
+    use crate::{
+        ability::GxEcho,
+        components::gxl_block::BlockAction,
+        model::components::gxl_block::BlockNode,
+        sec::{SecFrom, SecValueObj},
+        traits::Getter,
+    };
+    use orion_error::TestAssertWithMsg;
     use rstest::*;
 
     #[fixture]
@@ -65,32 +96,83 @@ mod tests {
         #[from(test_ctx)] ctx: ExecContext,
         #[from(test_dict)] mut dict: VarSpace,
     ) {
+        let obj1 = {
+            let mut n = SecValueObj::default();
+            n.insert(
+                "key1".to_string(),
+                SecValueType::nor_from("value1".to_string()),
+            );
+            n.insert(
+                "key2".to_string(),
+                SecValueType::nor_from("value2".to_string()),
+            );
+            n
+        };
+        let obj2 = {
+            let mut n = SecValueObj::default();
+            n.insert(
+                "key1".to_string(),
+                SecValueType::nor_from("value3".to_string()),
+            );
+            n.insert(
+                "key2".to_string(),
+                SecValueType::nor_from("value4".to_string()),
+            );
+            n
+        };
         // 准备测试数据
         let named_dict = {
-            let mut n = VarDict::default();
-            n.set("key1", "value1");
-            n.set("key2", "value2");
+            let mut n = SecValueObj::default();
+            n.insert("key1".to_string(), SecValueType::from(obj1));
+            n.insert("key2".to_string(), SecValueType::from(obj2));
             n
         };
 
-        dict.nameds_mut()
-            .insert("test_dict".to_string(), named_dict);
+        dict.global_mut()
+            .set("test_dict".to_string(), SecValueType::from(named_dict));
 
         // 创建一个空的 BlockNode 作为循环体
-        let body = BlockNode::new();
+        let mut body = BlockNode::new();
+        body.append(BlockAction::from(GxEcho::new("loop: ${current.key1}")));
         let loop_node = GxlLoop::new("current".to_string(), "test_dict".to_string(), body);
 
         // 执行测试
-        let result = loop_node.async_exec(ctx, dict).await;
+        let result = loop_node.async_exec(ctx, dict).await.assert("loop assert");
 
-        // 验证结果
-        assert!(result.is_ok());
-        let TaskValue { rec, .. } = result.unwrap();
+        let TaskValue { rec, .. } = result;
         if let ExecOut::Task(_task) = rec {
             //assert_eq!(job.tasks().len(), 2); // 应该有两个任务，对应两个键值对
         } else {
             panic!("Expected Job output");
         }
+    }
+    #[rstest]
+    #[tokio::test]
+    async fn test_loop_exec_with_list(
+        #[from(test_ctx)] ctx: ExecContext,
+        #[from(test_dict)] mut dict: VarSpace,
+    ) {
+        // Create a test list with SecValueType items
+        let test_list = vec![
+            SecValueType::nor_from("value1".to_string()),
+            SecValueType::nor_from("value2".to_string()),
+            SecValueType::nor_from(42u64),
+            SecValueType::nor_from(true),
+        ];
+
+        dict.global_mut()
+            .set("test_list".to_string(), SecValueType::List(test_list));
+
+        // Create a block that will echo each value
+        let mut body = BlockNode::new();
+        body.append(BlockAction::from(GxEcho::new("loop: ${current}")));
+        let loop_node = GxlLoop::new("current".to_string(), "test_list".to_string(), body);
+
+        // Execute the loop
+        let result = loop_node.async_exec(ctx, dict).await;
+
+        // Verify the result
+        assert!(result.is_ok());
     }
 
     #[rstest]
@@ -120,24 +202,29 @@ mod tests {
     ) {
         // 准备测试数据
         let named_dict = {
-            let mut n = VarDict::default();
-            n.set("key1", "value1");
+            let mut n = SecValueObj::default();
+            n.insert(
+                "key1".to_string(),
+                SecValueType::nor_from("value1".to_string()),
+            );
             n
         };
 
-        dict.nameds_mut()
-            .insert("test_dict".to_string(), named_dict);
+        dict.global_mut()
+            .set("test_dict".to_string(), SecValueType::from(named_dict));
 
         // 创建一个会检查当前变量的 BlockNode
         let body = BlockNode::new(); // 这里可以添加验证逻辑
         let loop_node = GxlLoop::new("current".to_string(), "test_dict".to_string(), body);
 
         // 执行测试
-        let result = loop_node.async_exec(ctx.clone(), dict.clone()).await;
+        let result = loop_node
+            .async_exec(ctx.clone(), dict.clone())
+            .await
+            .assert("loop assert");
 
         // 验证变量设置
-        assert!(result.is_ok());
-        let TaskValue { vars, .. } = result.unwrap();
+        let TaskValue { vars, .. } = result;
         assert_eq!(
             vars.global().get("current").unwrap().to_string(),
             "value1" // 最后一次循环设置的值

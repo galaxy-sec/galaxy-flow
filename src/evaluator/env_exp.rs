@@ -1,4 +1,5 @@
 use crate::{
+    sec::NoSecConv,
     traits::{Getter, Setter},
     var::VarDict,
     ExecReason, ExecResult,
@@ -47,8 +48,8 @@ impl EnvExpress {
     pub fn insert(&mut self, key: String, val: String) {
         self.data.set(&key, val);
     }
-    pub fn eval_val(&self, key: &str) -> Option<&String> {
-        self.data.get(key).map(|v| v.value())
+    pub fn eval_val(&self, key: &str) -> Option<String> {
+        self.data.get(key).map(|v| v.clone().no_sec().to_string())
     }
     pub fn sec_val(&self, key: &str) -> Option<String> {
         self.data.get(key).map(|v| v.to_string())

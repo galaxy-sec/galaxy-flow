@@ -8,14 +8,6 @@ use std::sync::{Arc, Mutex};
 pub trait VDSupport {
     fn name() -> &'static str;
 }
-pub trait VarCalcSupport: Sync + Send {
-    fn registry(key: String, val: String);
-    fn get(key: &str) -> Option<String>;
-    fn export() -> HashMap<String, String>;
-    fn import(data: &HashMap<String, String>);
-    fn clear_import(data: &HashMap<String, String>);
-    fn clear();
-}
 #[derive(Clone)]
 pub struct VarDef<T, E> {
     //assigns: VarsHold,
@@ -53,31 +45,6 @@ lazy_static! {
         let map = HashMap::new();
         Arc::new(Mutex::new(map))
     };
-}
-impl VarCalcSupport for EnvVarTag {
-    fn registry(key: String, val: String) {
-        ASSIGN_VARS.as_ref().lock().unwrap().insert(key, val);
-    }
-
-    fn get(key: &str) -> Option<String> {
-        ASSIGN_VARS.as_ref().lock().unwrap().get(key).cloned()
-    }
-    fn export() -> HashMap<String, String> {
-        ASSIGN_VARS.as_ref().lock().unwrap().clone()
-    }
-    fn clear() {
-        ASSIGN_VARS.as_ref().lock().unwrap().clear();
-    }
-
-    fn import(data: &HashMap<String, String>) {
-        for (k, v) in data {
-            Self::registry(k.clone(), v.clone());
-        }
-    }
-    fn clear_import(data: &HashMap<String, String>) {
-        Self::clear();
-        Self::import(data);
-    }
 }
 impl VDSupport for MocVarTag {
     fn name() -> &'static str {

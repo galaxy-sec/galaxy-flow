@@ -1,4 +1,5 @@
 use async_trait::async_trait;
+use derive_more::From;
 use gag::BufferRedirect;
 use orion_error::ErrorOwe;
 
@@ -29,7 +30,7 @@ use super::gxl_spc::GxlSpace;
 use super::gxl_var::GxlVar;
 use std::io::Read;
 
-#[derive(Clone)]
+#[derive(Clone, From)]
 pub enum BlockAction {
     Shell(GxShell),
     Command(GxCmd),

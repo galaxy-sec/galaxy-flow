@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use orion_error::{ErrorConv, ToStructError};
+use orion_error::ToStructError;
 use orion_variate::{addr::HttpAddr, update::UpdateOptions};
 
 use crate::ability::prelude::*;

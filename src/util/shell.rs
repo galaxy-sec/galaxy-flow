@@ -1,10 +1,10 @@
 use duct_sh;
-use std::collections::{HashMap, VecDeque};
+use std::collections::VecDeque;
 
 use crate::evaluator::{EnvExpress, Parser};
 use crate::expect::LogicScope;
 use crate::expect::ShellOption;
-use crate::var::{VarDict, VarMeta};
+use crate::var::VarDict;
 use crate::{ExecReason, ExecResult};
 
 use colored::*;
@@ -27,14 +27,13 @@ pub fn os_sh(
         }
     }
     let exe_cmd = exp.eval(cmd)?;
-    let env_map: HashMap<_, _> = std::env::vars().collect();
     let mut run_env = env.clone();
-    run_env.merge(VarMeta::Normal, env_map);
+    run_env.merge_dict(VarDict::from(std::env::vars()));
     let output = duct_sh::sh_dangerous(exe_cmd)
         .unchecked()
         .stdout_capture()
         .stderr_capture()
-        .full_env(run_env.export())
+        .full_env(run_env.export_str_map())
         .run();
     let fail_msg = opt.err.clone().unwrap_or(sec_cmd.clone());
     let fail_msg = exp.eval(fail_msg.as_str())?;
@@ -107,6 +106,8 @@ fn show_cmd(sec_cmd: &String) {
 
 #[cfg(test)]
 mod tests {
+    use orion_variate::vars::ValueType;
+
     use crate::var::VarDict;
 
     use super::*;
@@ -122,7 +123,7 @@ mod tests {
     #[test]
     fn rg_sh_test() {
         let mut dict = VarDict::global_new();
-        dict.sec_set("SEC_KEY", "galaxy");
+        dict.sec_set("SEC_KEY", ValueType::from("galaxy".to_string()));
         let exp = EnvExpress::from_env_mix(dict.clone());
         let opt = ShellOption {
             quiet: true,
