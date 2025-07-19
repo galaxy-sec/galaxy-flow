@@ -46,6 +46,7 @@ impl FileDTO {
         let file_path = PathBuf::from(exp.eval(&file)?);
         let values = if file_path.extension() == PathBuf::from("*.ini").extension() {
             ValueType::from_ini(&file_path).owe_data()?
+            //self.impl_ini(ctx, &file_path)?
         } else if file_path.extension() == PathBuf::from("*.json").extension() {
             ValueType::from_json(&file_path).owe_data()?
             //self.impl_json(ctx, &file_path)?
