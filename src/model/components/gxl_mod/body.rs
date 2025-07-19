@@ -331,7 +331,6 @@ mod test {
         sec::{SecFrom, SecValueType},
         traits::{DependTrait, ExecLoadTrait},
         types::AnyResult,
-        var::{SecVar, VarMeta},
     };
 
     #[test]

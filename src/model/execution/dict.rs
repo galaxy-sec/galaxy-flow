@@ -117,7 +117,7 @@ mod tests {
         std::env::set_var("GAL_SEC_FILE_PATH", original_path);
     }
     use super::*;
-    use crate::sec::{SecString, SecU64, SecValueType};
+    use crate::sec::{SecString, SecValueType};
     use std::collections::HashMap;
 
     #[test]

@@ -131,7 +131,7 @@ impl VarDict {
         }
         map
     }
-    pub fn merge(&mut self, meta: VarMeta, map: HashMap<String, SecValueType>) {
+    pub fn merge(&mut self, map: HashMap<String, SecValueType>) {
         for (k, v) in map {
             self.maps.insert(k, v);
         }
@@ -145,9 +145,6 @@ impl VarDict {
         self.maps.insert(key.into(), SecValueType::sec_from(val));
     }
 
-    pub(crate) fn set_name(&mut self, name: &str) {
-        self.useage = DictUse::Named(name.into());
-    }
     pub fn contains_key(&self, key: &str) -> bool {
         self.maps().contains_key(key)
     }

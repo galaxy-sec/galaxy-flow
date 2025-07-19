@@ -16,13 +16,15 @@ pub struct MainTask {
 }
 
 pub async fn create_main_task(task_name: String) {
+    let datetime = OffsetDateTime::now_local().unwrap_or_else(|_| OffsetDateTime::now_utc());
+    let parent_id = datetime.unix_timestamp();
+    std::env::set_var("task_id", parent_id.to_string());
     // 检查报告中心是否启用
     // 如果未启用，则不创建主任务,直接返回
     if !report_enable().await {
         return;
     }
     // 创建主任务
-    let datetime = OffsetDateTime::now_local().unwrap_or_else(|_| OffsetDateTime::now_utc());
     let format: Result<
         Vec<format_description::BorrowedFormatItem<'_>>,
         time::error::InvalidFormatDescription,
@@ -32,7 +34,6 @@ pub async fn create_main_task(task_name: String) {
         Ok(fmt) => now = datetime.format(&fmt).unwrap_or_default(),
         Err(e) => info!("create main task time format error: {e}"),
     }
-    let parent_id = datetime.unix_timestamp();
     let main_task = MainTask {
         id: parent_id,
         maintask_name: format!("{task_name} {now}",),
@@ -40,8 +41,6 @@ pub async fn create_main_task(task_name: String) {
         description: Some(task_name.clone()),
         task_type: task_name,
     };
-    // 设置环境变量中的父id
-    std::env::set_var("task_id", parent_id.to_string());
     // 创建主任务
     let url = build_task_url(TaskUrlType::MainTaskCreate)
         .await

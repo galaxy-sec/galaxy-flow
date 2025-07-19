@@ -7,7 +7,8 @@ mod envs {
 }
 mod main   {
   flow conf  {
-    gx.echo ( value : "${RUST}" );
+    gx.echo (  "${RUST}" );
+    gx.echo (  "${JAVA}" );
     gx.assert ( value : "${JAVA}" , expect : "90"  );
 
     gx.read_cmd (

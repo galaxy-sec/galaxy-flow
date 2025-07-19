@@ -1,7 +1,6 @@
 use std::sync::Arc;
 
 use crate::{
-    calculate::dynval::EnvVarTag,
     evaluator::{EnvExpress, Parser},
     menu::GxMenu,
     util::str_utils::{StringCutter, UpperKeyMaker},
