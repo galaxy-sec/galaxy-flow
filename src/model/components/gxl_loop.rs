@@ -169,10 +169,7 @@ mod tests {
         let loop_node = GxlLoop::new("current".to_string(), "test_list".to_string(), body);
 
         // Execute the loop
-        let result = loop_node.async_exec(ctx, dict).await;
-
-        // Verify the result
-        assert!(result.is_ok());
+        loop_node.async_exec(ctx, dict).await.assert("loop");
     }
 
     #[rstest]
