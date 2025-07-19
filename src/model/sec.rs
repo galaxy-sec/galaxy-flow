@@ -287,32 +287,51 @@ impl NoSecConv<HashMap<String, ValueType>> for UniCaseMap<SecValueType> {
             .collect()
     }
 }
-pub trait ObjGetter<T> {
-    fn obj_get(&self, path: &str) -> Option<&T>;
+pub trait ValueGetter<T> {
+    fn value_get(&self, path: &str) -> Option<&T>;
 }
-impl ObjGetter<SecValueType> for SecValueObj {
-    fn obj_get(&self, path: &str) -> Option<&SecValueType> {
-        let keys: Vec<&str> = path.split('.').collect();
-        if keys.is_empty() {
+
+impl ValueGetter<SecValueType> for SecValueObj {
+    fn value_get(&self, path: &str) -> Option<&SecValueType> {
+        let parts: Vec<&str> = path.split('.').collect();
+        if parts.is_empty() {
             return None;
         }
 
+        let mut current_value: Option<&SecValueType> = None;
         let mut current_map = self;
-        for (i, key) in keys.iter().enumerate() {
-            if let Some(value) = current_map.get(&UniString::from(key.to_string())) {
-                if i == keys.len() - 1 {
-                    return Some(value);
-                } else if let SecValueType::Obj(next_map) = value {
-                    current_map = next_map;
-                } else {
-                    return None;
+
+        for part in parts {
+            // 检查是否为数组访问（如 "A[0]"）
+            if part.contains('[') && part.ends_with(']') {
+                let (key, index_str) = part.split_once('[').unwrap();
+                let index_str = index_str.trim_end_matches(']');
+                let index = index_str.parse::<usize>().ok()?;
+
+                // 获取数组或对象
+                let value = current_map.get(&UniString::from(key.to_string()))?;
+                match value {
+                    SecValueType::List(list) => {
+                        current_value = list.get(index);
+                    }
+                    _ => return None,
                 }
             } else {
-                return None;
+                // 普通键访问
+                let value = current_map.get(&UniString::from(part.to_string()))?;
+                match value {
+                    SecValueType::Obj(map) => {
+                        current_map = map;
+                        current_value = Some(value);
+                    }
+                    _ => {
+                        current_value = Some(value);
+                    }
+                }
             }
         }
 
-        None
+        current_value
     }
 }
 
@@ -330,6 +349,84 @@ mod tests {
 
         let public_str = SecString::nor_from("username".to_string());
         assert_eq!(format!("{public_str}"), "username");
+    }
+    #[test]
+    fn test_obj_get_with_array() {
+        let mut obj = UniCaseMap::new();
+        let list = vec![
+            SecValueType::nor_from(42u64),
+            SecValueType::sec_from("secret".to_string()),
+        ];
+        obj.insert("A".into(), SecValueType::List(list));
+
+        let mut nested_obj = UniCaseMap::new();
+        nested_obj.insert("rust".into(), SecValueType::nor_from("awesome".to_string()));
+        obj.insert("B".into(), SecValueType::Obj(nested_obj));
+
+        // 测试数组访问
+        assert_eq!(obj.value_get("A[0]"), Some(&SecValueType::nor_from(42u64)));
+        assert_eq!(
+            obj.value_get("A[1]"),
+            Some(&SecValueType::sec_from("secret".to_string()))
+        );
+
+        // 测试嵌套路径
+        assert_eq!(
+            obj.value_get("B.rust"),
+            Some(&SecValueType::nor_from("awesome".to_string()))
+        );
+        assert_eq!(obj.value_get("B.rust.not_exists"), None);
+
+        // 测试无效路径
+        assert_eq!(obj.value_get("A[invalid]"), None);
+        assert_eq!(obj.value_get("A[2]"), None); // 越界
+    }
+    #[test]
+    fn test_obj_get_with_dot_notation() {
+        // 构建测试数据
+        let mut root = UniCaseMap::new();
+
+        // 嵌套对象：root -> "a" -> "b" -> "c"
+        let mut nested_c = UniCaseMap::new();
+        nested_c.insert("c".into(), SecValueType::nor_from("value_c".to_string()));
+
+        let mut nested_b = UniCaseMap::new();
+        nested_b.insert("b".into(), SecValueType::Obj(nested_c.clone()));
+        nested_b.insert("d".into(), SecValueType::nor_from(42u64));
+
+        root.insert("a".into(), SecValueType::Obj(nested_b));
+        root.insert("x".into(), SecValueType::nor_from("value_x".to_string()));
+
+        // 测试用例
+        // 1. 访问根节点直接键
+        assert_eq!(
+            root.value_get("x"),
+            Some(&SecValueType::nor_from("value_x".to_string()))
+        );
+
+        // 2. 访问单层嵌套路径 "a.b"
+        if let Some(SecValueType::Obj(map)) = root.value_get("a") {
+            assert_eq!(
+                map.value_get("b"),
+                Some(&SecValueType::from(nested_c)) // 实际应为嵌套的 `nested_c`
+            );
+        } else {
+            panic!("Expected 'a' to be an object");
+        }
+
+        // 3. 访问多层嵌套路径 "a.b.c"
+        assert_eq!(
+            root.value_get("a.b.c"),
+            Some(&SecValueType::nor_from("value_c".to_string()))
+        );
+
+        // 4. 访问路径中的非对象键（应返回 None）
+        assert_eq!(root.value_get("a.d.c"), None); // "d" 是数字，无法继续访问 "c"
+
+        // 5. 访问不存在的路径
+        assert_eq!(root.value_get("not_exists"), None);
+        assert_eq!(root.value_get("a.not_exists"), None);
+        assert_eq!(root.value_get("a.b.not_exists"), None);
     }
 
     #[test]

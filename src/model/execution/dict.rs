@@ -4,7 +4,7 @@ use derive_more::From;
 use dirs::home_dir;
 
 use crate::{
-    sec::{ObjGetter, SecValueType},
+    sec::{SecValueType, ValueGetter},
     var::VarDict,
     ExecResult,
 };
@@ -54,7 +54,7 @@ impl VarSpace {
         &mut self.global
     }
     pub fn get(&self, path: &str) -> Option<&SecValueType> {
-        self.global().maps().obj_get(path)
+        self.global().maps().value_get(path)
     }
 
     /*

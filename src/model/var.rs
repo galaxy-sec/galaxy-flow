@@ -6,7 +6,7 @@ use orion_variate::vars::{ValueDict, ValueType};
 use unicase::UniCase;
 
 use super::execution::DictUse;
-use super::sec::{NoSecConv, ObjGetter, SecFrom, SecValueType, ToUniCase};
+use super::sec::{NoSecConv, SecFrom, SecValueType, ToUniCase, ValueGetter};
 use super::traits::{Getter, Setter};
 
 #[derive(Clone, PartialEq, Eq)]
@@ -128,7 +128,7 @@ impl Getter<&UniString, SecValueType> for VarDict {
         }
     }
     fn get(&self, key: &UniString) -> Option<&SecValueType> {
-        self.maps.obj_get(key)
+        self.maps.value_get(key)
     }
 }
 impl Getter<&str, SecValueType> for VarDict {
@@ -140,7 +140,7 @@ impl Getter<&str, SecValueType> for VarDict {
         }
     }
     fn get(&self, key: &str) -> Option<&SecValueType> {
-        self.maps.obj_get(key)
+        self.maps.value_get(key)
     }
 }
 
