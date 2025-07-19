@@ -29,6 +29,9 @@ use super::gxl_cond::GxlCond;
 use super::gxl_spc::GxlSpace;
 use super::gxl_var::GxlVar;
 use std::io::Read;
+use tokio::sync::Mutex;
+
+static STDOUT_REDIRECT_MUTEX: Mutex<()> = Mutex::const_new(());
 
 #[derive(Clone, From)]
 pub enum BlockAction {
@@ -78,6 +81,8 @@ impl AsyncRunnableTrait for BlockAction {
             _ => {
                 let need_report = report_enable().await;
                 if need_report {
+                    let _lock = STDOUT_REDIRECT_MUTEX.lock().await;
+
                     let mut redirect = BufferRedirect::stdout().owe_sys()?;
                     let action_res = self.execute_action(ctx, dct).await;
 
