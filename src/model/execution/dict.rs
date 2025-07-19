@@ -74,9 +74,9 @@ pub enum DictUse {
 mod tests {
     use crate::{
         execution::{dict::sec_value_default_path, global::load_secfile},
-        sec::SecFrom,
+        sec::{SecFrom, ToUniCase},
         traits::{Getter, Setter},
-        var::VarDict,
+        var::{UniCaseMap, VarDict},
     };
 
     use orion_error::TestAssertWithMsg;
@@ -117,7 +117,6 @@ mod tests {
     }
     use super::*;
     use crate::sec::{SecString, SecValueType};
-    use std::collections::HashMap;
 
     #[test]
     fn test_get_top_level_key() {
@@ -141,16 +140,14 @@ mod tests {
         let mut var_space = VarSpace::default();
 
         // Create nested structure: user = { name: "Test", id: 42 }
-        let mut user = HashMap::new();
+        let mut user = UniCaseMap::new();
         user.insert(
-            "name".to_string(),
+            "name".to_unicase(),
             SecValueType::nor_from("Test User".to_string()),
         );
-        user.insert("id".to_string(), SecValueType::nor_from(42u64));
+        user.insert("id".to_unicase(), SecValueType::nor_from(42u64));
 
-        var_space
-            .global_mut()
-            .set("user".to_string(), SecValueType::Obj(user));
+        var_space.global_mut().set("user", SecValueType::Obj(user));
 
         // Test nested access
         let name = var_space.get("user.name");
@@ -175,18 +172,16 @@ mod tests {
         let mut var_space = VarSpace::default();
 
         // Create nested structure: app.user.profile.name
-        let mut profile = HashMap::new();
+        let mut profile = UniCaseMap::new();
         profile.insert(
-            "name".to_string(),
+            "name".to_unicase(),
             SecValueType::nor_from("Test User".to_string()),
         );
 
-        let mut user = HashMap::new();
-        user.insert("profile".to_string(), SecValueType::Obj(profile));
+        let mut user = UniCaseMap::new();
+        user.insert("profile".to_unicase(), SecValueType::Obj(profile));
 
-        var_space
-            .global_mut()
-            .set("app".to_string(), SecValueType::Obj(user));
+        var_space.global_mut().set("app", SecValueType::Obj(user));
 
         let name = var_space.get("app.profile.name");
         assert!(name.is_some());
@@ -211,15 +206,15 @@ mod tests {
         let mut var_space = VarSpace::default();
 
         // Create structure: parent = { child: "value" }
-        let mut parent = HashMap::new();
+        let mut parent = UniCaseMap::new();
         parent.insert(
-            "child".to_string(),
+            "child".to_unicase(),
             SecValueType::nor_from("value".to_string()),
         );
 
         var_space
             .global_mut()
-            .set("parent".to_string(), SecValueType::Obj(parent));
+            .set("parent", SecValueType::Obj(parent));
 
         // Try to get intermediate object
         let parent_obj = var_space.get("parent");

@@ -7,7 +7,29 @@ use std::{
 use derive_more::From;
 use orion_variate::vars::ValueType;
 use serde_derive::{Deserialize, Serialize};
+use unicase::UniCase;
 
+use super::var::{UniCaseMap, UniString};
+pub trait ToUniCase<T> {
+    fn to_unicase(self) -> UniCase<T>;
+}
+
+impl ToUniCase<String> for &str {
+    fn to_unicase(self) -> UniCase<String> {
+        UniString::from(self.to_string())
+    }
+}
+
+impl ToUniCase<String> for String {
+    fn to_unicase(self) -> UniCase<String> {
+        UniString::from(self)
+    }
+}
+impl ToUniCase<String> for &String {
+    fn to_unicase(self) -> UniCase<String> {
+        UniString::from(self.clone())
+    }
+}
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct SecValue<T> {
     is_secret: bool,
@@ -53,7 +75,7 @@ impl<T> SecConv for Vec<SecValue<T>> {
     }
 }
 
-impl<T> SecConv for HashMap<String, SecValue<T>> {
+impl<T> SecConv for UniCaseMap<SecValue<T>> {
     fn to_nor(mut self) -> Self {
         self.iter_mut().for_each(|(_, x)| x.is_secret = false);
         self
@@ -69,7 +91,7 @@ impl SecFrom<HashMap<String, ValueType>> for SecValueType {
         SecValueType::Obj(
             value
                 .into_iter()
-                .map(|(k, v)| (k, SecValueType::sec_from(v)))
+                .map(|(k, v)| (UniString::from(k), SecValueType::sec_from(v)))
                 .collect(),
         )
     }
@@ -78,7 +100,7 @@ impl SecFrom<HashMap<String, ValueType>> for SecValueType {
         SecValueType::Obj(
             value
                 .into_iter()
-                .map(|(k, v)| (k, SecValueType::nor_from(v)))
+                .map(|(k, v)| (UniString::from(k), SecValueType::nor_from(v)))
                 .collect(),
         )
     }
@@ -152,7 +174,7 @@ pub type SecBool = SecValue<bool>;
 pub type SecIpAddr = SecValue<IpAddr>;
 pub type SecU64 = SecValue<u64>;
 pub type SecF64 = SecValue<f64>;
-pub type SecValueObj = HashMap<String, SecValueType>;
+pub type SecValueObj = UniCaseMap<SecValueType>;
 pub type SecValueVec = Vec<SecValueType>;
 
 impl Display for SecValueType {
@@ -228,7 +250,7 @@ impl SecConv for Vec<SecValueType> {
     }
 }
 
-impl SecConv for HashMap<String, SecValueType> {
+impl SecConv for UniCaseMap<SecValueType> {
     fn to_nor(self) -> Self {
         self.into_iter().map(|(k, x)| (k, x.to_nor())).collect()
     }
@@ -258,9 +280,11 @@ impl NoSecConv<Vec<ValueType>> for Vec<SecValueType> {
     }
 }
 
-impl NoSecConv<HashMap<String, ValueType>> for HashMap<String, SecValueType> {
+impl NoSecConv<HashMap<String, ValueType>> for UniCaseMap<SecValueType> {
     fn no_sec(self) -> HashMap<String, ValueType> {
-        self.into_iter().map(|(k, x)| (k, x.no_sec())).collect()
+        self.into_iter()
+            .map(|(k, x)| (k.to_uppercase(), x.no_sec()))
+            .collect()
     }
 }
 pub trait ObjGetter<T> {
@@ -275,7 +299,7 @@ impl ObjGetter<SecValueType> for SecValueObj {
 
         let mut current_map = self;
         for (i, key) in keys.iter().enumerate() {
-            if let Some(value) = current_map.get(*key) {
+            if let Some(value) = current_map.get(&UniString::from(key.to_string())) {
                 if i == keys.len() - 1 {
                     return Some(value);
                 } else if let SecValueType::Obj(next_map) = value {
@@ -294,6 +318,7 @@ impl ObjGetter<SecValueType> for SecValueObj {
 
 #[cfg(test)]
 mod tests {
+
     use super::*;
     use std::net::IpAddr;
     use std::str::FromStr;
@@ -330,7 +355,7 @@ mod tests {
 
         let secret_obj = SecValueType::sec_from(obj.clone());
         if let SecValueType::Obj(map) = secret_obj {
-            assert!(map["key"].is_secret());
+            assert!(map[&"key".to_unicase()].is_secret());
         } else {
             panic!("Expected Obj variant");
         }
@@ -369,12 +394,12 @@ mod tests {
         assert_eq!(normal_str, ValueType::String("secret".to_string()));
 
         // Test nested conversion
-        let mut obj = HashMap::new();
-        obj.insert("nested".to_string(), SecValueType::nor_from(100u64));
+        let mut obj = UniCaseMap::new();
+        obj.insert("nested".into(), SecValueType::nor_from(100u64));
         let sec_obj = SecValueType::Obj(obj);
 
         if let ValueType::Obj(normal_obj) = sec_obj.no_sec() {
-            assert_eq!(normal_obj["nested"], ValueType::Number(100));
+            assert_eq!(normal_obj["NESTED"], ValueType::Number(100));
         }
     }
 

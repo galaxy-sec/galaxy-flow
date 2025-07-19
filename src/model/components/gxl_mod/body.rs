@@ -328,7 +328,7 @@ mod test {
         context::ExecContext,
         execution::sequence::ExecSequence,
         infra::{init_env, once_init_log},
-        sec::{SecFrom, SecValueType},
+        sec::{SecFrom, SecValueType, ToUniCase},
         traits::{DependTrait, ExecLoadTrait},
         types::AnyResult,
     };
@@ -471,11 +471,11 @@ mod test {
 
         println!("{:?}", vars.global().maps());
         assert_eq!(
-            vars.global().maps().get(&"ENV_KEY1".to_string()),
+            vars.global().maps().get(&"ENV_KEY1".to_unicase()),
             Some(&SecValueType::nor_from("value1".to_string()))
         );
         assert_eq!(
-            vars.global().maps().get(&"ENV_KEY3".to_string()),
+            vars.global().maps().get(&"ENV_KEY3".to_unicase()),
             Some(&SecValueType::nor_from("value1".to_string()))
         );
         Ok(())

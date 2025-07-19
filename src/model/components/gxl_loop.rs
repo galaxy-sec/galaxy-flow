@@ -74,7 +74,7 @@ mod tests {
         ability::GxEcho,
         components::gxl_block::BlockAction,
         model::components::gxl_block::BlockNode,
-        sec::{SecFrom, SecValueObj},
+        sec::{SecFrom, SecValueObj, ToUniCase},
         traits::Getter,
     };
     use orion_error::TestAssertWithMsg;
@@ -99,11 +99,11 @@ mod tests {
         let obj1 = {
             let mut n = SecValueObj::default();
             n.insert(
-                "key1".to_string(),
+                "key1".to_unicase(),
                 SecValueType::nor_from("value1".to_string()),
             );
             n.insert(
-                "key2".to_string(),
+                "key2".to_unicase(),
                 SecValueType::nor_from("value2".to_string()),
             );
             n
@@ -111,11 +111,11 @@ mod tests {
         let obj2 = {
             let mut n = SecValueObj::default();
             n.insert(
-                "key1".to_string(),
+                "key1".to_unicase(),
                 SecValueType::nor_from("value3".to_string()),
             );
             n.insert(
-                "key2".to_string(),
+                "key2".to_unicase(),
                 SecValueType::nor_from("value4".to_string()),
             );
             n
@@ -123,8 +123,8 @@ mod tests {
         // 准备测试数据
         let named_dict = {
             let mut n = SecValueObj::default();
-            n.insert("key1".to_string(), SecValueType::from(obj1));
-            n.insert("key2".to_string(), SecValueType::from(obj2));
+            n.insert("key1".to_unicase(), SecValueType::from(obj1));
+            n.insert("key2".to_unicase(), SecValueType::from(obj2));
             n
         };
 
@@ -133,7 +133,7 @@ mod tests {
 
         // 创建一个空的 BlockNode 作为循环体
         let mut body = BlockNode::new();
-        body.append(BlockAction::from(GxEcho::new("loop: ${current.key1}")));
+        body.append(BlockAction::from(GxEcho::new("loop: ${CURRENT.KEY1}")));
         let loop_node = GxlLoop::new("current".to_string(), "test_dict".to_string(), body);
 
         // 执行测试
@@ -201,7 +201,7 @@ mod tests {
         let named_dict = {
             let mut n = SecValueObj::default();
             n.insert(
-                "key1".to_string(),
+                "key1".to_unicase(),
                 SecValueType::nor_from("value1".to_string()),
             );
             n

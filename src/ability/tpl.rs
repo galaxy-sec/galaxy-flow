@@ -321,7 +321,7 @@ mod tests {
     #[test]
     fn handlebar_test() {
         let mut handlebars = Handlebars::new();
-        let source = "hello {{world}} {{PRJ_HOME}}!";
+        let source = "hello {{WORLD}} {{PRJ_HOME}}!";
         assert!(handlebars.register_template_string("t1", source).is_ok());
         let mut def = VarSpace::default();
         def.global_mut().set("world", "世界!".to_string());
@@ -331,9 +331,9 @@ mod tests {
 
         let data = r#"
         {
-            "world": "John",
+            "WORLD": "John",
             "PRJ_HOME": "home/bj",
-            "age": 43
+            "AGE": 43
         }"#;
         let v: serde_json::Value = serde_json::from_str(data).unwrap();
         assert_eq!(handlebars.render("t1", &v).unwrap(), "hello John home/bj!");
