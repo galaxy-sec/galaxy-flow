@@ -41,7 +41,6 @@ impl VarSpace {
             let mut ins = Self {
                 inherited: origin.inherited.clone(),
                 global: origin.inherited,
-                ..Default::default()
             };
             setup_gxlrun_vars(&mut ins.inherited)?;
             Ok(ins)

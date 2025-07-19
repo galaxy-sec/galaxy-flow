@@ -85,21 +85,11 @@ impl SecFrom<HashMap<String, ValueType>> for SecValueType {
 }
 impl SecFrom<Vec<ValueType>> for SecValueType {
     fn sec_from(value: Vec<ValueType>) -> Self {
-        SecValueType::List(
-            value
-                .into_iter()
-                .map(|v| SecValueType::sec_from(v))
-                .collect(),
-        )
+        SecValueType::List(value.into_iter().map(SecValueType::sec_from).collect())
     }
 
     fn nor_from(value: Vec<ValueType>) -> Self {
-        SecValueType::List(
-            value
-                .into_iter()
-                .map(|v| SecValueType::nor_from(v))
-                .collect(),
-        )
+        SecValueType::List(value.into_iter().map(SecValueType::nor_from).collect())
     }
 }
 impl SecFrom<ValueType> for SecValueType {
@@ -311,10 +301,10 @@ mod tests {
     #[test]
     fn test_sec_value_display() {
         let secret_str = SecString::sec_from("password".to_string());
-        assert_eq!(format!("{}", secret_str), "***");
+        assert_eq!(format!("{secret_str}"), "***");
 
         let public_str = SecString::nor_from("username".to_string());
-        assert_eq!(format!("{}", public_str), "username");
+        assert_eq!(format!("{public_str}"), "username");
     }
 
     #[test]

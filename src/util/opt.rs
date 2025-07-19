@@ -4,7 +4,7 @@ pub trait OptionFrom<T> {
     fn to_opt(self) -> Option<T>;
 }
 
-impl<'a> OptionFrom<String> for &'a str {
+impl OptionFrom<String> for &str {
     fn to_opt(self) -> Option<String> {
         Some(self.to_string())
     }

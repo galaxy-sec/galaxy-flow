@@ -52,9 +52,9 @@ impl GxShell {
         if let Some(arg_file) = &self.arg_file {
             let dict = if arg_file.extension() == PathBuf::from("data.json").extension() {
                 ValueDict::from_json(arg_file).owe_data()?
-            } else if arg_file.extension() == PathBuf::from("data.yml").extension() {
-                ValueDict::from_yml(arg_file).owe_data()?
-            } else if arg_file.extension() == PathBuf::from("data.yaml").extension() {
+            } else if arg_file.extension() == PathBuf::from("data.yml").extension()
+                || arg_file.extension() == PathBuf::from("data.yaml").extension()
+            {
                 ValueDict::from_yml(arg_file).owe_data()?
             } else if arg_file.extension() == PathBuf::from("data.toml").extension() {
                 ValueDict::from_toml(arg_file).owe_data()?
