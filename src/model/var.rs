@@ -121,7 +121,7 @@ impl From<HashMap<String, String>> for VarDict {
 }
 impl Getter<&UniString, SecValueType> for VarDict {
     fn must_get(&self, key: &UniString) -> &SecValueType {
-        if let Some(val) = self.maps.get(&UniCase::from(key.clone())) {
+        if let Some(val) = self.maps.get(key) {
             val
         } else {
             panic!("un get key {key}",);

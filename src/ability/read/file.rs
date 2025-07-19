@@ -1,33 +1,12 @@
-use std::{path::PathBuf, str::FromStr};
+use std::path::PathBuf;
 
 use crate::sec::SecFrom;
 use crate::traits::Setter;
 use crate::{ability::prelude::*, sec::SecValueType};
 
-use derive_more::{Display, From};
 use orion_common::serde::{IniAble, JsonAble, Yamlable};
 use orion_error::{ToStructError, UvsLogicFrom};
 use orion_variate::vars::ValueType;
-
-#[derive(Clone, Debug, PartialEq, From, Display)]
-//#[display("Java EE: {}")]
-pub enum ReadEntity {
-    #[display("mod_list")]
-    MList,
-    #[display("var_dict")]
-    VDict,
-}
-impl FromStr for ReadEntity {
-    type Err = String;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
-            "mod_list" => Ok(Self::MList),
-            "var_dict" => Ok(Self::VDict),
-            _ => Err(String::from(s)),
-        }
-    }
-}
 
 #[derive(Clone, Debug, PartialEq, Default, Builder)]
 pub struct FileDTO {
@@ -46,13 +25,10 @@ impl FileDTO {
         let file_path = PathBuf::from(exp.eval(&file)?);
         let values = if file_path.extension() == PathBuf::from("*.ini").extension() {
             ValueType::from_ini(&file_path).owe_data()?
-            //self.impl_ini(ctx, &file_path)?
         } else if file_path.extension() == PathBuf::from("*.json").extension() {
             ValueType::from_json(&file_path).owe_data()?
-            //self.impl_json(ctx, &file_path)?
         } else if file_path.extension() == PathBuf::from("*.yml").extension() {
             ValueType::from_yml(&file_path).owe_data()?
-            //self.impl_entity(ctx, &file_path)?
         } else {
             return ExecReason::Args(format!("not support format :{}", file_path.display()))
                 .err_result();
@@ -98,6 +74,43 @@ mod tests {
             ..Default::default()
         };
         let res = GxRead::from(ReadMode::from(dto));
-        res.async_exec(context, def).await.unwrap();
+        let TaskValue { vars, .. } = res.async_exec(context, def).await.unwrap();
+        assert_eq!(
+            vars.get("RUST"),
+            Some(&SecValueType::nor_from("100".to_string()))
+        );
+        assert_eq!(
+            vars.get("JAVA"),
+            Some(&SecValueType::nor_from("90".to_string()))
+        );
+    }
+    #[tokio::test]
+    async fn read_json_test() {
+        let (context, mut def) = ability_env_init();
+        def.global_mut()
+            .set("CONF_ROOT", "${GXL_PRJ_ROOT}/examples/read");
+        let dto = FileDTO {
+            file: String::from("${CONF_ROOT}/var.json"),
+            ..Default::default()
+        };
+        let res = GxRead::from(ReadMode::from(dto));
+        let TaskValue { vars, .. } = res.async_exec(context, def).await.unwrap();
+        assert_eq!(vars.get("RUST"), Some(&SecValueType::nor_from(100)));
+        assert_eq!(vars.get("JAVA"), Some(&SecValueType::nor_from(90)));
+    }
+
+    #[tokio::test]
+    async fn read_yaml_test() {
+        let (context, mut def) = ability_env_init();
+        def.global_mut()
+            .set("CONF_ROOT", "${GXL_PRJ_ROOT}/examples/read");
+        let dto = FileDTO {
+            file: String::from("${CONF_ROOT}/var.yml"),
+            ..Default::default()
+        };
+        let res = GxRead::from(ReadMode::from(dto));
+        let TaskValue { vars, .. } = res.async_exec(context, def).await.unwrap();
+        assert_eq!(vars.get("MEMBER.RUST"), Some(&SecValueType::nor_from(100)));
+        assert_eq!(vars.get("MEMBER.JAVA"), Some(&SecValueType::nor_from(90)));
     }
 }
