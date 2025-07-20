@@ -34,7 +34,7 @@ mod base{
   }
 }
 mod other {
-  flow def{
+  flow def1 {
     other_val = "OTHER_DEF";
   }
   flow def2{
@@ -45,7 +45,7 @@ mod main   {
   conf = "${ENV_ROOT}/conf" ;
 
   #[auto_load(entry)]
-  flow __into  | other.def  {
+  flow __into  | other.def1  {
     other_val = "OTHER_DE1";
   }
   #[auto_load(exit)]

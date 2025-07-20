@@ -1,6 +1,6 @@
 use crate::components::gxl_spc::GxlSpace;
 use crate::execution::VarSpace;
-use crate::parser::comment::ignore_comment;
+use crate::parser::abilities::ignore_comment;
 use crate::parser::externs::ExternParser;
 use crate::parser::stc_spc::gal_stc_spc;
 use crate::parser::stc_spc::WinnowErrorEx;

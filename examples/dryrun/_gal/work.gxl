@@ -6,13 +6,13 @@ flow _step1 {
     gx.echo ("step1");
 }
 
-#[dryrun(_dryrun_step)]
+#[dryrun(_step3)]
 flow _step2 {
     gx.echo ("step2");
     gx.assert ( value : "true" , expect : "false" );
 }
 
-flow _dryrun_step {
+flow _step3 {
     gx.echo ("dryrun setp2");
 }
 
