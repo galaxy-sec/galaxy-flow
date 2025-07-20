@@ -21,6 +21,16 @@ impl New2<String, GxlValue> for GxlVar {
         }
     }
 }
+impl New2<&str, GxlValue> for GxlVar {
+    fn new(key: &str, val: GxlValue) -> Self {
+        //key.make_ascii_uppercase();
+        Self {
+            key: key.into(),
+            meta: String::from("str"),
+            val,
+        }
+    }
+}
 impl New2<String, String> for GxlVar {
     fn new(key: String, val: String) -> Self {
         //key.make_ascii_uppercase();

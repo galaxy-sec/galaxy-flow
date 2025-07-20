@@ -57,12 +57,14 @@ mod main   {
     one= "one";
     sys_a = { mod1 : "A", mod2 : "B" };
     sys_b =  [ "C", "D" ];
-    sys_c = ${sys_b} ;
+    sys_c = ${SYS_B[1]} ;
+    sys_d = ${SYS_A.MOD1} ;
     gx.assert ( value : "${MAIN_CONF}" , expect : "${ENV_ROOT}/conf" );
     gx.assert ( value : "${OTHER_VAL}" , expect : "OTHER_DEF" );
     gx.assert ( value : "${SYS_A.MOD1}" , expect : "A" );
     gx.assert ( value : "${sys_a.mod1}" , expect : "A" );
-    //gx.assert ( value : "${sys_b[0]}" , expect : "C" );
+    gx.assert ( value : "${sys_b[0]}" , expect : "C" );
+    gx.assert ( value : "${sys_d}" , expect : "A" );
   }
 
   flow base.define | @assert_parent   {

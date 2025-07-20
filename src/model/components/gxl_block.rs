@@ -211,7 +211,12 @@ mod tests {
 
     //test RgBlock append
     use super::*;
-    use crate::model::components::gxl_block::BlockNode;
+    use crate::{
+        model::components::gxl_block::BlockNode,
+        sec::{NoSecConv, SecFrom, ToUniCase},
+        traits::Getter,
+        var::VarDict,
+    };
     #[test]
     fn test_append() {
         let mut block = BlockNode::new();
@@ -229,5 +234,83 @@ mod tests {
         let def = VarSpace::default();
         let res = block.async_exec(ctx, def).await;
         assert!(res.is_ok());
+    }
+
+    #[test]
+    fn test_props_export_with_complex_data() {
+        use crate::{
+            primitive::GxlValue,
+            sec::{SecValueObj, SecValueType, SecValueVec},
+        };
+        use orion_variate::vars::ValueType;
+
+        // 创建测试数据
+        let mut sys_a = SecValueObj::new();
+        sys_a.insert("mod1".to_unicase(), SecValueType::nor_from("A".to_string()));
+        sys_a.insert("mod2".to_unicase(), SecValueType::nor_from("B".to_string()));
+
+        let sys_b = SecValueVec::from(vec![
+            SecValueType::nor_from("C".to_string()),
+            SecValueType::nor_from("D".to_string()),
+        ]);
+
+        // 创建 BlockNode 的 props
+        let mut block = BlockNode::new();
+        block.append(GxlVar::new(
+            "sys_a",
+            GxlValue::from(SecValueType::Obj(sys_a)),
+        ));
+        block.append(GxlVar::new(
+            "sys_b",
+            GxlValue::Value(SecValueType::List(sys_b)),
+        ));
+        block.append(GxlVar::new(
+            "sys_c",
+            GxlValue::VarRef("SYS_B[1]".to_string()),
+        ));
+        block.append(GxlVar::new(
+            "sys_d",
+            GxlValue::VarRef("SYS_A.MOD1".to_string()),
+        ));
+
+        // 创建执行上下文
+        let ctx = ExecContext::new(Some(false), false);
+        let mut var_dict = VarDict::default();
+
+        // 导出 props
+        block
+            .export_props(ctx, &mut var_dict, "")
+            .expect("Export props failed");
+
+        // 验证导出的变量
+        assert_eq!(
+            var_dict.get("SYS_A").unwrap().clone().no_sec(),
+            ValueType::Obj(
+                vec![
+                    ("MOD1".to_string(), ValueType::String("A".to_string())),
+                    ("MOD2".to_string(), ValueType::String("B".to_string()))
+                ]
+                .into_iter()
+                .collect()
+            )
+        );
+
+        assert_eq!(
+            var_dict.get("SYS_B").unwrap().clone().no_sec(),
+            ValueType::from(vec![
+                ValueType::String("C".to_string()),
+                ValueType::String("D".to_string())
+            ])
+        );
+
+        assert_eq!(
+            var_dict.get("SYS_C").unwrap().clone().no_sec(),
+            ValueType::String("D".to_string())
+        );
+
+        assert_eq!(
+            var_dict.get("SYS_D").unwrap().clone().no_sec(),
+            ValueType::String("A".to_string())
+        );
     }
 }

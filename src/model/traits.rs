@@ -50,9 +50,11 @@ pub trait PropsTrait {
                 crate::primitive::GxlValue::VarRef(x) => {
                     if let Some(val) = dict.get(x.as_str()).cloned() {
                         dict.set(key.clone(), val.clone());
-                        exp.insert_from(key, val);
+                        exp.insert_from(key.clone(), val.clone());
+                        info!(target: ctx.path(),"{:10} = {}",key,val);
+                    } else {
+                        return ExecError::from_logic(format!("nor var ref {x}")).err();
                     }
-                    return ExecError::from_logic(format!("nor var ref {x}")).err();
                 }
                 crate::primitive::GxlValue::Value(x) => {
                     match x {
@@ -62,6 +64,7 @@ pub trait PropsTrait {
                             dict.set(&key, val.clone());
                         }
                         _ => {
+                            info!(target: ctx.path(),"{:10} = {}",key,x);
                             dict.set(&key, x.clone());
                         }
                     }

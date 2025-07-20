@@ -351,9 +351,15 @@ mod tests {
     }
 
     #[test]
-    fn valid_variable() {
+    fn valid_variable1() {
         let mut input = "${name}";
         assert_eq!(take_env_var(&mut input), Ok("name".to_string()));
+        assert_eq!(input, "");
+    }
+    #[test]
+    fn valid_variable2() {
+        let mut input = "${name[0]}";
+        assert_eq!(take_env_var(&mut input), Ok("name[0]".to_string()));
         assert_eq!(input, "");
     }
 
