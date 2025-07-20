@@ -26,7 +26,10 @@ impl Default for EnvExpress {
 
 impl EnvExpress {
     pub fn new(data: VarDict) -> EnvExpress {
-        let regex = Regex::new(r"(\$\{([[:alnum:]_\.]+)\})").expect(" EnvExpress Regex new fail!");
+        let regex =
+            //Regex::new(r"(\$\{([[:alnum:]_\.]+)\})").expect(" EnvExpress Regex new fail!");
+        Regex::new(r"(\$\{([[:alnum:]_\.]+(?:\[[^\]]*\])?)\})").expect("EnvExpress Regex new fail!");
+
         EnvExpress { regex, data }
     }
     #[allow(dead_code)]
@@ -146,6 +149,31 @@ mod tests {
         let newc = re.replace_all("{HOME}/bin", &fun);
         assert_eq!("{HOME}/bin", newc);
     }
+    #[test]
+    pub fn test_array_support() {
+        use crate::sec::SecValueType;
+
+        // 准备测试数据：包含数组的变量
+        let mut data = VarDict::default();
+        data.set(
+            "SYS",
+            SecValueType::List(vec![
+                SecValueType::nor_from("Linux".to_string()),
+                SecValueType::nor_from("Windows".to_string()),
+            ]),
+        );
+
+        let ex = EnvExpress::new(data);
+
+        // 测试解析数组元素
+        assert_eq!(ex.eval("OS: ${SYS[0]}").unwrap(), "OS: Linux");
+        assert_eq!(ex.eval("OS: ${SYS[1]}").unwrap(), "OS: Windows");
+
+        // 测试无效索引
+        assert!(ex.eval("OS: ${SYS[2]}").is_err()); // 越界
+        assert!(ex.eval("OS: ${SYS[abc]}").is_err()); // 非数字索引
+    }
+
     #[test]
     pub fn eval_test() {
         let data = str_map!(

@@ -1,3 +1,4 @@
+use derive_more::From;
 use getset::MutGetters;
 
 use super::sec::{SecFrom, SecValueType};
@@ -15,7 +16,7 @@ impl GxlArg {
         }
     }
 }
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, From)]
 pub enum GxlValue {
     VarRef(String),
     Value(SecValueType),

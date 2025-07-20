@@ -312,6 +312,9 @@ impl ValueGetter<SecValueType> for SecValueObj {
                 let value = current_map.get(&UniString::from(key.to_string()))?;
                 match value {
                     SecValueType::List(list) => {
+                        if index >= list.len() {
+                            return None;
+                        }
                         current_value = list.get(index);
                     }
                     _ => return None,

@@ -120,8 +120,7 @@ pub fn take_value_map(data: &mut &str) -> Result<SecValueObj> {
 pub fn gal_take_gxl_value(data: &mut &str) -> Result<GxlValue> {
     alt((
         take_env_var.map(GxlValue::VarRef),
-        take_string.map(GxlValue::from_val),
-        gal_raw_string.map(GxlValue::from_val),
+        gal_take_full_sec_value.map(GxlValue::from),
     ))
     .parse_next(data)
 }
