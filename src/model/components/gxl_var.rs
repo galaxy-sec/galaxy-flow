@@ -27,7 +27,7 @@ impl New2<String, String> for GxlVar {
         Self {
             key,
             meta: String::from("str"),
-            val: GxlValue::Value(val),
+            val: GxlValue::from_val(val),
         }
     }
 }

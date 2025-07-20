@@ -55,10 +55,17 @@ pub trait PropsTrait {
                     return ExecError::from_logic(format!("nor var ref {x}")).err();
                 }
                 crate::primitive::GxlValue::Value(x) => {
-                    let val = exp.eval(x)?;
-                    info!(target: ctx.path(),"{:10} = {}",key,val.cut_str(20));
-                    dict.set(&key, val.clone());
-                    exp.insert_nor(key, val);
+                    match x {
+                        crate::sec::SecValueType::String(v) => {
+                            let val = exp.eval(v.value())?;
+                            info!(target: ctx.path(),"{:10} = {}",key,val.cut_str(20));
+                            dict.set(&key, val.clone());
+                        }
+                        _ => {
+                            dict.set(&key, x.clone());
+                        }
+                    }
+                    exp.insert_from(key, x.clone());
                 }
             }
             //let val = exp.eval(prop.val())?;

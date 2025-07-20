@@ -45,6 +45,8 @@ mod tests {
     fn flow_test0() {
         let mut data = r#"
     flow start {
+         A = "this is A";
+         B = ${A} ;
          gx.echo ( value  : "${PRJ_ROOT}/test/main.py"  );
     };"#;
         let flow = run_gxl(gal_stc_flow, &mut data).assert();

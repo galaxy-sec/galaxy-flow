@@ -1,6 +1,6 @@
 use crate::symbol::{symbol_colon, wn_desc};
-use winnow::ascii::{multispace0, multispace1, newline, take_escaped, till_line_ending};
-use winnow::combinator::{delimited, repeat};
+use winnow::ascii::{digit1, multispace0, multispace1, newline, take_escaped, till_line_ending};
+use winnow::combinator::{alt, delimited, fail, repeat};
 use winnow::error::{ContextError, ErrMode, StrContext, StrContextValue};
 use winnow::token::{literal, one_of, take_till, take_until, take_while};
 use winnow::{Parser, Result};
@@ -134,7 +134,6 @@ pub fn take_parentheses_scope(data: &mut &str) -> Result<(String, String)> {
 }
 
 //take string
-//eg:  "hello", "a/b/c", "\""
 pub fn take_string(data: &mut &str) -> Result<String> {
     // 使用 take_escaped 解析转义字符
     let string_parser = take_escaped(
@@ -143,14 +142,49 @@ pub fn take_string(data: &mut &str) -> Result<String> {
         one_of(['"', 'n', '\\']),                         // 可转义的字符（包括 /）
     );
 
-    // 使用 delimited 解析双引号包围的字符串，并将结果转换为 String
-    //preceded(
     delimited(
         '"',
         string_parser.map(String::from), // 将 &str 转换为 String
         '"',
     )
     .context(StrContext::Label("string"))
+    .parse_next(data)
+}
+
+pub fn take_number(data: &mut &str) -> Result<u64> {
+    // 使用 take_escaped 解析转义字符
+    let digit = digit1
+        .context(StrContext::Label("number"))
+        .parse_next(data)?;
+    if let Ok(x) = digit.parse::<u64>() {
+        return Ok(x);
+    }
+    fail.context(wn_desc("number")).parse_next(data)
+}
+pub fn take_float(data: &mut &str) -> Result<f64> {
+    // 使用 take_escaped 解析转义字符
+    let integer_part = digit1
+        .context(StrContext::Label("float"))
+        .parse_next(data)?;
+    literal(".").parse_next(data)?;
+    let fractional_part = digit1
+        .context(StrContext::Label("float"))
+        .parse_next(data)?;
+    // 组合整数和小数部分
+    let float_str = format!("{}.{}", integer_part, fractional_part);
+    if let Ok(x) = float_str.parse::<f64>() {
+        return Ok(x);
+    }
+    fail.context(wn_desc("float")).parse_next(data)
+}
+
+pub fn take_bool(data: &mut &str) -> Result<bool> {
+    alt((
+        literal("true").map(|_| true),
+        literal("TRUE").map(|_| true),
+        literal("false").map(|_| false),
+        literal("FALSE").map(|_| false),
+    ))
     .parse_next(data)
 }
 
@@ -225,7 +259,7 @@ pub fn peek_line(input: &str) -> String {
 #[cfg(test)]
 mod tests {
     use crate::atom::{
-        gal_raw_string, skip_spaces_block, take_env_var, take_string, take_var_name,
+        gal_raw_string, skip_spaces_block, take_env_var, take_float, take_string, take_var_name,
     };
     use winnow::{Parser, Result};
 
@@ -434,6 +468,35 @@ mod tests {
         let mut input = "  \n  some text\n  more text  \n";
         skip_spaces_block(&mut input)?;
         assert_eq!(input, "some text\n  more text  \n");
+        Ok(())
+    }
+    #[test]
+    fn test_take_float() -> Result<()> {
+        // 测试普通浮点数
+        let mut input = "3.14";
+        assert_eq!(take_float(&mut input)?, 3.14);
+        assert_eq!(input, ""); // 输入被完全消耗
+
+        // 测试整数部分为 0
+        let mut input = "0.5";
+        assert_eq!(take_float(&mut input)?, 0.5);
+
+        // 测试小数部分为 0
+        let mut input = "42.0";
+        assert_eq!(take_float(&mut input)?, 42.0);
+
+        // 测试缺少小数部分（无效格式）
+        let mut input = "3.";
+        assert!(take_float(&mut input).is_err());
+
+        // 测试缺少小数点（无效格式）
+        let mut input = "314";
+        assert!(take_float(&mut input).is_err());
+
+        // 测试非数字字符（无效格式）
+        let mut input = "a.b";
+        assert!(take_float(&mut input).is_err());
+
         Ok(())
     }
 }

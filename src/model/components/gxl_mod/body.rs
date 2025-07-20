@@ -385,7 +385,7 @@ mod test {
                 .any(|(_, x)| x.key() == &"k3".to_string()));
             assert_eq!(
                 target.props.get("k2").map(|x| x.val()),
-                Some(&GxlValue::Value("v2".to_string()))
+                Some(&GxlValue::from_val("v2".to_string()))
             );
         }
     }

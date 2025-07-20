@@ -1,5 +1,7 @@
 use getset::MutGetters;
 
+use super::sec::{SecFrom, SecValueType};
+
 #[derive(Clone, MutGetters, Getters)]
 pub struct GxlArg {
     name: String,
@@ -13,15 +15,15 @@ impl GxlArg {
         }
     }
 }
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum GxlValue {
     VarRef(String),
-    Value(String),
+    Value(SecValueType),
 }
 
 impl GxlValue {
     pub fn from_val<S: Into<String>>(val: S) -> Self {
-        Self::Value(val.into())
+        Self::Value(SecValueType::nor_from(val.into()))
     }
     pub fn from_ref<S: Into<String>>(val: S) -> Self {
         Self::VarRef(val.into())

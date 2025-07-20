@@ -4,6 +4,7 @@ use winnow::{combinator::fail, Parser, Result};
 use crate::{
     components::gxl_act::activity::{Activity, ActivityDTO},
     primitive::GxlValue,
+    sec::SecValueType,
     types::*,
 };
 
@@ -21,7 +22,8 @@ pub fn gal_activity(input: &mut &str) -> Result<Activity> {
     };
     for one in props {
         let key = one.0.to_lowercase();
-        if let GxlValue::Value(p_v) = one.1 {
+        if let GxlValue::Value(SecValueType::String(s_v)) = one.1 {
+            let p_v = s_v.value().clone();
             if one.0 == "log" {
                 dto.expect.log_lev = Some(parse_log((one.0.as_str(), p_v.as_str())));
                 continue;
@@ -54,7 +56,7 @@ pub fn gal_activity(input: &mut &str) -> Result<Activity> {
             }
         } else {
             return fail
-                .context(wn_desc("<activity>(not use ref)"))
+                .context(wn_desc("<activity>(Prop Not String Value)"))
                 .parse_next(input);
         }
     }
