@@ -1,14 +1,10 @@
 extern crate galaxy_flow;
 
-use galaxy_flow::err::RunResult;
 use galaxy_flow::execution::VarSpace;
-use galaxy_flow::expect::ShellOption;
 use galaxy_flow::infra::once_init_log;
 use galaxy_flow::types::AnyResult;
-use galaxy_flow::util::ModRepo;
 use galaxy_flow::GxLoader;
-use orion_error::{ErrorConv, TestAssert};
-use std::fs::remove_dir_all;
+use orion_error::TestAssert;
 
 #[tokio::test]
 async fn conf_base_test() -> AnyResult<()> {
@@ -53,27 +49,4 @@ async fn conf_web_test() {
     )
     .await
     .unwrap();
-}
-
-#[ignore]
-#[tokio::test]
-async fn prj_init_test() -> RunResult<()> {
-    once_init_log();
-    let vars = VarSpace::sys_init().assert();
-    let sh_opt = ShellOption {
-        quiet: true,
-        ..Default::default()
-    };
-    let mut gx = GxLoader::new();
-    let repo =
-        ModRepo::new("https://galaxy-sec.org/free/loader/rg-tpl.git", "stable").err_conv()?;
-    let gxl_root = "./tmp/test";
-    if std::path::Path::new(gxl_root).exists() {
-        remove_dir_all(gxl_root).expect(gxl_root);
-    }
-    gx.init(repo, gxl_root, true, "open_pages", sh_opt.clone())?;
-    let rg_conf = format!("{gxl_root}/_rg/work.gxl",);
-    gx.parse_file(rg_conf.as_str(), false, &vars).await?;
-
-    Ok(())
 }

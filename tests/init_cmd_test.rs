@@ -1,32 +1,25 @@
 extern crate galaxy_flow;
 extern crate shells;
 
-use galaxy_flow::expect::ShellOption;
+use std::path::PathBuf;
+
 use galaxy_flow::infra::once_init_log;
-use galaxy_flow::util::ModRepo;
+use galaxy_flow::util::path::WorkDir;
 use galaxy_flow::GxLoader;
+use orion_error::TestAssertWithMsg;
+use orion_infra::path::ensure_path;
+use orion_variate::addr::GitAddr;
 
 // use shells;
 #[ignore]
-#[test]
-fn rg_test() {
+#[tokio::test]
+async fn init_test() {
     once_init_log();
     let loader = GxLoader::new();
-    let expect = ShellOption {
-        quiet: false,
-        ..Default::default()
-    };
-    let cmd = "rm -rf ./tmp/".to_string();
-    let (_code, _stdout, _stderr) = shells::execute_with("bash", &cmd);
-    let repo = ModRepo::new("https://galaxy-sec.org/free/galaxy/rg-tpl.git", "develop").unwrap();
-    loader
-        .init(repo, "./tmp/", true, "simple", expect.clone())
-        .unwrap();
 
-    let cmd = "rm -rf ./tmp/".to_string();
-    let (_code, _stdout, _stderr) = shells::execute_with("bash", &cmd);
-    let repo = ModRepo::new("https://galaxy-sec.org/free/galaxy/rg-tpl.git", "beta").unwrap();
-    loader
-        .init(repo, "./tmp/", true, "simple", expect.clone())
-        .unwrap();
+    let path = PathBuf::from("./tests/temp/init");
+    ensure_path(&path).assert("path");
+    let _work_path = WorkDir::change(&path);
+    let addr = GitAddr::from("https://github.com/galaxy-sec/gal-init.git").with_branch("main");
+    loader.init(addr, "example").await.assert("init");
 }

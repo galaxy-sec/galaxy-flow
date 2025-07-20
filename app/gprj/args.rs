@@ -10,6 +10,8 @@ use galaxy_flow::runner::GxlCmd;
 pub enum GxAdmCmd {
     #[command(subcommand)]
     Init(InitCmd),
+    #[command(subcommand)]
+    Update(UpdateCmd),
     Adm(GxlCmd),
     #[command(subcommand)]
     Conf(ConfCmd),
@@ -20,7 +22,10 @@ pub enum GxAdmCmd {
 pub enum InitCmd {
     Local,
     Remote(InitArgs),
-    Update(PrjArgs),
+}
+#[derive(Debug, Subcommand)]
+pub enum UpdateCmd {
+    Mod(PrjArgs),
 }
 
 #[derive(Debug, Subcommand)]
@@ -53,8 +58,11 @@ pub struct InitArgs {
     #[arg(short, long, default_value = "simple")]
     pub(crate) tpl: String,
     /// branch or tag for rg-tpl repo. eg: --tag  alpha|develop|beta|release/1.0
-    #[arg(short, long, default_value = "stable")]
-    pub(crate) channel: String,
+    #[arg(short, long)]
+    pub(crate) branch: Option<String>,
+
+    #[arg(short, long)]
+    pub(crate) tag: Option<String>,
     /// debug level ; eg: -d 1
     #[arg(short = 'd', long = "debug", default_value = "0")]
     pub(crate) debug: usize,

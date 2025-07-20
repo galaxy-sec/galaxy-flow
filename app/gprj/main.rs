@@ -13,19 +13,20 @@ use std::path::PathBuf;
 use crate::args::GxAdmCmd;
 use crate::args::InitCmd;
 use args::ConfCmd;
+use args::UpdateCmd;
 use clap::Parser;
 use galaxy_flow::conf::conf_init;
 use galaxy_flow::conf::conf_path;
 use galaxy_flow::const_val::CONFIG_FILE;
 use galaxy_flow::err::*;
 use galaxy_flow::execution::VarSpace;
-use galaxy_flow::expect::ShellOption;
 use galaxy_flow::infra::configure_run_logging;
 use galaxy_flow::runner::{GxlCmd, GxlRunner};
-use galaxy_flow::util::{GitTools, ModRepo};
+use galaxy_flow::util::GitTools;
 use galaxy_flow::GxLoader;
 use include_dir::{include_dir, Dir};
-use orion_error::{ErrorConv, ErrorOwe};
+use orion_error::ErrorConv;
+use orion_variate::addr::GitAddr;
 
 const ASSETS_DIR: Dir = include_dir!("app/gprj/init");
 #[tokio::main]
@@ -49,6 +50,9 @@ impl GxAdm {
         match cmd {
             GxAdmCmd::Init(prj_cmd) => {
                 Self::do_prj_cmd(&mut gx, prj_cmd).await?;
+            }
+            GxAdmCmd::Update(prj_cmd) => {
+                Self::do_update_cmd(&mut gx, prj_cmd).await?;
             }
             GxAdmCmd::Adm(cmd) => {
                 Self::do_adm_cmd(cmd).await?;
@@ -115,15 +119,25 @@ impl GxAdm {
             }
             InitCmd::Remote(args) => {
                 configure_run_logging(args.log.clone(), args.debug);
-                let sh_opt = ShellOption {
-                    quiet: args.cmd_print,
-                    inner_print: args.cmd_print,
-                    ..Default::default()
+
+                //let repo = ModRepo::new(args.repo.as_str(), args.channel.as_str()).owe_res()?;
+                let addr = GitAddr::from(args.repo.as_str());
+                let addr = if let Some(tag) = args.tag() {
+                    addr.with_tag(tag)
+                } else if let Some(branch) = args.branch() {
+                    addr.with_branch(branch)
+                } else {
+                    addr
                 };
-                let repo = ModRepo::new(args.repo.as_str(), args.channel.as_str()).owe_res()?;
-                load.init(repo, "./", true, args.tpl.as_str(), sh_opt)?;
+                load.init(addr, args.tpl.as_str()).await?;
             }
-            InitCmd::Update(args) => {
+        }
+        Ok(())
+    }
+
+    async fn do_update_cmd(load: &mut GxLoader, prj_cmd: UpdateCmd) -> RunResult<()> {
+        match prj_cmd {
+            UpdateCmd::Mod(args) => {
                 configure_run_logging(args.log.clone(), args.debug);
 
                 let vars = VarSpace::sys_init().err_conv()?;

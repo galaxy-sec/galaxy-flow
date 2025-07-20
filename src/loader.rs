@@ -1,23 +1,26 @@
 use crate::components::gxl_spc::GxlSpace;
 use crate::execution::VarSpace;
 use crate::parser::abilities::ignore_comment;
+use crate::parser::externs::ExternGit;
 use crate::parser::externs::ExternParser;
 use crate::parser::stc_spc::gal_stc_spc;
 use crate::parser::stc_spc::WinnowErrorEx;
 
 use std::fs;
 use std::fs::read_to_string;
+use std::path::PathBuf;
 
 use crate::err::*;
-use crate::util::*;
 
 use crate::ability::version::Version;
-use crate::model::expect::ShellOption;
 use once_cell::sync::OnceCell;
 use orion_error::ErrorConv;
 use orion_error::ErrorOwe;
 use orion_error::ErrorWith;
 use orion_error::WithContext;
+use orion_variate::addr::GitAddr;
+use orion_variate::addr::LocalAddr;
+use orion_variate::types::LocalUpdate;
 use orion_variate::update::UpdateOptions;
 use orion_variate::update::UpdateScope;
 use orion_variate::vars::ValueDict;
@@ -56,7 +59,6 @@ impl GxLoader {
         let mut wc = WithContext::want("parse gxl file");
         wc.with("conf", conf);
         let code = read_to_string(conf).owe_conf().with(&wc)?;
-        //let loader = Arc::new(PluginLoader::default());
         self.parse_code(&code, update, vars_space).await
     }
     pub async fn parse_code(
@@ -101,16 +103,20 @@ impl GxLoader {
         Ok(gxl_space)
     }
 
-    pub fn init(
-        &self,
-        repo: ModRepo,
-        path: &str,
-        force: bool,
-        tpl: &str,
-        opt: ShellOption,
-    ) -> RunResult<()> {
-        //init_cmd(repo, path, force, tpl, &opt).map_err(stc_err_from)?;
-        init_cmd(repo, path, force, tpl, &opt).err_conv()?;
+    pub async fn init(&self, addr: GitAddr, tpl: &str) -> RunResult<()> {
+        let up_options = UpdateOptions::new(UpdateScope::InHost, ValueDict::default());
+        let local_git = ExternGit::pull(addr, &up_options).await.owe_res()?;
+        let vender_path = format!("{}/tpl/{tpl}", local_git.position().display());
+        let init_path = PathBuf::from("./_gal");
+        if init_path.exists() {
+            println!("init dir exists! ({})", init_path.display());
+        } else {
+            std::fs::create_dir(&init_path).owe_res()?;
+            LocalAddr::from(vender_path)
+                .update_local(&init_path, &up_options)
+                .await
+                .owe_res()?;
+        }
         Ok(())
     }
 }

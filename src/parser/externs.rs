@@ -10,8 +10,10 @@ use orion_error::ErrorOwe;
 use orion_error::ErrorWith;
 use orion_error::WithContext;
 use orion_variate::addr::GitAddr;
+use orion_variate::types::UpdateUnit;
 use orion_variate::update::UpdateOptions;
 use std::fs::read_to_string;
+use std::path::PathBuf;
 use winnow::ascii::line_ending;
 use winnow::ascii::till_line_ending;
 
@@ -27,15 +29,15 @@ pub enum DslStatus {
 
 #[derive(Default, Builder, Getters)]
 struct ExternLocal {
-    path: String,
+    path: PathBuf,
 }
 
 #[derive(Default, Builder)]
-struct ExternGit {}
+pub struct ExternGit {}
 
 impl ExternGit {
-    pub async fn pull(addr: GitAddr, up_options: &UpdateOptions) -> ExecResult<String> {
-        GitTools::new(false)?.pull_mod(addr, up_options).await
+    pub async fn pull(addr: GitAddr, up_options: &UpdateOptions) -> ExecResult<UpdateUnit> {
+        GitTools::new(false)?.update_mod(addr, up_options).await
     }
 }
 
@@ -43,7 +45,7 @@ impl ExternLocal {
     pub fn fetch_code(&self, name: &str) -> ExecResult<String> {
         let mut ctx = WithContext::want("load code");
         let ee = EnvExpress::from_env();
-        let gxl_full_path = format!("{}/{}.gxl", self.path, name);
+        let gxl_full_path = format!("{}/{}.gxl", self.path.display(), name);
         let gxl_full_path = crate::evaluator::Parser::eval(&ee, &gxl_full_path)?;
         ctx.with("gxl", gxl_full_path.as_str());
         let code = read_to_string(gxl_full_path.as_str())
@@ -114,21 +116,21 @@ impl ExternParser {
                 let addr = GitAddr::from(git_addr.remote()).with_branch(git_addr.channel());
                 let local_path = ExternGit::pull(addr, up_options).await?;
                 ExternLocalBuilder::default()
-                    .path(local_path.clone())
+                    .path(local_path.position().clone())
                     .build()
                     .unwrap()
             }
             ModAddr::Loc(loc_addr) => ExternLocalBuilder::default()
-                .path(exp.eval(loc_addr.path())?)
+                .path(PathBuf::from(exp.eval(loc_addr.path())?))
                 .build()
                 .unwrap(),
         };
-        debug!("mod-local @PATH: {}", local.path());
+        debug!("mod-local @PATH: {}", local.path().display());
         let mut out = String::new();
         for mod_name in extern_mods.mods() {
             let mut code = local.fetch_code(mod_name)?;
-            code = code.replace("@{PATH}", local.path());
-            code = code.replace("@PATH", local.path());
+            code = code.replace("@{PATH}", local.path().display().to_string().as_str());
+            code = code.replace("@PATH", local.path().display().to_string().as_str());
             out += code.as_str();
         }
         Ok((out, DslStatus::Code))
