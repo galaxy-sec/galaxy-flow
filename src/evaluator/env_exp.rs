@@ -1,5 +1,5 @@
 use crate::{
-    sec::NoSecConv,
+    sec::{NoSecConv, SecFrom, SecValueType},
     traits::{Getter, Setter},
     var::VarDict,
     ExecReason, ExecResult,
@@ -45,8 +45,17 @@ impl EnvExpress {
         data.merge_dict(map);
         EnvExpress::new(data)
     }
-    pub fn insert(&mut self, key: String, val: String) {
-        self.data.set(&key, val);
+    pub fn insert_nor<S>(&mut self, key: String, val: S)
+    where
+        SecValueType: SecFrom<S>,
+    {
+        self.data.set(&key, SecValueType::nor_from(val));
+    }
+    pub fn insert_from<S>(&mut self, key: String, val: S)
+    where
+        SecValueType: From<S>,
+    {
+        self.data.set(&key, SecValueType::from(val));
     }
     pub fn eval_val(&self, key: &str) -> Option<String> {
         self.data.get(key).map(|v| v.clone().no_sec().to_string())

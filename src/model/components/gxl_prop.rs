@@ -7,6 +7,7 @@ use orion_common::friendly::{AppendAble, New2};
 use crate::{
     ability::prelude::{Action, TaskValue},
     meta::{GxlMeta, GxlType, MetaInfo},
+    primitive::GxlValue,
     traits::PropsTrait,
 };
 
@@ -112,10 +113,10 @@ impl GxlProps {
         self.items = IndexMap::from_vec(vars);
         self
     }
-    pub fn insert<S: Into<String>>(&mut self, key: S, val: S) {
+    pub fn insert<S: Into<String>>(&mut self, key: S, val: GxlValue) {
         let key_string = key.into();
         self.items
-            .insert(key_string.clone(), GxlVar::new(key_string, val.into()));
+            .insert(key_string.clone(), GxlVar::new(key_string, val));
     }
     pub fn merge(&mut self, mut other: Self) {
         self.items.append(&mut other.items);

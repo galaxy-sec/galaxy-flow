@@ -2,6 +2,7 @@ pub mod artifact;
 pub mod assert;
 pub mod cmd;
 pub mod common;
+pub mod funs;
 pub mod gxl;
 pub mod read;
 pub mod shell;

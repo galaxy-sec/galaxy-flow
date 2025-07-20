@@ -1,5 +1,5 @@
 use super::super::prelude::*;
-use super::common::sentence_call_args;
+use super::common::action_call_args;
 
 use crate::{
     ability::{gxl::GxRunBuilder, GxRun},
@@ -9,7 +9,7 @@ use crate::{
 pub fn gal_run(input: &mut &str) -> Result<GxRun> {
     let mut builder = GxRunBuilder::default();
     gal_keyword("gx.run", input)?;
-    let props = sentence_call_args.parse_next(input)?;
+    let props = action_call_args.parse_next(input)?;
     builder.gxl_path("./_gal/work.gxl".into());
     builder.env_isolate(false);
     for one in props {

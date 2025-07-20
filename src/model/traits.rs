@@ -1,9 +1,12 @@
 use std::sync::Arc;
 
+use orion_error::UvsLogicFrom;
+
 use crate::{
     evaluator::{EnvExpress, Parser},
     menu::GxMenu,
     util::str_utils::{StringCutter, UpperKeyMaker},
+    ExecError,
 };
 
 use super::{
@@ -43,10 +46,22 @@ pub trait PropsTrait {
         let mut exp = EnvExpress::from_env_mix(dict.clone());
         for prop in self.fetch_props() {
             let key = key_maker.make(prop.key());
-            let val = exp.eval(prop.val())?;
-            info!(target: ctx.path(),"{:10} = {}",key,val.cut_str(20));
-            dict.set(&key, val.clone());
-            exp.insert(key, val);
+            match prop.val() {
+                crate::primitive::GxlValue::VarRef(x) => {
+                    if let Some(val) = dict.get(x.as_str()).cloned() {
+                        dict.set(key.clone(), val.clone());
+                        exp.insert_from(key, val);
+                    }
+                    return ExecError::from_logic(format!("nor var ref {x}")).err();
+                }
+                crate::primitive::GxlValue::Value(x) => {
+                    let val = exp.eval(x)?;
+                    info!(target: ctx.path(),"{:10} = {}",key,val.cut_str(20));
+                    dict.set(&key, val.clone());
+                    exp.insert_nor(key, val);
+                }
+            }
+            //let val = exp.eval(prop.val())?;
         }
         Ok(())
     }

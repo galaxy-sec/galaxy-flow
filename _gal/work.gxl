@@ -32,7 +32,9 @@ mod main   {
     #[auto_load(entry)]
     flow __into  {
         DIST_REPO = "unkonw";
-        gx.echo ( value: "${GXL_OS_SYS}" )
+        if defined(${GXL_OS_SYS}) {
+             gx.echo (  "${GXL_OS_SYS} is defined " )
+        }
         if ${GXL_OS_SYS} =* "arm64_macos_*" {
             DIST_REPO = "macos";
         } else if ${GXL_OS_SYS} =* "x86_64_ubuntu*" {

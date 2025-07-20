@@ -1,21 +1,33 @@
 use orion_common::friendly::New2;
 
+use crate::primitive::GxlValue;
+
 use super::{gxl_prop::MapKeyable, prelude::*};
 
-#[derive(Debug, Clone, Default, Getters, PartialEq)]
+#[derive(Debug, Clone, Getters, PartialEq)]
 pub struct GxlVar {
-    key: String,  //var_name;
-    meta: String, //var_type;
-    val: String,  //var_val ;
+    key: String,   //var_name;
+    meta: String,  //var_type;
+    val: GxlValue, //var_val ;
 }
 
+impl New2<String, GxlValue> for GxlVar {
+    fn new(key: String, val: GxlValue) -> Self {
+        //key.make_ascii_uppercase();
+        Self {
+            key,
+            meta: String::from("str"),
+            val,
+        }
+    }
+}
 impl New2<String, String> for GxlVar {
     fn new(key: String, val: String) -> Self {
         //key.make_ascii_uppercase();
         Self {
             key,
             meta: String::from("str"),
-            val,
+            val: GxlValue::Value(val),
         }
     }
 }
@@ -25,7 +37,7 @@ impl New2<&str, &str> for GxlVar {
     }
 }
 impl GxlVar {
-    pub fn ext_new(key: String, vtype: String, val: String) -> Self {
+    pub fn ext_new(key: String, vtype: String, val: GxlValue) -> Self {
         Self {
             key,
             meta: vtype,

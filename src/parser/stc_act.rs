@@ -3,6 +3,7 @@ use winnow::{combinator::fail, Parser, Result};
 
 use crate::{
     components::gxl_act::activity::{Activity, ActivityDTO},
+    primitive::GxlValue,
     types::*,
 };
 
@@ -20,35 +21,41 @@ pub fn gal_activity(input: &mut &str) -> Result<Activity> {
     };
     for one in props {
         let key = one.0.to_lowercase();
-        if one.0 == "log" {
-            dto.expect.log_lev = Some(parse_log((one.0.as_str(), one.1.as_str())));
-            continue;
-        } else if key == "executer" {
-            dto.executer = one.1;
-            continue;
-        } else if key == "default_param" {
-            dto.default_param = Some(one.1);
-            continue;
-        } else if key == "sudo" && one.1.to_lowercase() == "true" {
-            dto.expect.sudo = true;
-            continue;
-        } else if key == "silence" && one.1.to_lowercase() == "true" {
-            dto.expect.secrecy = true;
-            continue;
-        } else if key == "out" && one.1.to_lowercase() == "true" {
-            dto.expect.quiet = true;
-            continue;
-        } else if key == "suc" {
-            dto.expect.suc = Some(one.1);
-            continue;
-        } else if key == "err" {
-            dto.expect.err = Some(one.1);
-            continue;
+        if let GxlValue::Value(p_v) = one.1 {
+            if one.0 == "log" {
+                dto.expect.log_lev = Some(parse_log((one.0.as_str(), p_v.as_str())));
+                continue;
+            } else if key == "executer" {
+                dto.executer = p_v;
+                continue;
+            } else if key == "default_param" {
+                dto.default_param = Some(p_v);
+                continue;
+            } else if key == "sudo" && p_v.to_lowercase() == "true" {
+                dto.expect.sudo = true;
+                continue;
+            } else if key == "silence" && p_v.to_lowercase() == "true" {
+                dto.expect.secrecy = true;
+                continue;
+            } else if key == "out" && p_v.to_lowercase() == "true" {
+                dto.expect.quiet = true;
+                continue;
+            } else if key == "suc" {
+                dto.expect.suc = Some(p_v);
+                continue;
+            } else if key == "err" {
+                dto.expect.err = Some(p_v);
+                continue;
+            } else {
+                dto.append_prop(Property {
+                    key: one.0,
+                    val: p_v,
+                });
+            }
         } else {
-            dto.append_prop(Property {
-                key: one.0,
-                val: one.1,
-            });
+            return fail
+                .context(wn_desc("<activity>(not use ref)"))
+                .parse_next(input);
         }
     }
     if !dto.check() {

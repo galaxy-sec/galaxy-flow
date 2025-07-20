@@ -1,5 +1,5 @@
 use super::super::prelude::*;
-use super::common::sentence_call_args;
+use super::common::action_call_args;
 use std::str::FromStr;
 
 use crate::ability::tpl::TPlEngineType;
@@ -9,7 +9,7 @@ use crate::parser::domain::gal_keyword_alt;
 
 pub fn gal_tpl(input: &mut &str) -> Result<GxTpl> {
     gal_keyword_alt("gx.tpl", "rg.tpl", input)?;
-    let props = sentence_call_args.parse_next(input)?;
+    let props = action_call_args.parse_next(input)?;
     let mut builder = TplDTOBuilder::default();
     for one in props {
         let key = one.0.to_lowercase();

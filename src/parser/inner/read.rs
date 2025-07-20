@@ -1,5 +1,5 @@
 use super::super::prelude::*;
-use super::common::sentence_call_args;
+use super::common::action_call_args;
 use super::common::shell_opt_setting;
 use winnow::combinator::fail;
 
@@ -17,7 +17,7 @@ use crate::parser::domain::gal_keyword_alt;
 
 pub fn gal_read_file(input: &mut &str) -> Result<GxRead> {
     gal_keyword_alt("gx.read_file", "rg.read_file", input)?;
-    let props = sentence_call_args.parse_next(input)?;
+    let props = action_call_args.parse_next(input)?;
     let mut builder = FileDTOBuilder::default();
     for one in props {
         let key = one.0.to_lowercase();
@@ -39,7 +39,7 @@ pub fn gal_read_file(input: &mut &str) -> Result<GxRead> {
 }
 pub fn gal_read_stdin(input: &mut &str) -> Result<GxRead> {
     gal_keyword_alt("gx.read_stdin", "rg.read_stdin", input)?;
-    let props = sentence_call_args.parse_next(input)?;
+    let props = action_call_args.parse_next(input)?;
     let mut builder = StdinDTOBuilder::default();
     for one in props {
         let key = one.0.to_lowercase();
@@ -60,7 +60,7 @@ pub fn gal_read_stdin(input: &mut &str) -> Result<GxRead> {
 
 pub fn gal_read_cmd(input: &mut &str) -> Result<GxRead> {
     gal_keyword("gx.read_cmd", input)?;
-    let props = sentence_call_args.parse_next(input)?;
+    let props = action_call_args.parse_next(input)?;
     let mut builder = CmdDTOBuilder::default();
     let mut sh_opt = ShellOption::default();
     builder.expect(sh_opt.clone());

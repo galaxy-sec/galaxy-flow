@@ -1,5 +1,6 @@
 use super::super::prelude::*;
-use super::common::{sentence_call_args, shell_opt_setting};
+use super::action_call_args;
+use super::common::shell_opt_setting;
 
 use crate::ability::shell::GxShell;
 use crate::expect::ShellOption;
@@ -9,7 +10,7 @@ use crate::util::OptionFrom;
 pub fn gal_shell(input: &mut &str) -> Result<GxShell> {
     let mut shell = GxShell::default();
     gal_keyword("gx.shell", input)?;
-    let props = sentence_call_args.parse_next(input)?;
+    let props = action_call_args.parse_next(input)?;
     let mut expect = ShellOption::default();
     shell.set_expect(ShellOption::default());
     for one in props {

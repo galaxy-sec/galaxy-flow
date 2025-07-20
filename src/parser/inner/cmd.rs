@@ -1,5 +1,5 @@
 use super::super::prelude::*;
-use super::common::{sentence_call_args, shell_opt_setting};
+use super::common::{action_call_args, shell_opt_setting};
 
 use crate::ability::cmd::GxCmdDtoBuilder;
 use crate::ability::GxCmd;
@@ -9,7 +9,7 @@ use crate::parser::domain::{gal_keyword, gal_keyword_alt};
 pub fn gal_cmd(input: &mut &str) -> Result<GxCmd> {
     let mut builder = GxCmdDtoBuilder::default();
     gal_keyword_alt("gx.cmd", "rg.cmd", input)?;
-    let props = sentence_call_args.parse_next(input)?;
+    let props = action_call_args.parse_next(input)?;
     let mut expect = ShellOption::default();
     builder.expect(ShellOption::default());
     for one in props {

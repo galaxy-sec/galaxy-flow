@@ -6,9 +6,10 @@ use crate::ability::delegate::ActCall;
 use crate::components::{gxl_var::*, GxlProps};
 use crate::expect::ShellOption;
 use crate::parser::domain::{
-    gal_call_beg, gal_call_end, gal_keyword, gal_sentence_beg, gal_sentence_end, gal_var_assign,
-    gal_var_input, parse_log,
+    fun_arg, gal_call_beg, gal_call_end, gal_keyword, gal_sentence_beg, gal_sentence_end,
+    gal_var_assign, gal_var_input, parse_log,
 };
+use crate::primitive::{GxlArg, GxlValue};
 use crate::types::Property;
 
 pub fn gal_vars(input: &mut &str) -> Result<GxlProps> {
@@ -20,7 +21,7 @@ pub fn gal_vars(input: &mut &str) -> Result<GxlProps> {
     }
     Ok(vars)
 }
-pub fn sentence_call_args(input: &mut &str) -> Result<Vec<(String, String)>> {
+pub fn action_call_args(input: &mut &str) -> Result<Vec<(String, String)>> {
     gal_call_beg.parse_next(input)?;
     let props: Vec<(String, String)> =
         separated(0.., gal_var_input, symbol_comma).parse_next(input)?;
@@ -29,9 +30,17 @@ pub fn sentence_call_args(input: &mut &str) -> Result<Vec<(String, String)>> {
     Ok(props)
 }
 
-pub fn sentence_body(input: &mut &str) -> Result<Vec<(String, String)>> {
+pub fn fun_call_args(input: &mut &str) -> Result<Vec<GxlArg>> {
+    gal_call_beg.parse_next(input)?;
+    let props: Vec<GxlArg> = separated(0.., fun_arg, symbol_comma).parse_next(input)?;
+    opt(symbol_comma).parse_next(input)?;
+    gal_call_end.parse_next(input)?;
+    Ok(props)
+}
+
+pub fn sentence_body(input: &mut &str) -> Result<Vec<(String, GxlValue)>> {
     gal_sentence_beg.parse_next(input)?;
-    let props: Vec<(String, String)> =
+    let props: Vec<(String, GxlValue)> =
         separated(0.., gal_var_assign, alt((symbol_comma, symbol_semicolon))).parse_next(input)?;
     opt(alt((symbol_comma, symbol_semicolon))).parse_next(input)?;
     gal_sentence_end.parse_next(input)?;
@@ -68,7 +77,7 @@ pub fn gal_call(input: &mut &str) -> Result<ActCall> {
     let name = take_var_path
         .context(wn_desc("<call-name>"))
         .parse_next(input)?;
-    let var_props = sentence_call_args.parse_next(input)?;
+    let var_props = action_call_args.parse_next(input)?;
     let mut props = Vec::new();
     for v_prop in var_props {
         props.push(Property::from(v_prop))

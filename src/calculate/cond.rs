@@ -83,7 +83,7 @@ mod tests {
     #[tokio::test]
     async fn test_ctrl_express() {
         let ctrl_express = IFExpress::new(
-            ExpressEnum::MU32(BinExpress::eq(MocU32::from("moc_1"), 1)),
+            ExpressEnum::MocU32(BinExpress::eq(MocU32::from("moc_1"), 1)),
             StuBlock {
                 out: ExecOut::Code(0),
             },
@@ -103,13 +103,13 @@ mod tests {
     #[tokio::test]
     async fn test_elseif_blocks() {
         let ctrl_express = IFExpress::new(
-            ExpressEnum::MU32(BinExpress::eq(MocU32::from("moc_1"), 0)),
+            ExpressEnum::MocU32(BinExpress::eq(MocU32::from("moc_1"), 0)),
             StuBlock {
                 out: ExecOut::Code(0),
             },
             vec![TGxlCond {
                 cond: IFExpress::new(
-                    ExpressEnum::MU32(BinExpress::eq(MocU32::from("moc_2"), 1)),
+                    ExpressEnum::MocU32(BinExpress::eq(MocU32::from("moc_2"), 1)),
                     StuBlock {
                         out: ExecOut::Code(2),
                     },
@@ -132,7 +132,7 @@ mod tests {
     #[tokio::test]
     async fn test_false_block() {
         let ctrl_express = IFExpress::new(
-            ExpressEnum::MU32(BinExpress::eq(MocU32::from("moc_1"), 0)),
+            ExpressEnum::MocU32(BinExpress::eq(MocU32::from("moc_1"), 0)),
             StuBlock {
                 out: ExecOut::Code(0),
             },

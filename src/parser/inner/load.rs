@@ -1,5 +1,5 @@
 use super::super::prelude::*;
-use super::common::sentence_call_args;
+use super::common::action_call_args;
 
 use crate::ability::{GxDownLoad, GxDownLoadBuilder};
 use crate::ability::{GxUpLoad, GxUpLoadBuilder};
@@ -7,7 +7,7 @@ use crate::parser::domain::gal_keyword;
 pub fn gal_download(input: &mut &str) -> Result<GxDownLoad> {
     let mut down = GxDownLoadBuilder::default();
     gal_keyword("gx.download", input)?;
-    let props = sentence_call_args.parse_next(input)?;
+    let props = action_call_args.parse_next(input)?;
     for (k, v) in &props {
         if k == "url" {
             down.svc_url(v.clone());
@@ -31,7 +31,7 @@ pub fn gal_download(input: &mut &str) -> Result<GxDownLoad> {
 pub fn gal_upload(input: &mut &str) -> Result<GxUpLoad> {
     let mut down = GxUpLoadBuilder::default();
     gal_keyword("gx.upload", input)?;
-    let props = sentence_call_args.parse_next(input)?;
+    let props = action_call_args.parse_next(input)?;
     for (k, v) in &props {
         if k == "url" {
             down.svc_url(v.clone());
