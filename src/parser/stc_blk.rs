@@ -3,7 +3,7 @@ use super::inner::funs::gal_defined;
 use super::inner::gxl::gal_run;
 use super::inner::shell::gal_shell;
 use super::prelude::*;
-use orion_parse::atom::take_env_var;
+use orion_parse::define::{take_env_var, take_string};
 use orion_parse::symbol::symbol_cmp;
 use winnow::combinator::repeat;
 

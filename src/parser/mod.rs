@@ -4,6 +4,7 @@ pub mod externs;
 
 pub mod comment;
 pub mod context;
+pub mod define;
 pub mod inner;
 pub mod prelude;
 pub mod stc_act;

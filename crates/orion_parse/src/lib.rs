@@ -3,6 +3,7 @@ pub use winnow::Parser;
 pub mod atom;
 pub mod comment;
 pub mod cond;
+pub mod define;
 pub mod fun;
 pub mod net;
 pub mod scope;

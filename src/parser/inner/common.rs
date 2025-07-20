@@ -5,9 +5,10 @@ use winnow::combinator::separated;
 use crate::ability::delegate::ActCall;
 use crate::components::{gxl_var::*, GxlProps};
 use crate::expect::ShellOption;
+use crate::parser::define::gal_var_assign;
 use crate::parser::domain::{
     fun_arg, gal_call_beg, gal_call_end, gal_keyword, gal_sentence_beg, gal_sentence_end,
-    gal_var_assign, gal_var_input, parse_log,
+    gal_var_input, parse_log,
 };
 use crate::primitive::{GxlArg, GxlValue};
 use crate::types::Property;

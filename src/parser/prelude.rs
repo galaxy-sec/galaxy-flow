@@ -10,8 +10,6 @@ pub use winnow::{
     Parser, Result,
 };
 
-pub use orion_parse::atom::gal_raw_string;
-pub use orion_parse::atom::take_string;
 pub use orion_parse::atom::take_var_path;
 
 pub use winnow::{
