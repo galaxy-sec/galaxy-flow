@@ -18,6 +18,9 @@ use orion_error::ErrorConv;
 use orion_error::ErrorOwe;
 use orion_error::ErrorWith;
 use orion_error::WithContext;
+use orion_variate::update::UpdateOptions;
+use orion_variate::update::UpdateScope;
+use orion_variate::vars::ValueDict;
 
 static CODE_INSTANCE: OnceCell<String> = OnceCell::new();
 pub fn get_parse_code() -> &'static str {
@@ -43,11 +46,10 @@ impl GxLoader {
             gal_ver: Version::new(2, 0, 0, None),
         }
     }
-    pub fn parse_file(
+    pub async fn parse_file(
         &mut self,
         conf: &str,
         update: bool,
-        sh_opt: ShellOption,
         vars_space: &VarSpace,
     ) -> RunResult<GxlSpace> {
         info!(target:"parse", "parse file: {conf}" );
@@ -55,23 +57,28 @@ impl GxLoader {
         wc.with("conf", conf);
         let code = read_to_string(conf).owe_conf().with(&wc)?;
         //let loader = Arc::new(PluginLoader::default());
-        self.parse_code(&code, update, sh_opt, vars_space)
+        self.parse_code(&code, update, vars_space).await
     }
-    pub fn parse_code(
+    pub async fn parse_code(
         &self,
         code: &str,
         update: bool,
-        sh_opt: ShellOption,
         vars_space: &VarSpace,
     ) -> RunResult<GxlSpace> {
         let e_parser = ExternParser::new();
-        let git_tools = GitTools::new(update).unwrap();
+
+        let up_options = if update {
+            UpdateOptions::new(UpdateScope::InHost, ValueDict::default())
+        } else {
+            UpdateOptions::new(UpdateScope::InElm, ValueDict::default())
+        };
         let mut target_code = code.to_string();
 
         loop {
             let mut target_code_str = target_code.as_str();
             let (code, have) = e_parser
-                .extern_parse(&git_tools, &sh_opt, &mut target_code_str, vars_space)
+                .extern_parse(&up_options, &mut target_code_str, vars_space)
+                .await
                 .with(("code", err_code_prompt(target_code_str)))
                 .err_conv()?;
 
@@ -119,7 +126,7 @@ pub fn err_code_prompt(code: &str) -> String {
 #[cfg(test)]
 mod tests {
 
-    use crate::{execution::VarSpace, expect::ShellOption, infra::once_init_log, types::AnyResult};
+    use crate::{execution::VarSpace, infra::once_init_log, types::AnyResult};
 
     use super::GxLoader;
 
@@ -129,12 +136,8 @@ mod tests {
         once_init_log();
         let mut loader = GxLoader::default();
         let conf = "./_gal/work.gxl";
-        let sh_opt = ShellOption {
-            quiet: true,
-            ..Default::default()
-        };
         let vars = VarSpace::sys_init()?;
-        let spc = loader.parse_file(conf, false, sh_opt, &vars)?.assemble()?;
+        let spc = loader.parse_file(conf, false, &vars).await?.assemble()?;
         info!("test begin");
         spc.show()?;
         println!("mods:{}", spc.len());

@@ -1,23 +1,20 @@
 extern crate galaxy_flow;
 use galaxy_flow::execution::VarSpace;
-use galaxy_flow::expect::ShellOption;
 use galaxy_flow::infra::once_init_log;
 use galaxy_flow::menu::*;
 use galaxy_flow::traits::ExecLoadTrait;
 use galaxy_flow::GxLoader;
 use orion_error::TestAssert;
 
-#[test]
-fn menu_normal() {
+#[tokio::test]
+async fn menu_normal() {
     once_init_log();
     let mut loader = GxLoader::new();
-    let expect = ShellOption {
-        quiet: false,
-        ..Default::default()
-    };
+
     let vars = VarSpace::sys_init().assert();
     let spc = loader
-        .parse_file("./tests/material/menu.gxl", false, expect, &vars)
+        .parse_file("./tests/material/menu.gxl", false, &vars)
+        .await
         .unwrap()
         .assemble()
         .assert();
@@ -35,17 +32,15 @@ fn menu_normal() {
     assert_eq!(menu, expect);
 }
 
-#[test]
-fn menu_simple() {
+#[tokio::test]
+async fn menu_simple() {
     once_init_log();
     let mut loader = GxLoader::new();
-    let expect = ShellOption {
-        quiet: false,
-        ..Default::default()
-    };
+
     let vars = VarSpace::sys_init().assert();
     let spc = loader
-        .parse_file("./tests/material/simple_menu.gxl", false, expect, &vars)
+        .parse_file("./tests/material/simple_menu.gxl", false, &vars)
+        .await
         .unwrap()
         .assemble()
         .assert();

@@ -48,7 +48,7 @@ impl GxAdm {
         let mut gx = GxLoader::new();
         match cmd {
             GxAdmCmd::Init(prj_cmd) => {
-                Self::do_prj_cmd(&mut gx, prj_cmd)?;
+                Self::do_prj_cmd(&mut gx, prj_cmd).await?;
             }
             GxAdmCmd::Adm(cmd) => {
                 Self::do_adm_cmd(cmd).await?;
@@ -108,7 +108,7 @@ impl GxAdm {
         Ok(())
     }
 
-    fn do_prj_cmd(load: &mut GxLoader, prj_cmd: InitCmd) -> RunResult<()> {
+    async fn do_prj_cmd(load: &mut GxLoader, prj_cmd: InitCmd) -> RunResult<()> {
         match prj_cmd {
             InitCmd::Local => {
                 init_local(None)?;
@@ -125,18 +125,15 @@ impl GxAdm {
             }
             InitCmd::Update(args) => {
                 configure_run_logging(args.log.clone(), args.debug);
-                let sh_opt = ShellOption {
-                    quiet: args.cmd_print,
-                    inner_print: args.cmd_print,
-                    ..Default::default()
-                };
+
                 let vars = VarSpace::sys_init().err_conv()?;
 
                 if std::path::Path::new(args.conf_work.as_str()).exists() {
-                    load.parse_file(args.conf_work.as_str(), true, sh_opt.clone(), &vars)?;
+                    load.parse_file(args.conf_work.as_str(), true, &vars)
+                        .await?;
                 }
                 if std::path::Path::new(args.conf_adm.as_str()).exists() {
-                    load.parse_file(args.conf_adm.as_str(), true, sh_opt, &vars)?;
+                    load.parse_file(args.conf_adm.as_str(), true, &vars).await?;
                 }
             }
         }

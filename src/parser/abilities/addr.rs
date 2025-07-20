@@ -1,7 +1,10 @@
 use orion_parse::atom::take_var_name;
 use winnow::combinator::{delimited, separated};
 
-use crate::{components::gxl_extend::{ModAddr, ModGitAddr, ModLocAddr, ModRef}, parser::atom::{take_filename, take_filename_body, take_host}};
+use crate::{
+    components::gxl_extend::{ModAddr, ModGitAddr, ModLocAddr, ModRef},
+    parser::atom::{take_filename, take_filename_body, take_host},
+};
 
 use super::prelude::*;
 
@@ -60,7 +63,6 @@ pub fn parse_mod_addr(input: &mut &str) -> Result<ModAddr> {
     }
 }
 
-
 // 解析 extern mod
 pub fn gal_extern_mod(input: &mut &str) -> Result<ModRef> {
     // 解析 "extern mod"
@@ -81,14 +83,10 @@ pub fn gal_extern_mod(input: &mut &str) -> Result<ModRef> {
     Ok(ModRef::new(mods, addr))
 }
 
-
-
 #[cfg(test)]
 mod tests {
 
     use orion_error::TestAssert;
-
-    use crate::{parser::{ abilities::define::gal_var_assign, domain::take_version, inner::run_gxl}, primitive::GxlObject};
 
     use super::*;
 
@@ -174,7 +172,6 @@ mod tests {
         assert!(gal_extern_mod(&mut input).is_err());
     }
 
-
     #[test]
     fn test_git() {
         let mut data = "git@galaxy-sec.org:free/gxl-lab.git";
@@ -194,6 +191,4 @@ mod tests {
 
         //https://galaxy-sec.org/free/gxl-lab.git
     }
-
-
 }

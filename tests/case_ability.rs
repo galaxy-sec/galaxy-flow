@@ -15,12 +15,10 @@ async fn conf_base_test() -> AnyResult<()> {
     once_init_log();
     let mut loader = GxLoader::new();
     let vars = VarSpace::sys_init().assert();
-    let expect = ShellOption {
-        quiet: false,
-        ..Default::default()
-    };
+
     let spc = loader
-        .parse_file("./tests/material/ability.gxl", false, expect, &vars)?
+        .parse_file("./tests/material/ability.gxl", false, &vars)
+        .await?
         .assemble()
         .assert();
     spc.exec(
@@ -39,12 +37,10 @@ async fn conf_web_test() {
     once_init_log();
     let vars = VarSpace::sys_init().assert();
     let mut loader = GxLoader::new();
-    let sh_opt = ShellOption {
-        quiet: false,
-        ..Default::default()
-    };
+
     let spc = loader
-        .parse_file("./tests/material/run_web.gxl", false, sh_opt, &vars)
+        .parse_file("./tests/material/run_web.gxl", false, &vars)
+        .await
         .unwrap()
         .assemble()
         .assert();
@@ -60,8 +56,8 @@ async fn conf_web_test() {
 }
 
 #[ignore]
-#[test]
-fn prj_init_test() -> RunResult<()> {
+#[tokio::test]
+async fn prj_init_test() -> RunResult<()> {
     once_init_log();
     let vars = VarSpace::sys_init().assert();
     let sh_opt = ShellOption {
@@ -77,7 +73,7 @@ fn prj_init_test() -> RunResult<()> {
     }
     gx.init(repo, gxl_root, true, "open_pages", sh_opt.clone())?;
     let rg_conf = format!("{gxl_root}/_rg/work.gxl",);
-    gx.parse_file(rg_conf.as_str(), false, sh_opt.clone(), &vars)?;
+    gx.parse_file(rg_conf.as_str(), false, &vars).await?;
 
     Ok(())
 }

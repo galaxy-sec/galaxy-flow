@@ -4,15 +4,8 @@ mod tests {
     use galaxy_flow::err::report_gxl_error;
     use galaxy_flow::execution::VarSpace;
     use galaxy_flow::util::path::WorkDirWithLock;
-    use galaxy_flow::{err::RunResult, expect::ShellOption, infra::once_init_log, GxLoader};
+    use galaxy_flow::{err::RunResult, infra::once_init_log, GxLoader};
     use orion_error::TestAssert;
-
-    fn test_opt() -> ShellOption {
-        ShellOption {
-            quiet: false,
-            ..Default::default()
-        }
-    }
 
     #[tokio::test(flavor = "current_thread")]
     async fn example_read() -> RunResult<()> {
@@ -21,7 +14,8 @@ mod tests {
         let vars = VarSpace::sys_init().assert();
         let mut loader = GxLoader::new();
         let spc = loader
-            .parse_file("./_gal/work.gxl", false, test_opt(), &vars)?
+            .parse_file("./_gal/work.gxl", false, &vars)
+            .await?
             .assemble()
             .assert();
         spc.exec(
@@ -42,7 +36,8 @@ mod tests {
         let vars = VarSpace::sys_init().assert();
         let mut loader = GxLoader::new();
         let spc = loader
-            .parse_file("./_gal/work.gxl", false, test_opt(), &vars)?
+            .parse_file("./_gal/work.gxl", false, &vars)
+            .await?
             .assemble()
             .assert();
         spc.exec(
@@ -62,7 +57,8 @@ mod tests {
         let vars = VarSpace::sys_init().assert();
         let mut loader = GxLoader::new();
         let spc = loader
-            .parse_file("./_gal/work.gxl", false, test_opt(), &vars)?
+            .parse_file("./_gal/work.gxl", false, &vars)
+            .await?
             .assemble()
             .assert();
         spc.exec(
@@ -82,7 +78,8 @@ mod tests {
         let mut loader = GxLoader::new();
         let vars = VarSpace::sys_init().assert();
         let spc = loader
-            .parse_file("./_gal/work.gxl", false, test_opt(), &vars)?
+            .parse_file("./_gal/work.gxl", false, &vars)
+            .await?
             .assemble()
             .assert();
         spc.exec(
@@ -103,7 +100,8 @@ mod tests {
         let mut loader = GxLoader::new();
         let vars = VarSpace::sys_init().assert();
         let spc = loader
-            .parse_file("./_gal/work.gxl", false, test_opt(), &vars)?
+            .parse_file("./_gal/work.gxl", false, &vars)
+            .await?
             .assemble()
             .assert();
         let result = spc
@@ -133,7 +131,8 @@ mod tests {
         let mut loader = GxLoader::new();
         let vars = VarSpace::sys_init().assert();
         let spc = loader
-            .parse_file("./_gal/work.gxl", false, test_opt(), &vars)?
+            .parse_file("./_gal/work.gxl", false, &vars)
+            .await?
             .assemble()
             .assert();
         let dryrun = true;

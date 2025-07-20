@@ -1,7 +1,6 @@
 extern crate galaxy_flow;
 
 use galaxy_flow::execution::VarSpace;
-use galaxy_flow::expect::ShellOption;
 use galaxy_flow::infra::once_init_log;
 use galaxy_flow::types::AnyResult;
 use galaxy_flow::GxLoader;
@@ -13,12 +12,10 @@ async fn gxl_normal_test() -> AnyResult<()> {
     once_init_log();
     let vars = VarSpace::sys_init().assert();
     let mut loader = GxLoader::new();
-    let expect = ShellOption {
-        quiet: false,
-        ..Default::default()
-    };
+
     let spc = loader
-        .parse_file("./tests/material/case_normal.gxl", false, expect, &vars)?
+        .parse_file("./tests/material/case_normal.gxl", false, &vars)
+        .await?
         .assemble()
         .assert();
     info!("------------------");

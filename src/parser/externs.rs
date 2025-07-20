@@ -2,7 +2,6 @@ use super::prelude::*;
 use crate::components::gxl_extend::ModAddr;
 use crate::evaluator::EnvExpress;
 use crate::execution::VarSpace;
-use crate::model::expect::ShellOption;
 use crate::parser::abilities::addr::gal_extern_mod;
 use crate::parser::abilities::addr::gal_git_path;
 use crate::util::GitTools;
@@ -10,6 +9,8 @@ use crate::ExecResult;
 use orion_error::ErrorOwe;
 use orion_error::ErrorWith;
 use orion_error::WithContext;
+use orion_variate::addr::GitAddr;
+use orion_variate::update::UpdateOptions;
 use std::fs::read_to_string;
 use winnow::ascii::line_ending;
 use winnow::ascii::till_line_ending;
@@ -30,24 +31,11 @@ struct ExternLocal {
 }
 
 #[derive(Default, Builder)]
-struct ExternGit {
-    // root: String,
-    url: String,
-    tag: String,
-    repo: String,
-}
+struct ExternGit {}
 
 impl ExternGit {
-    pub fn pull(&self, tools: &GitTools, expect: &ShellOption) -> ExecResult<()> {
-        tools.pull_mod(
-            self.url.as_str(),
-            self.repo.as_str(),
-            self.tag.as_str(),
-            expect,
-        )
-    }
-    pub fn vendor_path(&self, tools: &GitTools) -> String {
-        format!("{}/{}-{}/mods", tools.vendor_root(), self.repo, self.tag)
+    pub async fn pull(addr: GitAddr, up_options: &UpdateOptions) -> ExecResult<String> {
+        GitTools::new(false)?.pull_mod(addr, up_options).await
     }
 }
 
@@ -103,10 +91,9 @@ impl ExternParser {
         Ok((out, DslStatus::End))
     }
 
-    pub fn parse_extend_mod(
+    pub async fn parse_extend_mod(
         cur: &mut &str,
-        git: &GitTools,
-        shell_opt: &ShellOption,
+        up_options: &UpdateOptions,
         vars_space: &VarSpace,
     ) -> ExecResult<(String, DslStatus)> {
         use crate::evaluator::Parser;
@@ -115,22 +102,17 @@ impl ExternParser {
             .parse_next(cur)
             .owe_rule()?;
         let exp = EnvExpress::from_env_mix(vars_space.global().clone());
-        let mut git_builder = ExternGitBuilder::default();
-        git_builder.tag("".into());
         let local = match extern_mods.addr() {
             ModAddr::Git(git_addr) => {
                 let git_url = exp.eval(git_addr.remote())?;
                 let cl_git_url = git_url.clone();
-                let (_, repo_name) = gal_git_path(&mut git_url.as_str()).owe_rule()?;
+                let (_host, repo_name) = gal_git_path(&mut git_url.as_str()).owe_rule()?;
+
                 debug!("git url: {cl_git_url}");
                 debug!("git repo : {repo_name}",);
-                git_builder.url(cl_git_url);
-                git_builder.repo(repo_name);
-                git_builder.tag(git_addr.channel().into());
-                let git_cmd = git_builder.build().owe_rule()?;
-                git_cmd.pull(git, shell_opt)?;
-                let local_path = git_cmd.vendor_path(git);
-                //props.insert("path".into(), local_path);
+
+                let addr = GitAddr::from(git_addr.remote()).with_branch(git_addr.channel());
+                let local_path = ExternGit::pull(addr, up_options).await?;
                 ExternLocalBuilder::default()
                     .path(local_path.clone())
                     .build()
@@ -151,10 +133,9 @@ impl ExternParser {
         }
         Ok((out, DslStatus::Code))
     }
-    pub fn extern_parse(
+    pub async fn extern_parse(
         &self,
-        git: &GitTools,
-        shell_opt: &ShellOption,
+        git: &UpdateOptions,
         input: &mut &str,
         vars_space: &VarSpace,
     ) -> ExecResult<(String, bool)> {
@@ -173,8 +154,7 @@ impl ExternParser {
                     continue;
                 }
                 DslStatus::Extern => {
-                    let (code, cur_status) =
-                        Self::parse_extend_mod(input, git, shell_opt, vars_space)?;
+                    let (code, cur_status) = Self::parse_extend_mod(input, git, vars_space).await?;
                     out += code.as_str();
                     status = cur_status;
                     have_extern = true;
@@ -193,30 +173,30 @@ mod tests {
     use orion_error::TestAssert;
 
     use super::*;
-    #[test]
-    fn test_extern_one() {
-        let git_t = GitTools::new(false).expect("git tool init fail!");
-        let sh_opt = ShellOption::default();
+    #[tokio::test]
+    async fn test_extern_one() {
+        let up_opt = UpdateOptions::for_test();
         let parser = ExternParser::new();
         let vars = VarSpace::sys_init().assert();
         let mut data = r#"extern mod ssh { path = "./_gal/mods";}"#;
         let (codes, _have_ext) = parser
-            .extern_parse(&git_t, &sh_opt, &mut data, &vars)
+            .extern_parse(&up_opt, &mut data, &vars)
+            .await
             .assert();
 
         let mut expect = read_to_string("./_gal/mods/ssh.gxl").unwrap();
         expect = expect.replace("@PATH", "./_gal/mods");
         assert_eq!(codes, expect);
     }
-    #[test]
-    fn test_extern_muti() {
+    #[tokio::test]
+    async fn test_extern_muti() {
         let vars = VarSpace::sys_init().assert();
-        let git_t = GitTools::new(false).expect("git tool init fail!");
-        let sh_opt = ShellOption::default();
+        let up_opt = UpdateOptions::for_test();
         let parser = ExternParser::new();
         let mut data = r#"extern mod os,ssh { path = "./_gal/mods";}"#;
         let (codes, _have_ext) = parser
-            .extern_parse(&git_t, &sh_opt, &mut data, &vars)
+            .extern_parse(&up_opt, &mut data, &vars)
+            .await
             .assert();
         let mut expect = read_to_string("./_gal/tests/_all.gxl").assert();
         expect = expect.replace("@PATH", "./_gal/mods");

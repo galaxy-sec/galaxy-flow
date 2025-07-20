@@ -1,4 +1,7 @@
 use orion_error::ErrorOwe;
+use orion_variate::addr::GitAddr;
+use orion_variate::types::LocalUpdate;
+use orion_variate::update::UpdateOptions;
 
 use crate::err::*;
 use crate::evaluator::*;
@@ -12,6 +15,7 @@ use std::fs;
 use std::fs::File;
 use std::io::prelude::*;
 use std::os::unix::fs::PermissionsExt;
+use std::path::PathBuf;
 const SH_NAME: &str = "remote_git.sh";
 const RG_ROOT: &str = "${HOME}/.galaxy";
 const VENDOR_ROOT: &str = "${HOME}/.galaxy/vendor";
@@ -34,25 +38,28 @@ impl GitTools {
             exp_engine: ee,
         })
     }
-    pub fn pull_mod(&self, url: &str, repo: &str, tag: &str, opt: &ShellOption) -> ExecResult<()> {
-        self.build_remote_git()?;
-        let update = if self.force { "true" } else { "false" };
-        let cmd = format!(
-            "{}/{} {} {}-{} {} {} {}",
-            self.gxl_root, SH_NAME, url, repo, tag, tag, update, self.vendor_root
+    pub async fn pull_mod(&self, addr: GitAddr, up_options: &UpdateOptions) -> ExecResult<String> {
+        let local_git = format!(
+            "{}-{}/mods",
+            addr.repo(),
+            addr.tag()
+                .clone()
+                .or(addr.branch().clone())
+                .unwrap_or("".to_string())
         );
-
-        debug!(target:"sys/mod", "mod update cmd:{cmd}" );
-        gxl_sh!(
-            LogicScope::Inner,
-            "cmd:pull-mod",
-            &cmd,
-            opt,
-            &self.exp_engine,
-            &VarDict::default()
-        )?;
-        Ok(())
+        addr.update_local_rename(
+            &PathBuf::from(self.vendor_root()),
+            local_git.as_str(),
+            up_options,
+        )
+        .await
+        .owe_res()?;
+        Ok(format!("{}/{local_git}", self.vendor_root()))
     }
+    pub fn vendor_path(&self, repo: &str, tag: &str) -> String {
+        format!("{}/{repo}-{tag}/mods", self.vendor_root())
+    }
+
     pub fn pull_init(&self, url: &str, repo: &str, tag: &str, opt: &ShellOption) -> NER {
         self.build_remote_git()?;
         let update = if self.force { "true" } else { "false" };

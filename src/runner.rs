@@ -17,12 +17,10 @@ impl GxlRunner {
                 return Err(StructError::from_conf("gflow conf not exists".to_string()))
                     .with(("conf", conf));
             }
-            let expect = ShellOption {
-                quiet: cmd.quiet.unwrap_or(false),
-                ..Default::default()
-            };
+
             let spc = loader
-                .parse_file(conf.as_str(), false, expect, &vars)?
+                .parse_file(conf.as_str(), false, &vars)
+                .await?
                 .assemble()
                 .err_conv()?;
             if cmd.flow.is_empty() {
@@ -45,7 +43,6 @@ impl GxlRunner {
         }
     }
 }
-use crate::model::expect::ShellOption;
 use clap::Parser;
 
 #[derive(Parser, Debug)] // requires `derive` feature

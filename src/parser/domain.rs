@@ -1,19 +1,17 @@
+use crate::primitive::{GxlArg, GxlObject};
+
 use super::prelude::*;
 use orion_parse::{
-    atom::{skip_spaces_block,  take_var_name},
+    atom::{skip_spaces_block, take_var_name},
     define::{gal_raw_str, take_string},
     symbol::{
         symbol_brace_beg, symbol_brace_end, symbol_bracket_beg, symbol_bracket_end, symbol_colon,
         symbol_semicolon, wn_desc,
     },
 };
-use winnow::combinator::{ separated};
+use winnow::combinator::separated;
 
-use crate::{
-    primitive::{GxlArg, GxlObject},
-};
-
-use super::atom::{ take_var_ref_name};
+use super::atom::take_var_ref_name;
 
 pub fn parse_log(pair: (&str, &str)) -> log::Level {
     if pair.0 == "log" {
@@ -41,7 +39,6 @@ pub fn ext_meta_names(input: &mut &str) -> Result<String> {
     let fst = take_var_name(input)?;
     Ok(fst)
 }
-
 
 //take :  key, or ${key}
 pub fn gal_mix_item(input: &mut &str) -> Result<String> {
@@ -186,28 +183,14 @@ pub fn gal_keyword_alt(
     Ok(())
 }
 
-
 #[cfg(test)]
 mod tests {
 
     use orion_error::TestAssert;
 
-    use crate::parser::{ abilities::define::gal_var_assign, inner::run_gxl};
+    use crate::parser::{abilities::define::gal_var_assign, inner::run_gxl};
 
     use super::*;
-
- 
-
-
-
-
-
-
-
-
-
-
-
 
     #[test]
     fn test_mix() {
