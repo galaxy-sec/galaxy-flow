@@ -1,7 +1,7 @@
 use super::prelude::*;
 use orion_parse::{
     atom::{skip_spaces_block, starts_with, take_var_name},
-    define::{gal_raw_string, take_env_var, take_string},
+    define::{gal_raw_str, take_string},
     symbol::{
         symbol_brace_beg, symbol_brace_end, symbol_bracket_beg, symbol_bracket_end, symbol_colon,
         symbol_semicolon, wn_desc,
@@ -11,7 +11,7 @@ use winnow::combinator::{delimited, repeat, separated};
 
 use crate::{
     components::gxl_extend::{ModAddr, ModGitAddr, ModLocAddr, ModRef},
-    primitive::{GxlArg, GxlValue},
+    primitive::{GxlArg, GxlObject},
 };
 
 use super::atom::{take_filename, take_filename_body, take_host, take_var_ref_name};
@@ -89,7 +89,7 @@ pub fn gal_var_input(input: &mut &str) -> Result<(String, String)> {
         symbol_colon.parse_next(input)?;
     }
     let _ = multispace0.parse_next(input)?;
-    let val = alt((take_string, gal_raw_string))
+    let val = alt((take_string, gal_raw_str))
         .context(wn_desc("<var-val>"))
         .parse_next(input)?;
     multispace0(input)?;
@@ -110,8 +110,8 @@ pub fn fun_arg(input: &mut &str) -> Result<GxlArg> {
     }
     let _ = multispace0.parse_next(input)?;
     let val = alt((
-        take_env_var.map(GxlValue::VarRef),
-        take_string.map(GxlValue::from_val),
+        take_var_ref_name.map(GxlObject::VarRef),
+        take_string.map(GxlObject::from_val),
         //gal_raw_string,
     ))
     .context(wn_desc("<var-val>"))
@@ -399,7 +399,7 @@ mod tests {
         assert_eq!(key, "data".to_string());
         assert_eq!(
             val,
-            GxlValue::from_val(
+            GxlObject::from_val(
                 r#"{"branchs" : [{ "name": "develop" }, { "name" : "release/1"}]}"#.to_string()
             )
         );

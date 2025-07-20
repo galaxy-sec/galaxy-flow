@@ -1,18 +1,18 @@
 use orion_common::friendly::New2;
 
-use crate::primitive::GxlValue;
+use crate::primitive::GxlObject;
 
 use super::{gxl_prop::MapKeyable, prelude::*};
 
 #[derive(Debug, Clone, Getters, PartialEq)]
 pub struct GxlVar {
-    key: String,   //var_name;
-    meta: String,  //var_type;
-    val: GxlValue, //var_val ;
+    key: String,    //var_name;
+    meta: String,   //var_type;
+    val: GxlObject, //var_val ;
 }
 
-impl New2<String, GxlValue> for GxlVar {
-    fn new(key: String, val: GxlValue) -> Self {
+impl New2<String, GxlObject> for GxlVar {
+    fn new(key: String, val: GxlObject) -> Self {
         //key.make_ascii_uppercase();
         Self {
             key,
@@ -21,8 +21,8 @@ impl New2<String, GxlValue> for GxlVar {
         }
     }
 }
-impl New2<&str, GxlValue> for GxlVar {
-    fn new(key: &str, val: GxlValue) -> Self {
+impl New2<&str, GxlObject> for GxlVar {
+    fn new(key: &str, val: GxlObject) -> Self {
         //key.make_ascii_uppercase();
         Self {
             key: key.into(),
@@ -37,7 +37,7 @@ impl New2<String, String> for GxlVar {
         Self {
             key,
             meta: String::from("str"),
-            val: GxlValue::from_val(val),
+            val: GxlObject::from_val(val),
         }
     }
 }
@@ -47,7 +47,7 @@ impl New2<&str, &str> for GxlVar {
     }
 }
 impl GxlVar {
-    pub fn ext_new(key: String, vtype: String, val: GxlValue) -> Self {
+    pub fn ext_new(key: String, vtype: String, val: GxlObject) -> Self {
         Self {
             key,
             meta: vtype,

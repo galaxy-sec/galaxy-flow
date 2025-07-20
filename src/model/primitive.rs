@@ -6,10 +6,10 @@ use super::sec::{SecFrom, SecValueType};
 #[derive(Clone, MutGetters, Getters)]
 pub struct GxlArg {
     name: String,
-    value: GxlValue,
+    value: GxlObject,
 }
 impl GxlArg {
-    pub fn new<S: Into<String>>(name: S, value: GxlValue) -> Self {
+    pub fn new<S: Into<String>>(name: S, value: GxlObject) -> Self {
         Self {
             name: name.into(),
             value,
@@ -17,12 +17,12 @@ impl GxlArg {
     }
 }
 #[derive(Clone, Debug, PartialEq, From)]
-pub enum GxlValue {
+pub enum GxlObject {
     VarRef(String),
     Value(SecValueType),
 }
 
-impl GxlValue {
+impl GxlObject {
     pub fn from_val<S: Into<String>>(val: S) -> Self {
         Self::Value(SecValueType::nor_from(val.into()))
     }

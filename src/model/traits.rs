@@ -47,7 +47,7 @@ pub trait PropsTrait {
         for prop in self.fetch_props() {
             let key = key_maker.make(prop.key());
             match prop.val() {
-                crate::primitive::GxlValue::VarRef(x) => {
+                crate::primitive::GxlObject::VarRef(x) => {
                     if let Some(val) = dict.get(x.as_str()).cloned() {
                         dict.set(key.clone(), val.clone());
                         exp.insert_from(key.clone(), val.clone());
@@ -56,7 +56,7 @@ pub trait PropsTrait {
                         return ExecError::from_logic(format!("nor var ref {x}")).err();
                     }
                 }
-                crate::primitive::GxlValue::Value(x) => {
+                crate::primitive::GxlObject::Value(x) => {
                     match x {
                         crate::sec::SecValueType::String(v) => {
                             let val = exp.eval(v.value())?;

@@ -1,41 +1,41 @@
 use super::prelude::*;
 use orion_parse::{
-    define::{gal_raw_string, take_bool, take_env_var, take_float, take_number, take_string},
+    define::{gal_raw_str, take_bool, take_float, take_number, take_string, take_var_ref_name},
     symbol::{symbol_assign, symbol_colon, wn_desc},
 };
 use winnow::{combinator::separated, token::literal};
 
 use crate::{
-    primitive::GxlValue,
+    primitive::GxlObject,
     sec::{SecFrom, SecValueObj, SecValueType, SecValueVec},
     var::UniString,
 };
-pub fn gal_take_gxl_value(data: &mut &str) -> Result<GxlValue> {
+pub fn gal_gxl_object(data: &mut &str) -> Result<GxlObject> {
     alt((
-        take_env_var.map(GxlValue::VarRef),
-        gal_take_full_sec_value.map(GxlValue::from),
+        take_var_ref_name.map(GxlObject::VarRef),
+        gal_full_value.map(GxlObject::from),
     ))
     .parse_next(data)
 }
-pub fn gal_take_simple_sec_value(data: &mut &str) -> Result<SecValueType> {
+pub fn gal_simple_value(data: &mut &str) -> Result<SecValueType> {
     alt((
         take_string.map(SecValueType::nor_from),
         take_bool.map(SecValueType::nor_from),
         take_float.map(SecValueType::nor_from),
         take_number.map(SecValueType::nor_from),
-        gal_raw_string.map(SecValueType::nor_from),
+        gal_raw_str.map(SecValueType::nor_from),
     ))
     .parse_next(data)
 }
 
-pub fn gal_take_full_sec_value(data: &mut &str) -> Result<SecValueType> {
+pub fn gal_full_value(data: &mut &str) -> Result<SecValueType> {
     multispace0.parse_next(data)?;
-    let v = alt((gal_take_simple_sec_value, take_obj_value, take_vec_value)).parse_next(data)?;
+    let v = alt((gal_simple_value, take_obj_value, take_vec_value_type)).parse_next(data)?;
     multispace0.parse_next(data)?;
     Ok(v)
 }
 
-pub fn gal_obj_item_assign(input: &mut &str) -> Result<(String, SecValueType)> {
+pub fn gal_named_value(input: &mut &str) -> Result<(String, SecValueType)> {
     multispace0.parse_next(input)?;
     let key = take_while(1.., ('0'..='9', 'A'..='Z', 'a'..='z', ['_', '.']))
         .context(wn_desc("<var-name>"))
@@ -44,14 +44,14 @@ pub fn gal_obj_item_assign(input: &mut &str) -> Result<(String, SecValueType)> {
     symbol_colon.parse_next(input)?;
     let _ = multispace0.parse_next(input)?;
 
-    let val = gal_take_full_sec_value
+    let val = gal_full_value
         .context(wn_desc("<var-val>"))
         .parse_next(input)?;
     multispace0(input)?;
     Ok((key.to_string(), val))
 }
 
-pub fn gal_var_assign(input: &mut &str) -> Result<(String, GxlValue)> {
+pub fn gal_var_assign(input: &mut &str) -> Result<(String, GxlObject)> {
     let _ = multispace0.parse_next(input)?;
     let key = take_while(1.., ('0'..='9', 'A'..='Z', 'a'..='z', ['_', '.']))
         .context(wn_desc("<var-name>"))
@@ -59,7 +59,7 @@ pub fn gal_var_assign(input: &mut &str) -> Result<(String, GxlValue)> {
     symbol_assign.parse_next(input)?;
     let _ = multispace0.parse_next(input)?;
 
-    let val = gal_take_gxl_value
+    let val = gal_gxl_object
         .context(wn_desc("<var-val>"))
         .parse_next(input)?;
     multispace0(input)?;
@@ -73,14 +73,14 @@ pub fn take_obj_value(data: &mut &str) -> Result<SecValueType> {
     take_value_map.parse_next(data).map(SecValueType::from)
 }
 
-pub fn take_vec_value(data: &mut &str) -> Result<SecValueType> {
+pub fn take_vec_value_type(data: &mut &str) -> Result<SecValueType> {
     take_value_vec.parse_next(data).map(SecValueType::from)
 }
 pub fn take_value_vec(data: &mut &str) -> Result<SecValueVec> {
     let _ = multispace0.parse_next(data)?;
     literal("[").context(wn_desc("[")).parse_next(data)?;
     let _ = multispace0.parse_next(data)?;
-    let items: SecValueVec = separated(0.., gal_take_full_sec_value, ",").parse_next(data)?;
+    let items: SecValueVec = separated(0.., gal_full_value, ",").parse_next(data)?;
     literal("]").context(wn_desc("]")).parse_next(data)?;
     Ok(items)
 }
@@ -92,7 +92,7 @@ pub fn take_value_map(data: &mut &str) -> Result<SecValueObj> {
         .parse_next(data)?;
     let _ = multispace0.parse_next(data)?;
     let items: Vec<(String, SecValueType)> =
-        separated(0.., gal_obj_item_assign, ",").parse_next(data)?;
+        separated(0.., gal_named_value, ",").parse_next(data)?;
     literal("}").parse_next(data)?;
     let mut obj = SecValueObj::new();
     items.into_iter().for_each(|(k, v)| {
@@ -118,7 +118,7 @@ mod tests {
         assert_eq!(key, "data".to_string());
         assert_eq!(
             val,
-            GxlValue::from_val(
+            GxlObject::from_val(
                 r#"{"branchs" : [{ "name": "develop" }, { "name" : "release/1"}]}"#.to_string()
             )
         );

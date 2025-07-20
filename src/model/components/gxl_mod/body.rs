@@ -328,7 +328,7 @@ mod test {
         context::ExecContext,
         execution::sequence::ExecSequence,
         infra::{init_env, once_init_log},
-        primitive::GxlValue,
+        primitive::GxlObject,
         sec::{SecFrom, SecValueType, ToUniCase},
         traits::{DependTrait, ExecLoadTrait},
         types::AnyResult,
@@ -385,7 +385,7 @@ mod test {
                 .any(|(_, x)| x.key() == &"k3".to_string()));
             assert_eq!(
                 target.props.get("k2").map(|x| x.val()),
-                Some(&GxlValue::from_val("v2".to_string()))
+                Some(&GxlObject::from_val("v2".to_string()))
             );
         }
     }
@@ -451,7 +451,7 @@ mod test {
         let mut env1 = GxlEnv::from("env1");
         env1.append(GxlVar::new("key1", "value1"));
         let mut var = GxlProps::new("env");
-        var.insert("key3", GxlValue::from_val("value1"));
+        var.insert("key3", GxlObject::from_val("value1"));
         env1.append(var);
         mod1.append(env1);
         mod1.append(GxlVar::new("key2", "value1"));

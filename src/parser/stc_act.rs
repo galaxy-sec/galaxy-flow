@@ -3,7 +3,7 @@ use winnow::{combinator::fail, Parser, Result};
 
 use crate::{
     components::gxl_act::activity::{Activity, ActivityDTO},
-    primitive::GxlValue,
+    primitive::GxlObject,
     sec::SecValueType,
     types::*,
 };
@@ -22,7 +22,7 @@ pub fn gal_activity(input: &mut &str) -> Result<Activity> {
     };
     for one in props {
         let key = one.0.to_lowercase();
-        if let GxlValue::Value(SecValueType::String(s_v)) = one.1 {
+        if let GxlObject::Value(SecValueType::String(s_v)) = one.1 {
             let p_v = s_v.value().clone();
             if one.0 == "log" {
                 dto.expect.log_lev = Some(parse_log((one.0.as_str(), p_v.as_str())));

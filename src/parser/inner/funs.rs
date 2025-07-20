@@ -1,6 +1,6 @@
 use super::{super::prelude::*, fun_call_args};
 
-use crate::primitive::GxlValue;
+use crate::primitive::GxlObject;
 use crate::{
     calculate::defined::{FnDefined, FnDefinedBuilder},
     parser::domain::gal_keyword,
@@ -13,7 +13,7 @@ pub fn gal_defined(input: &mut &str) -> Result<FnDefined> {
     for one in props {
         let key = one.name().to_lowercase();
         if key == "default" || key == "var" {
-            if let GxlValue::VarRef(vref) = one.value() {
+            if let GxlObject::VarRef(vref) = one.value() {
                 builder.name(vref.clone());
             } else {
                 return fail.context(wn_desc("defined(not var)")).parse_next(input);

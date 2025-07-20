@@ -239,7 +239,7 @@ mod tests {
     #[test]
     fn test_props_export_with_complex_data() {
         use crate::{
-            primitive::GxlValue,
+            primitive::GxlObject,
             sec::{SecValueObj, SecValueType, SecValueVec},
         };
         use orion_variate::vars::ValueType;
@@ -258,19 +258,19 @@ mod tests {
         let mut block = BlockNode::new();
         block.append(GxlVar::new(
             "sys_a",
-            GxlValue::from(SecValueType::Obj(sys_a)),
+            GxlObject::from(SecValueType::Obj(sys_a)),
         ));
         block.append(GxlVar::new(
             "sys_b",
-            GxlValue::Value(SecValueType::List(sys_b)),
+            GxlObject::Value(SecValueType::List(sys_b)),
         ));
         block.append(GxlVar::new(
             "sys_c",
-            GxlValue::VarRef("SYS_B[1]".to_string()),
+            GxlObject::VarRef("SYS_B[1]".to_string()),
         ));
         block.append(GxlVar::new(
             "sys_d",
-            GxlValue::VarRef("SYS_A.MOD1".to_string()),
+            GxlObject::VarRef("SYS_A.MOD1".to_string()),
         ));
 
         // 创建执行上下文

@@ -3,7 +3,7 @@ use super::inner::funs::gal_defined;
 use super::inner::gxl::gal_run;
 use super::inner::shell::gal_shell;
 use super::prelude::*;
-use orion_parse::define::{take_env_var, take_string};
+use orion_parse::define::{take_string, take_var_ref_name};
 use orion_parse::symbol::symbol_cmp;
 use winnow::combinator::repeat;
 
@@ -124,7 +124,7 @@ pub fn gal_else_if(input: &mut &str) -> Result<GxlCond> {
     gal_keyword("else", input)?;
     gal_keyword("if", input)?;
     let (name, cmp, value) = (
-        spaced(take_env_var).context(wn_desc("<env-var>")),
+        spaced(take_var_ref_name).context(wn_desc("<env-var>")),
         spaced(symbol_cmp).context(wn_desc("operator")),
         spaced(take_string).context(wn_desc("<value-str>")),
     )
@@ -143,7 +143,7 @@ pub fn gal_else_if(input: &mut &str) -> Result<GxlCond> {
 pub fn gal_exp_bin_r(input: &mut &str) -> Result<ExpressEnum> {
     //BinExpress<EVarDef, String>> {
     let (name, cmp, value) = (
-        spaced(take_env_var).context(wn_desc("<env-var>")),
+        spaced(take_var_ref_name).context(wn_desc("<env-var>")),
         spaced(symbol_cmp).context(wn_desc("operator")),
         spaced(take_string).context(wn_desc("<value-str>")),
     )
@@ -186,9 +186,9 @@ pub fn gal_loop(input: &mut &str) -> Result<GxlLoop> {
     gal_keyword("for", input)?;
 
     let (cur_name, _, val_name) = (
-        spaced(take_env_var).context(wn_desc("<cur-var>")),
+        spaced(take_var_ref_name).context(wn_desc("<cur-var>")),
         spaced("in").context(wn_desc("in")),
-        spaced(take_env_var).context(wn_desc("<var-set>")),
+        spaced(take_var_ref_name).context(wn_desc("<var-set>")),
     )
         .parse_next(input)?;
     let block = gal_block.parse_next(input)?;
@@ -218,6 +218,20 @@ mod tests {
         }"#;
         let blk = run_gxl(gal_block, &mut data).assert();
         assert_eq!(blk.items().len(), 3);
+        assert_eq!(data, "");
+    }
+    #[test]
+    fn test_block_props_1() {
+        let mut data = r#" {
+            one= "one";
+            sys_a = { mod1 : "A", mod2 : "B" , mod3 : 3};
+            sys_b =  [ "C", "D" , 1,2 ];
+            sys_c = ${SYS_B[1]} ;
+            sys_d = ${SYS_A.MOD1} ;
+            }
+            "#;
+        let blk = run_gxl(gal_block, &mut data).assert();
+        assert_eq!(blk.props().len(), 5);
         assert_eq!(data, "");
     }
 

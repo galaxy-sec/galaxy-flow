@@ -10,7 +10,7 @@ use crate::parser::domain::{
     fun_arg, gal_call_beg, gal_call_end, gal_keyword, gal_sentence_beg, gal_sentence_end,
     gal_var_input, parse_log,
 };
-use crate::primitive::{GxlArg, GxlValue};
+use crate::primitive::{GxlArg, GxlObject};
 use crate::types::Property;
 
 pub fn gal_vars(input: &mut &str) -> Result<GxlProps> {
@@ -39,9 +39,9 @@ pub fn fun_call_args(input: &mut &str) -> Result<Vec<GxlArg>> {
     Ok(props)
 }
 
-pub fn sentence_body(input: &mut &str) -> Result<Vec<(String, GxlValue)>> {
+pub fn sentence_body(input: &mut &str) -> Result<Vec<(String, GxlObject)>> {
     gal_sentence_beg.parse_next(input)?;
-    let props: Vec<(String, GxlValue)> =
+    let props: Vec<(String, GxlObject)> =
         separated(0.., gal_var_assign, alt((symbol_comma, symbol_semicolon))).parse_next(input)?;
     opt(alt((symbol_comma, symbol_semicolon))).parse_next(input)?;
     gal_sentence_end.parse_next(input)?;
