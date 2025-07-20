@@ -87,11 +87,11 @@ impl GxShell {
             vars_dict
                 .global_mut()
                 .set(out_var, format!("{}", out_data_path.display()));
-            let exe_cmd = format!("{}", ext_cmd);
+            //let exe_cmd = format!("{ext_cmd}");
             let res = gxl_sh!(
                 LogicScope::Outer,
                 ctx.tag_path("cmd").as_str(),
-                &exe_cmd,
+                &ext_cmd,
                 &expect,
                 &exp,
                 vars_dict.global()
