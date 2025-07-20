@@ -1,0 +1,33 @@
+extern mod os { path= "../../_gal/mods"; }
+mod envs {
+    env _dev_local {
+    }
+    env default : _dev_local ;
+}
+mod main   {
+  flow conf  {
+
+    gx.read_file( file : "./var.yml" , name : "VAR");
+    gx.echo ( "what:${VAR.MEMBER.JAVA}" );
+
+    gx.shell(
+        arg_file: "./var.json",
+        shell : "./demo.sh",
+        out_var: "SYS_OUT" );
+
+    gx.echo ( "what:${SYS_OUT}" );
+
+    gx.read_file( file : "./var_list.yml" , name : "DATA");
+    for ${CUR} in ${DATA.DEV_LANG} {
+      gx.shell(
+          shell : "./demo_ex.sh ${CUR}",
+          out_var: "SYS_OUT" );
+          gx.echo ( "what:${SYS_OUT}" );
+    }
+
+
+  }
+
+
+
+}

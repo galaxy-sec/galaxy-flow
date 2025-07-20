@@ -34,6 +34,7 @@ pub fn os_sh(
         .stdout_capture()
         .stderr_capture()
         .full_env(run_env.export_str_map())
+        //.full_env(run_env.export())
         .run();
     let fail_msg = opt.err.clone().unwrap_or(sec_cmd.clone());
     let fail_msg = exp.eval(fail_msg.as_str())?;

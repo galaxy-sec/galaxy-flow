@@ -69,7 +69,7 @@ impl GxShell {
             };
             vars_dict.global_mut().merge_dict(VarDict::from(dict));
         }
-        let res = if let Some(out_var) = self.out_var.clone() {
+        let res = if let Some(out_var) = &self.out_var {
             let out_data_path = PathBuf::from(format!(
                 "/tmp/gx_out_{out_var}_{}_{}",
                 Local::now().format("%Y%m%d_%H%M%S"),
@@ -83,7 +83,11 @@ impl GxShell {
                 .map_err(|e| ExecReason::Io(e.to_string()))?;
             std::fs::File::create(&out_data_path).map_err(|e| ExecReason::Io(e.to_string()))?;
             // 修改命令以将输出写入 FIFO
-            let exe_cmd = format!("export {out_var}={} ; {}", out_data_path.display(), ext_cmd);
+
+            vars_dict
+                .global_mut()
+                .set(out_var, format!("{}", out_data_path.display()));
+            let exe_cmd = format!("{}", ext_cmd);
             let res = gxl_sh!(
                 LogicScope::Outer,
                 ctx.tag_path("cmd").as_str(),

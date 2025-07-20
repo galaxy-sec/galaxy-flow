@@ -81,8 +81,9 @@ impl VarDict {
     }
     //todo sec  to nor
     pub fn export_str_map(&self) -> HashMap<String, String> {
+        let data = self.maps.clone().no_sec();
         let mut map = HashMap::new();
-        for (k, v) in &self.maps {
+        for (k, v) in data {
             map.insert(k.to_uppercase(), v.to_string());
         }
         map
