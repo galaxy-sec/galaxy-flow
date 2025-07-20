@@ -25,9 +25,24 @@ mod main   {
           gx.echo ( "what:${SYS_OUT}" );
     }
 
+    gx.read_file( file : "./var_obj.yml" , name : "DATA");
+    for ${CUR} in ${DATA} {
+      gx.shell(
+          shell : "./demo_ex.sh ${CUR.SYS.NAME}",
+          out_var: "SYS_OUT" );
+          gx.echo ( "what:${SYS_OUT}" );
+    }
 
   }
-
-
+  flow do_obj {
+    gx.read_file( file : "./var_obj.yml" , name : "DATA");
+    for ${CUR} in ${DATA} {
+      //gx.echo( "CUR:${CUR.SYS.NAME}" );
+      gx.shell(
+          shell : "./demo_ex.sh ${CUR.SYS.NAME}",
+          out_var: "SYS_OUT" );
+          gx.echo ( "what:${SYS_OUT}" );
+    }
+  }
 
 }
