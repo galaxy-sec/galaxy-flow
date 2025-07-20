@@ -51,7 +51,7 @@ pub trait PropsTrait {
                     if let Some(val) = dict.get(x.as_str()).cloned() {
                         dict.set(key.clone(), val.clone());
                         exp.insert_from(key.clone(), val.clone());
-                        info!(target: ctx.path(),"{:10} = {}",key,val);
+                        info!(target: ctx.path(),"{key:10} = {val}",);
                     } else {
                         return ExecError::from_logic(format!("nor var ref {x}")).err();
                     }
@@ -60,11 +60,11 @@ pub trait PropsTrait {
                     match x {
                         crate::sec::SecValueType::String(v) => {
                             let val = exp.eval(v.value())?;
-                            info!(target: ctx.path(),"{:10} = {}",key,val.cut_str(20));
+                            info!(target: ctx.path(),"{key:10} = {}",val.cut_str(20));
                             dict.set(&key, val.clone());
                         }
                         _ => {
-                            info!(target: ctx.path(),"{:10} = {}",key,x);
+                            info!(target: ctx.path(),"{key:10} = {x}");
                             dict.set(&key, x.clone());
                         }
                     }

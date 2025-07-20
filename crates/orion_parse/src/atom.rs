@@ -171,7 +171,7 @@ pub fn take_float(data: &mut &str) -> Result<f64> {
         .context(StrContext::Label("float"))
         .parse_next(data)?;
     // 组合整数和小数部分
-    let float_str = format!("{}.{}", integer_part, fractional_part);
+    let float_str = format!("{integer_part}.{fractional_part}",);
     if let Ok(x) = float_str.parse::<f64>() {
         return Ok(x);
     }
