@@ -12,6 +12,8 @@ use orion_error::WithContext;
 use orion_variate::addr::GitAddr;
 use orion_variate::types::UpdateUnit;
 use orion_variate::update::UpdateOptions;
+use orion_variate::vars::EnvDict;
+use orion_variate::vars::EnvEvalable;
 use std::fs::read_to_string;
 use std::path::PathBuf;
 use winnow::ascii::line_ending;
@@ -116,6 +118,7 @@ impl ExternParser {
                 let addr = GitAddr::from(git_addr.remote())
                     .with_opt_branch(git_addr.branch().clone())
                     .with_opt_tag(git_addr.tag().clone());
+                let addr = addr.env_eval(&EnvDict::from(vars_space.global().export().clone()));
                 let local_path = ExternGit::pull(addr, up_options).await?;
                 ExternLocalBuilder::default()
                     .path(local_path.position().join("mods"))

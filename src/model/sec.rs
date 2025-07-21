@@ -1,10 +1,10 @@
 use std::{
-    collections::HashMap,
     fmt::{Display, Formatter},
     net::IpAddr,
 };
 
 use derive_more::From;
+use indexmap::IndexMap;
 use orion_variate::vars::ValueType;
 use serde_derive::{Deserialize, Serialize};
 use unicase::UniCase;
@@ -86,8 +86,8 @@ impl<T> SecConv for UniCaseMap<SecValue<T>> {
         self
     }
 }
-impl SecFrom<HashMap<String, ValueType>> for SecValueType {
-    fn sec_from(value: HashMap<String, ValueType>) -> Self {
+impl SecFrom<IndexMap<String, ValueType>> for SecValueType {
+    fn sec_from(value: IndexMap<String, ValueType>) -> Self {
         SecValueType::Obj(
             value
                 .into_iter()
@@ -96,7 +96,7 @@ impl SecFrom<HashMap<String, ValueType>> for SecValueType {
         )
     }
 
-    fn nor_from(value: HashMap<String, ValueType>) -> Self {
+    fn nor_from(value: IndexMap<String, ValueType>) -> Self {
         SecValueType::Obj(
             value
                 .into_iter()
@@ -280,8 +280,8 @@ impl NoSecConv<Vec<ValueType>> for Vec<SecValueType> {
     }
 }
 
-impl NoSecConv<HashMap<String, ValueType>> for UniCaseMap<SecValueType> {
-    fn no_sec(self) -> HashMap<String, ValueType> {
+impl NoSecConv<IndexMap<String, ValueType>> for UniCaseMap<SecValueType> {
+    fn no_sec(self) -> IndexMap<String, ValueType> {
         self.into_iter()
             .map(|(k, x)| (k.to_uppercase(), x.no_sec()))
             .collect()
@@ -450,7 +450,7 @@ mod tests {
     #[test]
     fn test_nested_conversions() {
         // Test nested objects
-        let mut obj = HashMap::new();
+        let mut obj = IndexMap::new();
         obj.insert("key".to_string(), ValueType::String("value".to_string()));
 
         let secret_obj = SecValueType::sec_from(obj.clone());

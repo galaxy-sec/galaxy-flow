@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::env::Vars;
 use std::fmt::{Debug, Display};
 
+use indexmap::IndexMap;
 use orion_variate::vars::{ValueDict, ValueType};
 use unicase::UniCase;
 
@@ -16,7 +17,7 @@ pub enum VarMeta {
 }
 
 pub type UniString = UniCase<String>;
-pub type UniCaseMap<T> = HashMap<UniCase<String>, T>;
+pub type UniCaseMap<T> = IndexMap<UniCase<String>, T>;
 #[derive(Debug, Clone, Default, Getters, PartialEq)]
 pub struct VarDict {
     useage: DictUse,
@@ -62,27 +63,27 @@ impl VarDict {
     pub fn global_new() -> Self {
         VarDict {
             useage: DictUse::Global,
-            maps: HashMap::new(),
+            maps: IndexMap::new(),
         }
     }
     pub fn new<S: Into<String>>(name: S) -> Self {
         VarDict {
             useage: DictUse::Named(name.into()),
-            maps: HashMap::new(),
+            maps: IndexMap::new(),
         }
     }
 
-    pub fn export(&self) -> HashMap<String, ValueType> {
-        let mut map = HashMap::new();
+    pub fn export(&self) -> IndexMap<String, ValueType> {
+        let mut map = IndexMap::new();
         for (k, v) in &self.maps {
             map.insert(k.to_uppercase(), v.clone().no_sec());
         }
         map
     }
     //todo sec  to nor
-    pub fn export_str_map(&self) -> HashMap<String, String> {
+    pub fn export_str_map(&self) -> IndexMap<String, String> {
         let data = self.maps.clone().no_sec();
-        let mut map = HashMap::new();
+        let mut map = IndexMap::new();
         for (k, v) in data {
             map.insert(k.to_uppercase(), v.to_string());
         }
