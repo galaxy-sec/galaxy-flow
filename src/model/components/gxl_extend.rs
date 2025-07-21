@@ -1,18 +1,24 @@
-#[derive(Clone, Debug, Getters)]
+use getset::{Getters, Setters, WithSetters};
+#[derive(Clone, Debug, WithSetters, Setters, Default, Getters)]
 pub struct ModGitAddr {
+    #[getset(get = "pub", set = "pub")]
     remote: String,
-    channel: String,
+    #[getset(get = "pub", set = "pub", set_with = "pub")]
+    branch: Option<String>,
+    #[getset(get = "pub", set = "pub", set_with = "pub")]
+    tag: Option<String>,
 }
 impl ModGitAddr {
-    pub fn new<S: Into<String>>(remote: S, channel: S) -> Self {
+    pub fn new<S: Into<String>>(remote: S) -> Self {
         Self {
             remote: remote.into(),
-            channel: channel.into(),
+            ..Default::default()
         }
     }
 }
 #[derive(Clone, Debug, Getters)]
 pub struct ModLocAddr {
+    #[getset(get = "pub")]
     path: String,
 }
 impl ModLocAddr {
@@ -27,7 +33,9 @@ pub enum ModAddr {
 }
 #[derive(Clone, Debug, Getters)]
 pub struct ModRef {
+    #[getset(get = "pub")]
     mods: Vec<String>,
+    #[getset(get = "pub")]
     addr: ModAddr,
 }
 impl ModRef {

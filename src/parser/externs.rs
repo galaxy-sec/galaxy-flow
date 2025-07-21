@@ -113,7 +113,9 @@ impl ExternParser {
                 debug!("git url: {cl_git_url}");
                 debug!("git repo : {repo_name}",);
 
-                let addr = GitAddr::from(git_addr.remote()).with_branch(git_addr.channel());
+                let addr = GitAddr::from(git_addr.remote())
+                    .with_opt_branch(git_addr.branch().clone())
+                    .with_opt_tag(git_addr.tag().clone());
                 let local_path = ExternGit::pull(addr, up_options).await?;
                 ExternLocalBuilder::default()
                     .path(local_path.position().join("mods"))

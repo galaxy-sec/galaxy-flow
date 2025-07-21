@@ -3,34 +3,37 @@ use winnow::combinator::{delimited, separated};
 
 use crate::{
     components::gxl_extend::{ModAddr, ModGitAddr, ModLocAddr, ModRef},
-    parser::atom::{take_filename, take_filename_body, take_host},
+    parser::{
+        atom::{take_filename, take_filename_body, take_host},
+        inner::object_props,
+    },
+    util::OptionFrom,
 };
 
 use super::prelude::*;
 
+//{ git = "git@galaxy-sec.org:/gxl-lab.git", tag = "0.1.0" };
+//{ git = "git@galaxy-sec.org:/gxl-lab.git", branch = "main" };
+//{ git = "https://galaxy-sec.org/gxl-lab.git", branch = "main" };
 pub fn parse_git_addr(input: &mut &str) -> Result<ModAddr> {
-    ("{", multispace0, "git", multispace0, "=", multispace0)
-        .context(wn_desc("{ git = "))
-        .parse_next(input)?;
-    let remote = delimited("\"", take_while(1.., |c: char| c != '"'), "\"")
-        .context(wn_desc("git path"))
-        .parse_next(input)?;
-    (
-        multispace0,
-        ";",
-        multispace0,
-        //"channel",
-        alt(("channel", "tag", "branch")),
-        multispace0,
-        "=",
-        multispace0,
-    )
-        .context(wn_desc(", channel = "))
-        .parse_next(input)?;
-
-    let channel = delimited("\"", take_while(1.., |c: char| c != '"'), "\"").parse_next(input)?;
-    (multispace0, ";", multispace0, "}").parse_next(input)?;
-    Ok(ModAddr::Git(ModGitAddr::new(remote, channel)))
+    let mut git = ModGitAddr::default();
+    let props = object_props.parse_next(input)?;
+    for one in props {
+        let key = one.0.to_lowercase();
+        if key == "git" {
+            git.set_remote(one.1);
+        } else if key == "branch" || key == "channel" {
+            git.set_branch(one.1.to_opt());
+        } else if key == "tag" {
+            git.set_tag(one.1.to_opt());
+        }
+    }
+    if git.remote().is_empty() {
+        return fail
+            .context(wn_desc("git addr miss remote"))
+            .parse_next(input);
+    }
+    Ok(ModAddr::Git(git))
 }
 
 // 解析本地路径模式
@@ -88,17 +91,28 @@ mod tests {
 
     use orion_error::TestAssert;
 
+    use crate::util::OptionFrom;
+
     use super::*;
 
     #[test]
     fn test_parse_git_addr() {
         // 测试 Git 仓库模式
         let mut input = r#"{ git = "git@galaxy-sec.org:/gxl-lab.git"; channel = "0.1.0"; }"#;
+        let result = parse_git_addr(&mut input).assert();
+        match result {
+            ModAddr::Git(addr) => {
+                assert_eq!(addr.remote(), "git@galaxy-sec.org:/gxl-lab.git");
+                assert_eq!(addr.branch(), &"0.1.0".to_opt());
+            }
+            _ => panic!("Expected Git address"),
+        }
+        let mut input = r#"{ git = "git@galaxy-sec.org:/gxl-lab.git", tag = "0.1.0" }"#;
         let result = parse_git_addr(&mut input).unwrap();
         match result {
             ModAddr::Git(addr) => {
                 assert_eq!(addr.remote(), "git@galaxy-sec.org:/gxl-lab.git");
-                assert_eq!(addr.channel(), "0.1.0");
+                assert_eq!(addr.tag(), &"0.1.0".to_opt());
             }
             _ => panic!("Expected Git address"),
         }
@@ -106,10 +120,6 @@ mod tests {
 
     #[test]
     fn test_parse_git_addr_invalid() {
-        // 测试无效的 Git 仓库模式（缺少 channel）
-        let mut input = r#"{ git = "git@galaxy-sec.org:free/gxl-lab.git"; }"#;
-        assert!(parse_git_addr(&mut input).is_err());
-
         // 测试无效的 Git 仓库模式（缺少 git）
         let mut input = r#"{ channel = "0.1.0"; }"#;
         assert!(parse_git_addr(&mut input).is_err());
@@ -142,11 +152,23 @@ mod tests {
     fn test_gal_extern_mod_git() {
         let mut input =
             r#"extern mod os { git = "git@galaxy-sec.org:free/gxl-lab.git"; channel = "0.1.0"; }"#;
+        let result = gal_extern_mod(&mut input).assert();
+        match result.addr() {
+            ModAddr::Git(addr) => {
+                assert_eq!(addr.remote(), "git@galaxy-sec.org:free/gxl-lab.git");
+                assert_eq!(addr.branch(), &"0.1.0".to_opt());
+            }
+            _ => panic!("Expected Git address"),
+        }
+        assert_eq!(result.mods(), &vec!["os"]);
+
+        let mut input =
+            r#"extern mod os { git = "git@galaxy-sec.org:free/gxl-lab.git", tag = "0.1.0" }"#;
         let result = gal_extern_mod(&mut input).unwrap();
         match result.addr() {
             ModAddr::Git(addr) => {
                 assert_eq!(addr.remote(), "git@galaxy-sec.org:free/gxl-lab.git");
-                assert_eq!(addr.channel(), "0.1.0");
+                assert_eq!(addr.tag(), &"0.1.0".to_opt());
             }
             _ => panic!("Expected Git address"),
         }

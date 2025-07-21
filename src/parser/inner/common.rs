@@ -7,8 +7,8 @@ use crate::components::{gxl_var::*, GxlProps};
 use crate::expect::ShellOption;
 use crate::parser::abilities::define::gal_var_assign;
 use crate::parser::domain::{
-    fun_arg, gal_call_beg, gal_call_end, gal_keyword, gal_sentence_beg, gal_sentence_end,
-    gal_var_input, parse_log,
+    fun_arg, gal_assign_exp, gal_block_beg, gal_block_end, gal_call_beg, gal_call_end, gal_keyword,
+    gal_sentence_beg, gal_sentence_end, gal_var_input, parse_log,
 };
 use crate::primitive::{GxlArg, GxlObject};
 use crate::types::Property;
@@ -28,6 +28,15 @@ pub fn action_call_args(input: &mut &str) -> Result<Vec<(String, String)>> {
         separated(0.., gal_var_input, symbol_comma).parse_next(input)?;
     opt(symbol_comma).parse_next(input)?;
     gal_call_end.parse_next(input)?;
+    Ok(props)
+}
+
+pub fn object_props(input: &mut &str) -> Result<Vec<(String, String)>> {
+    gal_block_beg.parse_next(input)?;
+    let props: Vec<(String, String)> =
+        separated(0.., gal_assign_exp, alt((symbol_comma, symbol_semicolon))).parse_next(input)?;
+    opt(alt((symbol_comma, symbol_semicolon))).parse_next(input)?;
+    gal_block_end.parse_next(input)?;
     Ok(props)
 }
 

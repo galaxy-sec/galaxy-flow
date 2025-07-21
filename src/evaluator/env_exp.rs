@@ -26,10 +26,8 @@ impl Default for EnvExpress {
 
 impl EnvExpress {
     pub fn new(data: VarDict) -> EnvExpress {
-        let regex =
-            //Regex::new(r"(\$\{([[:alnum:]_\.]+)\})").expect(" EnvExpress Regex new fail!");
-        Regex::new(r"(\$\{([[:alnum:]_\.]+(?:\[[^\]]*\])?)\})").expect("EnvExpress Regex new fail!");
-
+        let regex = Regex::new(r"(\$\{([[:alnum:]_\.]+(?:\[[^\]]*\])?)(?::([^}]*))?\})")
+            .expect("EnvExpress Regex new fail!");
         EnvExpress { regex, data }
     }
     #[allow(dead_code)]
@@ -93,7 +91,15 @@ impl Parser<&String> for EnvExpress {
 
 impl Parser<&str> for EnvExpress {
     fn eval(&self, content: &str) -> ExecResult<String> {
-        let fun = |caps: &Captures| self.safe_eval_val(&caps[2]);
+        let fun = |caps: &Captures| {
+            if let Some(val) = self.eval_val(&caps[2]) {
+                val
+            } else if let Some(default) = caps.get(3) {
+                default.as_str().to_string()
+            } else {
+                format!("__NO[{}]__", &caps[2])
+            }
+        };
         let mut target = content.to_string();
         loop {
             if self.regex.find(target.as_str()).is_none() {
@@ -136,7 +142,7 @@ mod tests {
 
     use super::*;
     #[test]
-    pub fn regex_test() {
+    pub fn regex_basic() {
         let re = Regex::new(r"(\$\{([[:alnum:]]+)\})").unwrap();
         let fun = |caps: &Captures| caps[2].to_string();
         let newc = re.replace_all("${HOME}/bin", &fun);
@@ -150,7 +156,7 @@ mod tests {
         assert_eq!("{HOME}/bin", newc);
     }
     #[test]
-    pub fn test_array_support() {
+    pub fn array_variables() {
         use crate::sec::SecValueType;
 
         // 准备测试数据：包含数组的变量
@@ -175,7 +181,7 @@ mod tests {
     }
 
     #[test]
-    pub fn eval_test() {
+    pub fn simple_eval() {
         let data = str_map!(
         "HOME" => "/home/galaxy",
         "USER" => "galaxy"
@@ -200,8 +206,9 @@ mod tests {
         let content = "HOME2".to_string();
         assert_eq!(ex.eval(&content).unwrap(), String::from("HOME2"));
     }
+
     #[test]
-    pub fn eval_test2() {
+    pub fn nested_eval() {
         let data = str_map!(
         "HOME"      => "/home/galaxy",
         "USER"      => "galaxy",
@@ -216,6 +223,43 @@ mod tests {
         assert_eq!(
             ex.eval("${CUR_DIR}/bin").unwrap(),
             String::from("/home/galaxy/prj/bin")
+        );
+    }
+    #[test]
+    pub fn default_values() {
+        let data = str_map!(
+            "EXISTING" => "value",
+            "EMPTY" => ""
+        );
+
+        let ex = EnvExpress::new(VarDict::from(data));
+
+        // Existing variable
+        assert_eq!(ex.eval("${EXISTING:default}").unwrap(), "value");
+
+        // Missing variable with default
+        assert_eq!(
+            ex.eval("${MISSING:default_value}").unwrap(),
+            "default_value"
+        );
+
+        // Empty variable with default
+        assert_eq!(ex.eval("${EMPTY:default}").unwrap(), "");
+
+        // Missing variable without default
+        assert!(ex.eval("${MISSING}").is_err());
+
+        // Array with default
+        assert_eq!(
+            ex.eval("${MISSING[0]:array_default}").unwrap(),
+            "array_default"
+        );
+
+        // Complex default value
+        assert_eq!(
+            ex.eval("${MISSING:default with spaces and $pecial!}")
+                .unwrap(),
+            "default with spaces and $pecial!"
         );
     }
 }

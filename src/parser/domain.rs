@@ -5,8 +5,8 @@ use orion_parse::{
     atom::{skip_spaces_block, take_var_name},
     define::{gal_raw_str, take_string},
     symbol::{
-        symbol_brace_beg, symbol_brace_end, symbol_bracket_beg, symbol_bracket_end, symbol_colon,
-        symbol_semicolon, wn_desc,
+        symbol_assign, symbol_brace_beg, symbol_brace_end, symbol_bracket_beg, symbol_bracket_end,
+        symbol_colon, symbol_semicolon, wn_desc,
     },
 };
 use winnow::combinator::separated;
@@ -81,6 +81,25 @@ pub fn gal_var_input(input: &mut &str) -> Result<(String, String)> {
     multispace0(input)?;
     let key = key_opt.unwrap_or("default");
     //(multispace0, alt((symbol_comma, symbol_semicolon))).parse_next(input)?;
+    Ok((key.to_string(), val.to_string()))
+}
+
+pub fn gal_assign_exp(input: &mut &str) -> Result<(String, String)> {
+    let _ = multispace0.parse_next(input)?;
+    let key_opt = opt(
+        take_while(1.., ('0'..='9', 'A'..='Z', 'a'..='z', ['_', '.']))
+            .context(wn_desc("<var-name>")),
+    )
+    .parse_next(input)?;
+    if key_opt.is_some() {
+        symbol_assign.parse_next(input)?;
+    }
+    let _ = multispace0.parse_next(input)?;
+    let val = alt((take_string, gal_raw_str))
+        .context(wn_desc("<var-val>"))
+        .parse_next(input)?;
+    multispace0(input)?;
+    let key = key_opt.unwrap_or("default");
     Ok((key.to_string(), val.to_string()))
 }
 
