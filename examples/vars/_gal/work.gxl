@@ -1,0 +1,23 @@
+mod envs {
+    env default   {
+      data_list =  [ "JAVA", "RUST", "PYTHON"] ;
+      data_obj =  { 
+        JAVA : { NAME: "JAVA", SCORE: 80 }, 
+        RUST : { NAME: "RUST", SCORE: 100 }, 
+        PYTHON : { NAME: "PYTHON", SCORE: 200} 
+        } ;
+    }
+}
+mod main   {
+  flow array_do{
+    for ${CUR} in ${ENV_DATA_LIST} {
+      gx.echo( "CUR:${CUR}" );
+    }
+  }
+  flow obj_do{
+    for ${CUR} in ${ENV_DATA_OBJ} {
+      gx.echo( "CUR:${CUR.NAME} : ${CUR.SCORE}" );
+    }
+  }
+
+}
