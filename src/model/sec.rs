@@ -43,6 +43,14 @@ impl<T> SecValue<T> {
         self.is_secret
     }
 }
+impl<T> PartialOrd for SecValue<T>
+where
+    T: PartialOrd,
+{
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        self.value.partial_cmp(&other.value)
+    }
+}
 
 pub trait NoSecConv<T> {
     fn no_sec(self) -> T;
@@ -199,6 +207,19 @@ pub enum SecValueType {
     Ip(SecIpAddr),
     Obj(SecValueObj),
     List(SecValueVec),
+}
+impl PartialOrd for SecValueType {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        match (self, other) {
+            (SecValueType::String(f), SecValueType::String(s)) => f.partial_cmp(s),
+            (SecValueType::Bool(f), SecValueType::Bool(s)) => f.partial_cmp(s),
+            (SecValueType::Float(f), SecValueType::Float(s)) => f.partial_cmp(s),
+            (SecValueType::Ip(f), SecValueType::Ip(s)) => f.partial_cmp(s),
+            _ => {
+                unimplemented!("un support cmp")
+            }
+        }
+    }
 }
 
 impl<T> SecFrom<T> for SecValueType

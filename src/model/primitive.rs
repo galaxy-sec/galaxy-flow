@@ -16,7 +16,7 @@ impl GxlArg {
         }
     }
 }
-#[derive(Clone, Debug, PartialEq, From)]
+#[derive(Clone, Debug, PartialEq, PartialOrd, From)]
 pub enum GxlObject {
     VarRef(String),
     Value(SecValueType),

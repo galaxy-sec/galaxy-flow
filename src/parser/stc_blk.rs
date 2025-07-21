@@ -1,18 +1,20 @@
+use super::abilities::define::gal_gxl_object;
 use super::inner::cmd::gal_cmd_block;
 use super::inner::funs::gal_defined;
 use super::inner::gxl::gal_run;
 use super::inner::shell::gal_shell;
 use super::prelude::*;
-use orion_parse::define::{take_string, take_var_ref_name};
+use orion_parse::define::take_var_ref_name;
 use orion_parse::symbol::symbol_cmp;
 use winnow::combinator::repeat;
 
 use crate::ability::prelude::GxlVar;
 use crate::calculate::cond::IFExpress;
-use crate::calculate::express::{BinExpress, EVarDef, ExpressEnum};
+use crate::calculate::express::{BinExpress, ExpressEnum};
 use crate::components::gxl_block::{BlockAction, BlockNode};
 use crate::components::gxl_cond::GxlCond;
 use crate::components::gxl_loop::GxlLoop;
+use crate::primitive::GxlObject;
 
 use super::atom::spaced;
 use super::domain::{gal_block_beg, gal_block_end, gal_keyword};
@@ -126,13 +128,13 @@ pub fn gal_else_if(input: &mut &str) -> Result<GxlCond> {
     let (name, cmp, value) = (
         spaced(take_var_ref_name).context(wn_desc("<env-var>")),
         spaced(symbol_cmp).context(wn_desc("operator")),
-        spaced(take_string).context(wn_desc("<value-str>")),
+        spaced(gal_gxl_object).context(wn_desc("<value-str>")),
     )
         .parse_next(input)?;
     let true_block = gal_block.parse_next(input)?;
     skip_spaces_block(input)?;
     let ctrl_express = IFExpress::new(
-        ExpressEnum::GxlStr(BinExpress::from_op(cmp, EVarDef::new(name), value)),
+        ExpressEnum::GxlObj(BinExpress::from_op(cmp, GxlObject::VarRef(name), value)),
         true_block,
         Vec::new(),
         None,
@@ -145,12 +147,13 @@ pub fn gal_exp_bin_r(input: &mut &str) -> Result<ExpressEnum> {
     let (name, cmp, value) = (
         spaced(take_var_ref_name).context(wn_desc("<env-var>")),
         spaced(symbol_cmp).context(wn_desc("operator")),
-        spaced(take_string).context(wn_desc("<value-str>")),
+        spaced(gal_gxl_object).context(wn_desc("<value-str>")),
     )
         .parse_next(input)?;
-    Ok(ExpressEnum::GxlStr(BinExpress::from_op(
+    Ok(ExpressEnum::GxlObj(BinExpress::from_op(
         cmp,
-        EVarDef::new(name),
+        //EVarDef::new(name),
+        GxlObject::VarRef(name),
         value,
     )))
 }
@@ -311,7 +314,7 @@ mod tests {
     fn test_if_for() {
         let mut data = r#"
             {
-            if ${val} == "1" {
+            if ${val} == 1 {
                 for  ${CUR} in ${DATA} {
                     gx.echo ( value  : "${cur}/test/main.py"  );
                 }

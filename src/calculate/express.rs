@@ -3,9 +3,10 @@ use wildmatch::WildMatch;
 
 use crate::context::ExecContext;
 use crate::execution::VarSpace;
+use crate::primitive::GxlObject;
 
 use super::defined::BoolBinFn;
-use super::dynval::{EnvVarTag, EvalError, MocVarTag, ValueEval, VarDef};
+use super::dynval::{EnvVarTag, EvalError, EvalResult, MocVarTag, ValueEval, VarDef};
 use std::fmt::Debug;
 use std::num::ParseIntError;
 
@@ -190,10 +191,28 @@ pub type EVarDef = VarDef<String, EnvVarTag>;
 #[derive(Clone, Debug)]
 pub enum ExpressEnum {
     EU32(BinExpress<VarDef<u32, EnvVarTag>, u32>),
-    GxlStr(BinExpress<VarDef<String, EnvVarTag>, String>),
+    GxlObj(BinExpress<GxlObject, GxlObject>),
     MocU32(BinExpress<VarDef<u32, MocVarTag>, u32>),
     MocStr(BinExpress<VarDef<String, MocVarTag>, String>),
     BinFun(BoolBinFn),
+}
+
+impl ValueEval<GxlObject> for GxlObject {
+    fn eval(&self, vars: &VarSpace) -> EvalResult<GxlObject> {
+        match self {
+            GxlObject::VarRef(name) => vars
+                .get(name)
+                .cloned()
+                .map(GxlObject::from)
+                .ok_or_else(|| EvalError::VarMiss(name.clone())),
+            GxlObject::Value(_) => Ok(self.clone()),
+        }
+    }
+}
+impl WildEq for GxlObject {
+    fn we(&self, other: &Self) -> bool {
+        self.eq(other)
+    }
 }
 
 impl<T> From<T> for ExpressEnum
@@ -211,7 +230,7 @@ impl Evaluation for ExpressEnum {
             ExpressEnum::MocU32(x) => x.decide(ctx, args),
             ExpressEnum::MocStr(x) => x.decide(ctx, args),
             ExpressEnum::EU32(x) => x.decide(ctx, args),
-            ExpressEnum::GxlStr(x) => x.decide(ctx, args),
+            ExpressEnum::GxlObj(x) => x.decide(ctx, args),
             ExpressEnum::BinFun(x) => x.decide(ctx, args),
         }
     }
