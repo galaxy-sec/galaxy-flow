@@ -210,7 +210,21 @@ impl ValueEval<GxlObject> for GxlObject {
 }
 impl WildEq for GxlObject {
     fn we(&self, other: &Self) -> bool {
-        self.eq(other)
+        match (self, other) {
+            (GxlObject::VarRef(f), GxlObject::VarRef(s)) => f.eq(s),
+            (GxlObject::Value(f), GxlObject::Value(s)) => match (f, s) {
+                (crate::sec::SecValueType::String(s1), crate::sec::SecValueType::String(s2)) => {
+                    s1.value().we(s2.value())
+                }
+                _ => {
+                    unreachable!("unsupport we op! only for string ");
+                }
+            },
+            _ => {
+                unreachable!("unsupport we op! only for string ");
+            }
+        }
+        //self.eq(other)
     }
 }
 
@@ -238,7 +252,7 @@ impl ExpressEnum {}
 
 #[cfg(test)]
 mod tests {
-    use crate::execution::VarSpace;
+    use crate::{execution::VarSpace, sec::SecFrom};
 
     use super::*;
 
@@ -301,5 +315,27 @@ mod tests {
             bin_express.decide(ExecContext::default(), &VarSpace::default()),
             Ok(false)
         );
+    }
+    #[test]
+    fn test_gxl_object_we() {
+        use crate::primitive::GxlObject;
+        use crate::sec::SecValueType;
+
+        // 测试字符串通配符匹配
+        let obj1 = GxlObject::Value(SecValueType::nor_from("hello*".to_string()));
+        let obj2 = GxlObject::Value(SecValueType::nor_from("hello_world".to_string()));
+        assert!(obj1.we(&obj2));
+
+        // 测试字符串不匹配
+        let obj3 = GxlObject::Value(SecValueType::nor_from("world*".to_string()));
+        assert!(!obj3.we(&obj2));
+
+        // 测试非字符串类型（应触发 unreachable!）
+        //let obj4 = GxlObject::Value(SecValueType::nor_from(42));
+        //let obj5 = GxlObject::Value(SecValueType::nor_from(42));
+        // 注意：这里会触发 unreachable!，因为 we 方法不支持非字符串类型
+        // 测试时可以通过 #[should_panic] 注解捕获 panic
+        // #[should_panic(expected = "unsupport we op! only for string")]
+        // assert!(obj4.we(&obj5));
     }
 }
