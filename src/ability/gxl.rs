@@ -2,6 +2,8 @@ use orion_error::ErrorConv;
 
 use crate::ability::prelude::*;
 
+use crate::const_val::gxl_const;
+use crate::sec::SecValueType;
 use crate::{
     runner::{GxlCmd, GxlRunner},
     util::path::WorkDir,
@@ -40,6 +42,19 @@ impl AsyncRunnableTrait for GxRun {
     async fn async_exec(&self, mut ctx: ExecContext, vars_dict: VarSpace) -> TaskResult {
         ctx.append("gx.run");
         let mut action = Action::from("gx.run");
+        let dryrun = if let Some(SecValueType::Bool(dryrun)) = vars_dict.get(gxl_const::CMD_DRYRUN)
+        {
+            *dryrun.value()
+        } else {
+            false
+        };
+        let mod_update =
+            if let Some(SecValueType::Bool(mod_up)) = vars_dict.get(gxl_const::CMD_MODUP) {
+                *mod_up.value()
+            } else {
+                false
+            };
+
         let exp = EnvExpress::from_env_mix(vars_dict.global().clone());
         let cmd = GxlCmd {
             env: exp.eval(&self.env_conf)?,
@@ -49,7 +64,8 @@ impl AsyncRunnableTrait for GxRun {
             log: None,
             quiet: ctx.quiet(),
             cmd_arg: String::new(),
-            dryrun: false,
+            dryrun,
+            mod_update,
         };
         let run_path = exp.eval(&self.run_path)?;
         let _g = WorkDir::change(run_path)

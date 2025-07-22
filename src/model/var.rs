@@ -193,6 +193,12 @@ impl Setter<&str, String> for VarDict {
             .insert(key.to_unicase(), SecValueType::nor_from(val));
     }
 }
+impl Setter<&str, bool> for VarDict {
+    fn set(&mut self, key: &str, val: bool) {
+        self.maps
+            .insert(key.to_unicase(), SecValueType::nor_from(val));
+    }
+}
 
 impl Setter<&str, &str> for VarDict {
     fn set(&mut self, key: &str, val: &str) {

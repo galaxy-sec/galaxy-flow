@@ -13,6 +13,7 @@ pub mod shell;
 pub mod version;
 use prelude::VarSpace;
 
+use crate::const_val::gxl_const;
 use crate::{context::ExecContext, infra::once_init_log, traits::Setter, ExecResult};
 
 pub struct StubFlowAbi {}
@@ -23,7 +24,7 @@ pub fn ability_env_init() -> (ExecContext, VarSpace) {
     let context = ExecContext::new(Some(false), false);
     let mut def = VarSpace::default();
     def.global_mut()
-        .set("GXL_PRJ_ROOT", context.cur_path().as_str());
+        .set(gxl_const::PRJ_ROOT, context.cur_path().as_str());
     (context, def)
 }
 
