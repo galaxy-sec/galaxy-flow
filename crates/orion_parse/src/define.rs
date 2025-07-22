@@ -95,7 +95,7 @@ pub fn gal_raw_str(data: &mut &str) -> Result<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use winnow::{Parser, Result};
+    use winnow::{ Result};
 
     #[test]
     fn test_take_string() {

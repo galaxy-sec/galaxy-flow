@@ -4,7 +4,6 @@ use crate::evaluator::EnvExpress;
 use crate::execution::VarSpace;
 use crate::parser::abilities::addr::gal_extern_mod;
 use crate::parser::abilities::addr::gal_git_path;
-use crate::util::GitTools;
 use crate::ExecResult;
 use orion_error::ErrorOwe;
 use orion_error::ErrorWith;
@@ -20,6 +19,7 @@ use winnow::ascii::line_ending;
 use winnow::ascii::till_line_ending;
 
 use winnow::stream::Stream;
+use crate::util::GitTools;
 
 #[derive(Debug)]
 pub enum DslStatus {
