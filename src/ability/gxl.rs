@@ -42,18 +42,18 @@ impl AsyncRunnableTrait for GxRun {
     async fn async_exec(&self, mut ctx: ExecContext, vars_dict: VarSpace) -> TaskResult {
         ctx.append("gx.run");
         let mut action = Action::from("gx.run");
-        let dryrun = if let Some(SecValueType::Bool(dryrun) )= vars_dict.get(gxl_const::CMD_DRYRUN) {
-                *dryrun.value()
-        }
-        else {
+        let dryrun = if let Some(SecValueType::Bool(dryrun)) = vars_dict.get(gxl_const::CMD_DRYRUN)
+        {
+            *dryrun.value()
+        } else {
             false
         };
-        let mod_update = if let Some(SecValueType::Bool(mod_up) )= vars_dict.get(gxl_const::CMD_MODUP) {
+        let mod_update =
+            if let Some(SecValueType::Bool(mod_up)) = vars_dict.get(gxl_const::CMD_MODUP) {
                 *mod_up.value()
-        }
-        else {
-            false
-        };
+            } else {
+                false
+            };
 
         let exp = EnvExpress::from_env_mix(vars_dict.global().clone());
         let cmd = GxlCmd {

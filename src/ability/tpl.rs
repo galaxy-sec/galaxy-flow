@@ -253,7 +253,7 @@ impl GxTpl {
 #[cfg(test)]
 mod tests {
 
-    use crate::{ability::ability_env_init, traits::Setter};
+    use crate::{ability::ability_env_init, const_val::gxl_const, traits::Setter};
 
     use super::*;
     fn files_identical(path1: &str, path2: &str) -> std::io::Result<bool> {

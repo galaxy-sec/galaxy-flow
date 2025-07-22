@@ -13,8 +13,8 @@ pub mod shell;
 pub mod version;
 use prelude::VarSpace;
 
-use crate::{context::ExecContext, infra::once_init_log, traits::Setter, ExecResult};
 use crate::const_val::gxl_const;
+use crate::{context::ExecContext, infra::once_init_log, traits::Setter, ExecResult};
 
 pub struct StubFlowAbi {}
 

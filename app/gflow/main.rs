@@ -42,10 +42,10 @@ async fn main() -> anyhow::Result<()> {
         .set(gxl_const::CMD_ARG, cmd.cmd_arg.clone());
     var_space
         .global_mut()
-        .set(gxl_const::CMD_DRYRUN, cmd.dryrun.clone());
+        .set(gxl_const::CMD_DRYRUN, cmd.dryrun);
     var_space
         .global_mut()
-        .set(gxl_const::CMD_MODUP, cmd.mod_update.clone());
+        .set(gxl_const::CMD_MODUP, cmd.mod_update);
     match GxlRunner::run(cmd, var_space).await {
         Err(e) => report_gxl_error(e),
         Ok(_) => {

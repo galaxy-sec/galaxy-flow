@@ -17,8 +17,8 @@ use args::UpdateCmd;
 use clap::Parser;
 use galaxy_flow::conf::conf_init;
 use galaxy_flow::conf::conf_path;
-use galaxy_flow::err::*;
 use galaxy_flow::const_val::gxl_const::CONFIG_FILE;
+use galaxy_flow::err::*;
 use galaxy_flow::execution::VarSpace;
 use galaxy_flow::infra::configure_run_logging;
 use galaxy_flow::runner::{GxlCmd, GxlRunner};
@@ -211,6 +211,7 @@ mod tests {
             quiet: Some(true),
             cmd_arg: String::new(),
             dryrun: false,
+            mod_update: false,
         })
         .await
         .assert();
