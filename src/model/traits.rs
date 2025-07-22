@@ -5,6 +5,7 @@ use orion_error::UvsLogicFrom;
 use crate::{
     evaluator::{EnvExpress, Parser},
     menu::GxMenu,
+    sec::{SecFrom, SecValueObj, SecValueType, ToUniCase},
     util::str_utils::{StringCutter, UpperKeyMaker},
     ExecError,
 };
@@ -41,17 +42,20 @@ pub type AssembleHold = Arc<dyn ExecLoadTrait + 'static + Send + Sync>;
 pub trait PropsTrait {
     fn fetch_props(&self) -> Vec<GxlVar>;
     fn export_props(&self, ctx: ExecContext, dict: &mut VarDict, prefix: &str) -> ExecResult<()> {
+        let mut obj = SecValueObj::new();
         let key_maker = UpperKeyMaker::new(prefix);
         debug!( target: ctx.path() ,"props export use prefix({prefix})" );
         let mut exp = EnvExpress::from_env_mix(dict.clone());
         for prop in self.fetch_props() {
-            let key = key_maker.make(prop.key());
+            let old_ver_key = key_maker.make(prop.key());
             match prop.val() {
                 crate::primitive::GxlObject::VarRef(x) => {
                     if let Some(val) = dict.get(x.as_str()).cloned() {
-                        dict.set(key.clone(), val.clone());
-                        exp.insert_from(key.clone(), val.clone());
-                        info!(target: ctx.path(),"{key:10} = {val}",);
+                        dict.set(old_ver_key.clone(), val.clone());
+                        exp.insert_from(old_ver_key.clone(), val.clone());
+                        exp.insert_from(prefix.to_string(), obj.clone());
+                        info!(target: ctx.path(),"{old_ver_key:10} = {val}",);
+                        obj.insert(prop.key().to_unicase(), val.clone());
                     } else {
                         return ExecError::from_logic(format!("nor var ref {x}")).err();
                     }
@@ -60,19 +64,23 @@ pub trait PropsTrait {
                     match x {
                         crate::sec::SecValueType::String(v) => {
                             let val = exp.eval(v.value())?;
-                            info!(target: ctx.path(),"{key:10} = {}",val.cut_str(20));
-                            dict.set(&key, val.clone());
+                            info!(target: ctx.path(),"{old_ver_key:10} = {}",val.cut_str(20));
+                            dict.set(&old_ver_key, val.clone());
+                            obj.insert(prop.key().to_unicase(), SecValueType::nor_from(val));
                         }
                         _ => {
-                            info!(target: ctx.path(),"{key:10} = {x}");
-                            dict.set(&key, x.clone());
+                            info!(target: ctx.path(),"{old_ver_key:10} = {x}");
+                            dict.set(&old_ver_key, x.clone());
+                            obj.insert(prop.key().to_unicase(), x.clone());
                         }
                     }
-                    exp.insert_from(key, x.clone());
+                    exp.insert_from(prefix.to_string(), obj.clone());
+                    exp.insert_from(old_ver_key, x.clone());
                 }
             }
             //let val = exp.eval(prop.val())?;
         }
+        dict.merge_item_obj(prefix, obj);
         Ok(())
     }
 }

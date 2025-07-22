@@ -7,7 +7,7 @@ use orion_variate::vars::{ValueDict, ValueType};
 use unicase::UniCase;
 
 use super::execution::DictUse;
-use super::sec::{NoSecConv, SecFrom, SecValueType, ToUniCase, ValueGetter};
+use super::sec::{NoSecConv, SecFrom, SecValueObj, SecValueType, ToUniCase, ValueGetter};
 use super::traits::{Getter, Setter};
 
 #[derive(Clone, PartialEq, Eq)]
@@ -99,6 +99,17 @@ impl VarDict {
             self.maps.insert(k, v);
         }
     }
+    pub fn merge_item_obj(&mut self, key: &str, obj: SecValueObj) {
+        if let Some(SecValueType::Obj(found)) = self.maps.get_mut(&key.to_unicase()) {
+            for (k, v) in obj {
+                found.insert(k, v);
+            }
+        } else {
+            self.maps.insert(key.to_unicase(), SecValueType::from(obj));
+            //unreachable!("merge item_obj  miss or not obj");
+        }
+    }
+
     pub fn sec_set<S: Into<String>>(&mut self, key: S, val: ValueType) {
         self.maps
             .insert(UniCase::from(key.into()), SecValueType::sec_from(val));

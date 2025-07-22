@@ -550,7 +550,7 @@ mod test {
         println!("{:?}", vars.global().maps());
         assert_eq!(
             vars.global().maps().len(),
-            2 //vars.maps().get(&"MOD2_K2".to_string()),
+            4 //vars.maps().get(&"MOD2_K2".to_string()),
 
               //Some(&SecVar::new(VarMeta::Normal, "v2".to_string()))
         );
