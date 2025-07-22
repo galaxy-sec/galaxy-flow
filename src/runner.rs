@@ -70,9 +70,11 @@ pub struct GxlCmd {
         default_value = ""
     )]
     pub cmd_arg: String,
+    /// run at dryrun mode
     #[arg(long = "dryrun", action = ArgAction::SetTrue, default_value = "false")]
     pub dryrun: bool,
 
+    ///update remote gxl mod
     #[arg(long = "mod_up", action = ArgAction::SetTrue, default_value = "false")]
     pub mod_update: bool,
 }
