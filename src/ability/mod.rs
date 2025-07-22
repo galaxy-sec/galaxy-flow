@@ -57,7 +57,7 @@ pub use crate::ability::{
     tpl::GxTpl,
     tpl::TplDTO,
     tpl::TplDTOBuilder,
-    version::{RgVersion, RgVersionBuilder},
+    version::{GxlVersion, GxlVersionBuilder},
 };
 use crate::evaluator::EnvExpress;
 

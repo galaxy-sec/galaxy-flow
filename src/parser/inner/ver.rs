@@ -18,8 +18,8 @@ pub fn gal_echo(input: &mut &str) -> Result<GxEcho> {
     Ok(watcher)
 }
 
-pub fn gal_version(input: &mut &str) -> Result<RgVersion> {
-    let mut builder = RgVersionBuilder::default();
+pub fn gal_version(input: &mut &str) -> Result<GxlVersion> {
+    let mut builder = GxlVersionBuilder::default();
     builder.verinc(VerInc::Build);
     builder.export("VERSION".into());
     gal_keyword_alt("gx.ver", "rg.ver", input)?;
@@ -94,7 +94,7 @@ mod tests {
         let mut data = r#"
              gx.ver  ( file : "./tests/version.txt",  inc : "build"  ) ;"#;
         let found = gal_version(&mut data).unwrap();
-        let expect = RgVersion::new("./tests/version.txt".into());
+        let expect = GxlVersion::new("./tests/version.txt".into());
         assert_eq!(found, expect);
         assert_eq!(data, "");
     }

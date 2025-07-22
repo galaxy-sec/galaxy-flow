@@ -96,4 +96,22 @@ impl ComponentMeta for GxDownLoad {
 }
 
 #[cfg(test)]
-mod tests {}
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn test_gx_download_parent_exists() {
+        let temp_dir = tempfile::tempdir().unwrap();
+        let file_path = temp_dir.path().join("README").to_str().unwrap().to_string();
+        let download = GxDownLoadBuilder::default()
+            .local_file(file_path.clone())
+            .svc_url("https://mirrors.aliyun.com/postgresql/".to_string())
+            .build()
+            .unwrap();
+
+        let vars_dict = VarSpace::default();
+        let ctx = ExecContext::default();
+        let result = download.async_exec(ctx, vars_dict).await;
+        assert!(result.is_ok());
+    }
+}

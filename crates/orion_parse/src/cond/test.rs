@@ -41,47 +41,52 @@ impl Condition<VMap> for LogicExpress<u32, RustSymbol> {
 }
 
 type CondParser = WnCondParser<u32, ObjGet, RustSymbol>;
-#[test]
-pub fn test_express_exec_simple() -> Result<()> {
-    let data = SVMap::from([("A", 100), ("B", 200)]);
 
-    let mut code = r#"$A == 100"#;
-    let exp = CondParser::exp(&mut code)?;
-    assert!(exp.is_true(&VMap(data.clone())));
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    pub fn test_express_exec_simple() -> Result<()> {
+        let data = SVMap::from([("A", 100), ("B", 200)]);
 
-    let mut code = r#"$A =* 100"#;
-    let exp = CondParser::exp(&mut code)?;
-    assert!(exp.is_true(&VMap(data.clone())));
+        let mut code = r#"$A == 100"#;
+        let exp = CondParser::exp(&mut code)?;
+        assert!(exp.is_true(&VMap(data.clone())));
 
-    let mut code = r#"$A >= 100"#;
-    let exp = CondParser::exp(&mut code)?;
-    assert!(exp.is_true(&VMap(data.clone())));
+        let mut code = r#"$A =* 100"#;
+        let exp = CondParser::exp(&mut code)?;
+        assert!(exp.is_true(&VMap(data.clone())));
 
-    let mut code = r#"$A <= 100"#;
-    let exp = CondParser::exp(&mut code)?;
-    assert!(exp.is_true(&VMap(data.clone())));
+        let mut code = r#"$A >= 100"#;
+        let exp = CondParser::exp(&mut code)?;
+        assert!(exp.is_true(&VMap(data.clone())));
 
-    let mut code = r#"$A != 100"#;
-    let exp = CondParser::exp(&mut code)?;
-    assert!(!exp.is_true(&VMap(data.clone())));
+        let mut code = r#"$A <= 100"#;
+        let exp = CondParser::exp(&mut code)?;
+        assert!(exp.is_true(&VMap(data.clone())));
 
-    let mut code = r#"$A > 90 && $B > 150"#;
-    let exp = CondParser::exp(&mut code)?;
-    assert!(exp.is_true(&VMap(data.clone())));
+        let mut code = r#"$A != 100"#;
+        let exp = CondParser::exp(&mut code)?;
+        assert!(!exp.is_true(&VMap(data.clone())));
 
-    let mut code = r#"$A > 100 && $B > 150"#;
-    let exp = CondParser::exp(&mut code)?;
-    assert!(!exp.is_true(&VMap(data.clone())));
+        let mut code = r#"$A > 90 && $B > 150"#;
+        let exp = CondParser::exp(&mut code)?;
+        assert!(exp.is_true(&VMap(data.clone())));
 
-    let mut code = r#"$A > 100 || $B > 150"#;
-    let exp = CondParser::exp(&mut code)?;
-    assert!(exp.is_true(&VMap(data.clone())));
+        let mut code = r#"$A > 100 && $B > 150"#;
+        let exp = CondParser::exp(&mut code)?;
+        assert!(!exp.is_true(&VMap(data.clone())));
 
-    let mut code = r#"$A < 10 || ($A >= 100 && $B > 150)"#;
-    let exp = CondParser::exp(&mut code)?;
-    assert!(exp.is_true(&VMap(data.clone())));
+        let mut code = r#"$A > 100 || $B > 150"#;
+        let exp = CondParser::exp(&mut code)?;
+        assert!(exp.is_true(&VMap(data.clone())));
 
-    Ok(())
+        let mut code = r#"$A < 10 || ($A >= 100 && $B > 150)"#;
+        let exp = CondParser::exp(&mut code)?;
+        assert!(exp.is_true(&VMap(data.clone())));
+
+        Ok(())
+    }
 }
 
 /*

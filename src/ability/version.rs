@@ -95,14 +95,14 @@ impl std::fmt::Display for Version {
 }
 
 #[derive(Debug, Builder, PartialEq, Clone)]
-pub struct RgVersion {
+pub struct GxlVersion {
     file: String,
     export: String,
     verinc: VerInc,
 }
-impl RgVersion {
-    pub fn new(file: String) -> RgVersion {
-        RgVersion {
+impl GxlVersion {
+    pub fn new(file: String) -> GxlVersion {
+        GxlVersion {
             file,
             export: "VERSION".into(),
             verinc: VerInc::Build,
@@ -110,7 +110,7 @@ impl RgVersion {
     }
 }
 #[async_trait]
-impl AsyncRunnableTrait for RgVersion {
+impl AsyncRunnableTrait for GxlVersion {
     async fn async_exec(&self, mut ctx: ExecContext, mut dict: VarSpace) -> TaskResult {
         ctx.append("version");
         let exp = EnvExpress::from_env_mix(dict.global().clone());
@@ -140,7 +140,7 @@ pub fn parse_version(data: &str) -> ExecResult<Version> {
     Ok(Version::new(a, b, c, d))
 }
 
-impl ComponentMeta for RgVersion {
+impl ComponentMeta for GxlVersion {
     fn gxl_meta(&self) -> GxlMeta {
         GxlMeta::from("gx.ver")
     }
@@ -168,7 +168,7 @@ mod tests {
     async fn version_test() {
         let mut file = File::create("./tests/tmp_version.txt").unwrap();
         file.write_all(b"0.1.0.0").unwrap();
-        let ver = RgVersion::new("./tests/tmp_version.txt".into());
+        let ver = GxlVersion::new("./tests/tmp_version.txt".into());
         let ctx = ExecContext::default();
         let def = VarSpace::default();
         ver.async_exec(ctx.clone(), def).await.unwrap();
@@ -249,5 +249,37 @@ mod tests {
         };
         ver.auto(&VerInc::Build);
         assert_eq!(ver.build.unwrap(), 6);
+    }
+
+    #[test]
+    fn version_comparison_test() {
+        // Equal versions
+        let v1 = Version::new(1, 2, 3, Some(4));
+        let v2 = Version::new(1, 2, 3, Some(4));
+        assert_eq!(v1.partial_cmp(&v2), Some(Ordering::Equal));
+
+        // Main version comparison
+        let v1 = Version::new(2, 0, 0, None);
+        let v2 = Version::new(1, 0, 0, None);
+        assert_eq!(v1.partial_cmp(&v2), Some(Ordering::Greater));
+        assert_eq!(v2.partial_cmp(&v1), Some(Ordering::Less));
+
+        // Feature version comparison
+        let v1 = Version::new(1, 2, 0, None);
+        let v2 = Version::new(1, 1, 0, None);
+        assert_eq!(v1.partial_cmp(&v2), Some(Ordering::Greater));
+        assert_eq!(v2.partial_cmp(&v1), Some(Ordering::Less));
+
+        // Bugfix version comparison
+        let v1 = Version::new(1, 1, 2, None);
+        let v2 = Version::new(1, 1, 1, None);
+        assert_eq!(v1.partial_cmp(&v2), Some(Ordering::Greater));
+        assert_eq!(v2.partial_cmp(&v1), Some(Ordering::Less));
+
+        // Build version comparison
+        let v1 = Version::new(1, 1, 1, Some(2));
+        let v2 = Version::new(1, 1, 1, Some(1));
+        assert_eq!(v1.partial_cmp(&v2), Some(Ordering::Greater));
+        assert_eq!(v2.partial_cmp(&v1), Some(Ordering::Less));
     }
 }

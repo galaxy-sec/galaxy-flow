@@ -18,7 +18,7 @@ use crate::ability::GxRead;
 use crate::ability::GxRun;
 use crate::ability::GxTpl;
 use crate::ability::GxUpLoad;
-use crate::ability::RgVersion;
+use crate::ability::GxlVersion;
 use crate::calculate::cond::CondExec;
 use crate::context::ExecContext;
 use crate::execution::runnable::TaskResult;
@@ -42,7 +42,7 @@ pub enum BlockAction {
     Loop(GxlLoop),
     Echo(GxEcho),
     Assert(GxAssert),
-    Version(RgVersion),
+    Version(GxlVersion),
     Read(GxRead),
     Delegate(Box<ActCall>),
     Tpl(GxTpl),
