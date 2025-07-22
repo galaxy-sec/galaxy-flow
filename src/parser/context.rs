@@ -10,7 +10,7 @@ pub struct ParsCTX {
     sh_opt: ShellOption,
 }
 impl ParsCTX {
-    pub fn new(parent: &str,  gal_ver: Version, expect: ShellOption) -> Self {
+    pub fn new(parent: &str, gal_ver: Version, expect: ShellOption) -> Self {
         ParsCTX {
             fpath: parent.into(),
             gal_ver,

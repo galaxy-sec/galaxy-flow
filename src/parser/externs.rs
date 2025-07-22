@@ -18,8 +18,8 @@ use std::path::PathBuf;
 use winnow::ascii::line_ending;
 use winnow::ascii::till_line_ending;
 
-use winnow::stream::Stream;
 use crate::util::GitTools;
+use winnow::stream::Stream;
 
 #[derive(Debug)]
 pub enum DslStatus {
