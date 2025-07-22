@@ -81,7 +81,7 @@ impl AsyncRunnableTrait for GxDownLoad {
             action.finish();
             Ok(TaskValue::from((vars_dict, ExecOut::Action(action))))
         } else {
-            return ExecReason::Miss("local_file_parent".into())
+            return ExecReason::Miss("parent path not exists".into())
                 .err_result()
                 .want("gx.download")
                 .with(&local_file_path);
