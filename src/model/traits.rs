@@ -27,7 +27,7 @@ pub trait Setter<K, T> {
 }
 pub trait Getter<K, T> {
     fn must_get(&self, key: K) -> &T;
-    fn get(&self, key: K) -> Option<&T>;
+    fn get_copy(&self, key: K) -> Option<T>;
 }
 
 pub trait ExecLoadTrait {
@@ -50,7 +50,7 @@ pub trait PropsTrait {
             let old_ver_key = key_maker.make(prop.key());
             match prop.val() {
                 crate::primitive::GxlObject::VarRef(x) => {
-                    if let Some(val) = dict.get(x.as_str()).cloned() {
+                    if let Some(val) = dict.get_copy(x.as_str()) {
                         dict.set(old_ver_key.clone(), val.clone());
                         exp.insert_from(old_ver_key.clone(), val.clone());
                         exp.insert_from(prefix.to_string(), obj.clone());

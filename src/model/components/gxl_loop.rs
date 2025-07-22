@@ -223,7 +223,7 @@ mod tests {
         // 验证变量设置
         let TaskValue { vars, .. } = result;
         assert_eq!(
-            vars.global().get("current").unwrap().to_string(),
+            vars.global().get_copy("current").unwrap().to_string(),
             "value1" // 最后一次循环设置的值
         );
     }

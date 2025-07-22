@@ -202,7 +202,6 @@ impl ValueEval<GxlObject> for GxlObject {
         match self {
             GxlObject::VarRef(name) => vars
                 .get(name)
-                .cloned()
                 .map(GxlObject::from)
                 .ok_or_else(|| EvalError::VarMiss(name.clone())),
             GxlObject::Value(_) => Ok(self.clone()),

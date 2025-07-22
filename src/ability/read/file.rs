@@ -77,11 +77,11 @@ mod tests {
         let TaskValue { vars, .. } = res.async_exec(context, def).await.unwrap();
         assert_eq!(
             vars.get("RUST"),
-            Some(&SecValueType::nor_from("100".to_string()))
+            Some(SecValueType::nor_from("100".to_string()))
         );
         assert_eq!(
             vars.get("JAVA"),
-            Some(&SecValueType::nor_from("90".to_string()))
+            Some(SecValueType::nor_from("90".to_string()))
         );
     }
     #[tokio::test]
@@ -95,8 +95,8 @@ mod tests {
         };
         let res = GxRead::from(ReadMode::from(dto));
         let TaskValue { vars, .. } = res.async_exec(context, def).await.unwrap();
-        assert_eq!(vars.get("RUST"), Some(&SecValueType::nor_from(100)));
-        assert_eq!(vars.get("JAVA"), Some(&SecValueType::nor_from(90)));
+        assert_eq!(vars.get("RUST"), Some(SecValueType::nor_from(100)));
+        assert_eq!(vars.get("JAVA"), Some(SecValueType::nor_from(90)));
     }
 
     #[tokio::test]
@@ -110,7 +110,28 @@ mod tests {
         };
         let res = GxRead::from(ReadMode::from(dto));
         let TaskValue { vars, .. } = res.async_exec(context, def).await.unwrap();
-        assert_eq!(vars.get("MEMBER.RUST"), Some(&SecValueType::nor_from(100)));
-        assert_eq!(vars.get("MEMBER.JAVA"), Some(&SecValueType::nor_from(90)));
+        assert_eq!(vars.get("MEMBER.RUST"), Some(SecValueType::nor_from(100)));
+        assert_eq!(vars.get("MEMBER.JAVA"), Some(SecValueType::nor_from(90)));
+    }
+    #[tokio::test]
+    async fn read_yaml_arr() {
+        let (context, mut def) = ability_env_init();
+        def.global_mut()
+            .set("CONF_ROOT", "${GXL_PRJ_ROOT}/examples/read");
+        let dto = FileDTO {
+            file: String::from("${CONF_ROOT}/var_arr.yml"),
+            name: Some("DATA".to_string()),
+            ..Default::default()
+        };
+        let res = GxRead::from(ReadMode::from(dto));
+        let TaskValue { vars, .. } = res.async_exec(context, def).await.unwrap();
+        assert_eq!(
+            vars.get("DATA[1].MEMBER.RUST"),
+            Some(SecValueType::nor_from(110))
+        );
+        assert_eq!(
+            vars.get("DATA[1].MEMBER.JAVA"),
+            Some(SecValueType::nor_from(190))
+        );
     }
 }

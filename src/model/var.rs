@@ -140,7 +140,7 @@ impl Getter<&UniString, SecValueType> for VarDict {
             panic!("un get key {key}",);
         }
     }
-    fn get(&self, key: &UniString) -> Option<&SecValueType> {
+    fn get_copy(&self, key: &UniString) -> Option<SecValueType> {
         self.maps.value_get(key)
     }
 }
@@ -152,7 +152,7 @@ impl Getter<&str, SecValueType> for VarDict {
             panic!("un get key {key}");
         }
     }
-    fn get(&self, key: &str) -> Option<&SecValueType> {
+    fn get_copy(&self, key: &str) -> Option<SecValueType> {
         self.maps.value_get(key)
     }
 }

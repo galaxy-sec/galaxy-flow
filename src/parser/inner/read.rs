@@ -9,7 +9,7 @@ use winnow::Result;
 use crate::ability::read::CmdDTOBuilder;
 use crate::ability::read::FileDTOBuilder;
 use crate::ability::read::ReadMode;
-use crate::ability::read::StdinDTOBuilder;
+use crate::ability::read::StdinDTO;
 use crate::ability::GxRead;
 use crate::expect::ShellOption;
 use crate::parser::domain::gal_keyword;
@@ -40,21 +40,20 @@ pub fn gal_read_file(input: &mut &str) -> Result<GxRead> {
 pub fn gal_read_stdin(input: &mut &str) -> Result<GxRead> {
     gal_keyword_alt("gx.read_stdin", "rg.read_stdin", input)?;
     let props = action_call_args.parse_next(input)?;
-    let mut builder = StdinDTOBuilder::default();
+    let mut dto = StdinDTO::default();
     for one in props {
         let key = one.0.to_lowercase();
         if key == "name" {
-            builder.name(one.1);
+            dto.set_name(one.1);
         } else if key == "prompt" {
-            builder.prompt(one.1);
+            dto.set_prompt(one.1);
         }
     }
-    match builder.build() {
-        Ok(dto) => Ok(GxRead::from(ReadMode::from(dto))),
-        Err(e) => {
-            error!(target: "parse", "{e}");
-            fail.context(wn_desc("read")).parse_next(input)
-        }
+    match !dto.name().is_empty() {
+        true => Ok(GxRead::from(ReadMode::from(dto))),
+        false => fail
+            .context(wn_desc("read(name is empty)"))
+            .parse_next(input),
     }
 }
 
@@ -168,10 +167,9 @@ mod tests {
 
     #[test]
     fn read_stdin_test() {
-        let dto = StdinDTO {
-            name: "name".to_string(),
-            prompt: "please input you name".to_string(),
-        };
+        let dto = StdinDTO::default()
+            .with_name("name".into())
+            .with_prompt("please input you name".into());
 
         let mut data = r#"
                  gx.read_stdin (

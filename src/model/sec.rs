@@ -208,15 +208,17 @@ pub enum SecValueType {
     Obj(SecValueObj),
     List(SecValueVec),
 }
+
 impl PartialOrd for SecValueType {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         match (self, other) {
             (SecValueType::String(f), SecValueType::String(s)) => f.partial_cmp(s),
             (SecValueType::Bool(f), SecValueType::Bool(s)) => f.partial_cmp(s),
+            (SecValueType::Number(f), SecValueType::Number(s)) => f.partial_cmp(s),
             (SecValueType::Float(f), SecValueType::Float(s)) => f.partial_cmp(s),
             (SecValueType::Ip(f), SecValueType::Ip(s)) => f.partial_cmp(s),
             _ => {
-                unimplemented!("un support cmp")
+                unreachable!("not support array , obj compare");
             }
         }
     }
@@ -309,18 +311,18 @@ impl NoSecConv<IndexMap<String, ValueType>> for UniCaseMap<SecValueType> {
     }
 }
 pub trait ValueGetter<T> {
-    fn value_get(&self, path: &str) -> Option<&T>;
+    fn value_get(&self, path: &str) -> Option<T>;
 }
 
 impl ValueGetter<SecValueType> for SecValueObj {
-    fn value_get(&self, path: &str) -> Option<&SecValueType> {
+    fn value_get(&self, path: &str) -> Option<SecValueType> {
         let parts: Vec<&str> = path.split('.').collect();
         if parts.is_empty() {
             return None;
         }
 
-        let mut current_value: Option<&SecValueType> = None;
-        let mut current_map = self;
+        //let mut current_value: Option<&SecValueType> = None;
+        let mut current_target = SecValueType::from(self.clone());
 
         for part in parts {
             // 检查是否为数组访问（如 "A[0]"）
@@ -329,33 +331,35 @@ impl ValueGetter<SecValueType> for SecValueObj {
                 let index_str = index_str.trim_end_matches(']');
                 let index = index_str.parse::<usize>().ok()?;
 
-                // 获取数组或对象
-                let value = current_map.get(&UniString::from(key.to_string()))?;
-                match value {
-                    SecValueType::List(list) => {
-                        if index >= list.len() {
-                            return None;
+                if let SecValueType::Obj(obj) = current_target {
+                    // 获取数组或对象
+                    let value = obj.get(&UniString::from(key.to_string()))?;
+                    match value {
+                        SecValueType::List(list) => {
+                            if index >= list.len() {
+                                return None;
+                            }
+                            current_target = list[index].clone();
                         }
-                        current_value = list.get(index);
+                        _ => return None,
                     }
-                    _ => return None,
+                } else {
+                    return None;
                 }
             } else {
                 // 普通键访问
-                let value = current_map.get(&UniString::from(part.to_string()))?;
-                match value {
-                    SecValueType::Obj(map) => {
-                        current_map = map;
-                        current_value = Some(value);
+                if let SecValueType::Obj(obj) = current_target {
+                    if let Some(found) = obj.get(&UniString::from(part.to_string())) {
+                        current_target = found.clone();
+                    } else {
+                        return None;
                     }
-                    _ => {
-                        current_value = Some(value);
-                    }
+                } else {
+                    return None;
                 }
             }
         }
-
-        current_value
+        Some(current_target)
     }
 }
 
@@ -388,16 +392,16 @@ mod tests {
         obj.insert("B".into(), SecValueType::Obj(nested_obj));
 
         // 测试数组访问
-        assert_eq!(obj.value_get("A[0]"), Some(&SecValueType::nor_from(42u64)));
+        assert_eq!(obj.value_get("A[0]"), Some(SecValueType::nor_from(42u64)));
         assert_eq!(
             obj.value_get("A[1]"),
-            Some(&SecValueType::sec_from("secret".to_string()))
+            Some(SecValueType::sec_from("secret".to_string()))
         );
 
         // 测试嵌套路径
         assert_eq!(
             obj.value_get("B.rust"),
-            Some(&SecValueType::nor_from("awesome".to_string()))
+            Some(SecValueType::nor_from("awesome".to_string()))
         );
         assert_eq!(obj.value_get("B.rust.not_exists"), None);
 
@@ -425,14 +429,14 @@ mod tests {
         // 1. 访问根节点直接键
         assert_eq!(
             root.value_get("x"),
-            Some(&SecValueType::nor_from("value_x".to_string()))
+            Some(SecValueType::nor_from("value_x".to_string()))
         );
 
         // 2. 访问单层嵌套路径 "a.b"
         if let Some(SecValueType::Obj(map)) = root.value_get("a") {
             assert_eq!(
                 map.value_get("b"),
-                Some(&SecValueType::from(nested_c)) // 实际应为嵌套的 `nested_c`
+                Some(SecValueType::from(nested_c)) // 实际应为嵌套的 `nested_c`
             );
         } else {
             panic!("Expected 'a' to be an object");
@@ -441,7 +445,7 @@ mod tests {
         // 3. 访问多层嵌套路径 "a.b.c"
         assert_eq!(
             root.value_get("a.b.c"),
-            Some(&SecValueType::nor_from("value_c".to_string()))
+            Some(SecValueType::nor_from("value_c".to_string()))
         );
 
         // 4. 访问路径中的非对象键（应返回 None）

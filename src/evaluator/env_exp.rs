@@ -59,10 +59,12 @@ impl EnvExpress {
         self.data.set(&key, SecValueType::from(val));
     }
     pub fn eval_val(&self, key: &str) -> Option<String> {
-        self.data.get(key).map(|v| v.clone().no_sec().to_string())
+        self.data
+            .get_copy(key)
+            .map(|v| v.clone().no_sec().to_string())
     }
     pub fn sec_val(&self, key: &str) -> Option<String> {
-        self.data.get(key).map(|v| v.to_string())
+        self.data.get_copy(key).map(|v| v.to_string())
     }
     pub fn safe_eval_val(&self, key: &str) -> String {
         if let Some(val) = self.eval_val(key) {

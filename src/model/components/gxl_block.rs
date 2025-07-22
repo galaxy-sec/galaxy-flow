@@ -284,7 +284,7 @@ mod tests {
 
         // 验证导出的变量
         assert_eq!(
-            var_dict.get("SYS_A").unwrap().clone().no_sec(),
+            var_dict.get_copy("SYS_A").unwrap().clone().no_sec(),
             ValueType::Obj(
                 vec![
                     ("MOD1".to_string(), ValueType::String("A".to_string())),
@@ -296,7 +296,7 @@ mod tests {
         );
 
         assert_eq!(
-            var_dict.get("SYS_B").unwrap().clone().no_sec(),
+            var_dict.get_copy("SYS_B").unwrap().clone().no_sec(),
             ValueType::from(vec![
                 ValueType::String("C".to_string()),
                 ValueType::String("D".to_string())
@@ -304,12 +304,12 @@ mod tests {
         );
 
         assert_eq!(
-            var_dict.get("SYS_C").unwrap().clone().no_sec(),
+            var_dict.get_copy("SYS_C").unwrap().clone().no_sec(),
             ValueType::String("D".to_string())
         );
 
         assert_eq!(
-            var_dict.get("SYS_D").unwrap().clone().no_sec(),
+            var_dict.get_copy("SYS_D").unwrap().clone().no_sec(),
             ValueType::String("A".to_string())
         );
     }

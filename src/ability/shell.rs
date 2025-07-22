@@ -157,7 +157,7 @@ mod tests {
 
         let TaskValue { vars, .. } = res.async_exec(context, def).await.assert("dryrun");
         assert_eq!(
-            vars.global().get("OUT_FILE").map(|x| x.to_string()),
+            vars.global().get_copy("OUT_FILE").map(|x| x.to_string()),
             Some("DATA\ngalaxy".to_string())
         )
     }
@@ -173,7 +173,7 @@ mod tests {
 
         let TaskValue { vars, .. } = res.async_exec(context, def).await.assert("dryrun");
         assert_eq!(
-            vars.global().get("OUT_FILE").map(|x| x.to_string()),
+            vars.global().get_copy("OUT_FILE").map(|x| x.to_string()),
             Some("DATA\ngalaxy".to_string())
         )
     }

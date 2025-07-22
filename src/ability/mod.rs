@@ -3,7 +3,6 @@ pub mod assert;
 pub mod cmd;
 pub mod delegate;
 pub mod echo;
-pub mod err_conv;
 pub mod gxl;
 pub mod load;
 pub mod prelude;

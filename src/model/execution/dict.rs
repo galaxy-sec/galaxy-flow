@@ -53,7 +53,7 @@ impl VarSpace {
     pub fn global_mut(&mut self) -> &mut VarDict {
         &mut self.global
     }
-    pub fn get(&self, path: &str) -> Option<&SecValueType> {
+    pub fn get(&self, path: &str) -> Option<SecValueType> {
         self.global().maps().value_get(path)
     }
 
@@ -109,7 +109,7 @@ mod tests {
         assert!(var_space.inherited.contains_key("SEC_KEY1"));
         assert!(var_space.inherited.contains_key("SEC_KEY2"));
         assert_eq!(
-            format!("{}", var_space.inherited.get("SEC_KEY1").unwrap()),
+            format!("{}", var_space.inherited.get_copy("SEC_KEY1").unwrap()),
             "***".to_string()
         );
         // 清理
