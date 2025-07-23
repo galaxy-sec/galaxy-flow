@@ -38,11 +38,15 @@ pub fn parse_git_addr(input: &mut &str) -> Result<ModAddr> {
 
 // 解析本地路径模式
 fn parse_local_addr(input: &mut &str) -> Result<ModAddr> {
-    ("{", multispace0, "path", multispace0, "=", multispace0).parse_next(input)?;
-
-    let path = delimited("\"", take_while(1.., |c: char| c != '"'), "\"").parse_next(input)?;
-    (multispace0, ";", multispace0, "}").parse_next(input)?;
-    Ok(ModAddr::Loc(ModLocAddr::new(path)))
+    let props = object_props.parse_next(input)?;
+    for one in props {
+        let key = one.0.to_lowercase();
+        if key == "path" {
+            return Ok(ModAddr::Loc(ModLocAddr::new(one.1)));
+        }
+    }
+    fail.context(wn_desc("mod addr miss path"))
+        .parse_next(input)
 }
 
 pub fn gal_git_path(input: &mut &str) -> Result<(String, String)> {
