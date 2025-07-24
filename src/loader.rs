@@ -70,9 +70,9 @@ impl GxLoader {
         let e_parser = ExternParser::new();
 
         let up_options = if update {
-            UpdateOptions::new(UpdateScope::InHost, ValueDict::default())
+            UpdateOptions::new(UpdateScope::RemoteCache, ValueDict::default())
         } else {
-            UpdateOptions::new(UpdateScope::InElm, ValueDict::default())
+            UpdateOptions::new(UpdateScope::None, ValueDict::default())
         };
         let mut target_code = code.to_string();
 
@@ -104,7 +104,7 @@ impl GxLoader {
     }
 
     pub async fn init(&self, addr: GitAddr, tpl: &str) -> RunResult<()> {
-        let up_options = UpdateOptions::new(UpdateScope::InHost, ValueDict::default());
+        let up_options = UpdateOptions::new(UpdateScope::RemoteCache, ValueDict::default());
         let local_git = ExternGit::pull(addr, &up_options).await.owe_res()?;
         let vender_path = format!("{}/tpl/{tpl}", local_git.position().display());
         let init_path = PathBuf::from("./_gal");
