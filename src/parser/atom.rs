@@ -1,4 +1,7 @@
-use orion_parse::{atom::take_var_name, symbol::wn_desc};
+use orion_parse::{
+    atom::{take_var_full_name, take_var_name},
+    symbol::wn_desc,
+};
 use winnow::{
     ascii::multispace0,
     combinator::delimited,
@@ -46,9 +49,9 @@ pub fn take_dot_pair(input: &mut &str) -> Result<(String, String)> {
 pub fn take_var_ref_name(input: &mut &str) -> Result<String> {
     // 使用 delimited 解析 ${var_name}
     delimited(
-        "${",          // 开头标记
-        take_var_name, // 解析变量名
-        "}",           // 结尾标记
+        "${",               // 开头标记
+        take_var_full_name, // 解析变量名
+        "}",                // 结尾标记
     )
     .context(StrContext::Label("variable reference"))
     .parse_next(input)

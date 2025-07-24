@@ -1114,7 +1114,7 @@ dependencies = [
 
 [[package]]
 name = "galaxy_flow"
-version = "0.8.4"
+version = "0.8.5"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2177,8 +2177,8 @@ dependencies = [
 
 [[package]]
 name = "orion_variate"
-version = "0.4.0"
-source = "git+https://github.com/galaxy-sec/orion-variate?branch=main#899a7466eb660c66458ff601be693694610496f5"
+version = "0.4.2"
+source = "git+https://github.com/galaxy-sec/orion-variate?tag=v0.4.2#f0f36095b13e64c7db6748ea6a85a2bc0e94bb58"
 dependencies = [
  "anyhow",
  "async-trait",
