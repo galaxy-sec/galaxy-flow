@@ -88,8 +88,8 @@ tokio-util = { version = "0.7", features = ["codec"] }
 reqwest = { version = "0.12.11", features = ["json"] }
 time = { version = "0.3.41", features = ["formatting", "local-offset"] }
 serde_yaml = "0.9"
-gag = "1.0.0"
 contracts = "0.6"
+libc = "0.2.174"
 
 [features]
 res_depend_test = []

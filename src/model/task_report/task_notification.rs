@@ -12,7 +12,7 @@ pub struct TaskOutline {
 // 子任务结构体
 #[derive(Debug, Deserialize, Serialize, Clone, Default)]
 pub struct TaskNotice {
-    pub parent_id: i64,
+    pub parent_id: String,
     pub name: String,        // 子任务名称s
     pub description: String, // 子任务描述
     pub order: u32,          // 执行顺序
@@ -23,7 +23,7 @@ impl TaskNotice {
         let parent_id = get_task_parent_id().unwrap_or_default();
         let order = OffsetDateTime::now_utc();
         TaskNotice {
-            parent_id: parent_id.parse::<i64>().unwrap_or(0),
+            parent_id,
             name: String::new(),
             description: String::new(),
             order: order.nanosecond(),

@@ -70,7 +70,7 @@ pub async fn create_and_send_task_notice(
         .unwrap_or_default();
 
     let notice = TaskNotice {
-        parent_id: task_notice.parent_id, // 明确初始化
+        parent_id: task_notice.parent_id.clone(), // 明确初始化
         name: task.name().to_string(),
         description: task.name().to_string(),
         order: task_notice.order, // 明确初始化

@@ -1,37 +1,27 @@
 use async_trait::async_trait;
 use derive_more::From;
-use gag::BufferRedirect;
-use orion_error::ErrorOwe;
+use std::fs::File;
+use std::io::{Read, Seek, SeekFrom};
 
+use super::gxl_cond::GxlCond;
 use super::gxl_loop::GxlLoop;
+use super::gxl_spc::GxlSpace;
+use super::gxl_var::GxlVar;
 use super::prelude::*;
 
 use crate::ability::artifact::GxArtifact;
 use crate::ability::delegate::ActCall;
 use crate::ability::prelude::TaskValue;
 use crate::ability::shell::GxShell;
-use crate::ability::GxAssert;
-use crate::ability::GxCmd;
-use crate::ability::GxDownLoad;
-use crate::ability::GxEcho;
-use crate::ability::GxRead;
-use crate::ability::GxRun;
-use crate::ability::GxTpl;
-use crate::ability::GxUpLoad;
-use crate::ability::GxlVersion;
+use crate::ability::{
+    GxAssert, GxCmd, GxDownLoad, GxEcho, GxRead, GxRun, GxTpl, GxUpLoad, GxlVersion,
+};
 use crate::calculate::cond::CondExec;
 use crate::context::ExecContext;
 use crate::execution::runnable::TaskResult;
 use crate::execution::task::Task;
 use crate::task_report::task_rc_config::report_enable;
-
-use super::gxl_cond::GxlCond;
-use super::gxl_spc::GxlSpace;
-use super::gxl_var::GxlVar;
-use std::io::Read;
-use tokio::sync::Mutex;
-
-static STDOUT_REDIRECT_MUTEX: Mutex<()> = Mutex::const_new(());
+use crate::util::redirect::init_redirect_file;
 
 #[derive(Clone, From)]
 pub enum BlockAction {
@@ -81,23 +71,29 @@ impl AsyncRunnableTrait for BlockAction {
             _ => {
                 let need_report = report_enable().await;
                 if need_report {
-                    let _lock = STDOUT_REDIRECT_MUTEX.lock().await;
-
-                    let mut redirect = BufferRedirect::stdout().owe_sys()?;
+                    let log_file = init_redirect_file()?;
+                    let mut file: File = File::open(log_file)
+                        .map_err(|e| ExecReason::Io(format!("get log file path error: {}", e)))?;
+                    // 记录本次任务开始时的日志开始位置
+                    let start_pos = file
+                        .seek(SeekFrom::End(0))
+                        .map_err(|e| ExecReason::Io(format!("seek log file error: {}", e)))?;
                     let action_res = self.execute_action(ctx, dct).await;
-
-                    let mut captured_output = String::new();
-                    let _ = redirect.read_to_string(&mut captured_output);
-                    redirect.into_inner();
-                    (action_res, captured_output)
+                    // 读取日志内容
+                    file.seek(SeekFrom::Start(start_pos))
+                        .map_err(|e| ExecReason::Io(format!("seek log file error: {}", e)))?;
+                    let mut content = String::new();
+                    file.read_to_string(&mut content)
+                        .map_err(|e| ExecReason::Io(format!("read log file error: {}", e)))?;
+                    drop(file);
+                    (action_res, content)
                 } else {
-                    let action_res = self.execute_action(ctx, dct).await;
+                    let action_res: Result<TaskValue, orion_error::StructError<ExecReason>> =
+                        self.execute_action(ctx, dct).await;
                     (action_res, String::new())
                 }
-            } // 处理重定向的输出
+            }
         };
-
-        print!("{}", output);
         return match result {
             Ok(mut tv) => {
                 tv.append_out(output);

@@ -1,3 +1,8 @@
+use crate::{
+    task_report::main_task::{create_main_task, get_task_parent_id},
+    util::redirect::{init_redirect_file, platform::StdoutRedirect},
+    ExecError, ExecReason,
+};
 use once_cell::sync::OnceCell;
 use serde::{Deserialize, Serialize};
 use tokio::sync::RwLock;
@@ -79,4 +84,34 @@ pub async fn build_task_url(url_type: TaskUrlType) -> Option<String> {
             report_svr.port()
         )),
     }
+}
+
+/// 初始化重定向和父任务
+pub async fn init_redirect_and_parent_task(
+    task_name: String,
+) -> Result<Option<StdoutRedirect>, ExecError> {
+    let mut redirect: Option<StdoutRedirect> = None;
+
+    if report_enable().await {
+        // 处理日志路径
+        let log_path = init_redirect_file()
+            .map_err(|e| ExecReason::Io(format!("Failed to initialize log file: {e}")))?;
+        println!("Log path: {}", log_path.display());
+        // macOS平台特定逻辑
+        #[cfg(any(target_os = "linux", target_os = "macos"))]
+        {
+            let stdout_redirect = match StdoutRedirect::start(&log_path) {
+                Some(r) => r,
+                None => return Ok(None),
+            };
+            redirect = Some(stdout_redirect);
+        }
+
+        // 处理父任务逻辑
+        if get_task_parent_id().is_none() {
+            create_main_task(task_name).await;
+        }
+    }
+
+    Ok(redirect)
 }
