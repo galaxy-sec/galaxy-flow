@@ -6,7 +6,7 @@ use serde::Serialize;
 // 返回至任务报告中心任务执行结果
 #[derive(Debug, Serialize, Clone)]
 pub struct TaskReport {
-    pub parent_id: i64,
+    pub parent_id: String,
     pub name: String,          // 子任务名称
     pub log: String,           // 执行日志
     pub status: SubTaskStatus, // 执行状态
@@ -26,10 +26,7 @@ impl TaskReport {
     // 转化报告中心的返回结果
     pub fn from_task_and_notice(task: Task, task_notice: TaskNotice) -> TaskReport {
         TaskReport {
-            parent_id: get_task_parent_id()
-                .unwrap_or_default()
-                .parse::<i64>()
-                .unwrap_or(0),
+            parent_id: get_task_parent_id().unwrap_or_default(),
             name: task.name().clone(),
             log: task.stdout.clone(),
             status: match task.result() {

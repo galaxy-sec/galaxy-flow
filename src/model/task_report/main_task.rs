@@ -12,7 +12,7 @@ pub struct MainTask {
     pub worker_name: String,
     pub description: Option<String>,
     pub task_type: String,
-    pub id: i64,
+    pub id: String,
 }
 
 pub async fn create_main_task(task_name: String) {
@@ -35,7 +35,7 @@ pub async fn create_main_task(task_name: String) {
         Err(e) => info!("create main task time format error: {e}"),
     }
     let main_task = MainTask {
-        id: parent_id,
+        id: parent_id.to_string(),
         maintask_name: format!("{task_name} {now}",),
         worker_name: String::new(),
         description: Some(task_name.clone()),
