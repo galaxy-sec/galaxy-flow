@@ -19,7 +19,7 @@ async fn main() -> anyhow::Result<()> {
     let mut cmd = GxlCmd::parse();
     // 加载task配置
     load_gxl_config();
-    let redirect = init_redirect_and_parent_task(cmd.flow.concat()).await?;
+    init_redirect_and_parent_task(cmd.flow.concat()).await?;
     configure_run_logging(cmd.log.clone(), cmd.debug);
 
     debug!("galaxy flow running .....");
@@ -33,9 +33,6 @@ async fn main() -> anyhow::Result<()> {
     match GxlRunner::run(cmd, var_space).await {
         Err(e) => report_gxl_error(e),
         Ok(_) => {
-            if let Some(mut r) = redirect {
-                r.stop();
-            }
             return Ok(());
         }
     }

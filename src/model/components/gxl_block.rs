@@ -85,7 +85,6 @@ impl AsyncRunnableTrait for BlockAction {
                     let mut content = String::new();
                     file.read_to_string(&mut content)
                         .map_err(|e| ExecReason::Io(format!("read log file error: {}", e)))?;
-                    drop(file);
                     (action_res, content)
                 } else {
                     let action_res: Result<TaskValue, orion_error::StructError<ExecReason>> =
