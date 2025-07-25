@@ -96,7 +96,6 @@ pub async fn init_redirect_and_parent_task(
         // 处理日志路径
         let log_path = init_redirect_file()
             .map_err(|e| ExecReason::Io(format!("Failed to initialize log file: {e}")))?;
-        println!("Log path: {}", log_path.display());
         // macOS平台特定逻辑
         #[cfg(any(target_os = "linux", target_os = "macos"))]
         {
