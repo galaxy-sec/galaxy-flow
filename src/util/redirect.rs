@@ -1,3 +1,4 @@
+use crate::util::redirect::platform::StdoutRedirect;
 use crate::ExecReason;
 use std::fs::File;
 use std::path::PathBuf;
@@ -276,8 +277,13 @@ pub fn init_redirect_file() -> Result<PathBuf, ExecReason> {
         .as_secs() as i64;
     let log_file = std::env::temp_dir().join(format!("galaxy_templog_{}.log", sys_time));
     File::create(&log_file).map_err(|e| ExecReason::Io(format!("创建临时日志文件失败: {}", e)))?;
-    LOG_PATH
-        .set(log_file.clone())
-        .map_err(|e| ExecReason::Io(format!("设置临时日志文件路径失败: {:?}", e)))?;
-    Ok(log_file)
+    Ok(LOG_PATH
+        .get_or_init(|| log_file).clone())
+}
+
+pub fn stop_redirect(redirect: Option<StdoutRedirect>) -> Result<(), ExecReason> {
+    if let Some(mut redirect) = redirect {
+        redirect.stop();
+    }
+    Ok(())
 }

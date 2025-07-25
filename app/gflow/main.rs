@@ -10,6 +10,7 @@ use galaxy_flow::infra::configure_run_logging;
 use galaxy_flow::model::task_report::task_rc_config::init_redirect_and_parent_task;
 use galaxy_flow::runner::{GxlCmd, GxlRunner};
 use galaxy_flow::traits::Setter;
+use galaxy_flow::util::redirect::stop_redirect;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -19,7 +20,7 @@ async fn main() -> anyhow::Result<()> {
     let mut cmd = GxlCmd::parse();
     // 加载task配置
     load_gxl_config();
-    init_redirect_and_parent_task(cmd.flow.concat()).await?;
+    let redirect = init_redirect_and_parent_task(cmd.flow.concat()).await?;
     configure_run_logging(cmd.log.clone(), cmd.debug);
 
     debug!("galaxy flow running .....");
@@ -33,9 +34,10 @@ async fn main() -> anyhow::Result<()> {
     match GxlRunner::run(cmd, var_space).await {
         Err(e) => report_gxl_error(e),
         Ok(_) => {
+            stop_redirect(redirect)?;
             return Ok(());
         }
     }
-
+    stop_redirect(redirect)?;
     process::exit(-1);
 }
