@@ -8,7 +8,7 @@ pub mod read;
 pub mod shell;
 pub mod tpl;
 pub mod ver;
-
+pub mod archive;
 mod load;
 pub use assert::gal_assert;
 pub use cmd::gal_cmd;

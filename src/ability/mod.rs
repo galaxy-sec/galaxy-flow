@@ -8,6 +8,7 @@ pub mod load;
 pub mod prelude;
 pub mod read;
 pub mod tpl;
+pub mod archive;
 //pub mod vault;
 pub mod shell;
 pub mod version;

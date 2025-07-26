@@ -6,6 +6,8 @@ use orion_error::ErrorOwe;
 use super::gxl_loop::GxlLoop;
 use super::prelude::*;
 
+use crate::ability::archive::GxTar;
+use crate::ability::archive::GxUnTar;
 use crate::ability::artifact::GxArtifact;
 use crate::ability::delegate::ActCall;
 use crate::ability::prelude::TaskValue;
@@ -47,6 +49,8 @@ pub enum BlockAction {
     Delegate(Box<ActCall>),
     Tpl(GxTpl),
     Artifact(GxArtifact),
+    Tar(GxTar),
+    UnTar(GxUnTar),
     DownLoad(GxDownLoad),
     UpLoad(GxUpLoad),
 }
@@ -118,6 +122,8 @@ impl BlockAction {
             BlockAction::Assert(o) => o.async_exec(ctx, dct).await,
             BlockAction::Cond(o) => o.async_exec(ctx, dct).await,
             BlockAction::Tpl(o) => o.async_exec(ctx, dct).await,
+            BlockAction::Tar(o) => o.async_exec(ctx, dct).await,
+            BlockAction::UnTar(o) => o.async_exec(ctx, dct).await,
             BlockAction::Delegate(o) => o.async_exec(ctx, dct).await,
             BlockAction::Version(o) => o.async_exec(ctx, dct).await,
             BlockAction::Read(o) => o.async_exec(ctx, dct).await,
@@ -158,6 +164,8 @@ impl DependTrait<&GxlSpace> for BlockNode {
         for x in self.items {
             let item = match x {
                 BlockAction::Tpl(v) => BlockAction::Tpl(v.clone()),
+                BlockAction::Tar(v) => BlockAction::Tar(v.clone()),
+                BlockAction::UnTar(v) => BlockAction::UnTar(v.clone()),
                 BlockAction::Cond(v) => BlockAction::Cond(v.clone()),
                 BlockAction::Loop(v) => BlockAction::Loop(v.clone()),
                 BlockAction::Read(v) => BlockAction::Read(v.clone()),

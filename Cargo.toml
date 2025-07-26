@@ -28,7 +28,8 @@ winnow = "0.7.11"
 orion-error = "~0.3"
 orion_common = { git = "https://github.com/galaxy-sec/orion-common.git", branch = "main" }
 orion_infra = { git = "https://github.com/galaxy-sec/orion-infra", branch = "main" }
-orion_variate = { git = "https://github.com/galaxy-sec/orion-variate", tag = "v0.4.2" }
+#orion_variate = { git = "https://github.com/galaxy-sec/orion-variate", tag = "v0.4.2" }
+orion_variate = { path = "../orion_variate" }
 #orion-error = { path = "../orion-error" }
 #orion-syspec = { path = "../orion-syspec" }
 tokio = { version = "1.45", features = ["full"] }

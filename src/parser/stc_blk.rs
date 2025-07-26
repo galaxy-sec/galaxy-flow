@@ -14,6 +14,7 @@ use crate::calculate::express::{BinExpress, ExpressEnum};
 use crate::components::gxl_block::{BlockAction, BlockNode};
 use crate::components::gxl_cond::GxlCond;
 use crate::components::gxl_loop::GxlLoop;
+use crate::parser::inner::archive::{gal_tar, gal_untar};
 use crate::primitive::GxlObject;
 
 use super::atom::spaced;
@@ -103,6 +104,12 @@ pub fn gal_sentens_item(input: &mut &str) -> Result<BlockAction> {
     }
     if starts_with("gx.artifact", input) {
         return gal_artifact.map(BlockAction::Artifact).parse_next(input);
+    }
+    if starts_with("gx.tar", input) {
+        return gal_tar.map(BlockAction::Tar).parse_next(input);
+    }
+    if starts_with("gx.untar", input) {
+        return gal_untar.map(BlockAction::UnTar).parse_next(input);
     }
     if starts_with("gx.download", input) {
         return gal_download.map(BlockAction::DownLoad).parse_next(input);
