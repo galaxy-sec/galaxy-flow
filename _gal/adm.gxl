@@ -1,35 +1,10 @@
-extern mod head   { path = "./_gal/"; }
-
+extern mod ver,git,ver_adm { git = "https://github.com/galaxy-operators/cfm-gxl.git", channel = "${GXL_CHANNEL:main}" }
 mod  envs {
   env default {
-    root = "./" ;
   }
 }
-mod main :  {
-
-  #[auto_load(entry)]
-  flow __into {
-    main_key = "dv_example" ;
-  }
-  #[usage(desp="update version of patch ")]
-  flow up_v_patch   : ver.patch,_ver_app      { }
-  #[usage(desp="update version of feature ")]
-  flow up_v_feature : ver.feature, _ver_app  { }
-
-  #[usage(desp="release by tag version ")]
-  flow tag_release     : git.tag_ver ;
-  #[usage(desp="release-pre by tag version ")]
-  flow tag_release_pre     : git.tag_ver_pre ;
-
-  #[usage(desp="update version to crates cargo.toml ")]
-  flow _ver_app: ver.use {
-    gx.echo (  " up version: ${VERSION} to cargo.toml" );
-    gx.cmd (  "cargo semver set ${VERSION}" );
-  }
-  #[usage(desp="setup run depends")]
+mod main  : ver_adm {
   flow setup_depends {
     gx.cmd (  "cargo install cargo-semver --vers 1.0.0-alpha.3" );
   }
-
-
 }

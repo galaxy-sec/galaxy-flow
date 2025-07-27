@@ -70,6 +70,10 @@ pub fn parse_mod_addr(input: &mut &str) -> Result<ModAddr> {
     }
 }
 
+pub fn take_mod_name(input: &mut &str) -> Result<String> {
+    let (_, data, _) = ((multispace0, take_var_name, multispace0)).parse_next(input)?;
+    Ok(data)
+}
 // 解析 extern mod
 pub fn gal_extern_mod(input: &mut &str) -> Result<ModRef> {
     // 解析 "extern mod"
@@ -78,7 +82,7 @@ pub fn gal_extern_mod(input: &mut &str) -> Result<ModRef> {
         .parse_next(input)?;
 
     // 解析模块名列表
-    let mods = separated(1.., take_var_name, ",")
+    let mods = separated(1.., take_mod_name, ",")
         .context(wn_desc("mod names"))
         .parse_next(input)?;
 

@@ -70,7 +70,7 @@ impl AsyncRunnableTrait for ActCall {
         match &self.act {
             Some(act) => act.async_exec(ctx, vars_dict).await,
             None => Err(ExecError::from(ExecReason::Depend(format!(
-                "act call less{}",
+                "act call not support :{}",
                 self.name
             )))),
         }
