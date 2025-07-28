@@ -79,7 +79,7 @@ where
 mod tests {
     use super::{IFExpress, CondExec, StuBlock};
     use crate::ability::prelude::{TaskResult, TaskValue, VarSpace};
-    use crate::calculate::BinExpress;
+    use crate::calculate::CmpExpress;
     use crate::context::ExecContext;
     use crate::execution::runnable::ExecOut;
     use crate::calculate::express::{ ExpressEnum};
@@ -113,7 +113,7 @@ mod tests {
 
     // 创建一个总是返回 true 的表达式
     fn create_true_expr() -> ExpressEnum {
-        ExpressEnum::GxlObj(BinExpress::eq(
+        ExpressEnum::Cmp(CmpExpress::eq(
             GxlObject::Value(SecValueType::nor_from("true".to_string())),
             GxlObject::Value(SecValueType::nor_from("true".to_string())),
         ))
@@ -121,7 +121,7 @@ mod tests {
 
     // 创建一个总是返回 false 的表达式
     fn create_false_expr() -> ExpressEnum {
-        ExpressEnum::GxlObj(BinExpress::eq(
+        ExpressEnum::Cmp(CmpExpress::eq(
             GxlObject::Value(SecValueType::nor_from("true".to_string())),
             GxlObject::Value(SecValueType::nor_from("false".to_string())),
         ))
@@ -129,7 +129,7 @@ mod tests {
 
     // 创建一个基于变量值的表达式
     fn create_var_expr(var_name: &str, expected: &str) -> ExpressEnum {
-        ExpressEnum::GxlObj(BinExpress::eq(
+        ExpressEnum::Cmp(CmpExpress::eq(
             GxlObject::VarRef(var_name.to_string()),
             GxlObject::Value(SecValueType::nor_from(expected.to_string())),
         ))

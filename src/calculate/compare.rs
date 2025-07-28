@@ -21,29 +21,29 @@ pub enum BinRelation {
 }
 
 #[derive(Clone, Debug)]
-pub struct BinExpress<T, E> {
+pub struct CmpExpress<T, E> {
     pub relation: BinRelation,
     pub first: T,
     pub second: E,
 }
 
-impl<T, E> BinExpress<T, E> {
+impl<T, E> CmpExpress<T, E> {
     pub fn new(r: BinRelation, first: T, second: E) -> Self {
-        BinExpress {
+        CmpExpress {
             relation: r,
             first,
             second,
         }
     }
     pub fn eq(first: T, second: E) -> Self {
-        BinExpress {
+        CmpExpress {
             relation: BinRelation::EQ,
             first,
             second,
         }
     }
     pub fn gt(first: T, second: E) -> Self {
-        BinExpress {
+        CmpExpress {
             relation: BinRelation::GT,
             first,
             second,
@@ -51,7 +51,7 @@ impl<T, E> BinExpress<T, E> {
     }
 
     pub fn le(first: T, second: E) -> Self {
-        BinExpress {
+        CmpExpress {
             relation: BinRelation::LE,
             first,
             second,
@@ -60,10 +60,10 @@ impl<T, E> BinExpress<T, E> {
     pub fn from_op(op: CmpSymbol, first: T, second: E) -> Self {
         match op {
             CmpSymbol::Eq => Self::new(BinRelation::EQ, first, second),
-            CmpSymbol::Ne => todo!(),
+            CmpSymbol::Ne => Self::new(BinRelation::NE, first, second),
             CmpSymbol::Gt => Self::new(BinRelation::GT, first, second),
-            CmpSymbol::Ge => todo!(),
-            CmpSymbol::Lt => todo!(),
+            CmpSymbol::Ge => Self::new(BinRelation::GE, first, second),
+            CmpSymbol::Lt => Self::new(BinRelation::LT, first, second),
             CmpSymbol::Le => Self::new(BinRelation::LE, first, second),
             CmpSymbol::We => Self::new(BinRelation::WE, first, second),
         }
@@ -71,7 +71,7 @@ impl<T, E> BinExpress<T, E> {
 }
 //impl<T, E> ExpressInstance<T, E> for BinExpress<T, E> {}
 
-impl Evaluation for BinExpress<&str, &str> {
+impl Evaluation for CmpExpress<&str, &str> {
     fn decide(&self, _ctx: ExecContext, _vars_dict: &VarSpace) -> DecideResult {
         Ok(match self.relation {
             BinRelation::EQ => self.first.eq_ignore_ascii_case(self.second),
@@ -92,7 +92,7 @@ impl Evaluation for BinExpress<&str, &str> {
     }
 }
 
-impl Evaluation for BinExpress<String, String> {
+impl Evaluation for CmpExpress<String, String> {
     fn decide(&self, _ctx: ExecContext, _vars_dict: &VarSpace) -> DecideResult {
         Ok(match self.relation {
             BinRelation::EQ => self.first == self.second,
@@ -113,7 +113,7 @@ impl Evaluation for BinExpress<String, String> {
     }
 }
 
-impl Evaluation for BinExpress<u32, u32> {
+impl Evaluation for CmpExpress<u32, u32> {
     fn decide(&self, _ctx: ExecContext, _vars_dict: &VarSpace) -> DecideResult {
         Ok(match self.relation {
             BinRelation::EQ => self.first == self.second,
@@ -127,7 +127,7 @@ impl Evaluation for BinExpress<u32, u32> {
     }
 }
 
-impl<T, E> Evaluation for BinExpress<T, E>
+impl<T, E> Evaluation for CmpExpress<T, E>
 where
     T: ValueEval<E> + Debug + Clone,
     E: PartialEq + PartialOrd + WildEq,
@@ -152,20 +152,20 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::{execution::VarSpace, };
+    use crate::execution::VarSpace;
 
     use super::*;
 
     //test bind express
     #[test]
     fn test_bin_express() {
-        let bin_express = BinExpress::eq("a", "b");
+        let bin_express = CmpExpress::eq("a", "b");
         assert_eq!(bin_express.relation, BinRelation::EQ);
         assert_eq!(
             bin_express.decide(ExecContext::default(), &VarSpace::default()),
             Ok(false)
         );
-        let bin_express = BinExpress::eq("a", "a");
+        let bin_express = CmpExpress::eq("a", "a");
         assert_eq!(bin_express.relation, BinRelation::EQ);
         assert_eq!(
             bin_express.decide(ExecContext::default(), &VarSpace::default()),
@@ -175,25 +175,25 @@ mod tests {
     //test for i32 test bin express
     #[test]
     fn test_bin_express_i32() {
-        let bin_express = BinExpress::eq(1, 2);
+        let bin_express = CmpExpress::eq(1, 2);
         assert_eq!(bin_express.relation, BinRelation::EQ);
         assert_eq!(
             bin_express.decide(ExecContext::default(), &VarSpace::default()),
             Ok(false)
         );
-        let bin_express = BinExpress::eq(1, 1);
+        let bin_express = CmpExpress::eq(1, 1);
         assert_eq!(bin_express.relation, BinRelation::EQ);
         assert_eq!(
             bin_express.decide(ExecContext::default(), &VarSpace::default()),
             Ok(true)
         );
-        let bin_express = BinExpress::gt(2, 1);
+        let bin_express = CmpExpress::gt(2, 1);
         assert_eq!(bin_express.relation, BinRelation::GT);
         assert_eq!(
             bin_express.decide(ExecContext::default(), &VarSpace::default()),
             Ok(true)
         );
-        let bin_express = BinExpress::gt(1, 2);
+        let bin_express = CmpExpress::gt(1, 2);
         assert_eq!(bin_express.relation, BinRelation::GT);
         assert_eq!(
             bin_express.decide(ExecContext::default(), &VarSpace::default()),

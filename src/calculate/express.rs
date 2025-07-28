@@ -1,6 +1,6 @@
 use wildmatch::WildMatch;
 
-use crate::calculate::compare::BinExpress;
+use crate::calculate::compare::CmpExpress;
 use crate::calculate::logic::LogicExpress;
 use crate::calculate::traits::{DecideResult, Evaluation, WildEq};
 use crate::context::ExecContext;
@@ -34,12 +34,14 @@ impl WildEq for String {
     }
 }
 
+
+
 pub type EVarDef = VarDef<String, EnvVarTag>;
 #[derive(Clone, Debug)]
 pub enum ExpressEnum {
     Logic(Box<LogicExpress<ExpressEnum, ExpressEnum>>),
-    GxlObj(BinExpress<GxlObject, GxlObject>),
-    BinFun(BoolBinFn),
+    Cmp(CmpExpress<GxlObject, GxlObject>),
+    Fun(BoolBinFn),
 }
 
 impl ValueEval<GxlObject> for GxlObject {
@@ -78,15 +80,15 @@ where
     T: Into<BoolBinFn>,
 {
     fn from(value: T) -> Self {
-        ExpressEnum::BinFun(value.into())
+        ExpressEnum::Fun(value.into())
     }
 }
 
 impl Evaluation for ExpressEnum {
     fn decide(&self, ctx: ExecContext, args: &VarSpace) -> DecideResult {
         match self {
-            ExpressEnum::GxlObj(x) => x.decide(ctx, args),
-            ExpressEnum::BinFun(x) => x.decide(ctx, args),
+            ExpressEnum::Cmp(x) => x.decide(ctx, args),
+            ExpressEnum::Fun(x) => x.decide(ctx, args),
             ExpressEnum::Logic(x) => x.decide(ctx, args),
         }
     }
@@ -102,13 +104,13 @@ mod tests {
     //test bind express
     #[test]
     fn test_bin_express() {
-        let bin_express = BinExpress::eq("a", "b");
+        let bin_express = CmpExpress::eq("a", "b");
         assert_eq!(bin_express.relation, BinRelation::EQ);
         assert_eq!(
             bin_express.decide(ExecContext::default(), &VarSpace::default()),
             Ok(false)
         );
-        let bin_express = BinExpress::eq("a", "a");
+        let bin_express = CmpExpress::eq("a", "a");
         assert_eq!(bin_express.relation, BinRelation::EQ);
         assert_eq!(
             bin_express.decide(ExecContext::default(), &VarSpace::default()),

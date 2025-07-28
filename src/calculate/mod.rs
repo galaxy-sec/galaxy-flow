@@ -6,6 +6,6 @@ pub mod express;
 pub mod logic;
 pub mod traits;
 
-pub use compare::BinExpress;
+pub use compare::CmpExpress;
 pub use express::ExpressEnum;
 pub use traits::Evaluation;
