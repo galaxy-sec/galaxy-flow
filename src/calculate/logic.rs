@@ -83,8 +83,7 @@ where
         match self.relation {
             BinLogic::AND => {
                 let first = self.first.decide(ctx.clone(), def)?;
-                let second = self.second.decide(ctx.clone(), def)?;
-                if first && second {
+                if first && self.second.decide(ctx.clone(), def)? {
                     Ok(true)
                 } else {
                     Ok(false)

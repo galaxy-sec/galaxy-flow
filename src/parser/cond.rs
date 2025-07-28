@@ -3,7 +3,8 @@ use super::inner::funs::gal_defined;
 use super::prelude::*;
 use orion_parse::define::take_var_ref_name;
 use orion_parse::symbol::{
-    symbol_cmp, symbol_logic_and, symbol_logic_not, symbol_logic_or, LogicSymbol,
+    symbol_bracket_beg, symbol_bracket_end, symbol_cmp, symbol_logic_and, symbol_logic_not,
+    symbol_logic_or, LogicSymbol,
 };
 use winnow::combinator::repeat;
 
@@ -37,7 +38,7 @@ pub fn gal_else_if(input: &mut &str) -> Result<GxlCond> {
     Ok(GxlCond::new(ctrl_express))
 }
 
-pub fn gal_exp_bin_r(input: &mut &str) -> Result<ExpressEnum> {
+pub fn gal_cmp_exp(input: &mut &str) -> Result<ExpressEnum> {
     let (name, cmp, value) = (
         spaced(take_var_ref_name).context(wn_desc("<env-var>")),
         spaced(symbol_cmp).context(wn_desc("operator")),
@@ -51,7 +52,7 @@ pub fn gal_exp_bin_r(input: &mut &str) -> Result<ExpressEnum> {
     )))
 }
 
-pub fn gal_exp_fun(input: &mut &str) -> Result<ExpressEnum> {
+pub fn gal_cmp_fun(input: &mut &str) -> Result<ExpressEnum> {
     let defined = gal_defined.parse_next(input)?;
     Ok(ExpressEnum::from(defined))
 }
@@ -59,7 +60,7 @@ pub fn gal_exp_fun(input: &mut &str) -> Result<ExpressEnum> {
 pub fn gal_logic_not(input: &mut &str) -> Result<ExpressEnum> {
     symbol_logic_not.parse_next(input)?;
     multispace0.parse_next(input)?;
-    let first = gal_exp.parse_next(input)?;
+    let first = alt((gal_exp_cmp, gal_exp_gourp)).parse_next(input)?;
     Ok(ExpressEnum::Logic(Box::new(LogicExpress::not_exp(first))))
 }
 
@@ -70,8 +71,31 @@ pub fn gal_logic_bin(input: &mut &str) -> Result<(LogicSymbol, ExpressEnum)> {
     Ok((logic, second))
 }
 
+pub fn gal_exp_cmp(input: &mut &str) -> Result<ExpressEnum> {
+    alt((gal_cmp_exp, gal_cmp_fun)).parse_next(input)
+}
+
+pub fn gal_exp_gourp(input: &mut &str) -> Result<ExpressEnum> {
+    multispace0.parse_next(input)?;
+    symbol_bracket_beg.parse_next(input)?;
+    multispace0.parse_next(input)?;
+    let first = alt((gal_cmp_exp, gal_cmp_fun, gal_logic_not)).parse_next(input)?;
+    let second = opt(gal_logic_bin).parse_next(input)?;
+    multispace0.parse_next(input)?;
+    symbol_bracket_end.parse_next(input)?;
+    if let Some((logic, exp)) = second {
+        Ok(match logic {
+            LogicSymbol::And => ExpressEnum::Logic(Box::new(LogicExpress::and_exp(first, exp))),
+            LogicSymbol::Or => ExpressEnum::Logic(Box::new(LogicExpress::or_exp(first, exp))),
+            _ => unreachable!(),
+        })
+    } else {
+        Ok(first)
+    }
+}
+
 pub fn gal_exp(input: &mut &str) -> Result<ExpressEnum> {
-    let first = alt((gal_exp_bin_r, gal_exp_fun, gal_logic_not)).parse_next(input)?;
+    let first = alt((gal_cmp_exp, gal_cmp_fun, gal_logic_not, gal_exp_gourp)).parse_next(input)?;
     let second = opt(gal_logic_bin).parse_next(input)?;
     if let Some((logic, exp)) = second {
         Ok(match logic {
@@ -174,6 +198,21 @@ mod tests {
         assert!(exp.decide(ExecContext::default(), &dict).assert());
         assert_eq!(data, "");
 
+        let mut data = r#"  defined(${val_not}) || ${val} == 1"#;
+        let exp = run_gxl(gal_exp, &mut data).assert();
+        assert!(exp.decide(ExecContext::default(), &dict).assert());
+        assert_eq!(data, "");
+
+        let mut data = r#"  !defined(${val_not}) || ${val_not} == 1"#;
+        let exp = run_gxl(gal_exp, &mut data).assert();
+        assert!(exp.decide(ExecContext::default(), &dict).assert());
+        assert_eq!(data, "");
+
+        let mut data = r#"  !defined(${val_not}) || ${val_not} == 1"#;
+        let exp = run_gxl(gal_exp, &mut data).assert();
+        assert!(exp.decide(ExecContext::default(), &dict).assert());
+        assert_eq!(data, "");
+
         let mut data = r#"  ${val} == 1 && ${val} == 2"#;
         let exp = run_gxl(gal_exp, &mut data).assert();
         assert!(!exp.decide(ExecContext::default(), &dict).assert());
@@ -188,6 +227,26 @@ mod tests {
         let exp = run_gxl(gal_exp, &mut data).assert();
         assert!(!exp.decide(ExecContext::default(), &dict).assert());
         assert_eq!(data, "");
+
+        let mut data = r#" ( ${val} == 1)"#;
+        let exp = run_gxl(gal_exp, &mut data).assert();
+        assert!(exp.decide(ExecContext::default(), &dict).assert());
+        assert_eq!(data, "");
+
+        let mut data = r#"  (${val} == 1) || (${val} == 2)"#;
+        let exp = run_gxl(gal_exp, &mut data).assert();
+        assert!(exp.decide(ExecContext::default(), &dict).assert());
+        assert_eq!(data, "");
+
+        let mut data = r#"  (defined(${val_not}) && ${val_not} == 1) || ${val} == 1"#;
+        let exp = run_gxl(gal_exp, &mut data).assert();
+        assert!(exp.decide(ExecContext::default(), &dict).assert());
+        assert_eq!(data, "");
+
+        let mut data = r#"  (defined(${val}) && ${val} == 2) || ${val} == 1"#;
+        let exp = run_gxl(gal_exp, &mut data).assert();
+        assert!(exp.decide(ExecContext::default(), &dict).assert());
+        assert_eq!(data, "");
     }
 
     #[test]
@@ -201,6 +260,14 @@ mod tests {
 
         let mut data = r#"
             if ${var} == 2 || ${val} == "1" {
+                gx.echo ( value  : "${PRJ_ROOT}/test/main.py"  );
+             }"#;
+        let _ = run_gxl(gal_cond, &mut data).assert();
+        assert_eq!(data, "");
+        //if !defined($CUR.ENABLE) || ${CUR.ENABLE} == true
+
+        let mut data = r#"
+            if !defined(${CUR.ENABLE}) || ${CUR.ENABLE} == true {
                 gx.echo ( value  : "${PRJ_ROOT}/test/main.py"  );
              }"#;
         let _ = run_gxl(gal_cond, &mut data).assert();
