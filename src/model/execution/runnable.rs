@@ -27,22 +27,15 @@ pub enum ExecOut {
 #[derive(Debug, Clone, PartialEq)]
 pub struct TaskValue {
     pub vars: VarSpace,
-    pub out: String,
+
     pub rec: ExecOut,
 }
 impl TaskValue {
-    pub fn new(vars: VarSpace, out: String, task: ExecOut) -> Self {
-        Self {
-            vars,
-            out,
-            rec: task,
-        }
+    pub fn new(vars: VarSpace, task: ExecOut) -> Self {
+        Self { vars, rec: task }
     }
     pub fn rec(&self) -> &ExecOut {
         &self.rec
-    }
-    pub fn append_out(&mut self, out: String) {
-        self.out.push_str(&out);
     }
 }
 impl From<(VarSpace, ExecOut)> for TaskValue {
@@ -50,7 +43,6 @@ impl From<(VarSpace, ExecOut)> for TaskValue {
         Self {
             vars: value.0,
             rec: value.1,
-            out: String::new(),
         }
     }
 }
@@ -60,7 +52,6 @@ impl From<(VarSpace, ExecOut, String)> for TaskValue {
         Self {
             vars: value.0,
             rec: value.1,
-            out: value.2,
         }
     }
 }

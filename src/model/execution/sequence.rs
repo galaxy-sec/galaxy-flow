@@ -150,11 +150,7 @@ impl ExecSequence {
             *def = vars;
             job.append(rec);
         }
-        Ok(TaskValue::new(
-            def.clone(),
-            "".to_string(),
-            ExecOut::Job(job),
-        ))
+        Ok(TaskValue::new(def.clone(), ExecOut::Job(job)))
     }
 }
 

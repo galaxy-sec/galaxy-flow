@@ -101,7 +101,7 @@ mod tests {
             if self.should_fail {
                 Err(ExecError::from_logic("should_fail".into()))
             } else {
-                Ok(TaskValue::new(_vars, "".to_string(), ExecOut::Ignore))
+                Ok(TaskValue::new(_vars, ExecOut::Ignore))
             }
         }
     }
@@ -120,7 +120,7 @@ mod tests {
             if self.should_fail {
                 Err(ExecError::from_logic("should_fail".into()))
             } else {
-                Ok(TaskValue::new(_vars, "".to_string(), ExecOut::Ignore))
+                Ok(TaskValue::new(_vars, ExecOut::Ignore))
             }
         }
     }

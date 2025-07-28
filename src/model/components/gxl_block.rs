@@ -67,29 +67,9 @@ impl AsyncRunnableWithSenderTrait for BlockAction {
         dct: VarSpace,
         sender: Option<Sender<ReadSignal>>,
     ) -> TaskResult {
-        let (result, output) = match self {
-            BlockAction::GxlRun(o) => (o.async_exec(ctx, dct, sender).await, String::new()),
-            BlockAction::Loop(o) => (o.async_exec(ctx, dct, sender).await, String::new()),
-            _ => {
-                let action_res: Result<TaskValue, orion_error::StructError<ExecReason>> =
-                    self.execute_action(ctx, dct).await;
-                (action_res, String::new())
-            }
-        };
-        return match result {
-            Ok(mut tv) => {
-                tv.append_out(output);
-                Ok(tv)
-            }
-            Err(e) => Err(e),
-        };
-    }
-}
-
-impl BlockAction {
-    /// 执行具体动作
-    async fn execute_action(&self, ctx: ExecContext, dct: VarSpace) -> TaskResult {
         match self {
+            BlockAction::GxlRun(o) => o.async_exec(ctx, dct, sender).await,
+            BlockAction::Loop(o) => o.async_exec(ctx, dct, sender).await,
             BlockAction::Shell(o) => o.async_exec(ctx, dct).await,
             BlockAction::Command(o) => o.async_exec(ctx, dct).await,
             BlockAction::Echo(o) => o.async_exec(ctx, dct).await,
@@ -102,7 +82,6 @@ impl BlockAction {
             BlockAction::Artifact(o) => o.async_exec(ctx, dct).await,
             BlockAction::UpLoad(o) => o.async_exec(ctx, dct).await,
             BlockAction::DownLoad(o) => o.async_exec(ctx, dct).await,
-            _ => unreachable!(),
         }
     }
 }
@@ -121,11 +100,11 @@ impl AsyncRunnableWithSenderTrait for BlockNode {
         self.export_props(ctx.clone(), cur_var_dict.global_mut(), "")?;
 
         for item in &self.items {
-            let TaskValue { vars, out, rec } = item
+            let TaskValue { vars, rec } = item
                 .async_exec(ctx.clone(), cur_var_dict, sender.clone())
                 .await?;
             cur_var_dict = vars;
-            task.stdout.push_str(out.as_str());
+            // task.stdout.push_str(out.as_str());
             task.append(rec);
         }
         task.finish();
