@@ -10,7 +10,7 @@ use winnow::combinator::repeat;
 
 use crate::ability::prelude::GxlVar;
 use crate::calculate::cond::IFExpress;
-use crate::calculate::express::{BinExpress, ExpressEnum};
+use crate::calculate::{BinExpress, ExpressEnum};
 use crate::components::gxl_block::{BlockAction, BlockNode};
 use crate::components::gxl_cond::GxlCond;
 use crate::components::gxl_loop::GxlLoop;

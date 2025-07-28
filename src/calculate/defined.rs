@@ -1,9 +1,11 @@
 use derive_more::From;
 
-use crate::{context::ExecContext, execution::VarSpace};
+use crate::{
+    calculate::traits::{DecideResult, Evaluation},
+    context::ExecContext,
+    execution::VarSpace,
+};
 use std::env;
-
-use super::express::{DecideResult, Evaluation};
 
 #[derive(Clone, Debug, From)]
 pub enum BoolBinFn {
