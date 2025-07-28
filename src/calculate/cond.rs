@@ -77,13 +77,13 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::{IFExpress, CondExec, StuBlock};
+    use super::{CondExec, IFExpress, StuBlock};
     use crate::ability::prelude::{TaskResult, TaskValue, VarSpace};
+    use crate::calculate::express::ExpressEnum;
     use crate::calculate::CmpExpress;
+    use crate::components::gxl_cond::TGxlCond;
     use crate::context::ExecContext;
     use crate::execution::runnable::ExecOut;
-    use crate::calculate::express::{ ExpressEnum};
-    use crate::components::gxl_cond::TGxlCond;
     use crate::primitive::GxlObject;
     use crate::sec::{SecFrom, SecValueType};
     use crate::traits::Setter;
@@ -92,15 +92,11 @@ mod tests {
     #[derive(Clone)]
     struct TestBlock {
         expected_out: ExecOut,
-        name: String,
     }
 
     impl TestBlock {
-        fn new(name: &str, expected_out: ExecOut) -> Self {
-            Self {
-                expected_out,
-                name: name.to_string(),
-            }
+        fn new(_name: &str, expected_out: ExecOut) -> Self {
+            Self { expected_out }
         }
     }
 
@@ -139,7 +135,7 @@ mod tests {
     async fn test_if_express_true_branch() {
         let true_block = TestBlock::new("true_branch", ExecOut::Ignore);
         let false_block = TestBlock::new("false_branch", ExecOut::Code(1));
-        
+
         let if_express = IFExpress::new(
             create_true_expr(),
             true_block.clone(),
@@ -149,7 +145,7 @@ mod tests {
 
         let ctx = ExecContext::default();
         let def = VarSpace::default();
-        
+
         let result = if_express.cond_exec(ctx, def).await.unwrap();
         assert_eq!(result.rec(), &ExecOut::Ignore);
     }
@@ -158,7 +154,7 @@ mod tests {
     async fn test_if_express_false_branch() {
         let true_block = TestBlock::new("true_branch", ExecOut::Ignore);
         let false_block = TestBlock::new("false_branch", ExecOut::Code(1));
-        
+
         let if_express = IFExpress::new(
             create_false_expr(),
             true_block,
@@ -168,7 +164,7 @@ mod tests {
 
         let ctx = ExecContext::default();
         let def = VarSpace::default();
-        
+
         let result = if_express.cond_exec(ctx, def).await.unwrap();
         assert_eq!(result.rec(), &ExecOut::Code(1));
     }
@@ -176,17 +172,12 @@ mod tests {
     #[tokio::test]
     async fn test_if_express_no_false_branch() {
         let true_block = TestBlock::new("true_branch", ExecOut::Ignore);
-        
-        let if_express = IFExpress::new(
-            create_false_expr(),
-            true_block,
-            vec![],
-            None,
-        );
+
+        let if_express = IFExpress::new(create_false_expr(), true_block, vec![], None);
 
         let ctx = ExecContext::default();
         let def = VarSpace::default();
-        
+
         let result = if_express.cond_exec(ctx, def).await.unwrap();
         assert_eq!(result.rec(), &ExecOut::Ignore);
     }
@@ -199,12 +190,7 @@ mod tests {
 
         // 创建返回 true 的 elseif 条件
         let elseif1 = TGxlCond {
-            cond: IFExpress::new(
-                create_true_expr(),
-                elseif1_block.clone(),
-                vec![],
-                None,
-            ),
+            cond: IFExpress::new(create_true_expr(), elseif1_block.clone(), vec![], None),
         };
 
         let if_express = IFExpress::new(
@@ -216,7 +202,7 @@ mod tests {
 
         let ctx = ExecContext::default();
         let def = VarSpace::default();
-        
+
         let result = if_express.cond_exec(ctx, def).await.unwrap();
         assert_eq!(result.rec(), &ExecOut::Code(2));
     }
@@ -229,12 +215,7 @@ mod tests {
 
         // 创建返回 false 的 elseif 条件
         let elseif1 = TGxlCond {
-            cond: IFExpress::new(
-                create_false_expr(),
-                elseif1_block,
-                vec![],
-                None,
-            ),
+            cond: IFExpress::new(create_false_expr(), elseif1_block, vec![], None),
         };
 
         let if_express = IFExpress::new(
@@ -246,7 +227,7 @@ mod tests {
 
         let ctx = ExecContext::default();
         let def = VarSpace::default();
-        
+
         let result = if_express.cond_exec(ctx, def).await.unwrap();
         assert_eq!(result.rec(), &ExecOut::Code(1));
     }
@@ -255,7 +236,7 @@ mod tests {
     async fn test_if_express_with_variable_condition() {
         let true_block = TestBlock::new("true_branch", ExecOut::Ignore);
         let false_block = TestBlock::new("false_block", ExecOut::Code(1));
-        
+
         let mut vars = VarSpace::default();
         vars.global_mut().set("test_var", "expected_value");
 
@@ -267,7 +248,7 @@ mod tests {
         );
 
         let ctx = ExecContext::default();
-        
+
         let result = if_express.cond_exec(ctx, vars).await.unwrap();
         assert_eq!(result.rec(), &ExecOut::Ignore);
     }
@@ -280,7 +261,7 @@ mod tests {
 
         let ctx = ExecContext::default();
         let def = VarSpace::default();
-        
+
         let result = stu_block.cond_exec(ctx, def).await.unwrap();
         assert_eq!(result.rec(), &ExecOut::Ignore);
     }
@@ -298,7 +279,7 @@ mod tests {
             let stu_block = StuBlock { out: out.clone() };
             let ctx = ExecContext::default();
             let def = VarSpace::default();
-            
+
             let result = stu_block.cond_exec(ctx, def).await.unwrap();
             assert_eq!(result.rec(), &out);
         }

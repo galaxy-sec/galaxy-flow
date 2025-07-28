@@ -3,14 +3,14 @@ use std::fmt::Debug;
 use super::traits::Evaluation;
 use crate::{calculate::traits::DecideResult, context::ExecContext, execution::VarSpace};
 
-#[derive(Clone, Debug )]
+#[derive(Clone, Debug)]
 pub enum BinLogic {
     AND,
     OR,
 }
 
-#[derive(Clone, Debug )]
-pub struct BinLogicExpress<T, E> 
+#[derive(Clone, Debug)]
+pub struct BinLogicExpress<T, E>
 where
     T: Evaluation + Debug,
     E: Evaluation + Debug,
@@ -19,16 +19,16 @@ where
     first: T,
     second: E,
 }
-#[derive(Clone, Debug )]
-pub struct NotLogicExpress<T> 
+#[derive(Clone, Debug)]
+pub struct NotLogicExpress<T>
 where
     T: Evaluation + Debug,
 {
     first: T,
 }
 
-#[derive(Clone, Debug )]
-pub enum LogicExpress<T, E> 
+#[derive(Clone, Debug)]
+pub enum LogicExpress<T, E>
 where
     T: Evaluation + Debug,
     E: Evaluation + Debug,
@@ -37,7 +37,7 @@ where
     Not(NotLogicExpress<T>),
 }
 
-impl<T, E> LogicExpress<T, E> 
+impl<T, E> LogicExpress<T, E>
 where
     T: Evaluation + Debug,
     E: Evaluation + Debug,
@@ -104,7 +104,7 @@ where
 
 impl<T> Evaluation for NotLogicExpress<T>
 where
-    T: Evaluation +Debug,
+    T: Evaluation + Debug,
 {
     fn decide(&self, ctx: ExecContext, def: &VarSpace) -> DecideResult {
         let first = self.first.decide(ctx.clone(), def)?;

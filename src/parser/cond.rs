@@ -132,61 +132,61 @@ mod tests {
             .set("val_s", SecValueType::nor_from("1".to_string()));
         let mut data = r#" defined(${val})"#;
         let exp = run_gxl(gal_exp, &mut data).assert();
-        assert!(exp.decide(ExecContext::default(), &mut dict).assert());
+        assert!(exp.decide(ExecContext::default(), &dict).assert());
 
         let mut data = r#" defined(${val_not_exists})"#;
         let exp = run_gxl(gal_exp, &mut data).assert();
-        assert!(!exp.decide(ExecContext::default(), &mut dict).assert());
+        assert!(!exp.decide(ExecContext::default(), &dict).assert());
 
         let mut data = r#" ${val} == 1"#;
         let exp = run_gxl(gal_exp, &mut data).assert();
-        assert!(exp.decide(ExecContext::default(), &mut dict).assert());
+        assert!(exp.decide(ExecContext::default(), &dict).assert());
 
         let mut data = r#" ${val_s} =* "1""#;
         let exp = run_gxl(gal_exp, &mut data).assert();
-        assert!(exp.decide(ExecContext::default(), &mut dict).assert());
+        assert!(exp.decide(ExecContext::default(), &dict).assert());
 
         let mut data = r#" ${val} != 1"#;
         let exp = run_gxl(gal_exp, &mut data).assert();
-        assert!(!exp.decide(ExecContext::default(), &mut dict).assert());
+        assert!(!exp.decide(ExecContext::default(), &dict).assert());
 
         let mut data = r#" ${val2} > 1"#;
         let exp = run_gxl(gal_exp, &mut data).assert();
-        assert!(exp.decide(ExecContext::default(), &mut dict).assert());
+        assert!(exp.decide(ExecContext::default(), &dict).assert());
 
         let mut data = r#" ${val2} >= 1"#;
         let exp = run_gxl(gal_exp, &mut data).assert();
-        assert!(exp.decide(ExecContext::default(), &mut dict).assert());
+        assert!(exp.decide(ExecContext::default(), &dict).assert());
         assert_eq!(data, "");
 
         let mut data = r#" ${val_f} >= 1.11"#;
         let exp = run_gxl(gal_exp, &mut data).assert();
-        assert!(exp.decide(ExecContext::default(), &mut dict).assert());
+        assert!(exp.decide(ExecContext::default(), &dict).assert());
         assert_eq!(data, "");
 
         let mut data = r#"  ${val} == 1 && ${val} == 1"#;
         let exp = run_gxl(gal_exp, &mut data).assert();
-        assert!(exp.decide(ExecContext::default(), &mut dict).assert());
+        assert!(exp.decide(ExecContext::default(), &dict).assert());
         assert_eq!(data, "");
 
         let mut data = r#"  defined(${val}) && ${val} == 1"#;
         let exp = run_gxl(gal_exp, &mut data).assert();
-        assert!(exp.decide(ExecContext::default(), &mut dict).assert());
+        assert!(exp.decide(ExecContext::default(), &dict).assert());
         assert_eq!(data, "");
 
         let mut data = r#"  ${val} == 1 && ${val} == 2"#;
         let exp = run_gxl(gal_exp, &mut data).assert();
-        assert!(!exp.decide(ExecContext::default(), &mut dict).assert());
+        assert!(!exp.decide(ExecContext::default(), &dict).assert());
         assert_eq!(data, "");
 
         let mut data = r#"  ${val} == 1 || ${val} == 2"#;
         let exp = run_gxl(gal_exp, &mut data).assert();
-        assert!(exp.decide(ExecContext::default(), &mut dict).assert());
+        assert!(exp.decide(ExecContext::default(), &dict).assert());
         assert_eq!(data, "");
 
         let mut data = r#" ! ${val} == 1"#;
         let exp = run_gxl(gal_exp, &mut data).assert();
-        assert!(!exp.decide(ExecContext::default(), &mut dict).assert());
+        assert!(!exp.decide(ExecContext::default(), &dict).assert());
         assert_eq!(data, "");
     }
 

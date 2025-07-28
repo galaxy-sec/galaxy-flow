@@ -34,8 +34,6 @@ impl WildEq for String {
     }
 }
 
-
-
 pub type EVarDef = VarDef<String, EnvVarTag>;
 #[derive(Clone, Debug)]
 pub enum ExpressEnum {

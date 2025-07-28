@@ -71,7 +71,7 @@ pub fn parse_mod_addr(input: &mut &str) -> Result<ModAddr> {
 }
 
 pub fn take_mod_name(input: &mut &str) -> Result<String> {
-    let (_, data, _) = ((multispace0, take_var_name, multispace0)).parse_next(input)?;
+    let (_, data, _) = (multispace0, take_var_name, multispace0).parse_next(input)?;
     Ok(data)
 }
 // 解析 extern mod
