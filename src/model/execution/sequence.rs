@@ -1,4 +1,5 @@
 use std::collections::{HashSet, VecDeque};
+use std::sync::mpsc::Sender;
 
 use async_trait::async_trait;
 use orion_common::friendly::AppendAble;
@@ -12,12 +13,13 @@ use crate::context::ExecContext;
 use crate::execution::hold::AsyncComHold;
 use crate::execution::hold::{ComHold, IsolationHold};
 use crate::execution::job::Job;
-use crate::execution::runnable::ComponentMeta;
 use crate::execution::runnable::{AsyncRunnableTrait, ExecOut, TaskResult};
+use crate::execution::runnable::{AsyncRunnableWithSenderTrait, ComponentMeta};
 use crate::execution::task::Task;
 use crate::execution::trans::ComTrans;
 use crate::execution::VarSpace;
 use crate::meta::{GxlMeta, MetaInfo};
+use crate::util::redirect::ReadSignal;
 use crate::ExecResult;
 
 use super::hold::TransableHold;
@@ -74,8 +76,9 @@ impl ExecSequence {
         ctx: ExecContext,
         def: VarSpace,
         spc: &impl SequLoader,
+        sender: Option<Sender<ReadSignal>>,
     ) -> TaskResult {
-        self.execute_sequence(ctx, def, spc).await
+        self.execute_sequence(ctx, def, spc, sender).await
     }
 
     pub async fn test_execute(
@@ -83,8 +86,9 @@ impl ExecSequence {
         ctx: ExecContext,
         def: VarSpace,
         spc: &GxlSpace,
+        sender: Option<Sender<ReadSignal>>,
     ) -> TaskResult {
-        self.execute_sequence(ctx, def, spc).await
+        self.execute_sequence(ctx, def, spc, sender).await
     }
 
     async fn execute_sequence(
@@ -92,6 +96,7 @@ impl ExecSequence {
         ctx: ExecContext,
         mut def: VarSpace,
         spc: &impl SequLoader,
+        sender: Option<Sender<ReadSignal>>,
     ) -> TaskResult {
         warn!(target: ctx.path(), "sequence size: {}  dryrun: {}", self.run_items().len(), ctx.dryrun());
 
@@ -109,7 +114,10 @@ impl ExecSequence {
                     }
                 }
             }
-            match self.execute_hold(&ctx, &mut def, spc, item).await {
+            match self
+                .execute_hold(&ctx, &mut def, spc, item, sender.clone())
+                .await
+            {
                 Ok(TaskValue { vars, rec, .. }) => {
                     def = vars;
                     job.append(rec);
@@ -131,11 +139,14 @@ impl ExecSequence {
         def: &mut VarSpace,
         spc: &impl SequLoader,
         item: &ComHold,
+        sender: Option<Sender<ReadSignal>>,
     ) -> TaskResult {
         let mut job = Job::from(&self.name);
         let mut exec_queue = build_exec_queue(ctx, spc, item)?;
         while let Some(item) = exec_queue.pop_back() {
-            let TaskValue { vars, rec, .. } = item.async_exec(ctx.clone(), def.clone()).await?;
+            let TaskValue { vars, rec, .. } = item
+                .async_exec(ctx.clone(), def.clone(), sender.clone())
+                .await?;
             *def = vars;
             job.append(rec);
         }

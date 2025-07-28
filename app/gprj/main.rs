@@ -78,7 +78,7 @@ impl GxAdm {
             cmd.conf = Some("./_gal/adm.gxl".to_string());
         }
         let var_space = VarSpace::sys_init().err_conv()?;
-        GxlRunner::run(cmd, var_space).await?;
+        GxlRunner::run(cmd, var_space, None).await?;
         Ok(())
     }
 

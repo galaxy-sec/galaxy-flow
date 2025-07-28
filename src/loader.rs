@@ -154,6 +154,7 @@ mod tests {
             Some(true),
             false,
             VarSpace::sys_init()?,
+            None,
         )
         .await?;
         Ok(())

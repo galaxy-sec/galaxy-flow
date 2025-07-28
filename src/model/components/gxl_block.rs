@@ -2,6 +2,7 @@ use async_trait::async_trait;
 use derive_more::From;
 use std::fs::File;
 use std::io::{Read, Seek, SeekFrom};
+use std::sync::mpsc::Sender;
 
 use super::gxl_cond::GxlCond;
 use super::gxl_loop::GxlLoop;
@@ -18,10 +19,10 @@ use crate::ability::{
 };
 use crate::calculate::cond::CondExec;
 use crate::context::ExecContext;
-use crate::execution::runnable::TaskResult;
+use crate::execution::runnable::{AsyncRunnableWithSenderTrait, TaskResult};
 use crate::execution::task::Task;
 use crate::task_report::task_rc_config::report_enable;
-use crate::util::redirect::init_redirect_file;
+use crate::util::redirect::{init_redirect_file, ReadSignal};
 
 #[derive(Clone, From)]
 pub enum BlockAction {
@@ -59,38 +60,24 @@ impl BlockNode {
 #[async_trait]
 impl CondExec for BlockNode {
     async fn cond_exec(&self, ctx: ExecContext, def: VarSpace) -> TaskResult {
-        self.async_exec(ctx, def).await
+        self.async_exec(ctx, def, None).await
     }
 }
 #[async_trait]
-impl AsyncRunnableTrait for BlockAction {
-    async fn async_exec(&self, ctx: ExecContext, dct: VarSpace) -> TaskResult {
+impl AsyncRunnableWithSenderTrait for BlockAction {
+    async fn async_exec(
+        &self,
+        ctx: ExecContext,
+        dct: VarSpace,
+        sender: Option<Sender<ReadSignal>>,
+    ) -> TaskResult {
         let (result, output) = match self {
-            BlockAction::GxlRun(o) => (o.async_exec(ctx, dct).await, String::new()),
-            BlockAction::Loop(o) => (o.async_exec(ctx, dct).await, String::new()),
+            BlockAction::GxlRun(o) => (o.async_exec(ctx, dct, sender).await, String::new()),
+            BlockAction::Loop(o) => (o.async_exec(ctx, dct, sender).await, String::new()),
             _ => {
-                let need_report = report_enable().await;
-                if need_report {
-                    let log_file = init_redirect_file()?;
-                    let mut file: File = File::open(log_file)
-                        .map_err(|e| ExecReason::Io(format!("get log file path error: {}", e)))?;
-                    // 记录本次任务开始时的日志开始位置
-                    let start_pos = file
-                        .seek(SeekFrom::End(0))
-                        .map_err(|e| ExecReason::Io(format!("seek log file error: {}", e)))?;
-                    let action_res = self.execute_action(ctx, dct).await;
-                    // 读取日志内容
-                    file.seek(SeekFrom::Start(start_pos))
-                        .map_err(|e| ExecReason::Io(format!("seek log file error: {}", e)))?;
-                    let mut content = String::new();
-                    file.read_to_string(&mut content)
-                        .map_err(|e| ExecReason::Io(format!("read log file error: {}", e)))?;
-                    (action_res, content)
-                } else {
-                    let action_res: Result<TaskValue, orion_error::StructError<ExecReason>> =
-                        self.execute_action(ctx, dct).await;
-                    (action_res, String::new())
-                }
+                let action_res: Result<TaskValue, orion_error::StructError<ExecReason>> =
+                    self.execute_action(ctx, dct).await;
+                (action_res, String::new())
             }
         };
         return match result {
@@ -125,15 +112,22 @@ impl BlockAction {
 }
 
 #[async_trait]
-impl AsyncRunnableTrait for BlockNode {
-    async fn async_exec(&self, ctx: ExecContext, var_dict: VarSpace) -> TaskResult {
+impl AsyncRunnableWithSenderTrait for BlockNode {
+    async fn async_exec(
+        &self,
+        ctx: ExecContext,
+        var_dict: VarSpace,
+        sender: Option<Sender<ReadSignal>>,
+    ) -> TaskResult {
         //ctx.append("block");
         let mut task = Task::from("block");
         let mut cur_var_dict = var_dict;
         self.export_props(ctx.clone(), cur_var_dict.global_mut(), "")?;
 
         for item in &self.items {
-            let TaskValue { vars, out, rec } = item.async_exec(ctx.clone(), cur_var_dict).await?;
+            let TaskValue { vars, out, rec } = item
+                .async_exec(ctx.clone(), cur_var_dict, sender.clone())
+                .await?;
             cur_var_dict = vars;
             task.stdout.push_str(out.as_str());
             task.append(rec);
@@ -227,7 +221,7 @@ mod tests {
         block.append(prop);
         let ctx = ExecContext::new(Some(false), false);
         let def = VarSpace::default();
-        let res = block.async_exec(ctx, def).await;
+        let res = block.async_exec(ctx, def, None).await;
         assert!(res.is_ok());
     }
 

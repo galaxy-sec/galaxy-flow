@@ -1,8 +1,14 @@
+use std::sync::mpsc::Sender;
+
 use orion_error::ToStructError;
 
 use super::prelude::*;
 use crate::{
-    ability::prelude::TaskValue, execution::task::Task, sec::SecValueType, traits::Setter,
+    ability::prelude::TaskValue,
+    execution::{runnable::AsyncRunnableWithSenderTrait, task::Task},
+    sec::SecValueType,
+    traits::Setter,
+    util::redirect::ReadSignal,
 };
 
 use super::gxl_block::BlockNode;
@@ -25,8 +31,13 @@ impl GxlLoop {
 }
 
 #[async_trait]
-impl AsyncRunnableTrait for GxlLoop {
-    async fn async_exec(&self, ctx: ExecContext, dict: VarSpace) -> TaskResult {
+impl AsyncRunnableWithSenderTrait for GxlLoop {
+    async fn async_exec(
+        &self,
+        ctx: ExecContext,
+        dict: VarSpace,
+        sender: Option<Sender<ReadSignal>>,
+    ) -> TaskResult {
         let mut task = Task::from("loop");
         let mut cur_dict = dict.clone();
         if let Some(found) = dict.get(self.var_name()) {
@@ -36,8 +47,10 @@ impl AsyncRunnableTrait for GxlLoop {
                         cur_dict
                             .global_mut()
                             .set(self.cur_name().clone(), v.clone());
-                        let TaskValue { vars, rec, .. } =
-                            self.body.async_exec(ctx.clone(), cur_dict).await?;
+                        let TaskValue { vars, rec, .. } = self
+                            .body
+                            .async_exec(ctx.clone(), cur_dict, sender.clone())
+                            .await?;
                         cur_dict = vars;
                         task.append(rec);
                     }
@@ -47,8 +60,10 @@ impl AsyncRunnableTrait for GxlLoop {
                         cur_dict
                             .global_mut()
                             .set(self.cur_name().clone(), i.clone());
-                        let TaskValue { vars, rec, .. } =
-                            self.body.async_exec(ctx.clone(), cur_dict).await?;
+                        let TaskValue { vars, rec, .. } = self
+                            .body
+                            .async_exec(ctx.clone(), cur_dict, sender.clone())
+                            .await?;
                         cur_dict = vars;
                         task.append(rec);
                     }
@@ -137,7 +152,10 @@ mod tests {
         let loop_node = GxlLoop::new("current".to_string(), "test_dict".to_string(), body);
 
         // 执行测试
-        let result = loop_node.async_exec(ctx, dict).await.assert("loop assert");
+        let result = loop_node
+            .async_exec(ctx, dict, None)
+            .await
+            .assert("loop assert");
 
         let TaskValue { rec, .. } = result;
         if let ExecOut::Task(_task) = rec {
@@ -169,7 +187,7 @@ mod tests {
         let loop_node = GxlLoop::new("current".to_string(), "test_list".to_string(), body);
 
         // Execute the loop
-        loop_node.async_exec(ctx, dict).await.assert("loop");
+        loop_node.async_exec(ctx, dict, None).await.assert("loop");
     }
 
     #[rstest]
@@ -183,7 +201,7 @@ mod tests {
         let loop_node = GxlLoop::new("current".to_string(), "missing_dict".to_string(), body);
 
         // 执行测试
-        let result = loop_node.async_exec(ctx, dict).await;
+        let result = loop_node.async_exec(ctx, dict, None).await;
 
         // 验证错误情况
         assert!(result.is_err());
@@ -216,7 +234,7 @@ mod tests {
 
         // 执行测试
         let result = loop_node
-            .async_exec(ctx.clone(), dict.clone())
+            .async_exec(ctx.clone(), dict.clone(), None)
             .await
             .assert("loop assert");
 

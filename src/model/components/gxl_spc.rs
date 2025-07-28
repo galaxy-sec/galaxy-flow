@@ -7,13 +7,13 @@ use crate::{
     },
     menu::*,
     meta::MetaInfo,
-    util::task_report::task_local_report,
+    util::{redirect::ReadSignal, task_report::task_local_report},
 };
 use colored::Colorize;
 use contracts::requires;
 use indexmap::IndexMap;
 use orion_error::ErrorConv;
-use std::fmt::Display;
+use std::{fmt::Display, sync::mpsc::Sender};
 
 use super::GxlMod;
 
@@ -202,6 +202,7 @@ impl GxlSpace {
         out: Option<bool>,
         dryrun: bool,
         var_space: VarSpace,
+        sender: Option<Sender<ReadSignal>>,
     ) -> RunResult<()> {
         info!(
             target: "execution",
@@ -217,7 +218,7 @@ impl GxlSpace {
 
         let main_ctx = ExecContext::new(out, dryrun);
         for flow_name in flow_names {
-            self.execute_flow(&main_ctx, &var_space, &envs, &flow_name)
+            self.execute_flow(&main_ctx, &var_space, &envs, &flow_name, sender.clone())
                 .await?;
         }
 
@@ -231,6 +232,7 @@ impl GxlSpace {
         var_space: &VarSpace,
         envs: &[String],
         flow_name: &str,
+        sender: Option<Sender<ReadSignal>>,
     ) -> RunResult<()> {
         let flow_name = self.normalize_flow_name(flow_name);
         println!("execute flow: {}", flow_name);
@@ -247,7 +249,7 @@ impl GxlSpace {
         let exec_ctx = main_ctx.clone().with_subcontext("exec");
 
         match exec_sequ
-            .execute(exec_ctx, var_space.clone(), self)
+            .execute(exec_ctx, var_space.clone(), self, sender)
             .await
             .err_conv()
         {
@@ -431,7 +433,10 @@ mod tests {
         work_space.load_env(ctx.clone(), &mut flow, "env.env1")?;
         work_space.load_flow(ctx.clone(), &mut flow, "main.flow1")?;
 
-        let task_v = flow.test_execute(ctx, def, &work_space).await.unwrap();
+        let task_v = flow
+            .test_execute(ctx, def, &work_space, None)
+            .await
+            .unwrap();
         debug!("Job result: {task_v:#?}",);
 
         work_space.show().unwrap();

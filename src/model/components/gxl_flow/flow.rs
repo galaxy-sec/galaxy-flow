@@ -7,7 +7,7 @@ use crate::data::AnnDto;
 use crate::model::components::prelude::*;
 
 use crate::annotation::{ComUsage, Dryrunable, GetArgValue, TaskMessage, Transaction, FST_ARG_TAG};
-use crate::execution::runnable::AsyncRunnableTrait;
+use crate::execution::runnable::AsyncRunnableWithSenderTrait;
 use crate::execution::task::Task;
 use crate::task_report::task_notification::TaskNotice;
 use crate::task_report::task_rc_config::{build_task_url, TaskUrlType};
@@ -16,7 +16,12 @@ use crate::traits::DependTrait;
 
 use crate::components::gxl_block::BlockNode;
 use crate::util::http_handle::{create_and_send_task_notice, send_http_request};
+use crate::util::redirect::{init_redirect_file, ReadSignal};
+use std::fs::File;
 use std::io::Write;
+use std::io::{Read, Seek, SeekFrom};
+use std::path::Path;
+use std::sync::{mpsc, Arc, Mutex};
 
 use contracts::requires;
 use derive_getters::Getters;
@@ -164,34 +169,170 @@ impl Transaction for GxlFlow {
 }
 impl GxlFlow {
     #[requires(self.assembled )]
-    async fn exec_self(&self, ctx: ExecContext, mut var_dict: VarSpace) -> TaskResult {
+    async fn exec_self(
+        &self,
+        ctx: ExecContext,
+        mut var_dict: VarSpace,
+        sender: Option<mpsc::Sender<ReadSignal>>,
+    ) -> TaskResult {
         let task_description = self.task_description();
         let mut task = Task::from(self.meta.name());
         let mut task_notice = TaskNotice::new();
+
         if let Some(des) = task_description.clone() {
-            task = Task::from(des);
+            task = Task::from(des.clone());
             task_notice = create_and_send_task_notice(&task, &task_notice).await?;
         }
 
-        // 执行块
-        for item in &self.blocks {
-            let TaskValue { vars, rec, .. } = item.async_exec(ctx.clone(), var_dict).await?;
-            var_dict = vars;
-            task.append(rec);
+        // 通知上层Task收集标准输出
+        if let Some(send) = sender.clone() {
+            let log_file = init_redirect_file()?;
+            let end_pos = Self::seek_log_file_end(&log_file)?;
+            send.send(ReadSignal::Start(end_pos as u32))
+                .map_err(|e| ExecReason::Io(format!("flow send task error: {}", e)))?;
+            // drop(send);
         }
-        task.finish();
 
-        match task_description {
-            Some(_) => {
-                let url = build_task_url(TaskUrlType::TaskReport)
-                    .await
-                    .unwrap_or_default();
-                let task_result = TaskReport::from_task_and_notice(task.clone(), task_notice);
-                send_http_request(task_result.clone(), &url).await;
-                Ok(TaskValue::from((var_dict, ExecOut::Task(task))))
+        // 执行块
+        let des_spawn = task_description.clone();
+        for item in &self.blocks {
+            match des_spawn {
+                Some(_) => {
+                    let (cur_sender, receiver) = mpsc::channel::<ReadSignal>();
+                    let log_file = init_redirect_file()?;
+                    // 记录开始节点
+                    let start_pos = Arc::new(Mutex::new(Self::seek_log_file_end(&log_file)?));
+
+                    let task_notice_for_spawn = task_notice.clone();
+                    let mut task_for_spawn = task.clone();
+
+                    // 用于从监听端的子线程中获取数据
+                    let shared_data = Arc::new(Mutex::new(String::new()));
+
+                    let handle: tokio::task::JoinHandle<Result<(), ExecReason>> = tokio::spawn({
+                        let shared_data = Arc::clone(&shared_data);
+                        let share_start_pos = Arc::clone(&start_pos);
+                        async move {
+                            while let Ok(flag) = receiver.recv() {
+                                match flag {
+                                    // 下层任务开始，读取属于自己的日志信息
+                                    ReadSignal::Start(end) => {
+                                        info!("receive start signal {}", end);
+                                        let start = {
+                                            let guard = share_start_pos.lock().unwrap();
+                                            *guard
+                                        };
+                                        let buf =
+                                            Self::read_log_content(&log_file, start, end as u64)
+                                                .await?;
+                                        task_for_spawn.stdout.push_str(&buf);
+
+                                        let url = build_task_url(TaskUrlType::TaskReport)
+                                            .await
+                                            .unwrap_or_default();
+                                        let task_result = TaskReport::from_task_and_notice(
+                                            task_for_spawn.clone(),
+                                            task_notice_for_spawn.clone(),
+                                        );
+
+                                        if let Ok(mut data) = shared_data.lock() {
+                                            data.push_str(&buf);
+                                        }
+                                        send_http_request(task_result.clone(), &url).await;
+                                    }
+                                    ReadSignal::End(cur_start) => {
+                                        let mut guard = share_start_pos.lock().unwrap();
+                                        *guard = cur_start as u64;
+                                    }
+                                }
+                            }
+                            info!("channel closed");
+                            Ok(())
+                        }
+                    });
+
+                    let sender_option = des_spawn.as_ref().map(|_| cur_sender.clone());
+                    let TaskValue { vars, rec, .. } = item
+                        .async_exec(ctx.clone(), var_dict, sender_option)
+                        .await?;
+                    var_dict = vars;
+                    drop(cur_sender);
+                    info!("start to stop handle");
+                    std::mem::drop(handle);
+                    info!("stoped handle");
+                    task.append(rec);
+                    // 更新日志信息
+                    if let Ok(data) = shared_data.lock() {
+                        if !data.is_empty() {
+                            task.stdout = data.clone();
+                        }
+                    }
+                    let log_path = init_redirect_file()?;
+                    let end_pos = Self::seek_log_file_end(&log_path)?;
+                    let start = {
+                        let guard = start_pos.lock().unwrap();
+                        *guard
+                    };
+                    let log_content = Self::read_log_content(&log_path, start, end_pos).await?;
+                    task.stdout.push_str(&log_content);
+                    // 上报任务最新信息
+                    if task_description.is_some() {
+                        let url = build_task_url(TaskUrlType::TaskReport)
+                            .await
+                            .unwrap_or_default();
+                        let task_result =
+                            TaskReport::from_task_and_notice(task.clone(), task_notice.clone());
+                        send_http_request(task_result, &url).await;
+                    }
+                }
+                None => {
+                    let TaskValue { vars, rec, .. } =
+                        item.async_exec(ctx.clone(), var_dict, None).await?;
+                    var_dict = vars;
+                    task.append(rec);
+                }
             }
+        }
+
+        task.finish();
+        // 通知上层Task收集标准输出
+        if let Some(send) = sender {
+            let log_file = init_redirect_file()?;
+            let end_pos = Self::seek_log_file_end(&log_file)?;
+            send.send(ReadSignal::End(end_pos as u32))
+                .map_err(|e| ExecReason::Io(format!("flow send task error: {}", e)))?;
+            drop(send);
+        }
+        match task_description {
+            Some(_) => Ok(TaskValue::from((var_dict, ExecOut::Task(task)))),
             None => Ok(TaskValue::from((var_dict, ExecOut::Ignore))),
         }
+    }
+
+    /// 封装日志文件操作：定位到文件末尾并返回位置
+    pub fn seek_log_file_end(log_file: &Path) -> Result<u64, ExecReason> {
+        let mut file = File::open(log_file)
+            .map_err(|e| ExecReason::Io(format!("open log file error: {}", e)))?;
+        file.seek(SeekFrom::End(0))
+            .map_err(|e| ExecReason::Io(format!("seek log file error: {}", e)))
+    }
+
+    /// 封装日志内容读取
+    async fn read_log_content(
+        log_file: &Path,
+        start_pos: u64,
+        end_pos: u64,
+    ) -> Result<String, ExecReason> {
+        let mut file = File::open(log_file)
+            .map_err(|e| ExecReason::Io(format!("open log file error: {}", e)))?;
+        file.seek(SeekFrom::Start(start_pos))
+            .map_err(|e| ExecReason::Io(format!("seek log file error: {}", e)))?;
+
+        let mut buffer = vec![0; (end_pos - start_pos) as usize];
+        file.read_exact(&mut buffer)
+            .map_err(|e| ExecReason::Io(format!("read log file error: {}", e)))?;
+
+        Ok(String::from_utf8_lossy(&buffer).into_owned())
     }
 
     // 获取注解中的描述信息
@@ -249,14 +390,19 @@ impl GxlFlow {
     }
 }
 #[async_trait]
-impl AsyncRunnableTrait for GxlFlow {
-    async fn async_exec(&self, mut ctx: ExecContext, mut var_dict: VarSpace) -> TaskResult {
+impl AsyncRunnableWithSenderTrait for GxlFlow {
+    async fn async_exec(
+        &self,
+        mut ctx: ExecContext,
+        mut var_dict: VarSpace,
+        sender: Option<mpsc::Sender<ReadSignal>>,
+    ) -> TaskResult {
         let des = self
             .task_description()
             .unwrap_or(self.meta.name().to_string());
         let mut job = Job::from(&des);
         ctx.append(self.meta.name());
-        let TaskValue { vars, rec, .. } = self.exec_self(ctx.clone(), var_dict).await?;
+        let TaskValue { vars, rec, .. } = self.exec_self(ctx.clone(), var_dict, sender).await?;
         var_dict = vars;
         job.append(rec);
         Ok(TaskValue::from((var_dict, ExecOut::Job(job))))

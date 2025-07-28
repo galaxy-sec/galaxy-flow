@@ -23,6 +23,7 @@ async fn conf_simple_test() -> AnyResult<()> {
         Some(false),
         false,
         VarSpace::default(),
+        None,
     )
     .await?;
     Ok(())
@@ -46,6 +47,7 @@ async fn conf_cond_test() -> RunResult<()> {
         Some(false),
         false,
         VarSpace::default(),
+        None,
     )
     .await?;
     Ok(())

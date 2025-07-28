@@ -1,7 +1,11 @@
+use std::sync::mpsc::Sender;
+
 use orion_error::ErrorConv;
 
 use crate::ability::prelude::*;
 
+use crate::execution::runnable::AsyncRunnableWithSenderTrait;
+use crate::util::redirect::ReadSignal;
 use crate::{
     runner::{GxlCmd, GxlRunner},
     util::path::WorkDir,
@@ -36,9 +40,16 @@ impl GxRun {
     }
 }
 #[async_trait]
-impl AsyncRunnableTrait for GxRun {
-    async fn async_exec(&self, mut ctx: ExecContext, vars_dict: VarSpace) -> TaskResult {
+impl AsyncRunnableWithSenderTrait for GxRun {
+    async fn async_exec(
+        &self,
+        mut ctx: ExecContext,
+        vars_dict: VarSpace,
+        sender: Option<Sender<ReadSignal>>,
+    ) -> TaskResult {
         ctx.append("gx.run");
+        info!("start subtask");
+        info!("run {name} ", name = &self.gxl_path);
         let mut action = Action::from("gx.run");
         let exp = EnvExpress::from_env_mix(vars_dict.global().clone());
         let cmd = GxlCmd {
@@ -57,7 +68,10 @@ impl AsyncRunnableTrait for GxRun {
             .with(self.run_path().clone())?;
         debug!(target:ctx.path(), "{:#?}", cmd);
         let sub_var_space = VarSpace::inherit_init(vars_dict.clone(), self.env_isolate)?;
-        GxlRunner::run(cmd, sub_var_space).await.err_conv()?;
+        println!("开始");
+        GxlRunner::run(cmd, sub_var_space, sender)
+            .await
+            .err_conv()?;
         action.finish();
         Ok(TaskValue::from((vars_dict, ExecOut::Action(action))))
     }
@@ -84,6 +98,6 @@ mod tests {
             vec!["assert_main"],
             true,
         );
-        res.async_exec(context, def).await.unwrap();
+        res.async_exec(context, def, None).await.unwrap();
     }
 }

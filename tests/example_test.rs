@@ -24,6 +24,7 @@ mod tests {
             Some(false),
             false,
             VarSpace::default(),
+            None,
         )
         .await?;
         Ok(())
@@ -46,6 +47,7 @@ mod tests {
             Some(false),
             false,
             VarSpace::default(),
+            None,
         )
         .await?;
         Ok(())
@@ -67,6 +69,7 @@ mod tests {
             Some(false),
             false,
             VarSpace::default(),
+            None,
         )
         .await?;
         Ok(())
@@ -88,6 +91,7 @@ mod tests {
             Some(false),
             false,
             VarSpace::default(),
+            None,
         )
         .await?;
         Ok(())
@@ -111,6 +115,7 @@ mod tests {
                 Some(false),
                 false,
                 VarSpace::default(),
+                None,
             )
             .await;
         match result {
@@ -142,6 +147,7 @@ mod tests {
             Some(false),
             dryrun,
             VarSpace::default(),
+            None,
         )
         .await?;
 
@@ -153,6 +159,7 @@ mod tests {
                 Some(false),
                 dryrun,
                 VarSpace::default(),
+                None,
             )
             .await;
         assert!(fail.is_err());

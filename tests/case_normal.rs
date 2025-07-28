@@ -25,6 +25,7 @@ async fn gxl_normal_test() -> AnyResult<()> {
         Some(false),
         false,
         VarSpace::default(),
+        None,
     )
     .await?;
     Ok(())

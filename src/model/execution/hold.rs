@@ -1,3 +1,4 @@
+use std::sync::mpsc::Sender;
 use std::sync::Arc;
 
 use async_trait::async_trait;
@@ -8,8 +9,10 @@ use crate::components::gxl_flow::meta::FlowMetaHold;
 use crate::components::gxl_spc::GxlSpace;
 use crate::components::{GxlEnv, GxlFlow, GxlMod, GxlProps};
 use crate::context::ExecContext;
+use crate::execution::runnable::AsyncRunnableWithSenderTrait;
 use crate::meta::GxlMeta;
 use crate::traits::DependTrait;
+use crate::util::redirect::ReadSignal;
 
 use super::runnable::{AsyncRunnableTrait, ComponentMeta, TaskResult, TaskValue};
 use super::VarSpace;
@@ -144,11 +147,16 @@ impl Dryrunable for AsyncComHold {
 }
 
 #[async_trait]
-impl AsyncRunnableTrait for AsyncComHold {
-    async fn async_exec(&self, ctx: ExecContext, dct: VarSpace) -> TaskResult {
+impl AsyncRunnableWithSenderTrait for AsyncComHold {
+    async fn async_exec(
+        &self,
+        ctx: ExecContext,
+        dct: VarSpace,
+        sender: Option<Sender<ReadSignal>>,
+    ) -> TaskResult {
         match self {
             Self::Props(obj) => obj.async_exec(ctx, dct).await,
-            Self::Flow(obj) => obj.async_exec(ctx, dct).await,
+            Self::Flow(obj) => obj.async_exec(ctx, dct, sender).await,
             Self::Env(obj) => obj.async_exec(ctx, dct).await,
             Self::Mox(obj) => obj.async_exec(ctx, dct).await,
         }
@@ -160,7 +168,7 @@ impl AsyncRunnableTrait for TransableHold {
     async fn async_exec(&self, ctx: ExecContext, dct: VarSpace) -> TaskResult {
         match self {
             Self::Props(obj) => obj.async_exec(ctx, dct).await,
-            Self::Flow(obj) => obj.async_exec(ctx, dct).await,
+            Self::Flow(obj) => obj.async_exec(ctx, dct, None).await,
         }
     }
 }
@@ -175,21 +183,31 @@ impl ComponentMeta for TransableHold {
 }
 
 #[async_trait]
-impl AsyncRunnableTrait for IsolationHold {
+impl AsyncRunnableWithSenderTrait for IsolationHold {
     ///varspace isolation
-    async fn async_exec(&self, ctx: ExecContext, dict: VarSpace) -> TaskResult {
+    async fn async_exec(
+        &self,
+        ctx: ExecContext,
+        dict: VarSpace,
+        sender: Option<Sender<ReadSignal>>,
+    ) -> TaskResult {
         let origin = dict.clone();
-        let TaskValue { rec, .. } = self.hold.async_exec(ctx, dict).await?;
+        let TaskValue { rec, .. } = self.hold.async_exec(ctx, dict, sender).await?;
         Ok(TaskValue::from((origin, rec)))
     }
 }
 
 #[async_trait]
-impl AsyncRunnableTrait for ComHold {
-    async fn async_exec(&self, ctx: ExecContext, dict: VarSpace) -> TaskResult {
+impl AsyncRunnableWithSenderTrait for ComHold {
+    async fn async_exec(
+        &self,
+        ctx: ExecContext,
+        dict: VarSpace,
+        sender: Option<Sender<ReadSignal>>,
+    ) -> TaskResult {
         match self {
-            ComHold::Conduction(h) => h.async_exec(ctx, dict).await,
-            ComHold::Isolation(h) => h.async_exec(ctx, dict).await,
+            ComHold::Conduction(h) => h.async_exec(ctx, dict, sender).await,
+            ComHold::Isolation(h) => h.async_exec(ctx, dict, sender).await,
         }
     }
 }

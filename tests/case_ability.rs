@@ -23,6 +23,7 @@ async fn conf_base_test() -> AnyResult<()> {
         Some(false),
         false,
         VarSpace::default(),
+        None,
     )
     .await?;
     Ok(())
@@ -46,6 +47,7 @@ async fn conf_web_test() {
         Some(false),
         false,
         VarSpace::default(),
+        None,
     )
     .await
     .unwrap();

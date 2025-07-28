@@ -2,15 +2,20 @@ use crate::{
     err::{RunError, RunResult},
     execution::VarSpace,
     infra::DfxArgsGetter,
+    util::redirect::ReadSignal,
     GxLoader,
 };
 use clap::ArgAction;
 use orion_error::{ErrorConv, ErrorWith, StructError, UvsConfFrom};
-use std::path::Path;
+use std::{path::Path, sync::mpsc::Sender};
 
 pub struct GxlRunner {}
 impl GxlRunner {
-    pub async fn run(cmd: GxlCmd, vars: VarSpace) -> RunResult<()> {
+    pub async fn run(
+        cmd: GxlCmd,
+        vars: VarSpace,
+        sender: Option<Sender<ReadSignal>>,
+    ) -> RunResult<()> {
         let mut loader = GxLoader::new();
         if let Some(conf) = cmd.conf {
             if !Path::new(conf.as_str()).exists() {
@@ -34,7 +39,8 @@ impl GxlRunner {
                     cmd.flow.clone()
                     //cmd.flow.iter().collect()
                 };
-                spc.exec(envs, flws, cmd.quiet, cmd.dryrun, vars).await?;
+                spc.exec(envs, flws, cmd.quiet, cmd.dryrun, vars, sender)
+                    .await?;
                 println!("\ngod job!");
             }
             Ok(())

@@ -9,17 +9,18 @@ use crate::{
 use colored::Colorize;
 use orion_error::StructError;
 use serde::Serialize;
-use std::fmt::Debug;
+use std::{fmt::Debug, time::Duration};
 
 // 发送http请求
 pub async fn send_http_request<T: Serialize + Debug>(payload: T, url: &String) {
     if !report_enable().await {
         return; // 如果报告中心未启用，则直接返回不再发送http请求
     }
-
+    info!("发送http请求: {}\n, playload:{:#?}", url, payload);
     let response = reqwest::Client::new()
         .post(url)
         .json(&payload)
+        .timeout(Duration::from_secs(5))
         .send()
         .await
         .map_err(|e| {
@@ -39,7 +40,7 @@ pub async fn send_http_request<T: Serialize + Debug>(payload: T, url: &String) {
             } else {
                 let status = resp.status();
                 let text = resp.text().await.unwrap_or_default();
-                println!(
+                info!(
                     "{}",
                     format!("HTTP request to {url} failed with status {status}: {text}",)
                         .yellow()
@@ -49,7 +50,7 @@ pub async fn send_http_request<T: Serialize + Debug>(payload: T, url: &String) {
             }
         }
         Err(e) => {
-            println!(
+            info!(
                 "{}",
                 format!("HTTP request to {url} failed: {e}",)
                     .yellow()
@@ -79,7 +80,6 @@ pub async fn create_and_send_task_notice(
     let task_outline = TaskOutline {
         tasks: vec![notice.clone()],
     };
-
     send_http_request(task_outline, &url).await;
     Ok(notice)
 }

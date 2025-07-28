@@ -23,6 +23,7 @@ async fn prj_conf() -> AnyResult<()> {
         Some(false),
         false,
         VarSpace::sys_init()?,
+        None,
     )
     .await?;
     Ok(())

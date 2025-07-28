@@ -1,14 +1,17 @@
 use std::collections::VecDeque;
 
-use crate::{ability::prelude::ComponentMeta, context::ExecContext};
+use crate::{
+    ability::prelude::ComponentMeta, context::ExecContext,
+    execution::runnable::AsyncRunnableWithSenderTrait,
+};
 
-use super::{hold::ComHold, runnable::AsyncRunnableTrait, VarSpace};
+use super::{hold::ComHold, VarSpace};
 
 // 事务管理器，跟踪事务状态和撤销任务
 #[derive(Clone, Default)]
 pub struct TransactionManager<T>
 where
-    T: AsyncRunnableTrait,
+    T: AsyncRunnableWithSenderTrait,
 {
     in_transaction: bool,
     undo_stack: VecDeque<(T, VarSpace)>, // 存储待撤销的任务
@@ -16,7 +19,7 @@ where
 
 impl<T> TransactionManager<T>
 where
-    T: AsyncRunnableTrait + ComponentMeta,
+    T: AsyncRunnableWithSenderTrait + ComponentMeta,
 {
     pub fn new() -> Self {
         Self {
@@ -48,7 +51,7 @@ where
 
     pub async fn rollback(&mut self, ctx: &ExecContext) {
         while let Some((undo, dict)) = self.undo_stack.pop_back() {
-            match undo.async_exec(ctx.clone(), dict).await {
+            match undo.async_exec(ctx.clone(), dict, None).await {
                 Ok(_) => warn!("Undo successful for {}", undo.gxl_meta().name()),
                 Err(e) => error!("Undo failed for {}: {}", undo.gxl_meta().name(), e),
             }
@@ -61,14 +64,15 @@ pub type ComTrans = TransactionManager<ComHold>;
 mod tests {
     use super::*;
     use crate::{
-        ability::prelude::{ExecOut, TaskResult, TaskValue},
+        ability::prelude::{AsyncRunnableTrait, ExecOut, TaskResult, TaskValue},
         context::ExecContext,
         meta::GxlMeta,
+        util::redirect::ReadSignal,
         ExecError,
     };
     use async_trait::async_trait;
     use orion_error::UvsLogicFrom;
-    use std::sync::{Arc, Mutex};
+    use std::sync::{mpsc::Sender, Arc, Mutex};
 
     // Mock runnable task for testing
     #[derive(Clone)]
@@ -91,6 +95,25 @@ mod tests {
     #[async_trait]
     impl AsyncRunnableTrait for MockTask {
         async fn async_exec(&self, _ctx: ExecContext, _vars: VarSpace) -> TaskResult {
+            let mut count = self.execute_count.lock().unwrap();
+            *count += 1;
+
+            if self.should_fail {
+                Err(ExecError::from_logic("should_fail".into()))
+            } else {
+                Ok(TaskValue::new(_vars, "".to_string(), ExecOut::Ignore))
+            }
+        }
+    }
+
+    #[async_trait]
+    impl AsyncRunnableWithSenderTrait for MockTask {
+        async fn async_exec(
+            &self,
+            _ctx: ExecContext,
+            _vars: VarSpace,
+            _sender: Option<Sender<ReadSignal>>,
+        ) -> TaskResult {
             let mut count = self.execute_count.lock().unwrap();
             *count += 1;
 

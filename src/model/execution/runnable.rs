@@ -1,9 +1,12 @@
+use std::sync::mpsc::Sender;
+
 use async_trait::async_trait;
 use serde::Serialize;
 
 use crate::context::ExecContext;
 use crate::execution::task::Task;
 use crate::meta::GxlMeta;
+use crate::util::redirect::ReadSignal;
 use crate::ExecResult;
 
 use super::action::Action;
@@ -69,6 +72,16 @@ pub type TaskResult = ExecResult<TaskValue>;
 #[async_trait]
 pub trait AsyncRunnableTrait {
     async fn async_exec(&self, ctx: ExecContext, dict: VarSpace) -> TaskResult;
+}
+
+#[async_trait]
+pub trait AsyncRunnableWithSenderTrait {
+    async fn async_exec(
+        &self,
+        ctx: ExecContext,
+        dict: VarSpace,
+        sender: Option<Sender<ReadSignal>>,
+    ) -> TaskResult;
 }
 
 pub trait RunnableTrait {

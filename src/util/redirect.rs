@@ -1,3 +1,5 @@
+use serde::Serialize;
+
 use crate::util::redirect::platform::StdoutRedirect;
 use crate::ExecReason;
 use std::fs::File;
@@ -285,4 +287,10 @@ pub fn stop_redirect(redirect: Option<StdoutRedirect>) -> Result<(), ExecReason>
         redirect.stop();
     }
     Ok(())
+}
+
+#[derive(Serialize)]
+pub enum ReadSignal {
+    Start(u32),
+    End(u32),
 }

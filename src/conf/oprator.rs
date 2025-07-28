@@ -98,5 +98,6 @@ mod tests {
 
         let task_result_config = TASK_REPORT_CENTER.get();
         assert!(task_result_config.is_some());
+        // TASK_REPORT_CENTER.take();
     }
 }

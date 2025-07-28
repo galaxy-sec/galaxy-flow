@@ -468,7 +468,7 @@ mod test {
 
         let ctx = ExecContext::default();
         let vars = VarSpace::default();
-        let TaskValue { vars, .. } = sequ.execute(ctx, vars.clone(), &spc).await.unwrap();
+        let TaskValue { vars, .. } = sequ.execute(ctx, vars.clone(), &spc, None).await.unwrap();
 
         println!("{:?}", vars.global().maps());
         assert_eq!(
@@ -545,7 +545,7 @@ mod test {
 
         let ctx = ExecContext::default();
         let vars = VarSpace::default();
-        let TaskValue { vars, .. } = sequ.execute(ctx, vars, &work_spc).await.unwrap();
+        let TaskValue { vars, .. } = sequ.execute(ctx, vars, &work_spc, None).await.unwrap();
 
         println!("{:?}", vars.global().maps());
         assert_eq!(
