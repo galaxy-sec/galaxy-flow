@@ -1,14 +1,11 @@
-use async_trait::async_trait;
-use derive_more::From;
-use std::fs::File;
-use std::io::{Read, Seek, SeekFrom};
-use std::sync::mpsc::Sender;
-
 use super::gxl_cond::GxlCond;
 use super::gxl_loop::GxlLoop;
 use super::gxl_spc::GxlSpace;
 use super::gxl_var::GxlVar;
 use super::prelude::*;
+use async_trait::async_trait;
+use derive_more::From;
+use std::sync::mpsc::Sender;
 
 use crate::ability::artifact::GxArtifact;
 use crate::ability::delegate::ActCall;
@@ -21,8 +18,7 @@ use crate::calculate::cond::CondExec;
 use crate::context::ExecContext;
 use crate::execution::runnable::{AsyncRunnableWithSenderTrait, TaskResult};
 use crate::execution::task::Task;
-use crate::task_report::task_rc_config::report_enable;
-use crate::util::redirect::{init_redirect_file, ReadSignal};
+use crate::util::redirect::ReadSignal;
 
 #[derive(Clone, From)]
 pub enum BlockAction {

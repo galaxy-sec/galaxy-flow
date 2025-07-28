@@ -16,7 +16,6 @@ pub async fn send_http_request<T: Serialize + Debug>(payload: T, url: &String) {
     if !report_enable().await {
         return; // 如果报告中心未启用，则直接返回不再发送http请求
     }
-    info!("发送http请求: {}\n, playload:{:#?}", url, payload);
     let response = reqwest::Client::new()
         .post(url)
         .json(&payload)
@@ -42,9 +41,12 @@ pub async fn send_http_request<T: Serialize + Debug>(payload: T, url: &String) {
                 let text = resp.text().await.unwrap_or_default();
                 info!(
                     "{}",
-                    format!("HTTP request to {url} failed with status {status}: {text}",)
-                        .yellow()
-                        .bold()
+                    format!(
+                        "HTTP request to {url} failed with status {status}: {text}, payload:{:?}",
+                        payload
+                    )
+                    .yellow()
+                    .bold()
                 );
                 set_report_enable(false).await; // Disable reporting if the request fails
             }
@@ -52,7 +54,7 @@ pub async fn send_http_request<T: Serialize + Debug>(payload: T, url: &String) {
         Err(e) => {
             info!(
                 "{}",
-                format!("HTTP request to {url} failed: {e}",)
+                format!("HTTP request to {url} failed: {e}, payload:{:?}", payload)
                     .yellow()
                     .bold()
             );
@@ -65,7 +67,7 @@ pub async fn send_http_request<T: Serialize + Debug>(payload: T, url: &String) {
 pub async fn create_and_send_task_notice(
     task: &Task,
     task_notice: &TaskNotice,
-) -> Result<TaskNotice, StructError<ExecReason>> {
+) -> Result<TaskNotice, ExecReason> {
     let url = build_task_url(TaskUrlType::TaskNotice)
         .await
         .unwrap_or_default();

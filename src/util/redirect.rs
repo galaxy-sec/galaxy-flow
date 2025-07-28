@@ -266,6 +266,8 @@ mod platform {
 }
 
 pub static LOG_PATH: OnceLock<PathBuf> = OnceLock::new();
+use std::io::{Read, Seek, SeekFrom};
+use std::path::Path;
 
 /// 返回一个临时日志文件，格式为 ".galaxy/templog_<timestamp>.log"
 /// 如果文件已存在，则返回该文件路径；如果不存在，则创建新文件
@@ -289,8 +291,33 @@ pub fn stop_redirect(redirect: Option<StdoutRedirect>) -> Result<(), ExecReason>
     Ok(())
 }
 
+/// 封装日志文件操作：定位到文件末尾并返回位置
+pub fn seek_log_file_end(log_file: &Path) -> Result<u64, ExecReason> {
+    let mut file =
+        File::open(log_file).map_err(|e| ExecReason::Io(format!("open log file error: {}", e)))?;
+    file.seek(SeekFrom::End(0))
+        .map_err(|e| ExecReason::Io(format!("seek log file error: {}", e)))
+}
+
+/// 封装日志内容读取
+pub async fn read_log_content(
+    log_file: &Path,
+    start_pos: u64,
+    end_pos: u64,
+) -> Result<String, ExecReason> {
+    let mut file =
+        File::open(log_file).map_err(|e| ExecReason::Io(format!("open log file error: {}", e)))?;
+    file.seek(SeekFrom::Start(start_pos))
+        .map_err(|e| ExecReason::Io(format!("seek log file error: {}", e)))?;
+
+    let mut buffer = vec![0; (end_pos - start_pos) as usize];
+    file.read_exact(&mut buffer)
+        .map_err(|e| ExecReason::Io(format!("read log file error: {}", e)))?;
+
+    Ok(String::from_utf8_lossy(&buffer).into_owned())
+}
 #[derive(Serialize)]
 pub enum ReadSignal {
-    Start(u32),
-    End(u32),
+    Start(u64),
+    End(u64),
 }
