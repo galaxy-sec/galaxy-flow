@@ -1,10 +1,4 @@
-use std::path::PathBuf;
-
-use orion_common::serde::Configable;
-use orion_error::ToStructError;
-use orion_variate::{ext::ArtifactPackage, types::LocalUpdate, update::UpdateOptions};
-
-use crate::{ability::prelude::*, execution::runnable::TaskValue};
+use crate::ability::prelude::*;
 
 #[derive(Clone, Default, Debug, PartialEq, Builder, Getters)]
 #[builder(setter(into))]
@@ -19,7 +13,9 @@ pub struct GxArtifact {
 
 #[async_trait]
 impl AsyncRunnableTrait for GxArtifact {
-    async fn async_exec(&self, ctx: ExecContext, vars_dict: VarSpace) -> TaskResult {
+    async fn async_exec(&self, _ctx: ExecContext, _vars_dict: VarSpace) -> TaskResult {
+        unreachable!("not support!, use gx.download");
+        /*
         let exp = EnvExpress::from_env_mix(vars_dict.global().clone());
         let pkg_file = exp.eval(self.pkg_file())?;
         let dst_file = exp.eval(self.dst_path())?;
@@ -39,6 +35,7 @@ impl AsyncRunnableTrait for GxArtifact {
         }
 
         Ok(TaskValue::from((vars_dict, ExecOut::Ignore)))
+        */
     }
 }
 
