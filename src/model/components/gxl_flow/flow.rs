@@ -220,7 +220,7 @@ impl GxlFlow {
             let log_file = init_redirect_file()?;
             let end_pos = seek_log_file_end(&log_file)?;
             send.send(ReadSignal::Start(end_pos))
-                .map_err(|e| ExecReason::Io(format!("flow send task error: {}", e)))?;
+                .map_err(|e| ExecReason::Io(format!("flow send task error: {e}")))?;
         }
         Ok(())
     }
@@ -357,7 +357,7 @@ impl GxlFlow {
             let log_file = init_redirect_file()?;
             let end_pos = seek_log_file_end(&log_file)?;
             send.send(ReadSignal::End(end_pos))
-                .map_err(|e| ExecReason::Io(format!("flow send task error: {}", e)))?;
+                .map_err(|e| ExecReason::Io(format!("flow send task error: {e}")))?;
         }
         Ok(())
     }

@@ -76,7 +76,7 @@ pub mod platform {
             {
                 Ok(file) => file,
                 Err(e) => {
-                    error!("Failed to open stdout.log: {}", e);
+                    error!("Failed to open stdout.log: {e}");
                     unsafe {
                         // 错误时关闭已打开的文件描述符
                         close(read_fd);
@@ -133,7 +133,7 @@ pub mod platform {
                     }
                     // 写入日志文件
                     if let Err(e) = log_file.write_all(&buf[..n]) {
-                        error!("Failed to write to log file: {}", e);
+                        error!("Failed to write to log file: {e}");
                     }
                 }
 
@@ -277,10 +277,10 @@ pub fn init_redirect_file() -> Result<PathBuf, ExecReason> {
     }
     let sys_time = SystemTime::now()
         .duration_since(SystemTime::UNIX_EPOCH)
-        .map_err(|e| ExecReason::Io(format!("获取系统时间失败: {}", e)))?
+        .map_err(|e| ExecReason::Io(format!("获取系统时间失败: {e}")))?
         .as_secs() as i64;
-    let log_file = std::env::temp_dir().join(format!("galaxy_templog_{}.log", sys_time));
-    File::create(&log_file).map_err(|e| ExecReason::Io(format!("创建临时日志文件失败: {}", e)))?;
+    let log_file = std::env::temp_dir().join(format!("galaxy_templog_{sys_time}.log"));
+    File::create(&log_file).map_err(|e| ExecReason::Io(format!("创建临时日志文件失败: {e}")))?;
     Ok(LOG_PATH.get_or_init(|| log_file).clone())
 }
 
@@ -294,9 +294,9 @@ pub fn stop_redirect(redirect: Option<StdoutRedirect>) -> Result<(), ExecReason>
 /// 封装日志文件操作：定位到文件末尾并返回位置
 pub fn seek_log_file_end(log_file: &Path) -> Result<u64, ExecReason> {
     let mut file =
-        File::open(log_file).map_err(|e| ExecReason::Io(format!("open log file error: {}", e)))?;
+        File::open(log_file).map_err(|e| ExecReason::Io(format!("open log file error: {e}")))?;
     file.seek(SeekFrom::End(0))
-        .map_err(|e| ExecReason::Io(format!("seek log file error: {}", e)))
+        .map_err(|e| ExecReason::Io(format!("seek log file error: {e}")))
 }
 
 /// 封装日志内容读取
@@ -306,13 +306,13 @@ pub async fn read_log_content(
     end_pos: u64,
 ) -> Result<String, ExecReason> {
     let mut file =
-        File::open(log_file).map_err(|e| ExecReason::Io(format!("open log file error: {}", e)))?;
+        File::open(log_file).map_err(|e| ExecReason::Io(format!("open log file error: {e}")))?;
     file.seek(SeekFrom::Start(start_pos))
-        .map_err(|e| ExecReason::Io(format!("seek log file error: {}", e)))?;
+        .map_err(|e| ExecReason::Io(format!("seek log file error: {e}")))?;
 
     let mut buffer = vec![0; (end_pos - start_pos) as usize];
     file.read_exact(&mut buffer)
-        .map_err(|e| ExecReason::Io(format!("read log file error: {}", e)))?;
+        .map_err(|e| ExecReason::Io(format!("read log file error: {e}")))?;
 
     Ok(String::from_utf8_lossy(&buffer).into_owned())
 }

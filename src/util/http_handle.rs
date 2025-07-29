@@ -42,8 +42,7 @@ pub async fn send_http_request<T: Serialize + Debug>(payload: T, url: &String) {
                 info!(
                     "{}",
                     format!(
-                        "HTTP request to {url} failed with status {status}: {text}, payload:{:?}",
-                        payload
+                        "HTTP request to {url} failed with status {status}: {text}, payload:{payload:?}",
                     )
                     .yellow()
                     .bold()
@@ -54,7 +53,7 @@ pub async fn send_http_request<T: Serialize + Debug>(payload: T, url: &String) {
         Err(e) => {
             info!(
                 "{}",
-                format!("HTTP request to {url} failed: {e}, payload:{:?}", payload)
+                format!("HTTP request to {url} failed: {e}, payload:{payload:?}")
                     .yellow()
                     .bold()
             );
