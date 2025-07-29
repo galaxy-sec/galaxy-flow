@@ -22,8 +22,9 @@ pub mod platform {
     use std::time::Duration;
 
     pub struct StdoutRedirect {
-        // thread_handle: thread::JoinHandle<()>,
+        thread_handle: Option<thread::JoinHandle<()>>,
         stop_signal: Arc<AtomicBool>,
+        original_stdout_fd: i32,
     }
 
     impl Drop for StdoutRedirect {
@@ -101,7 +102,7 @@ pub mod platform {
                 return None;
             }
 
-            let _ = thread::spawn(move || {
+            let thread_handle = thread::spawn(move || {
                 let mut buf = [0u8; 1024];
                 loop {
                     if thread_stop.load(Ordering::Relaxed) {
@@ -143,13 +144,22 @@ pub mod platform {
                     close(thread_stdout_fd);
                 }
             });
-
-            Some(Self { stop_signal })
+            Some(Self {
+                thread_handle: Some(thread_handle),
+                stop_signal,
+                original_stdout_fd,
+            })
         }
 
         pub fn stop(&mut self) {
-            // 向线程发出停止信号
-            self.stop_signal.store(true, Ordering::Relaxed);
+            // 恢复原始终端 stdout
+            unsafe {
+                dup2(self.original_stdout_fd, STDOUT_FILENO);
+            }
+            // 取出 `JoinHandle` 并等待线程完成
+            if let Some(handle) = self.thread_handle.take() {
+                handle.join().expect("Failed to join logger thread");
+            }
         }
     }
 }

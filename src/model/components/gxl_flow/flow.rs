@@ -183,9 +183,24 @@ impl GxlFlow {
         self.notify_log_collection(sender.clone()).await?;
 
         // 执行所有块
-        let (var_dict, task) = self
-            .execute_blocks(ctx, var_dict, task_description.clone(), task, task_notice)
-            .await?;
+        let (var_dict, task) = match self
+            .execute_blocks(
+                ctx,
+                var_dict,
+                task_description.clone(),
+                task.clone(),
+                task_notice.clone(),
+            )
+            .await
+        {
+            Ok((var_dict, task)) => (var_dict, task),
+            Err(e) => {
+                task.stdout.push_str(&e.to_string());
+                task.result = Err(e.to_string());
+                self.report_task_status(&task, &task_notice).await?;
+                return Err(e);
+            }
+        };
 
         // 完成日志收集
         self.finalize_log_collection(sender).await?;
