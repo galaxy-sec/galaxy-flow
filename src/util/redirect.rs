@@ -23,6 +23,7 @@ pub mod platform {
 
     pub struct StdoutRedirect {
         thread_handle: Option<thread::JoinHandle<()>>,
+        #[allow(dead_code)]
         stop_signal: Arc<AtomicBool>,
         original_stdout_fd: i32,
     }
