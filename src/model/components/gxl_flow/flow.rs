@@ -334,19 +334,7 @@ impl GxlFlow {
                 Ok(())
             });
         let sender_option = task_description.as_ref().map(|_| cur_sender.clone());
-        let TaskValue { vars, rec, .. } = match block.async_exec(ctx, var_dict, sender_option).await
-        {
-            Ok(task_value) => task_value,
-            Err(e) => {
-                info!("has been completed due to block error: {}", e);
-                Self::update_task_with_output(&mut task, &shared_output, start_pos).await?;
-
-                if task_description.is_some() {
-                    self.report_task_status(&task, &task_notice).await?;
-                }
-                return Err(e);
-            }
-        };
+        let TaskValue { vars, rec, .. } = block.async_exec(ctx, var_dict, sender_option).await?;
 
         drop(cur_sender);
         drop(monitor_handle);
