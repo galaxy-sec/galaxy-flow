@@ -1,20 +1,15 @@
-use super::abilities::define::gal_gxl_object;
 use super::inner::cmd::gal_cmd_block;
-use super::inner::funs::gal_defined;
 use super::inner::gxl::gal_run;
 use super::inner::shell::gal_shell;
 use super::prelude::*;
 use orion_parse::define::take_var_ref_name;
-use orion_parse::symbol::symbol_cmp;
 use winnow::combinator::repeat;
 
 use crate::ability::prelude::GxlVar;
-use crate::calculate::cond::IFExpress;
-use crate::calculate::express::{BinExpress, ExpressEnum};
 use crate::components::gxl_block::{BlockAction, BlockNode};
-use crate::components::gxl_cond::GxlCond;
 use crate::components::gxl_loop::GxlLoop;
-use crate::primitive::GxlObject;
+use crate::parser::cond::gal_cond;
+use crate::parser::inner::archive::{gal_tar, gal_untar};
 
 use super::atom::spaced;
 use super::domain::{gal_block_beg, gal_block_end, gal_keyword};
@@ -104,6 +99,12 @@ pub fn gal_sentens_item(input: &mut &str) -> Result<BlockAction> {
     if starts_with("gx.artifact", input) {
         return gal_artifact.map(BlockAction::Artifact).parse_next(input);
     }
+    if starts_with("gx.tar", input) {
+        return gal_tar.map(BlockAction::Tar).parse_next(input);
+    }
+    if starts_with("gx.untar", input) {
+        return gal_untar.map(BlockAction::UnTar).parse_next(input);
+    }
     if starts_with("gx.download", input) {
         return gal_download.map(BlockAction::DownLoad).parse_next(input);
     }
@@ -120,67 +121,6 @@ pub fn gal_sentens_item(input: &mut &str) -> Result<BlockAction> {
         .context(wn_desc("<flow-call>"))
         .map(|x| BlockAction::Delegate(Box::new(x)))
         .parse_next(input)
-}
-pub fn gal_else_if(input: &mut &str) -> Result<GxlCond> {
-    skip_spaces_block(input)?;
-    gal_keyword("else", input)?;
-    gal_keyword("if", input)?;
-    let (name, cmp, value) = (
-        spaced(take_var_ref_name).context(wn_desc("<env-var>")),
-        spaced(symbol_cmp).context(wn_desc("operator")),
-        spaced(gal_gxl_object).context(wn_desc("<value-str>")),
-    )
-        .parse_next(input)?;
-    let true_block = gal_block.parse_next(input)?;
-    skip_spaces_block(input)?;
-    let ctrl_express = IFExpress::new(
-        ExpressEnum::GxlObj(BinExpress::from_op(cmp, GxlObject::VarRef(name), value)),
-        true_block,
-        Vec::new(),
-        None,
-    );
-    Ok(GxlCond::new(ctrl_express))
-}
-
-pub fn gal_exp_bin_r(input: &mut &str) -> Result<ExpressEnum> {
-    //BinExpress<EVarDef, String>> {
-    let (name, cmp, value) = (
-        spaced(take_var_ref_name).context(wn_desc("<env-var>")),
-        spaced(symbol_cmp).context(wn_desc("operator")),
-        spaced(gal_gxl_object).context(wn_desc("<value-str>")),
-    )
-        .parse_next(input)?;
-    Ok(ExpressEnum::GxlObj(BinExpress::from_op(
-        cmp,
-        //EVarDef::new(name),
-        GxlObject::VarRef(name),
-        value,
-    )))
-}
-
-pub fn gal_exp_fun(input: &mut &str) -> Result<ExpressEnum> {
-    let defined = gal_defined.parse_next(input)?;
-    Ok(ExpressEnum::from(defined))
-}
-
-pub fn gal_cond(input: &mut &str) -> Result<GxlCond> {
-    skip_spaces_block(input)?;
-    gal_keyword("if", input)?;
-
-    let exp = alt((gal_exp_bin_r, gal_exp_fun)).parse_next(input)?;
-    let true_block = gal_block.parse_next(input)?;
-    skip_spaces_block(input)?;
-    let elseif_conds: Vec<GxlCond> = repeat(0.., gal_else_if).parse_next(input)?;
-
-    multispace0(input)?;
-    let false_block = if starts_with("else", input) {
-        gal_keyword("else", input)?;
-        Some(gal_block.parse_next(input)?)
-    } else {
-        None
-    };
-    let ctrl_express = IFExpress::new(exp, true_block, elseif_conds, false_block);
-    Ok(GxlCond::new(ctrl_express))
 }
 
 pub fn gal_loop(input: &mut &str) -> Result<GxlLoop> {
@@ -207,7 +147,7 @@ mod tests {
 
     use crate::parser::{
         inner::run_gxl,
-        stc_blk::{gal_block, gal_cond, gal_loop},
+        stc_blk::{gal_block, gal_loop},
     };
 
     #[test]
@@ -239,68 +179,6 @@ mod tests {
     }
 
     #[test]
-    fn test_block_if() {
-        let mut data = r#"
-            if ${val} == "1" {
-                gx.echo ( value  : "${PRJ_ROOT}/test/main.py"  );
-             }"#;
-        let _ = run_gxl(gal_cond, &mut data).assert();
-        //assert_eq!(blk.items().len(), 1);
-        assert_eq!(data, "");
-
-        let mut data = r#"
-            if ${val} == "1" {
-                gx.echo ( value  : "${PRJ_ROOT}/test/main.py"  );
-             }
-             else {
-                gx.echo ( value  : "${PRJ_ROOT}/test/main.py"  );
-             }"#;
-        let _ = run_gxl(gal_cond, &mut data).assert();
-        assert_eq!(data, "");
-
-        let mut data = r#"
-            if ${val} == "1" {
-                gx.echo ( value  : "${PRJ_ROOT}/test/main.py"  );
-             } else if ${val} == "2" {
-                gx.echo ( value  : "${PRJ_ROOT}/test/main.py"  );
-             }
-             else {
-                gx.echo ( value  : "${PRJ_ROOT}/test/main.py"  );
-             }"#;
-        let _ = run_gxl(gal_cond, &mut data).assert();
-        assert_eq!(data, "");
-    }
-    #[test]
-    fn test_block_3() {
-        let mut data = r#"
-        {
-            if ${val} == "1" {
-                gx.echo ( value  : "${PRJ_ROOT}/test/main.py"  );
-             }
-             else {
-                gx.echo ( value  : "${PRJ_ROOT}/test/main.py"  );
-             }
-        }"#;
-        let _ = run_gxl(gal_block, &mut data).assert();
-        assert_eq!(data, "");
-    }
-
-    #[test]
-    fn test_block_if_4() {
-        let mut data = r#"
-        {
-            if defined(${val}) {
-                gx.echo ( value  : "${PRJ_ROOT}/test/main.py"  );
-             }
-             else {
-                gx.echo ( value  : "${PRJ_ROOT}/test/main.py"  );
-             }
-        }"#;
-        let _ = run_gxl(gal_block, &mut data).assert();
-        assert_eq!(data, "");
-    }
-
-    #[test]
     fn test_for() {
         let mut data = r#"
             for  ${CUR} in ${DATA} {
@@ -322,18 +200,6 @@ mod tests {
              }
         "#;
         let _ = run_gxl(gal_block, &mut data).assert();
-        assert_eq!(data, "");
-    }
-    #[test]
-    fn test_if_for2() {
-        let mut data = r#"
-            if ${val} =* "hello*" {
-                for  ${CUR} in ${DATA} {
-                    gx.echo ( value  : "${cur}/test/main.py"  );
-                }
-             }
-        "#;
-        let _cond = run_gxl(gal_cond, &mut data).assert();
         assert_eq!(data, "");
     }
 }

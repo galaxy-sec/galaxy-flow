@@ -11,6 +11,13 @@ pub fn take_var_name(input: &mut &str) -> Result<String> {
     Ok(key.to_string())
 }
 
+pub fn take_var_full_name(input: &mut &str) -> Result<String> {
+    let _ = multispace0.parse_next(input)?;
+    let key = take_while(1.., ('0'..='9', 'A'..='Z', 'a'..='z', ['_', '.', '[', ']']))
+        .parse_next(input)?;
+    Ok(key.to_string())
+}
+
 pub fn take_var_path(input: &mut &str) -> Result<String> {
     let _ = multispace0.parse_next(input)?;
     let key = take_while(1.., ('0'..='9', 'A'..='Z', 'a'..='z', ['_', '.'])).parse_next(input)?;

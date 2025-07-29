@@ -253,7 +253,7 @@ impl GxTpl {
 #[cfg(test)]
 mod tests {
 
-    use crate::{ability::ability_env_init, traits::Setter};
+    use crate::{ability::ability_env_init, const_val::gxl_const, traits::Setter};
 
     use super::*;
     fn files_identical(path1: &str, path2: &str) -> std::io::Result<bool> {
@@ -275,7 +275,7 @@ mod tests {
         );
         let conf_tpl = GxTpl::new(tpl.clone(), dst.clone());
         context.append("RG");
-        def.global_mut().set("GXL_PRJ_ROOT", "/home/galaxy");
+        def.global_mut().set(gxl_const::PRJ_ROOT, "/home/galaxy");
         def.global_mut().set("DOMAIN", "www.galaxy-sec.org");
         def.global_mut().set("SOCK_FILE", "galaxy.socket");
         conf_tpl.async_exec(context.clone(), def).await.unwrap();

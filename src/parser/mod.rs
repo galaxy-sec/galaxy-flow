@@ -3,6 +3,7 @@ pub mod domain;
 pub mod externs;
 
 pub mod abilities;
+pub mod cond;
 pub mod context;
 pub mod inner;
 pub mod prelude;

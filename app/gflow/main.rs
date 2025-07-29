@@ -4,6 +4,7 @@ extern crate clap;
 
 use clap::Parser;
 use galaxy_flow::conf::load_gxl_config;
+use galaxy_flow::const_val::gxl_const;
 use galaxy_flow::err::report_gxl_error;
 use galaxy_flow::execution::VarSpace;
 use galaxy_flow::infra::configure_run_logging;
@@ -30,7 +31,13 @@ async fn main() -> anyhow::Result<()> {
     }
     var_space
         .global_mut()
-        .set("GXL_CMD_ARG", cmd.cmd_arg.clone());
+        .set(gxl_const::CMD_ARG, cmd.cmd_arg.clone());
+    var_space
+        .global_mut()
+        .set(gxl_const::CMD_DRYRUN, cmd.dryrun);
+    var_space
+        .global_mut()
+        .set(gxl_const::CMD_MODUP, cmd.mod_update);
     match GxlRunner::run(cmd, var_space, None).await {
         Err(e) => report_gxl_error(e),
         Ok(_) => {

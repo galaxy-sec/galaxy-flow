@@ -12,20 +12,21 @@ use crate::{
 };
 
 use super::dict::{galaxy_dot_path, sec_value_default_path};
+use crate::const_val::gxl_const;
 
 pub fn setup_start_vars(vars_dict: &mut VarDict) -> ExecResult<()> {
-    vars_dict.set("GXL_OS_SYS", format_os_sys().as_str());
+    vars_dict.set(gxl_const::OS_SYS, format_os_sys().as_str());
 
     let start_root = current_dir().owe_sys().want("get current dir")?;
-    vars_dict.set("GXL_START_ROOT", start_root.display().to_string());
+    vars_dict.set(gxl_const::START_ROOT, start_root.display().to_string());
     let prj_root = find_project_define().unwrap_or(PathBuf::from("UNDEFIN"));
-    vars_dict.set("GXL_PRJ_ROOT", format!("{}", prj_root.display()));
+    vars_dict.set(gxl_const::PRJ_ROOT, format!("{}", prj_root.display()));
     Ok(())
 }
 
 pub fn setup_gxlrun_vars(vars_dict: &mut VarDict) -> ExecResult<()> {
     let start_root = current_dir().owe_sys().want("get current dir")?;
-    vars_dict.set("GXL_CUR_DIR", start_root.display().to_string());
+    vars_dict.set(gxl_const::CUR_DIR, start_root.display().to_string());
     Ok(())
 }
 

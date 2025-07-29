@@ -1,4 +1,4 @@
-use crate::{error::AssembleReason, ExecReason, ExecResult};
+use crate::{const_val::gxl_const, error::AssembleReason, ExecReason, ExecResult};
 use orion_error::{ErrorCode, StructError, UvsReason};
 
 use serde::Serialize;
@@ -94,7 +94,7 @@ pub fn report_gxl_error(e: RunError) {
             }
         },
         RunReason::Gxl(e) => {
-            println!("GXL ERROR: {e}\n",);
+            println!("{}{e}\n", gxl_const::ERROR_PREFIX);
         }
         RunReason::Exec(e) => {
             println!("EXEC ERROR: {e}\n",);

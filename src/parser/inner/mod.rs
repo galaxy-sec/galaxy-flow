@@ -1,15 +1,15 @@
+pub mod archive;
 pub mod artifact;
 pub mod assert;
 pub mod cmd;
 pub mod common;
 pub mod funs;
 pub mod gxl;
+mod load;
 pub mod read;
 pub mod shell;
 pub mod tpl;
 pub mod ver;
-
-mod load;
 pub use assert::gal_assert;
 pub use cmd::gal_cmd;
 

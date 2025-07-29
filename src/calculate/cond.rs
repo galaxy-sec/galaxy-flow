@@ -1,8 +1,8 @@
 use async_trait::async_trait;
 
 use super::express::ExpressEnum;
-use super::express::*;
 use crate::ability::prelude::{TaskResult, TaskValue, VarSpace};
+use crate::calculate::traits::Evaluation;
 use crate::components::gxl_cond::TGxlCond;
 use crate::context::ExecContext;
 use crate::execution::runnable::ExecOut;
@@ -77,75 +77,211 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::calculate::dynval::MocU32;
+    use super::{CondExec, IFExpress, StuBlock};
+    use crate::ability::prelude::{TaskResult, TaskValue, VarSpace};
+    use crate::calculate::express::ExpressEnum;
+    use crate::calculate::CmpExpress;
+    use crate::components::gxl_cond::TGxlCond;
+    use crate::context::ExecContext;
+    use crate::execution::runnable::ExecOut;
+    use crate::primitive::GxlObject;
+    use crate::sec::{SecFrom, SecValueType};
+    use crate::traits::Setter;
 
-    use super::*;
-    #[tokio::test]
-    async fn test_ctrl_express() {
-        let ctrl_express = IFExpress::new(
-            ExpressEnum::MocU32(BinExpress::eq(MocU32::from("moc_1"), 1)),
-            StuBlock {
-                out: ExecOut::Code(0),
-            },
-            Vec::new(),
-            Some(StuBlock {
-                out: ExecOut::Code(1),
-            }),
-        );
-        assert_eq!(
-            ctrl_express
-                .cond_exec(ExecContext::default(), VarSpace::default(),)
-                .await,
-            Ok(TaskValue::from((VarSpace::default(), ExecOut::Code(0))))
-        );
+    // 创建一个简单的测试块实现 CondExec trait
+    #[derive(Clone)]
+    struct TestBlock {
+        expected_out: ExecOut,
+    }
+
+    impl TestBlock {
+        fn new(_name: &str, expected_out: ExecOut) -> Self {
+            Self { expected_out }
+        }
+    }
+
+    #[async_trait::async_trait]
+    impl CondExec for TestBlock {
+        async fn cond_exec(&self, _ctx: ExecContext, def: VarSpace) -> TaskResult {
+            Ok(TaskValue::from((def, self.expected_out.clone())))
+        }
+    }
+
+    // 创建一个总是返回 true 的表达式
+    fn create_true_expr() -> ExpressEnum {
+        ExpressEnum::Cmp(CmpExpress::eq(
+            GxlObject::Value(SecValueType::nor_from("true".to_string())),
+            GxlObject::Value(SecValueType::nor_from("true".to_string())),
+        ))
+    }
+
+    // 创建一个总是返回 false 的表达式
+    fn create_false_expr() -> ExpressEnum {
+        ExpressEnum::Cmp(CmpExpress::eq(
+            GxlObject::Value(SecValueType::nor_from("true".to_string())),
+            GxlObject::Value(SecValueType::nor_from("false".to_string())),
+        ))
+    }
+
+    // 创建一个基于变量值的表达式
+    fn create_var_expr(var_name: &str, expected: &str) -> ExpressEnum {
+        ExpressEnum::Cmp(CmpExpress::eq(
+            GxlObject::VarRef(var_name.to_string()),
+            GxlObject::Value(SecValueType::nor_from(expected.to_string())),
+        ))
     }
 
     #[tokio::test]
-    async fn test_elseif_blocks() {
-        let ctrl_express = IFExpress::new(
-            ExpressEnum::MocU32(BinExpress::eq(MocU32::from("moc_1"), 0)),
-            StuBlock {
-                out: ExecOut::Code(0),
-            },
-            vec![TGxlCond {
-                cond: IFExpress::new(
-                    ExpressEnum::MocU32(BinExpress::eq(MocU32::from("moc_2"), 1)),
-                    StuBlock {
-                        out: ExecOut::Code(2),
-                    },
-                    Vec::new(),
-                    None,
-                ),
-            }],
-            Some(StuBlock {
-                out: ExecOut::Code(1),
-            }),
+    async fn test_if_express_true_branch() {
+        let true_block = TestBlock::new("true_branch", ExecOut::Ignore);
+        let false_block = TestBlock::new("false_branch", ExecOut::Code(1));
+
+        let if_express = IFExpress::new(
+            create_true_expr(),
+            true_block.clone(),
+            vec![],
+            Some(false_block),
         );
-        assert_eq!(
-            ctrl_express
-                .cond_exec(ExecContext::default(), VarSpace::default(),)
-                .await,
-            Ok(TaskValue::from((VarSpace::default(), ExecOut::Code(1))))
-        );
+
+        let ctx = ExecContext::default();
+        let def = VarSpace::default();
+
+        let result = if_express.cond_exec(ctx, def).await.unwrap();
+        assert_eq!(result.rec(), &ExecOut::Ignore);
     }
 
     #[tokio::test]
-    async fn test_false_block() {
-        let ctrl_express = IFExpress::new(
-            ExpressEnum::MocU32(BinExpress::eq(MocU32::from("moc_1"), 0)),
-            StuBlock {
-                out: ExecOut::Code(0),
-            },
-            Vec::new(),
-            Some(StuBlock {
-                out: ExecOut::Code(1),
-            }),
+    async fn test_if_express_false_branch() {
+        let true_block = TestBlock::new("true_branch", ExecOut::Ignore);
+        let false_block = TestBlock::new("false_branch", ExecOut::Code(1));
+
+        let if_express = IFExpress::new(
+            create_false_expr(),
+            true_block,
+            vec![],
+            Some(false_block.clone()),
         );
-        assert_eq!(
-            ctrl_express
-                .cond_exec(ExecContext::default(), VarSpace::default(),)
-                .await,
-            Ok(TaskValue::from((VarSpace::default(), ExecOut::Code(1))))
+
+        let ctx = ExecContext::default();
+        let def = VarSpace::default();
+
+        let result = if_express.cond_exec(ctx, def).await.unwrap();
+        assert_eq!(result.rec(), &ExecOut::Code(1));
+    }
+
+    #[tokio::test]
+    async fn test_if_express_no_false_branch() {
+        let true_block = TestBlock::new("true_branch", ExecOut::Ignore);
+
+        let if_express = IFExpress::new(create_false_expr(), true_block, vec![], None);
+
+        let ctx = ExecContext::default();
+        let def = VarSpace::default();
+
+        let result = if_express.cond_exec(ctx, def).await.unwrap();
+        assert_eq!(result.rec(), &ExecOut::Ignore);
+    }
+
+    #[tokio::test]
+    async fn test_if_express_with_elseif_first_match() {
+        let true_block = TestBlock::new("true_branch", ExecOut::Ignore);
+        let false_block = TestBlock::new("false_branch", ExecOut::Code(1));
+        let elseif1_block = TestBlock::new("elseif1", ExecOut::Code(2));
+
+        // 创建返回 true 的 elseif 条件
+        let elseif1 = TGxlCond {
+            cond: IFExpress::new(create_true_expr(), elseif1_block.clone(), vec![], None),
+        };
+
+        let if_express = IFExpress::new(
+            create_false_expr(),
+            true_block,
+            vec![elseif1],
+            Some(false_block),
         );
+
+        let ctx = ExecContext::default();
+        let def = VarSpace::default();
+
+        let result = if_express.cond_exec(ctx, def).await.unwrap();
+        assert_eq!(result.rec(), &ExecOut::Code(2));
+    }
+
+    #[tokio::test]
+    async fn test_if_express_with_elseif_no_match() {
+        let true_block = TestBlock::new("true_branch", ExecOut::Ignore);
+        let false_block = TestBlock::new("false_branch", ExecOut::Code(1));
+        let elseif1_block = TestBlock::new("elseif1", ExecOut::Code(2));
+
+        // 创建返回 false 的 elseif 条件
+        let elseif1 = TGxlCond {
+            cond: IFExpress::new(create_false_expr(), elseif1_block, vec![], None),
+        };
+
+        let if_express = IFExpress::new(
+            create_false_expr(),
+            true_block,
+            vec![elseif1],
+            Some(false_block.clone()),
+        );
+
+        let ctx = ExecContext::default();
+        let def = VarSpace::default();
+
+        let result = if_express.cond_exec(ctx, def).await.unwrap();
+        assert_eq!(result.rec(), &ExecOut::Code(1));
+    }
+
+    #[tokio::test]
+    async fn test_if_express_with_variable_condition() {
+        let true_block = TestBlock::new("true_branch", ExecOut::Ignore);
+        let false_block = TestBlock::new("false_block", ExecOut::Code(1));
+
+        let mut vars = VarSpace::default();
+        vars.global_mut().set("test_var", "expected_value");
+
+        let if_express = IFExpress::new(
+            create_var_expr("test_var", "expected_value"),
+            true_block.clone(),
+            vec![],
+            Some(false_block),
+        );
+
+        let ctx = ExecContext::default();
+
+        let result = if_express.cond_exec(ctx, vars).await.unwrap();
+        assert_eq!(result.rec(), &ExecOut::Ignore);
+    }
+
+    #[tokio::test]
+    async fn test_stu_block() {
+        let stu_block = StuBlock {
+            out: ExecOut::Ignore,
+        };
+
+        let ctx = ExecContext::default();
+        let def = VarSpace::default();
+
+        let result = stu_block.cond_exec(ctx, def).await.unwrap();
+        assert_eq!(result.rec(), &ExecOut::Ignore);
+    }
+
+    #[tokio::test]
+    async fn test_stu_block_different_outputs() {
+        let outputs = vec![
+            ExecOut::Ignore,
+            ExecOut::Code(0),
+            ExecOut::Code(1),
+            ExecOut::Code(2),
+        ];
+
+        for out in outputs {
+            let stu_block = StuBlock { out: out.clone() };
+            let ctx = ExecContext::default();
+            let def = VarSpace::default();
+
+            let result = stu_block.cond_exec(ctx, def).await.unwrap();
+            assert_eq!(result.rec(), &out);
+        }
     }
 }

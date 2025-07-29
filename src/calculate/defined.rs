@@ -1,9 +1,11 @@
 use derive_more::From;
 
-use crate::{context::ExecContext, execution::VarSpace};
+use crate::{
+    calculate::traits::{DecideResult, Evaluation},
+    context::ExecContext,
+    execution::VarSpace,
+};
 use std::env;
-
-use super::express::{DecideResult, Evaluation};
 
 #[derive(Clone, Debug, From)]
 pub enum BoolBinFn {
@@ -22,7 +24,7 @@ impl FnDefined {
 
 impl Evaluation for FnDefined {
     fn decide(&self, _ctx: ExecContext, args: &VarSpace) -> DecideResult {
-        if args.global().contains_key(self.name()) {
+        if args.get(self.name()).is_some() {
             return Ok(true);
         }
         if env::vars().any(|x| x.0.as_str() == self.name()) {

@@ -24,7 +24,7 @@ impl GxlRunner {
             }
 
             let spc = loader
-                .parse_file(conf.as_str(), false, &vars)
+                .parse_file(conf.as_str(), cmd.mod_update, &vars)
                 .await?
                 .assemble()
                 .err_conv()?;
@@ -76,8 +76,13 @@ pub struct GxlCmd {
         default_value = ""
     )]
     pub cmd_arg: String,
+    /// run at dryrun mode
     #[arg(long = "dryrun", action = ArgAction::SetTrue, default_value = "false")]
     pub dryrun: bool,
+
+    ///update remote gxl mod
+    #[arg(long = "mod_up", action = ArgAction::SetTrue, default_value = "false")]
+    pub mod_update: bool,
 }
 impl DfxArgsGetter for GxlCmd {
     fn debug_level(&self) -> usize {

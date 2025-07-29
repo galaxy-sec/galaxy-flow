@@ -33,6 +33,7 @@ impl FileDTO {
             return ExecReason::Args(format!("not support format :{}", file_path.display()))
                 .err_result();
         };
+        info!(target: ctx.path(),"read file from {} data len:{}", file_path.display(), values.len());
         let sec_values = SecValueType::nor_from(values);
         match sec_values {
             SecValueType::Obj(obj) => {
