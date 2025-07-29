@@ -10,7 +10,7 @@ use crate::annotation::{ComUsage, Dryrunable, GetArgValue, TaskMessage, Transact
 use crate::execution::runnable::AsyncRunnableWithSenderTrait;
 use crate::execution::task::Task;
 use crate::task_report::task_notification::TaskNotice;
-use crate::task_report::task_rc_config::{build_task_url, TaskUrlType};
+use crate::task_report::task_rc_config::{build_task_url, report_enable, TaskUrlType};
 use crate::task_report::task_result_report::TaskReport;
 use crate::traits::DependTrait;
 
@@ -235,7 +235,7 @@ impl GxlFlow {
         task_notice: TaskNotice,
     ) -> Result<(VarSpace, Task), ExecError> {
         for item in &self.blocks {
-            if task_description.is_some() {
+            if task_description.is_some() && report_enable().await {
                 let (var_dict_new, task_new) = self
                     .execute_block_with_monitoring(
                         item,
