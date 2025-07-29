@@ -12,7 +12,7 @@ pub struct Task {
     #[serde(serialize_with = "serialize_time_format")]
     begin: OffsetDateTime,
     pub stdout: String,
-    result: Result<RunningTime, String>,
+    pub result: Result<RunningTime, String>,
     actions: Vec<Action>,
 }
 

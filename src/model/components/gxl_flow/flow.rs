@@ -183,9 +183,24 @@ impl GxlFlow {
         self.notify_log_collection(sender.clone()).await?;
 
         // 执行所有块
-        let (var_dict, task) = self
-            .execute_blocks(ctx, var_dict, task_description.clone(), task, task_notice)
-            .await?;
+        let (var_dict, task) = match self
+            .execute_blocks(
+                ctx,
+                var_dict,
+                task_description.clone(),
+                task.clone(),
+                task_notice.clone(),
+            )
+            .await
+        {
+            Ok((var_dict, task)) => (var_dict, task),
+            Err(e) => {
+                task.stdout.push_str(&e.to_string());
+                task.result = Err(e.to_string());
+                self.report_task_status(&task, &task_notice).await?;
+                return Err(e);
+            }
+        };
 
         // 完成日志收集
         self.finalize_log_collection(sender).await?;
@@ -319,7 +334,19 @@ impl GxlFlow {
                 Ok(())
             });
         let sender_option = task_description.as_ref().map(|_| cur_sender.clone());
-        let TaskValue { vars, rec, .. } = block.async_exec(ctx, var_dict, sender_option).await?;
+        let TaskValue { vars, rec, .. } = match block.async_exec(ctx, var_dict, sender_option).await
+        {
+            Ok(task_value) => task_value,
+            Err(e) => {
+                info!("has been completed due to block error: {}", e);
+                Self::update_task_with_output(&mut task, &shared_output, start_pos).await?;
+
+                if task_description.is_some() {
+                    self.report_task_status(&task, &task_notice).await?;
+                }
+                return Err(e);
+            }
+        };
 
         drop(cur_sender);
         drop(monitor_handle);
