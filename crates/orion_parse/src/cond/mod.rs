@@ -41,4 +41,3 @@ pub trait LogicSymbolGet {
     fn logic_or(data: &mut &str) -> Result<LogicSymbol>;
     fn logic_not(data: &mut &str) -> Result<LogicSymbol>;
 }
-

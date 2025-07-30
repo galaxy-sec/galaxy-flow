@@ -62,7 +62,8 @@ impl GxLoader {
         let code = read_to_string(conf).owe_conf().with(&wc)?;
         let file_path = Path::new(conf);
         let file_exist_path = file_path.parent();
-        self.parse_code(&code, update, vars_space, file_exist_path).await
+        self.parse_code(&code, update, vars_space, file_exist_path)
+            .await
     }
     pub async fn parse_code(
         &self,
@@ -83,7 +84,12 @@ impl GxLoader {
         loop {
             let mut target_code_str = target_code.as_str();
             let (code, have) = e_parser
-                .extern_parse(&up_options, &mut target_code_str, vars_space,file_exist_path)
+                .extern_parse(
+                    &up_options,
+                    &mut target_code_str,
+                    vars_space,
+                    file_exist_path,
+                )
                 .await
                 .with(("code", err_code_prompt(target_code_str)))
                 .err_conv()?;

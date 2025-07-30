@@ -4,7 +4,8 @@ use crate::atom::take_var_name;
 use crate::cond::{CmpParser, SymbolFrom, WnCondParser};
 use crate::symbol::{symbol_bracket_beg, symbol_cmp, symbol_dollar, CmpSymbol, LogicSymbol};
 use orion_common::cond::{
-    cmp_is_true, CmpOP, CmpSymbolDef, CompareExpress, Condition, ExpressEnum, LogicCrator, LogicExpress, LogicOP, LogicSymbolDef, RustSymbol, SQLSymbol, ValueGet
+    cmp_is_true, CmpOP, CmpSymbolDef, CompareExpress, Condition, ExpressEnum, LogicCrator,
+    LogicExpress, LogicOP, LogicSymbolDef, RustSymbol, SQLSymbol, ValueGet,
 };
 use winnow::ascii::{digit1, multispace0};
 use winnow::combinator::peek;
@@ -254,8 +255,6 @@ impl LogicSymbolGet for SQLSymbol {
     }
 }
 
-
-
 pub struct ObjGet {}
 impl CmpParser<u32, RustSymbol> for ObjGet {
     fn cmp_exp(data: &mut &str) -> Result<CompareExpress<u32, RustSymbol>> {
@@ -285,7 +284,6 @@ impl Condition<VMap> for LogicExpress<u32, RustSymbol> {
         cmp_is_true(&self.op, self.left.as_ref(), &self.right, data)
     }
 }
-
 
 #[cfg(test)]
 mod tests {

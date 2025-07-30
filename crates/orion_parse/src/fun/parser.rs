@@ -120,7 +120,10 @@ mod test {
         }
 
         fn build(args: (Self::ARG1, Self::ARG2)) -> Self {
-            B { x: args.0, y: args.1 }
+            B {
+                x: args.0,
+                y: args.1,
+            }
         }
     }
 
@@ -146,7 +149,10 @@ mod test {
         }
 
         fn build(args: (Self::ARG1, Self::ARG2)) -> Self {
-            C { ip1: args.0, ip2: args.1 }
+            C {
+                ip1: args.0,
+                ip2: args.1,
+            }
         }
     }
 
@@ -217,7 +223,13 @@ mod test {
     fn test_call_fun_args2_large_numbers() -> winnow::Result<()> {
         let mut data = "fun_b(999999, 888888888888)";
         let x = call_fun_args2::<B>.parse_next(&mut data)?;
-        assert_eq!(x, B { x: 999999, y: 888888888888 });
+        assert_eq!(
+            x,
+            B {
+                x: 999999,
+                y: 888888888888
+            }
+        );
         assert_eq!(data, "");
         Ok(())
     }
@@ -226,10 +238,13 @@ mod test {
     fn test_call_fun_args2_ip_addresses() -> winnow::Result<()> {
         let mut data = "fun_c(192.168.1.1, 10.0.0.1)";
         let x = call_fun_args2::<C>.parse_next(&mut data)?;
-        assert_eq!(x, C {
-            ip1: IpAddr::V4(Ipv4Addr::new(192, 168, 1, 1)),
-            ip2: IpAddr::V4(Ipv4Addr::new(10, 0, 0, 1)),
-        });
+        assert_eq!(
+            x,
+            C {
+                ip1: IpAddr::V4(Ipv4Addr::new(192, 168, 1, 1)),
+                ip2: IpAddr::V4(Ipv4Addr::new(10, 0, 0, 1)),
+            }
+        );
         assert_eq!(data, "");
         Ok(())
     }
