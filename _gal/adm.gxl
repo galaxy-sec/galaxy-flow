@@ -1,4 +1,4 @@
-extern mod ver,git,ver_adm { git = "https://github.com/galaxy-operators/cfm-gxl.git", channel = "${GXL_CHANNEL:main}" }
+extern mod ver,git,tag,ver_adm { git = "https://github.com/galaxy-operators/cfm-gxl.git", channel = "${GXL_CHANNEL:main}" }
 mod  envs {
   env default {
   }

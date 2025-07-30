@@ -1,0 +1,5 @@
+extern mod mod_c { path = "@{PATH}/level2";}
+
+mod mod_b {
+
+}

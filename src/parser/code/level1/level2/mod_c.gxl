@@ -1,0 +1,5 @@
+mod mod_c {
+    flow a {}
+    flow b {}
+
+}

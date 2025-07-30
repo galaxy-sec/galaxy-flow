@@ -12,7 +12,7 @@ mod tests {
         //once_init_log();
         let _dir = WorkDirWithLock::change("./examples/read");
         let vars = VarSpace::sys_init().assert();
-        let mut loader = GxLoader::new();
+        let loader = GxLoader::new();
         let spc = loader
             .parse_file("./_gal/work.gxl", false, &vars)
             .await?
@@ -35,7 +35,7 @@ mod tests {
         //once_init_log();
         let _dir = WorkDirWithLock::change("./examples/shell");
         let vars = VarSpace::sys_init().assert();
-        let mut loader = GxLoader::new();
+        let loader = GxLoader::new();
         let spc = loader
             .parse_file("./_gal/work.gxl", false, &vars)
             .await?
@@ -57,7 +57,7 @@ mod tests {
         //once_init_log();
         let _dir = WorkDirWithLock::change("./examples/assert");
         let vars = VarSpace::sys_init().assert();
-        let mut loader = GxLoader::new();
+        let loader = GxLoader::new();
         let spc = loader
             .parse_file("./_gal/work.gxl", false, &vars)
             .await?
@@ -78,7 +78,7 @@ mod tests {
     async fn example_template() -> RunResult<()> {
         //jonce_init_log();
         let _dir = WorkDirWithLock::change("./examples/template");
-        let mut loader = GxLoader::new();
+        let loader = GxLoader::new();
         let vars = VarSpace::sys_init().assert();
         let spc = loader
             .parse_file("./_gal/work.gxl", false, &vars)
@@ -101,7 +101,7 @@ mod tests {
     async fn example_translate() -> RunResult<()> {
         once_init_log();
         let _dir = WorkDirWithLock::change("./examples/transaction");
-        let mut loader = GxLoader::new();
+        let loader = GxLoader::new();
         let vars = VarSpace::sys_init().assert();
         let spc = loader
             .parse_file("./_gal/work.gxl", false, &vars)
@@ -133,7 +133,7 @@ mod tests {
     async fn example_dryrun() -> RunResult<()> {
         once_init_log();
         let _dir = WorkDirWithLock::change("./examples/dryrun");
-        let mut loader = GxLoader::new();
+        let loader = GxLoader::new();
         let vars = VarSpace::sys_init().assert();
         let spc = loader
             .parse_file("./_gal/work.gxl", false, &vars)

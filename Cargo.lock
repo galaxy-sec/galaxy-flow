@@ -1124,7 +1124,7 @@ dependencies = [
 
 [[package]]
 name = "galaxy_flow"
-version = "0.8.6"
+version = "0.9.0"
 dependencies = [
  "anyhow",
  "async-trait",

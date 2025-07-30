@@ -9,7 +9,7 @@ use orion_error::TestAssert;
 #[tokio::test]
 async fn conf_base_test() -> AnyResult<()> {
     once_init_log();
-    let mut loader = GxLoader::new();
+    let loader = GxLoader::new();
     let vars = VarSpace::sys_init().assert();
 
     let spc = loader
@@ -33,7 +33,7 @@ async fn conf_base_test() -> AnyResult<()> {
 async fn conf_web_test() {
     once_init_log();
     let vars = VarSpace::sys_init().assert();
-    let mut loader = GxLoader::new();
+    let loader = GxLoader::new();
 
     let spc = loader
         .parse_file("./tests/material/run_web.gxl", false, &vars)

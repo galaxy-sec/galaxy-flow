@@ -10,7 +10,7 @@ use orion_error::TestAssert;
 async fn conf_simple_test() -> AnyResult<()> {
     once_init_log();
     let vars = VarSpace::sys_init().assert();
-    let mut loader = GxLoader::new();
+    let loader = GxLoader::new();
 
     let spc = loader
         .parse_file("./tests/material/case_simple.gxl", false, &vars)
@@ -33,7 +33,7 @@ async fn conf_simple_test() -> AnyResult<()> {
 #[tokio::test]
 async fn conf_cond_test() -> RunResult<()> {
     once_init_log();
-    let mut loader = GxLoader::new();
+    let loader = GxLoader::new();
     let vars = VarSpace::sys_init().assert();
 
     let spc = loader

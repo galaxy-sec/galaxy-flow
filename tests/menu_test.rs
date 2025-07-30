@@ -9,7 +9,7 @@ use orion_error::TestAssert;
 #[tokio::test]
 async fn menu_normal() {
     once_init_log();
-    let mut loader = GxLoader::new();
+    let loader = GxLoader::new();
 
     let vars = VarSpace::sys_init().assert();
     let spc = loader
@@ -35,7 +35,7 @@ async fn menu_normal() {
 #[tokio::test]
 async fn menu_simple() {
     once_init_log();
-    let mut loader = GxLoader::new();
+    let loader = GxLoader::new();
 
     let vars = VarSpace::sys_init().assert();
     let spc = loader

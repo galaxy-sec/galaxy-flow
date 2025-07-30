@@ -9,7 +9,7 @@ use orion_error::TestAssert;
 #[tokio::test]
 async fn prj_conf() -> AnyResult<()> {
     once_init_log();
-    let mut loader = GxLoader::new();
+    let loader = GxLoader::new();
 
     let vars = VarSpace::sys_init().assert();
     let spc = loader

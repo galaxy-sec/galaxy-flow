@@ -8,6 +8,7 @@ use crate::parser::stc_spc::WinnowErrorEx;
 
 use std::fs;
 use std::fs::read_to_string;
+use std::path::Path;
 use std::path::PathBuf;
 
 use crate::err::*;
@@ -50,7 +51,7 @@ impl GxLoader {
         }
     }
     pub async fn parse_file(
-        &mut self,
+        &self,
         conf: &str,
         update: bool,
         vars_space: &VarSpace,
@@ -59,13 +60,16 @@ impl GxLoader {
         let mut wc = WithContext::want("parse gxl file");
         wc.with("conf", conf);
         let code = read_to_string(conf).owe_conf().with(&wc)?;
-        self.parse_code(&code, update, vars_space).await
+        let file_path = Path::new(conf);
+        let file_exist_path = file_path.parent();
+        self.parse_code(&code, update, vars_space, file_exist_path).await
     }
     pub async fn parse_code(
         &self,
         code: &str,
         update: bool,
         vars_space: &VarSpace,
+        file_exist_path: Option<&Path>,
     ) -> RunResult<GxlSpace> {
         let e_parser = ExternParser::new();
 
@@ -79,7 +83,7 @@ impl GxLoader {
         loop {
             let mut target_code_str = target_code.as_str();
             let (code, have) = e_parser
-                .extern_parse(&up_options, &mut target_code_str, vars_space)
+                .extern_parse(&up_options, &mut target_code_str, vars_space,file_exist_path)
                 .await
                 .with(("code", err_code_prompt(target_code_str)))
                 .err_conv()?;
@@ -140,7 +144,7 @@ mod tests {
     async fn test_parse_file() -> AnyResult<()> {
         //log_init(&LogConf::alpha()).assert();
         once_init_log();
-        let mut loader = GxLoader::default();
+        let loader = GxLoader::default();
         let conf = "./_gal/work.gxl";
         let vars = VarSpace::sys_init()?;
         let spc = loader.parse_file(conf, false, &vars).await?.assemble()?;

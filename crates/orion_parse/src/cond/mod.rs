@@ -5,8 +5,6 @@ use winnow::Result;
 use crate::symbol::LogicSymbol;
 
 mod parser;
-#[cfg(test)]
-mod test;
 
 pub trait CmpParser<T, S>
 where
@@ -43,3 +41,4 @@ pub trait LogicSymbolGet {
     fn logic_or(data: &mut &str) -> Result<LogicSymbol>;
     fn logic_not(data: &mut &str) -> Result<LogicSymbol>;
 }
+

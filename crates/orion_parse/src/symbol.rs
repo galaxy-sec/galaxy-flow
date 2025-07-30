@@ -332,3 +332,556 @@ pub fn wn_literal(lit: &'static str) -> StrContext {
 pub fn wn_desc(desc: &'static str) -> StrContext {
     StrContext::Expected(StrContextValue::Description(desc))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_symbol_logic_and() {
+        let mut input = "&&";
+        let result = symbol_logic_and(&mut input);
+        assert_eq!(result, Ok(LogicSymbol::And));
+        assert_eq!(input, "");
+
+        let mut input = " &&";
+        let result = symbol_logic_and(&mut input);
+        assert_eq!(result, Ok(LogicSymbol::And));
+        assert_eq!(input, "");
+
+        let mut input = "&& test";
+        let result = symbol_logic_and(&mut input);
+        assert_eq!(result, Ok(LogicSymbol::And));
+        assert_eq!(input, " test");
+    }
+
+    #[test]
+    fn test_symbol_logic_or() {
+        let mut input = "||";
+        let result = symbol_logic_or(&mut input);
+        assert_eq!(result, Ok(LogicSymbol::Or));
+        assert_eq!(input, "");
+
+        let mut input = " ||";
+        let result = symbol_logic_or(&mut input);
+        assert_eq!(result, Ok(LogicSymbol::Or));
+        assert_eq!(input, "");
+
+        let mut input = "|| test";
+        let result = symbol_logic_or(&mut input);
+        assert_eq!(result, Ok(LogicSymbol::Or));
+        assert_eq!(input, " test");
+    }
+
+    #[test]
+    fn test_symbol_logic_not() {
+        let mut input = "!";
+        let result = symbol_logic_not(&mut input);
+        assert_eq!(result, Ok(LogicSymbol::Not));
+        assert_eq!(input, "");
+
+        let mut input = " !";
+        let result = symbol_logic_not(&mut input);
+        assert_eq!(result, Ok(LogicSymbol::Not));
+        assert_eq!(input, "");
+
+        let mut input = "! test";
+        let result = symbol_logic_not(&mut input);
+        assert_eq!(result, Ok(LogicSymbol::Not));
+        assert_eq!(input, " test");
+    }
+
+    #[test]
+    fn test_symbol_match_to() {
+        let mut input = "=>";
+        let result = symbol_match_to(&mut input);
+        assert_eq!(result, Ok(()));
+        assert_eq!(input, "");
+
+        let mut input = " =>";
+        let result = symbol_match_to(&mut input);
+        assert_eq!(result, Ok(()));
+        assert_eq!(input, "");
+
+        let mut input = "=> test";
+        let result = symbol_match_to(&mut input);
+        assert_eq!(result, Ok(()));
+        assert_eq!(input, " test");
+    }
+
+    #[test]
+    fn test_symbol_var() {
+        let mut input = "var";
+        let result = symbol_var(&mut input);
+        assert_eq!(result, Ok(()));
+        assert_eq!(input, "");
+
+        let mut input = " var";
+        let result = symbol_var(&mut input);
+        assert_eq!(result, Ok(()));
+        assert_eq!(input, "");
+
+        let mut input = "var test";
+        let result = symbol_var(&mut input);
+        assert_eq!(result, Ok(()));
+        assert_eq!(input, " test");
+    }
+
+    #[test]
+    fn test_symbol_comma() {
+        let mut input = ",";
+        let result = symbol_comma(&mut input);
+        assert_eq!(result, Ok(()));
+        assert_eq!(input, "");
+
+        let mut input = " ,";
+        let result = symbol_comma(&mut input);
+        assert_eq!(result, Ok(()));
+        assert_eq!(input, "");
+
+        let mut input = ", test";
+        let result = symbol_comma(&mut input);
+        assert_eq!(result, Ok(()));
+        assert_eq!(input, " test");
+    }
+
+    #[test]
+    fn test_symbol_bracket_end() {
+        let mut input = ")";
+        let result = symbol_bracket_end(&mut input);
+        assert_eq!(result, Ok(()));
+        assert_eq!(input, "");
+
+        let mut input = " )";
+        let result = symbol_bracket_end(&mut input);
+        assert_eq!(result, Ok(()));
+        assert_eq!(input, "");
+
+        let mut input = ") test";
+        let result = symbol_bracket_end(&mut input);
+        assert_eq!(result, Ok(()));
+        assert_eq!(input, " test");
+    }
+
+    #[test]
+    fn test_symbol_bracket_beg() {
+        let mut input = "(";
+        let result = symbol_bracket_beg(&mut input);
+        assert_eq!(result, Ok(()));
+        assert_eq!(input, "");
+
+        let mut input = " (";
+        let result = symbol_bracket_beg(&mut input);
+        assert_eq!(result, Ok(()));
+        assert_eq!(input, "");
+
+        let mut input = "( test";
+        let result = symbol_bracket_beg(&mut input);
+        assert_eq!(result, Ok(()));
+        assert_eq!(input, " test");
+    }
+
+    #[test]
+    fn test_symbol_brace_end() {
+        let mut input = "}";
+        let result = symbol_brace_end(&mut input);
+        assert_eq!(result, Ok(()));
+        assert_eq!(input, "");
+
+        let mut input = " }";
+        let result = symbol_brace_end(&mut input);
+        assert_eq!(result, Ok(()));
+        assert_eq!(input, "");
+
+        let mut input = "} test";
+        let result = symbol_brace_end(&mut input);
+        assert_eq!(result, Ok(()));
+        assert_eq!(input, " test");
+    }
+
+    #[test]
+    fn test_symbol_brace_beg() {
+        let mut input = "{";
+        let result = symbol_brace_beg(&mut input);
+        assert_eq!(result, Ok(()));
+        assert_eq!(input, "");
+
+        let mut input = " {";
+        let result = symbol_brace_beg(&mut input);
+        assert_eq!(result, Ok(()));
+        assert_eq!(input, "");
+
+        let mut input = "{ test";
+        let result = symbol_brace_beg(&mut input);
+        assert_eq!(result, Ok(()));
+        assert_eq!(input, " test");
+    }
+
+    #[test]
+    fn test_symbol_under_line() {
+        let mut input = "_";
+        let result = symbol_under_line(&mut input);
+        assert_eq!(result, Ok(()));
+        assert_eq!(input, "");
+
+        let mut input = " _";
+        let result = symbol_under_line(&mut input);
+        assert_eq!(result, Ok(()));
+        assert_eq!(input, "");
+
+        let mut input = "_ test";
+        let result = symbol_under_line(&mut input);
+        assert_eq!(result, Ok(()));
+        assert_eq!(input, " test");
+    }
+
+    #[test]
+    fn test_symbol_marvel() {
+        let mut input = "!";
+        let result = symbol_marvel(&mut input);
+        assert_eq!(result, Ok(()));
+        assert_eq!(input, "");
+
+        let mut input = " !";
+        let result = symbol_marvel(&mut input);
+        assert_eq!(result, Ok(()));
+        assert_eq!(input, "");
+
+        let mut input = "! test";
+        let result = symbol_marvel(&mut input);
+        assert_eq!(result, Ok(()));
+        assert_eq!(input, " test");
+    }
+
+    #[test]
+    fn test_symbol_brackets_beg() {
+        let mut input = "[";
+        let result = symbol_brackets_beg(&mut input);
+        assert_eq!(result, Ok(()));
+        assert_eq!(input, "");
+
+        let mut input = " [";
+        let result = symbol_brackets_beg(&mut input);
+        assert_eq!(result, Ok(()));
+        assert_eq!(input, "");
+
+        let mut input = "[ test";
+        let result = symbol_brackets_beg(&mut input);
+        assert_eq!(result, Ok(()));
+        assert_eq!(input, " test");
+    }
+
+    #[test]
+    fn test_symbol_brackets_end() {
+        let mut input = "]";
+        let result = symbol_brackets_end(&mut input);
+        assert_eq!(result, Ok(()));
+        assert_eq!(input, "");
+
+        let mut input = " ]";
+        let result = symbol_brackets_end(&mut input);
+        assert_eq!(result, Ok(()));
+        assert_eq!(input, "");
+
+        let mut input = "] test";
+        let result = symbol_brackets_end(&mut input);
+        assert_eq!(result, Ok(()));
+        assert_eq!(input, " test");
+    }
+
+    #[test]
+    fn test_symbol_colon() {
+        let mut input = ":";
+        let result = symbol_colon(&mut input);
+        assert_eq!(result, Ok(()));
+        assert_eq!(input, "");
+
+        let mut input = " :";
+        let result = symbol_colon(&mut input);
+        assert_eq!(result, Ok(()));
+        assert_eq!(input, "");
+
+        let mut input = ": test";
+        let result = symbol_colon(&mut input);
+        assert_eq!(result, Ok(()));
+        assert_eq!(input, " test");
+    }
+
+    #[test]
+    fn test_symbol_semicolon() {
+        let mut input = ";";
+        let result = symbol_semicolon(&mut input);
+        assert_eq!(result, Ok(()));
+        assert_eq!(input, "");
+
+        let mut input = " ;";
+        let result = symbol_semicolon(&mut input);
+        assert_eq!(result, Ok(()));
+        assert_eq!(input, "");
+
+        let mut input = "; test";
+        let result = symbol_semicolon(&mut input);
+        assert_eq!(result, Ok(()));
+        assert_eq!(input, " test");
+    }
+
+    #[test]
+    fn test_symbol_pipe() {
+        let mut input = "|";
+        let result = symbol_pipe(&mut input);
+        assert_eq!(result, Ok(()));
+        assert_eq!(input, "");
+
+        let mut input = " |";
+        let result = symbol_pipe(&mut input);
+        assert_eq!(result, Ok(()));
+        assert_eq!(input, "");
+
+        let mut input = "| test";
+        let result = symbol_pipe(&mut input);
+        assert_eq!(result, Ok(()));
+        assert_eq!(input, " test");
+    }
+
+    #[test]
+    fn test_symbol_assign() {
+        let mut input = "=";
+        let result = symbol_assign(&mut input);
+        assert_eq!(result, Ok(()));
+        assert_eq!(input, "");
+
+        let mut input = " =";
+        let result = symbol_assign(&mut input);
+        assert_eq!(result, Ok(()));
+        assert_eq!(input, "");
+
+        let mut input = "= test";
+        let result = symbol_assign(&mut input);
+        assert_eq!(result, Ok(()));
+        assert_eq!(input, " test");
+    }
+
+    #[test]
+    fn test_symbol_dollar() {
+        let mut input = "$";
+        let result = symbol_dollar(&mut input);
+        assert_eq!(result, Ok(()));
+        assert_eq!(input, "");
+
+        let mut input = " $";
+        let result = symbol_dollar(&mut input);
+        assert_eq!(result, Ok(()));
+        assert_eq!(input, "");
+
+        let mut input = "$ test";
+        let result = symbol_dollar(&mut input);
+        assert_eq!(result, Ok(()));
+        assert_eq!(input, " test");
+    }
+
+    #[test]
+    fn test_symbol_cmp_eq() {
+        let mut input = "==";
+        let result = symbol_cmp_eq(&mut input);
+        assert_eq!(result, Ok(CmpSymbol::Eq));
+        assert_eq!(input, "");
+
+        let mut input = " ==";
+        let result = symbol_cmp_eq(&mut input);
+        assert_eq!(result, Ok(CmpSymbol::Eq));
+        assert_eq!(input, "");
+
+        let mut input = "== test";
+        let result = symbol_cmp_eq(&mut input);
+        assert_eq!(result, Ok(CmpSymbol::Eq));
+        assert_eq!(input, " test");
+    }
+
+    #[test]
+    fn test_symbol_cmp_we() {
+        let mut input = "=*";
+        let result = symbol_cmp_we(&mut input);
+        assert_eq!(result, Ok(CmpSymbol::We));
+        assert_eq!(input, "");
+
+        let mut input = " =*";
+        let result = symbol_cmp_we(&mut input);
+        assert_eq!(result, Ok(CmpSymbol::We));
+        assert_eq!(input, "");
+
+        let mut input = "=* test";
+        let result = symbol_cmp_we(&mut input);
+        assert_eq!(result, Ok(CmpSymbol::We));
+        assert_eq!(input, " test");
+    }
+
+    #[test]
+    fn test_symbol_cmp_ne() {
+        let mut input = "!=";
+        let result = symbol_cmp_ne(&mut input);
+        assert_eq!(result, Ok(CmpSymbol::Ne));
+        assert_eq!(input, "");
+
+        let mut input = " !=";
+        let result = symbol_cmp_ne(&mut input);
+        assert_eq!(result, Ok(CmpSymbol::Ne));
+        assert_eq!(input, "");
+
+        let mut input = "!= test";
+        let result = symbol_cmp_ne(&mut input);
+        assert_eq!(result, Ok(CmpSymbol::Ne));
+        assert_eq!(input, " test");
+    }
+
+    #[test]
+    fn test_symbol_cmp_ge() {
+        let mut input = ">=";
+        let result = symbol_cmp_ge(&mut input);
+        assert_eq!(result, Ok(CmpSymbol::Ge));
+        assert_eq!(input, "");
+
+        let mut input = " >=";
+        let result = symbol_cmp_ge(&mut input);
+        assert_eq!(result, Ok(CmpSymbol::Ge));
+        assert_eq!(input, "");
+
+        let mut input = ">= test";
+        let result = symbol_cmp_ge(&mut input);
+        assert_eq!(result, Ok(CmpSymbol::Ge));
+        assert_eq!(input, " test");
+    }
+
+    #[test]
+    fn test_symbol_cmp_gt() {
+        let mut input = ">";
+        let result = symbol_cmp_gt(&mut input);
+        assert_eq!(result, Ok(CmpSymbol::Gt));
+        assert_eq!(input, "");
+
+        let mut input = " >";
+        let result = symbol_cmp_gt(&mut input);
+        assert_eq!(result, Ok(CmpSymbol::Gt));
+        assert_eq!(input, "");
+
+        let mut input = "> test";
+        let result = symbol_cmp_gt(&mut input);
+        assert_eq!(result, Ok(CmpSymbol::Gt));
+        assert_eq!(input, " test");
+    }
+
+    #[test]
+    fn test_symbol_cmp_le() {
+        let mut input = "<=";
+        let result = symbol_cmp_le(&mut input);
+        assert_eq!(result, Ok(CmpSymbol::Le));
+        assert_eq!(input, "");
+
+        let mut input = " <=";
+        let result = symbol_cmp_le(&mut input);
+        assert_eq!(result, Ok(CmpSymbol::Le));
+        assert_eq!(input, "");
+
+        let mut input = "<= test";
+        let result = symbol_cmp_le(&mut input);
+        assert_eq!(result, Ok(CmpSymbol::Le));
+        assert_eq!(input, " test");
+    }
+
+    #[test]
+    fn test_symbol_cmp_lt() {
+        let mut input = "<";
+        let result = symbol_cmp_lt(&mut input);
+        assert_eq!(result, Ok(CmpSymbol::Lt));
+        assert_eq!(input, "");
+
+        let mut input = " <";
+        let result = symbol_cmp_lt(&mut input);
+        assert_eq!(result, Ok(CmpSymbol::Lt));
+        assert_eq!(input, "");
+
+        let mut input = "< test";
+        let result = symbol_cmp_lt(&mut input);
+        assert_eq!(result, Ok(CmpSymbol::Lt));
+        assert_eq!(input, " test");
+    }
+
+    #[test]
+    fn test_symbol_cmp() {
+        let mut input = "==";
+        let result = symbol_cmp(&mut input);
+        assert_eq!(result, Ok(CmpSymbol::Eq));
+        assert_eq!(input, "");
+
+        let mut input = "!=";
+        let result = symbol_cmp(&mut input);
+        assert_eq!(result, Ok(CmpSymbol::Ne));
+        assert_eq!(input, "");
+
+        let mut input = "=*";
+        let result = symbol_cmp(&mut input);
+        assert_eq!(result, Ok(CmpSymbol::We));
+        assert_eq!(input, "");
+
+        let mut input = ">=";
+        let result = symbol_cmp(&mut input);
+        assert_eq!(result, Ok(CmpSymbol::Ge));
+        assert_eq!(input, "");
+
+        let mut input = ">";
+        let result = symbol_cmp(&mut input);
+        assert_eq!(result, Ok(CmpSymbol::Gt));
+        assert_eq!(input, "");
+
+        let mut input = "<=";
+        let result = symbol_cmp(&mut input);
+        assert_eq!(result, Ok(CmpSymbol::Le));
+        assert_eq!(input, "");
+
+        let mut input = "<";
+        let result = symbol_cmp(&mut input);
+        assert_eq!(result, Ok(CmpSymbol::Lt));
+        assert_eq!(input, "");
+    }
+
+    #[test]
+    fn test_symbol_logic() {
+        let mut input = "&&";
+        let result = symbol_logic(&mut input);
+        assert_eq!(result, Ok(LogicSymbol::And));
+        assert_eq!(input, "");
+
+        let mut input = "||";
+        let result = symbol_logic(&mut input);
+        assert_eq!(result, Ok(LogicSymbol::Or));
+        assert_eq!(input, "");
+
+        let mut input = "!";
+        let result = symbol_logic(&mut input);
+        assert_eq!(result, Ok(LogicSymbol::Not));
+        assert_eq!(input, "");
+    }
+
+    #[test]
+    fn test_error_cases() {
+        // Test various error cases
+        let mut input = "invalid";
+        let result = symbol_logic_and(&mut input);
+        assert!(result.is_err());
+
+        let mut input = "invalid";
+        let result = symbol_cmp_eq(&mut input);
+        assert!(result.is_err());
+
+        let mut input = "invalid";
+        let result = symbol_bracket_beg(&mut input);
+        assert!(result.is_err());
+
+        let mut input = "";
+        let result = symbol_logic_and(&mut input);
+        assert!(result.is_err());
+
+        let mut input = "";
+        let result = symbol_cmp_eq(&mut input);
+        assert!(result.is_err());
+    }
+}

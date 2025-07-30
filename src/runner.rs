@@ -16,7 +16,7 @@ impl GxlRunner {
         vars: VarSpace,
         sender: Option<Sender<ReadSignal>>,
     ) -> RunResult<()> {
-        let mut loader = GxLoader::new();
+        let loader = GxLoader::new();
         if let Some(conf) = cmd.conf {
             if !Path::new(conf.as_str()).exists() {
                 return Err(StructError::from_conf("gflow conf not exists".to_string()))

@@ -14,6 +14,7 @@ use orion_variate::update::UpdateOptions;
 use orion_variate::vars::EnvDict;
 use orion_variate::vars::EnvEvalable;
 use std::fs::read_to_string;
+use std::path::Path;
 use std::path::PathBuf;
 use winnow::ascii::line_ending;
 use winnow::ascii::till_line_ending;
@@ -99,6 +100,7 @@ impl ExternParser {
         cur: &mut &str,
         up_options: &UpdateOptions,
         vars_space: &VarSpace,
+        file_exist_path: Option<&Path>,
     ) -> ExecResult<(String, DslStatus)> {
         use crate::evaluator::Parser;
         let extern_mods = gal_extern_mod
@@ -125,10 +127,19 @@ impl ExternParser {
                     .build()
                     .unwrap()
             }
-            ModAddr::Loc(loc_addr) => ExternLocalBuilder::default()
-                .path(PathBuf::from(exp.eval(loc_addr.path())?))
+            ModAddr::Loc(loc_addr) => { 
+
+                let local_path = if let Some(file_exist_path) = file_exist_path {
+                    loc_addr.path().replace("@{PATH}", file_exist_path.display().to_string().as_str())
+                }
+                else {
+                    loc_addr.path().clone()
+                };
+                ExternLocalBuilder::default()
+                .path(PathBuf::from(exp.eval(local_path.as_str())?))
                 .build()
-                .unwrap(),
+                .unwrap()
+            }
         };
         debug!("mod-local @PATH: {}", local.path().display());
         let mut out = String::new();
@@ -145,6 +156,7 @@ impl ExternParser {
         git: &UpdateOptions,
         input: &mut &str,
         vars_space: &VarSpace,
+        file_exist_path: Option<&Path>,
     ) -> ExecResult<(String, bool)> {
         let mut status = DslStatus::Code;
         let mut out = String::new();
@@ -161,7 +173,7 @@ impl ExternParser {
                     continue;
                 }
                 DslStatus::Extern => {
-                    let (code, cur_status) = Self::parse_extend_mod(input, git, vars_space).await?;
+                    let (code, cur_status) = Self::parse_extend_mod(input, git, vars_space,file_exist_path).await?;
                     out += code.as_str();
                     status = cur_status;
                     have_extern = true;
@@ -179,6 +191,8 @@ mod tests {
 
     use orion_error::TestAssert;
 
+    use crate::GxLoader;
+
     use super::*;
     #[tokio::test]
     async fn test_extern_one() {
@@ -187,7 +201,7 @@ mod tests {
         let vars = VarSpace::sys_init().assert();
         let mut data = r#"extern mod ssh { path = "./_gal/mods";}"#;
         let (codes, _have_ext) = parser
-            .extern_parse(&up_opt, &mut data, &vars)
+            .extern_parse(&up_opt, &mut data, &vars,None)
             .await
             .assert();
 
@@ -202,12 +216,23 @@ mod tests {
         let parser = ExternParser::new();
         let mut data = r#"extern mod os,ssh { path = "./_gal/mods";}"#;
         let (codes, _have_ext) = parser
-            .extern_parse(&up_opt, &mut data, &vars)
+            .extern_parse(&up_opt, &mut data, &vars,None)
             .await
             .assert();
         let mut expect = read_to_string("./_gal/tests/_all.gxl").assert();
         expect = expect.replace("@PATH", "./_gal/mods");
         println!("{codes}",);
         assert_eq!(codes, expect);
+    }
+
+        #[tokio::test]
+    async fn test_extern_levels() {
+        let loader = GxLoader::default();
+        let vars = VarSpace::sys_init().assert();
+        let codes = loader.parse_file("./src/parser/code/main.gxl", false, &vars).await.assert();
+        assert!(codes.get("mod_a").is_some());
+        assert!(codes.get("mod_b").is_some());
+        assert_eq!(codes.get("mod_c").unwrap().flows().len() , 2);
+        assert!(codes.get("mod_d").is_none());
     }
 }

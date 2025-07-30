@@ -11,7 +11,7 @@ use orion_error::TestAssert;
 async fn gxl_normal_test() -> AnyResult<()> {
     once_init_log();
     let vars = VarSpace::sys_init().assert();
-    let mut loader = GxLoader::new();
+    let loader = GxLoader::new();
 
     let spc = loader
         .parse_file("./tests/material/case_normal.gxl", false, &vars)

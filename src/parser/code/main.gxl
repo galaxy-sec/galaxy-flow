@@ -1,0 +1,1 @@
+extern mod mod_a { path = "@{PATH}";}
