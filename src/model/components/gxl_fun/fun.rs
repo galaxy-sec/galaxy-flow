@@ -1,7 +1,6 @@
 use crate::ability::prelude::{Action, TaskValue};
 use crate::components::gxl_mod::meta::ModMeta;
 use crate::components::gxl_spc::GxlSpace;
-use crate::components::gxl_utls::mod_obj_name;
 use crate::model::components::prelude::*;
 
 use crate::execution::runnable::AsyncRunnableWithSenderTrait;
@@ -31,9 +30,6 @@ impl GxlFun {
         &mut self.meta
     }
 
-    pub(crate) fn bind(&mut self, mod_meta: ModMeta) {
-        self.meta.set_host(mod_meta);
-    }
     pub fn with_mod(mut self, meta: ModMeta) -> Self {
         self.meta.set_host(meta);
         self
@@ -48,8 +44,8 @@ impl DependTrait<&GxlSpace> for GxlFun {
     fn assemble(self, mod_name: &str, src: &GxlSpace) -> AResult<Self> {
         debug!(target : "assemble", "will assemble flow {}" , self.meta().name() );
         let mut target = GxlFun::from(self.meta().clone());
-        let mut buffer = Vec::new();
-        let mut linked = false;
+        let buffer = Vec::new();
+        let linked = false;
 
         if linked {
             info!(
@@ -66,18 +62,6 @@ impl DependTrait<&GxlSpace> for GxlFun {
         debug!(target : "assemble", "assemble flow {} end" , target.meta().name() );
         Ok(target)
     }
-}
-
-fn assemble_fun_meta(m_name: &str, flow: &str, src: &GxlSpace) -> AResult<FunMeta> {
-    let (mod_name, fun_name) = mod_obj_name(m_name, flow);
-    debug!(target:"assemble", " find flow by {mod_name}.{fun_name}" );
-    if let Some(flow) = src.get(&mod_name).and_then(|m| m.load_fun(&fun_name)) {
-        debug!(target:"assemble", "found flow by {mod_name}.{fun_name}" );
-        return Ok(flow.meta.clone());
-    }
-    Err(AssembleError::from(AssembleReason::Miss(format!(
-        "{mod_name}.{fun_name}"
-    ))))
 }
 
 impl From<FunMeta> for GxlFun {
@@ -114,12 +98,12 @@ impl GxlFun {
         &self,
         ctx: ExecContext,
         var_dict: VarSpace,
-        sender: Option<mpsc::Sender<ReadSignal>>,
+        _sender: Option<mpsc::Sender<ReadSignal>>,
     ) -> TaskResult {
         let mut task = Task::from(self.meta.name());
-        let mut task_notice = TaskNotice::new();
+        let task_notice = TaskNotice::new();
         // 执行所有块
-        let (var_dict, task) = match self
+        let (var_dict, _task) = match self
             .execute_blocks(ctx, var_dict, None, task.clone(), task_notice.clone())
             .await
         {
@@ -259,18 +243,6 @@ impl GxlFun {
     }
 
     /// 完成日志收集
-    async fn finalize_log_collection(
-        &self,
-        sender: Option<mpsc::Sender<ReadSignal>>,
-    ) -> Result<(), ExecReason> {
-        if let Some(send) = sender {
-            let log_file = init_redirect_file()?;
-            let end_pos = seek_log_file_end(&log_file)?;
-            send.send(ReadSignal::End(end_pos))
-                .map_err(|e| ExecReason::Io(format!("flow send task error: {e}")))?;
-        }
-        Ok(())
-    }
 
     // 更新任务输出
     async fn update_task_with_output(
@@ -303,7 +275,7 @@ impl AsyncRunnableWithSenderTrait for GxlFun {
         mut vars_dict: VarSpace,
         sender: Option<mpsc::Sender<ReadSignal>>,
     ) -> TaskResult {
-        let mut action = Action::from("gx.cmd");
+        let action = Action::from("gx.cmd");
         ctx.append(self.meta.name());
         let TaskValue { vars, rec, .. } = self.exec_self(ctx.clone(), vars_dict, sender).await?;
         vars_dict = vars;

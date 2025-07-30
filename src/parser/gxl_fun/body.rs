@@ -1,12 +1,13 @@
-use crate::components::gxl_flow::meta::FlowMeta;
 use crate::components::gxl_fun::fun::GxlFun;
 use crate::parser::prelude::*;
 
-use crate::components::GxlFlow;
-use crate::parser::stc_ann::gal_ann;
 use crate::parser::stc_blk::gal_block;
 
 use super::head::gal_fun_head;
+
+pub fn trim_trailing_space(s: &str) -> &str {
+    s.trim_end_matches(|c: char| c.is_whitespace())
+}
 
 pub fn gal_fun_body(input: &mut &str) -> Result<GxlFun> {
     let meta = gal_fun_head
@@ -105,5 +106,122 @@ mod tests {
         let flow = run_gxl(gal_stc_fun, &mut data).assert();
         assert_eq!(data, "");
         assert_eq!(flow.meta().name(), "x");
+    }
+
+    #[test]
+    fn flow_test7_empty_body() {
+        let mut data = r#"
+        fun empty() {
+        };"#;
+        let flow = run_gxl(gal_stc_fun, &mut data).assert();
+        assert_eq!(data, "");
+        assert_eq!(flow.meta().name(), "empty");
+    }
+
+    #[test]
+    fn flow_test8_multiple_params() {
+        let mut data = r#"
+        fun multi_param(a, b, c, d) {
+            result = "a b c d processed";
+        };"#;
+        let flow = run_gxl(gal_stc_fun, &mut data).assert();
+        assert_eq!(data, "");
+        assert_eq!(flow.meta().name(), "multi_param");
+        assert_eq!(
+            flow.meta().args(),
+            &[
+                "a".to_string(),
+                "b".to_string(),
+                "c".to_string(),
+                "d".to_string()
+            ]
+            .to_vec()
+        );
+    }
+
+    #[test]
+    fn flow_test9_nested_calls() {
+        let mut data = r#"
+        fun nested() {
+            gx.cmd( "gx.build_command" );
+        };"#;
+        let flow = run_gxl(gal_stc_fun, &mut data).assert();
+        assert_eq!(data, "");
+        assert_eq!(flow.meta().name(), "nested");
+    }
+
+    #[test]
+    fn flow_test10_various_types() {
+        let mut data = r#"
+        fun mixed_types() {
+            string_val = "hello world";
+            number_val = "42";
+            bool_val = "true";
+        };"#;
+        let flow = run_gxl(gal_stc_fun, &mut data).assert();
+        assert_eq!(data, "");
+        assert_eq!(flow.meta().name(), "mixed_types");
+    }
+
+    #[test]
+    fn flow_test11_complex_conditional() {
+        let mut data = r#"
+        fun complex_condition() {
+            if ${status} == "running" && ${count} > 10 {
+                gx.log ( level : "warn", message : "High load detected" );
+            }
+            else if ${status} == "failed" {
+                gx.notify ( channel : "alerts", message : "Process failed" );
+            }
+            else {
+                gx.log ( level : "info", message : "System normal" );
+            }
+        };"#;
+        let flow = run_gxl(gal_stc_fun, &mut data).assert();
+        assert_eq!(data, "");
+        assert_eq!(flow.meta().name(), "complex_condition");
+    }
+
+    #[test]
+    fn flow_test12_empty_body_with_semicolon() {
+        let mut data = r#"
+        fun noop() {};"#;
+        let flow = run_gxl(gal_stc_fun, &mut data).assert();
+        assert_eq!(super::trim_trailing_space(data), "");
+        assert_eq!(flow.meta().name(), "noop");
+    }
+
+    #[test]
+    fn flow_test13_annotations() {
+        let mut data = r#"
+        fun annotated_func() {
+            legacy_code = "some value";
+        };"#;
+        let flow = run_gxl(gal_stc_fun, &mut data).assert();
+        assert_eq!(data, "");
+        assert_eq!(flow.meta().name(), "annotated_func");
+    }
+
+    #[test]
+    fn flow_test14_whitespace_variations() {
+        let mut data = r#"
+        fun spaced(param1, param2) {
+            result = "param1 and param2 processed";
+        };"#;
+        let flow = run_gxl(gal_stc_fun, &mut data).assert();
+        assert_eq!(data, "");
+        assert_eq!(flow.meta().name(), "spaced");
+    }
+
+    #[test]
+    fn flow_test15_simple_nested() {
+        let mut data = r#"
+        fun outer() {
+            inner_val = "I am inner";
+            gx.cmd( cmd : "echo", );
+        };"#;
+        let flow = run_gxl(gal_stc_fun, &mut data).assert();
+        assert_eq!(data, "");
+        assert_eq!(flow.meta().name(), "outer");
     }
 }
