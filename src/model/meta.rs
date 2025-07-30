@@ -4,11 +4,13 @@ use std::fmt::Debug;
 use derive_more::From;
 
 use super::components::{
-    gxl_env::meta::EnvMeta, gxl_flow::meta::FlowMeta, gxl_mod::meta::ModMeta, gxl_prop::PropMeta,
+    gxl_env::meta::EnvMeta, gxl_flow::meta::FlowMeta, gxl_fun::meta::FunMeta,
+    gxl_mod::meta::ModMeta, gxl_prop::PropMeta,
 };
 #[derive(Debug, Clone, Default, PartialEq)]
 pub enum GxlType {
     Env,
+    Fun,
     Flow,
     Mod,
     Vars,
@@ -29,6 +31,7 @@ impl GxlType {
 pub enum GxlMeta {
     Prop(PropMeta),
     Env(EnvMeta),
+    Fun(FunMeta),
     Flow(FlowMeta),
     Mod(ModMeta),
     Simple(String),
@@ -43,6 +46,7 @@ impl GxlMeta {
         match self {
             GxlMeta::Prop(m) => m.name(),
             GxlMeta::Env(m) => m.name(),
+            GxlMeta::Fun(m) => m.name(),
             GxlMeta::Flow(m) => m.name(),
             GxlMeta::Mod(m) => m.name(),
             GxlMeta::Simple(m) => m,
@@ -54,6 +58,7 @@ impl MetaInfo for GxlMeta {
         match self {
             GxlMeta::Prop(m) => m.full_name(),
             GxlMeta::Env(m) => m.full_name(),
+            GxlMeta::Fun(m) => m.full_name(),
             GxlMeta::Flow(m) => m.full_name(),
             GxlMeta::Mod(m) => m.full_name(),
             GxlMeta::Simple(m) => m.clone(),
@@ -63,6 +68,7 @@ impl MetaInfo for GxlMeta {
         match self {
             GxlMeta::Prop(m) => m.long_name(),
             GxlMeta::Env(m) => m.long_name(),
+            GxlMeta::Fun(m) => m.long_name(),
             GxlMeta::Flow(m) => m.long_name(),
             GxlMeta::Mod(m) => m.long_name(),
             GxlMeta::Simple(m) => m.clone(),

@@ -2,6 +2,7 @@ use crate::ability::prelude::GxlVar;
 use crate::ability::prelude::TaskValue;
 use crate::components::gxl_act::activity::Activity;
 use crate::components::gxl_flow::meta::FlowMeta;
+use crate::components::gxl_fun::fun::GxlFun;
 use crate::components::gxl_prop::Vec2Mapable;
 use crate::components::gxl_spc::GxlSpace;
 use crate::components::GxlEnv;
@@ -146,6 +147,9 @@ impl GxlMod {
             return Some(flow.clone());
         }
         None
+    }
+    pub fn load_fun(&self, name: &str) -> Option<GxlFun> {
+        todo!();
     }
 
     fn up_meta(&mut self, meta: ModMeta) {
