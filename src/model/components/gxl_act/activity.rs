@@ -21,11 +21,10 @@ use crate::{
 
 use super::meta::ActivityMeta;
 
-#[derive(Debug, Default, Builder, Clone, Getters, PartialEq)]
+#[derive(Debug, Builder, Clone, Getters, PartialEq)]
 pub struct Activity {
     meta: ActivityMeta,
-    host: String,
-    dto: ActivityDTO,
+    //dto: ActivityDTO,
     assembled: bool,
 }
 #[derive(Clone, Debug, PartialEq, Builder, Default)]
@@ -63,15 +62,11 @@ impl ComponentMeta for Activity {
 }
 
 impl Activity {
-    pub fn dto_new(dto: ActivityDTO) -> Self {
+    pub fn new(meta: ActivityMeta) -> Self {
         Activity {
-            host: String::new(),
-            dto,
-            ..Default::default()
+            meta,
+            assembled: false,
         }
-    }
-    pub fn set_host(&mut self, host: String) {
-        self.host = host;
     }
     pub fn merge_prop(&mut self, props: Vec<Property>) {
         let default_props = self.dto.props.clone();
@@ -186,7 +181,7 @@ mod tests {
             val: "./example/conf/used/copy_3.txt".into(),
         });
 
-        let act = Activity::dto_new(dto.clone());
+        let act = Activity::new(dto.clone());
         let task_value = act.async_exec(context.clone(), def).await.assert();
         match task_value.rec() {
             ExecOut::Action(action) => {

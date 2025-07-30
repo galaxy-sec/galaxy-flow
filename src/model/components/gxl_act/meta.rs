@@ -1,13 +1,18 @@
+use getset::{Getters, WithSetters};
+
 use crate::{
     components::gxl_mod::meta::ModMeta,
     meta::{GxlType, MetaInfo},
 };
 use std::fmt::Debug;
 
-#[derive(Clone, Getters, Default, PartialEq)]
+#[derive(Clone, Getters, WithSetters, PartialEq)]
+#[getset(get = "pub")]
 pub struct ActivityMeta {
     class: GxlType,
     name: String,
+    #[getset(set_with = "pub")]
+    args: Vec<String>,
     host: Option<ModMeta>,
 }
 
@@ -16,6 +21,7 @@ impl Debug for ActivityMeta {
         f.debug_struct("ActivityMeta")
             .field("class", &self.class)
             .field("name", &self.name)
+            .field("args", &self.args)
             .finish()
     }
 }

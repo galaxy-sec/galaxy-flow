@@ -28,6 +28,7 @@ pub enum ModItem {
     Env(GxlEnv),
     Flow(GxlFlow),
     Actv(Activity),
+    Fun(GxlFun),
 }
 impl ModItem {
     pub(crate) fn bind(&mut self, mod_meta: ModMeta) {
@@ -35,6 +36,7 @@ impl ModItem {
             ModItem::Env(o) => o.bind(mod_meta),
             ModItem::Flow(o) => o.bind(mod_meta),
             ModItem::Actv(o) => o.bind(mod_meta),
+            ModItem::Fun(o) => o.bind(mod_meta),
         }
     }
 }
@@ -47,6 +49,7 @@ pub struct GxlMod {
     flow_names: IndexMap<String, MenuItem>,
     envs: IndexMap<String, GxlEnv>,
     flows: IndexMap<String, GxlFlow>,
+    funs: IndexMap<String, GxlFun>,
     entrys: Vec<FlowMeta>,
     exits: Vec<FlowMeta>,
     acts: IndexMap<String, Activity>,
@@ -293,6 +296,15 @@ impl AppendAble<GxlEnv> for GxlMod {
     }
 }
 
+impl AppendAble<GxlFun> for GxlMod {
+    fn append(&mut self, hold: GxlFun) {
+        let meta = hold.meta();
+        debug!(target:format!("stc/mod({})",self.meta.name()).as_str(),
+            "append {:#?} {}, ",meta.class(), meta.name());
+        self.funs.insert(meta.name().clone(), hold);
+    }
+}
+
 impl AppendAble<GxlFlow> for GxlMod {
     fn append(&mut self, hold: GxlFlow) {
         let hold = hold.with_mod(self.meta.clone());
@@ -311,6 +323,7 @@ impl AppendAble<ModItem> for GxlMod {
     fn append(&mut self, now: ModItem) {
         match now {
             ModItem::Env(v) => self.append(v),
+            ModItem::Fun(v) => self.append(v),
             ModItem::Flow(v) => self.append(v),
             ModItem::Actv(v) => self.append(v),
         }

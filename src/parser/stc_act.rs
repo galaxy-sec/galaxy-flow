@@ -63,7 +63,7 @@ pub fn gal_activity(input: &mut &str) -> Result<Activity> {
     if !dto.check() {
         return fail.context(wn_desc("<activity-check>")).parse_next(input);
     }
-    let obj = Activity::dto_new(dto);
+    let obj = Activity::new(dto);
     Ok(obj)
 }
 #[cfg(test)]
@@ -102,6 +102,6 @@ mod tests {
             val: "".into(),
         });
         assert_eq!(data.trim(), "");
-        assert_eq!(obj, Activity::dto_new(dto));
+        assert_eq!(obj, Activity::new(dto));
     }
 }

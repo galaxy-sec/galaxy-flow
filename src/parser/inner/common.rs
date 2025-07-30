@@ -87,12 +87,8 @@ pub fn gal_call(input: &mut &str) -> Result<ActCall> {
     let name = take_var_path
         .context(wn_desc("<call-name>"))
         .parse_next(input)?;
-    let var_props = action_call_args.parse_next(input)?;
-    let mut props = Vec::new();
-    for v_prop in var_props {
-        props.push(Property::from(v_prop))
-    }
-    let dto = ActCall::from((name, props));
+    let args = fun_call_args.parse_next(input)?;
+    let dto = ActCall::from((name, args));
     Ok(dto)
 }
 
@@ -153,7 +149,7 @@ mod tests {
                 Property::from(("keep", "ture")),
             ],
         ));
-        assert_eq!(found.props, expect.props);
+        assert_eq!(found.args, expect.args);
         assert_eq!(data, "");
     }
 }

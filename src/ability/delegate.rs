@@ -1,18 +1,31 @@
+use derive_more::From;
+use indexmap::IndexMap;
+use orion_error::ToStructError;
+
 use crate::ability::prelude::*;
 
 use crate::components::gxl_act::activity::Activity;
+use crate::components::gxl_fun::fun::GxlFun;
 use crate::components::gxl_spc::GxlSpace;
+use crate::execution::runnable::AsyncRunnableArgsTrait;
 use crate::model::components::gxl_utls::mod_obj_name;
 
+use crate::primitive::GxlArg;
 use crate::traits::DependTrait;
 use crate::types::Property;
 
-#[derive(Clone, Debug, Default, Builder)]
+#[derive(Clone, From)]
+pub enum ActTypes {
+    Fun(GxlFun),
+    Act(Activity),
+}
+pub type GxlArgs = IndexMap<String, GxlArg>;
+#[derive(Clone, Default, Builder)]
 pub struct ActCall {
     pub name: String,
     pub sudo: bool,
-    pub props: Vec<Property>,
-    act: Option<Activity>,
+    pub args: GxlArgs,
+    act: Option<ActTypes>,
 }
 
 impl From<String> for ActCall {
@@ -20,17 +33,21 @@ impl From<String> for ActCall {
         Self {
             name,
             sudo: false,
-            props: Vec::new(),
+            args: GxlArgs::new(),
             act: None,
         }
     }
 }
-impl From<(String, Vec<Property>)> for ActCall {
-    fn from(value: (String, Vec<Property>)) -> Self {
+impl From<(String, Vec<GxlArg>)> for ActCall {
+    fn from(value: (String, Vec<GxlArg>)) -> Self {
+        let mut args = GxlArgs::new();
+        value.1.into_iter().for_each(|x| {
+            args.insert(x.name().clone(), x);
+        });
         Self {
             name: value.0,
             sudo: false,
-            props: value.1,
+            args,
             act: None,
         }
     }
@@ -38,28 +55,59 @@ impl From<(String, Vec<Property>)> for ActCall {
 
 impl DependTrait<&GxlSpace> for ActCall {
     fn assemble(self, mod_name: &str, src: &GxlSpace) -> AResult<Self> {
-        let (t_mod, act_name) = mod_obj_name(mod_name, self.name.as_str());
-        if let Some(act) = src.get(&t_mod).and_then(|m| m.acts().get(&act_name)) {
-            Ok(self.clone_from(act, t_mod))
-        } else {
-            error!("activity not found: {t_mod}.{act_name}");
-            Err(AssembleError::from(AssembleReason::Miss(format!(
-                "activity: {t_mod}.{act_name}"
-            ))))
+        let (find_mod, act_name) = mod_obj_name(mod_name, self.name.as_str());
+        if let Some(found_mod) = src.get(&find_mod) {
+            if let Some(act) = found_mod.acts().get(&act_name) {
+                return Ok(ActCall::from((self.clone(), act, find_mod)));
+            } else if let Some(fun) = found_mod.funs().get(&act_name) {
+                for arg in fun.meta().args() {
+                    if self.args.get(arg).is_none() {
+                        return AssembleReason::Miss(format!(
+                            "{arg} for call {find_mod}.{act_name}"
+                        ))
+                        .err_result();
+                    }
+                }
+                return Ok(ActCall::from((self.clone(), fun, find_mod)));
+            }
         }
+        error!("activity not found: {find_mod}.{act_name}");
+        Err(AssembleError::from(AssembleReason::Miss(format!(
+            "activity: {find_mod}.{act_name}"
+        ))))
     }
 }
 
 impl ActCall {
-    pub fn append_prop(&mut self, prop: Property) {
-        self.props.push(prop);
-    }
+    /*
     pub fn clone_from(&self, act: &Activity, host: String) -> Self {
         let mut ins = self.clone();
         let mut cur_act = act.clone();
         cur_act.set_host(host);
         cur_act.merge_prop(self.props.clone());
-        ins.act = Some(cur_act);
+        ins.act = Some(ActTypes::from(cur_act));
+        ins
+    }
+    */
+}
+impl From<(Self, &Activity, String)> for ActCall {
+    fn from(value: (Self, &Activity, String)) -> Self {
+        let mut ins = value.0;
+        let mut cur_act = value.1.clone();
+        cur_act.set_host(value.2);
+        //cur_act.merge_prop(ins.args.clone());
+        ins.act = Some(ActTypes::from(cur_act));
+        ins
+    }
+}
+
+impl From<(Self, &GxlFun, String)> for ActCall {
+    fn from(value: (Self, &GxlFun, String)) -> Self {
+        let mut ins = value.0;
+        let cur_fun = value.1.clone();
+        //cur_fun.set_host(host);
+        //cur_fun.merge_prop(self.props.clone());
+        ins.act = Some(ActTypes::from(cur_fun));
         ins
     }
 }
@@ -68,11 +116,21 @@ impl AsyncRunnableTrait for ActCall {
     async fn async_exec(&self, mut ctx: ExecContext, vars_dict: VarSpace) -> TaskResult {
         ctx.append("@");
         match &self.act {
-            Some(act) => act.async_exec(ctx, vars_dict).await,
+            Some(act) => act.async_exec(ctx, vars_dict, &self.args).await,
             None => Err(ExecError::from(ExecReason::Depend(format!(
                 "act call not support :{}",
                 self.name
             )))),
+        }
+    }
+}
+
+#[async_trait]
+impl AsyncRunnableArgsTrait for ActTypes {
+    async fn async_exec(&self, ctx: ExecContext, vars: VarSpace, args: &GxlArgs) -> TaskResult {
+        match self {
+            ActTypes::Fun(o) => o.async_exec(ctx, vars, args).await,
+            ActTypes::Act(o) => o.async_exec(ctx, vars).await,
         }
     }
 }

@@ -11,7 +11,7 @@ use crate::{
         GxlMod,
     },
     meta::GxlType,
-    parser::stc_flow::body::gal_stc_flow_body,
+    parser::{gxl_fun::body::gal_stc_fun, stc_flow::body::gal_stc_flow_body},
 };
 
 use super::{
@@ -39,6 +39,11 @@ pub fn gal_stc_mod_item(input: &mut &str) -> Result<ModItem> {
             .parse_next(input)?;
         flow.set_anns(ann);
         return Ok(ModItem::Flow(flow));
+    }
+    if starts_with("fun", input) {
+        let mut flow = gal_stc_fun.context(wn_desc("<fun>")).parse_next(input)?;
+        //flow.set_anns(ann);
+        return Ok(ModItem::Fun(flow));
     }
     if starts_with("activity", input) {
         return gal_activity

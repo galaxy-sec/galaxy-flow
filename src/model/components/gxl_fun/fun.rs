@@ -1,20 +1,24 @@
+use crate::ability::delegate::GxlArgs;
 use crate::ability::prelude::{Action, TaskValue};
 use crate::components::gxl_mod::meta::ModMeta;
 use crate::components::gxl_spc::GxlSpace;
 use crate::model::components::prelude::*;
 
-use crate::execution::runnable::AsyncRunnableWithSenderTrait;
+use crate::execution::runnable::{AsyncRunnableArgsTrait, AsyncRunnableWithSenderTrait};
 use crate::execution::task::Task;
+use crate::primitive::{GxlArg, GxlObject};
 use crate::task_report::task_notification::TaskNotice;
 use crate::task_report::task_rc_config::{build_task_url, report_enable, TaskUrlType};
 use crate::task_report::task_result_report::TaskReport;
-use crate::traits::DependTrait;
+use crate::traits::{DependTrait, Getter, Setter};
 
 use crate::components::gxl_block::BlockNode;
+use crate::types::Property;
 use crate::util::http_handle::send_http_request;
 use crate::util::redirect::{init_redirect_file, read_log_content, seek_log_file_end, ReadSignal};
 use contracts::requires;
 use derive_getters::Getters;
+use orion_error::ToStructError;
 use std::sync::{mpsc, Arc, Mutex};
 
 use super::meta::FunMeta;
@@ -37,6 +41,9 @@ impl GxlFun {
     pub fn with_code(mut self, block: BlockNode) -> Self {
         self.blocks.push(block);
         self
+    }
+    pub fn bind(&mut self, mod_meta: ModMeta) {
+        self.meta.set_host(mod_meta);
     }
 }
 
@@ -94,27 +101,28 @@ impl GxlFun {
 
 impl GxlFun {
     #[requires(self.assembled )]
-    async fn exec_self(
-        &self,
-        ctx: ExecContext,
-        var_dict: VarSpace,
-        _sender: Option<mpsc::Sender<ReadSignal>>,
-    ) -> TaskResult {
-        let mut task = Task::from(self.meta.name());
+    async fn exec_self(&self, ctx: ExecContext, var_dict: VarSpace, args: &GxlArgs) -> TaskResult {
+        let mut cur_vars = var_dict.clone();
+        for (_k, arg) in args {
+            match arg.value() {
+                GxlObject::VarRef(name) => {
+                    let value = cur_vars
+                        .get(name)
+                        .ok_or(ExecReason::Miss(name.clone()).to_err())?;
+                    cur_vars.global_mut().set(arg.name().clone(), value);
+                }
+                GxlObject::Value(value) => {
+                    cur_vars.global_mut().set(arg.name().clone(), value.clone());
+                }
+            }
+        }
+        let task = Task::from(self.meta.name());
         let task_notice = TaskNotice::new();
         // 执行所有块
-        let (var_dict, _task) = match self
+        // TODO : @txy
+        let (var_dict, _task) = self
             .execute_blocks(ctx, var_dict, None, task.clone(), task_notice.clone())
-            .await
-        {
-            Ok((var_dict, task)) => (var_dict, task),
-            Err(e) => {
-                task.stdout.push_str(&e.to_string());
-                task.result = Err(e.to_string());
-                self.report_task_status(&task, &task_notice).await?;
-                return Err(e);
-            }
-        };
+            .await?;
 
         Ok(TaskValue::from((var_dict, ExecOut::Ignore)))
     }
@@ -268,16 +276,16 @@ impl GxlFun {
     }
 }
 #[async_trait]
-impl AsyncRunnableWithSenderTrait for GxlFun {
+impl AsyncRunnableArgsTrait for GxlFun {
     async fn async_exec(
         &self,
         mut ctx: ExecContext,
         mut vars_dict: VarSpace,
-        sender: Option<mpsc::Sender<ReadSignal>>,
+        args: &GxlArgs,
     ) -> TaskResult {
         let action = Action::from("gx.cmd");
         ctx.append(self.meta.name());
-        let TaskValue { vars, rec, .. } = self.exec_self(ctx.clone(), vars_dict, sender).await?;
+        let TaskValue { vars, rec, .. } = self.exec_self(ctx.clone(), vars_dict, args).await?;
         vars_dict = vars;
         Ok(TaskValue::from((vars_dict, ExecOut::Action(action))))
     }
