@@ -23,3 +23,9 @@ impl OptionFrom<SecValueType> for SecValueType {
         Some(self)
     }
 }
+
+impl OptionFrom<SecValueType> for u64 {
+    fn to_opt(self) -> Option<SecValueType> {
+        Some(SecValueType::nor_from(self))
+    }
+}

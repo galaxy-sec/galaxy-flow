@@ -2,6 +2,7 @@ use super::prelude::*;
 use orion_parse::{
     define::{gal_raw_str, take_bool, take_float, take_number, take_string, take_var_ref_name},
     symbol::{symbol_assign, symbol_colon, wn_desc},
+    utils::peek_one,
 };
 use winnow::{
     combinator::{peek, separated},
@@ -9,7 +10,7 @@ use winnow::{
 };
 
 use crate::{
-    primitive::GxlObject,
+    primitive::{GxlFParam, GxlObject},
     sec::{SecFrom, SecValueObj, SecValueType, SecValueVec},
     var::UniString,
 };
@@ -67,28 +68,6 @@ pub fn gal_var_assign_obj(input: &mut &str) -> Result<(String, GxlObject)> {
         .parse_next(input)?;
     multispace0(input)?;
     //(multispace0, alt((symbol_comma, symbol_semicolon))).parse_next(input)?;
-    Ok((key.to_string(), val))
-}
-
-pub fn gal_var_assign_val(input: &mut &str) -> Result<(String, Option<SecValueType>)> {
-    let _ = multispace0.parse_next(input)?;
-    let key = take_while(1.., ('0'..='9', 'A'..='Z', 'a'..='z', ['_', '.']))
-        .context(wn_desc("<var-name>"))
-        .parse_next(input)?;
-    let _ = multispace0.parse_next(input)?;
-    let val = if peek("=").parse_next(input).is_ok() {
-        symbol_assign.parse_next(input)?;
-        let _ = multispace0.parse_next(input)?;
-
-        let val = gal_full_value
-            .context(wn_desc("<var-val>"))
-            .parse_next(input)?;
-        multispace0(input)?;
-        //(multispace0, alt((symbol_comma, symbol_semicolon))).parse_next(input)?;
-    }
-    else {
-        None
-    }
     Ok((key.to_string(), val))
 }
 

@@ -5,14 +5,13 @@ use winnow::combinator::separated;
 use crate::ability::delegate::ActCall;
 use crate::components::{gxl_var::*, GxlProps};
 use crate::expect::ShellOption;
-use crate::parser::abilities::define::{gal_var_assign_obj, gal_var_assign_val};
+use crate::parser::abilities::define::gal_var_assign_obj;
+use crate::parser::abilities::param::gal_formal_param;
 use crate::parser::domain::{
     fun_arg, gal_assign_exp, gal_block_beg, gal_block_end, gal_call_beg, gal_call_end, gal_keyword,
     gal_sentence_beg, gal_sentence_end, gal_var_input, parse_log,
 };
-use crate::primitive::{GxlAParam, GxlObject};
-use crate::sec::SecValueType;
-use crate::types::Property;
+use crate::primitive::{GxlAParam, GxlFParam, GxlObject};
 
 pub fn gal_vars(input: &mut &str) -> Result<GxlProps> {
     let mut vars = GxlProps::default();
@@ -62,14 +61,11 @@ pub fn sentence_body(input: &mut &str) -> Result<Vec<(String, GxlObject)>> {
     Ok(args)
 }
 
-pub fn act_param_define(input: &mut &str) -> Result<Vec<(String, SecValueType)>> {
+pub fn act_param_define(input: &mut &str) -> Result<Vec<GxlFParam>> {
     gal_sentence_beg.parse_next(input)?;
-    let args: Vec<(String, SecValueType)> = separated(
-        0..,
-        gal_var_assign_val,
-        alt((symbol_comma, symbol_semicolon)),
-    )
-    .parse_next(input)?;
+    let args: Vec<GxlFParam> =
+        separated(0.., gal_formal_param, alt((symbol_comma, symbol_semicolon)))
+            .parse_next(input)?;
     opt(alt((symbol_comma, symbol_semicolon))).parse_next(input)?;
     gal_sentence_end.parse_next(input)?;
     Ok(args)
@@ -158,7 +154,7 @@ mod tests {
     #[test]
     fn call_test() {
         let mut data = r#"
-             os.path ( dist: "./tests/" , keep: "ture" ) ;"#;
+             os.path ( dist: "./tests/" , keep: "true" ) ;"#;
         let found = run_gxl(gal_call, &mut data).assert();
         let expect = ActCall::from((
             "os.path".to_string(),
@@ -167,7 +163,7 @@ mod tests {
                 GxlAParam::from_val("keep", "true"),
             ],
         ));
-        assert_eq!(found.args(), expect.args());
+        assert_eq!(found.actual_params(), expect.actual_params());
         assert_eq!(data, "");
     }
 }

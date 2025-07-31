@@ -7,8 +7,6 @@ use crate::{
     execution::runnable::AsyncRunnableArgsTrait,
     meta::MetaInfo,
     model::components::prelude::*,
-    primitive::GxlObject,
-    traits::Setter,
 };
 use async_trait::async_trait;
 use orion_common::friendly::AppendAble;

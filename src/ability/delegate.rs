@@ -26,7 +26,7 @@ pub type GxlAParams = IndexMap<String, GxlAParam>;
 pub struct ActCall {
     pub name: String,
     pub sudo: bool,
-    pub params: GxlAParams,
+    pub actual_params: GxlAParams,
     act: Option<ActTypes>,
 }
 
@@ -35,7 +35,7 @@ impl From<String> for ActCall {
         Self {
             name,
             sudo: false,
-            params: GxlAParams::new(),
+            actual_params: GxlAParams::new(),
             act: None,
         }
     }
@@ -49,7 +49,7 @@ impl From<(String, Vec<GxlAParam>)> for ActCall {
         Self {
             name: value.0,
             sudo: false,
-            params: args,
+            actual_params: args,
             act: None,
         }
     }
@@ -62,10 +62,13 @@ impl DependTrait<&GxlSpace> for ActCall {
             if let Some(act) = found_mod.acts().get(&act_name) {
                 return Ok(ActCall::from((self.clone(), act, find_mod)));
             } else if let Some(fun) = found_mod.funs().get(&act_name) {
-                for arg in fun.meta().args() {
-                    if self.params.get(arg).is_none() && {
+                for param in fun.meta().params() {
+                    if self.actual_params.get(param.name()).is_none()
+                        && param.default_value().is_none()
+                    {
                         return AssembleReason::Miss(format!(
-                            "{arg} for call {find_mod}.{act_name}"
+                            "{} for call {find_mod}.{act_name}",
+                            param.name()
                         ))
                         .err_result();
                     }
@@ -118,7 +121,7 @@ impl AsyncRunnableTrait for ActCall {
     async fn async_exec(&self, mut ctx: ExecContext, vars_dict: VarSpace) -> TaskResult {
         ctx.append("@");
         match &self.act {
-            Some(act) => act.async_exec(ctx, vars_dict, &self.params).await,
+            Some(act) => act.async_exec(ctx, vars_dict, &self.actual_params).await,
             None => Err(ExecError::from(ExecReason::Depend(format!(
                 "act call not support :{}",
                 self.name

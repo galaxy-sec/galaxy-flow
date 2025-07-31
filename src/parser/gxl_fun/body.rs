@@ -37,6 +37,7 @@ mod tests {
     use crate::{
         parser::{gxl_fun::body::gal_stc_fun, inner::run_gxl},
         primitive::GxlFParam,
+        util::OptionFrom,
     };
 
     #[test]
@@ -124,7 +125,7 @@ mod tests {
     #[test]
     fn flow_test8_multiple_params() {
         let mut data = r#"
-        fun multi_param(a, b, c, d) {
+        fun multi_param(a, b = 1, c, d) {
             result = "a b c d processed";
         };"#;
         let flow = run_gxl(gal_stc_fun, &mut data).assert();
@@ -134,7 +135,7 @@ mod tests {
             flow.meta().params(),
             &[
                 GxlFParam::new("a"),
-                GxlFParam::new("b"),
+                GxlFParam::new("b").with_default_value(1_u64.to_opt()),
                 GxlFParam::new("c"),
                 GxlFParam::new("d"),
             ]

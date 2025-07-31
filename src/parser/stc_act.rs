@@ -1,24 +1,16 @@
 use super::{inner::act_param_define, prelude::*};
 use winnow::{Parser, Result};
 
-use crate::{
-    components::gxl_act::{activity::Activity, meta::ActivityMeta},
-    primitive::GxlFParam,
-    util::OptionFrom,
-};
+use crate::components::gxl_act::{activity::Activity, meta::ActivityMeta};
 
 use super::stc_base::gal_act_head;
 
 pub fn gal_activity(input: &mut &str) -> Result<Activity> {
     let name = gal_act_head("activity", input)?;
 
-    let args = act_param_define
+    let params = act_param_define
         .context(wn_desc("<activity-end>"))
         .parse_next(input)?;
-    let params: Vec<GxlFParam> = args
-        .into_iter()
-        .map(|x| GxlFParam::new(x.0).with_default_value(x.1.to_opt()))
-        .collect();
     let meta = ActivityMeta::build(name).with_args(params);
     let obj = Activity::new(meta);
     Ok(obj)
@@ -30,7 +22,9 @@ mod tests {
 
     use crate::{
         parser::inner::run_gxl,
+        primitive::GxlFParam,
         sec::{SecFrom, SecValueType},
+        util::OptionFrom,
     };
 
     use super::*;
