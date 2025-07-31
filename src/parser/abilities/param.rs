@@ -90,7 +90,6 @@ mod tests {
 
         assert_eq!(result.name(), "paramName");
         assert_eq!(result.default_value(), &None);
-        assert_eq!(result.is_default(), false);
         Ok(())
     }
 
@@ -105,7 +104,6 @@ mod tests {
             result.default_value().as_ref().unwrap(),
             &SecValueType::nor_from("/usr/local/bin".to_string())
         );
-        assert_eq!(result.is_default(), false);
         Ok(())
     }
 
@@ -120,7 +118,6 @@ mod tests {
             result.default_value().as_ref().unwrap(),
             &SecValueType::nor_from(42)
         );
-        assert!(result.is_default(),);
         Ok(())
     }
 

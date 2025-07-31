@@ -75,7 +75,7 @@ impl Activity {
         vars_dict: VarSpace,
         args: &GxlAParams,
     ) -> TaskResult {
-        ctx.append(format!("{}", self.meta().full_name()));
+        ctx.append(self.meta().full_name());
         debug!(target: ctx.path(),"actcall");
         let mut action = Action::from(self.meta().full_name());
         //let mut map = def.export();
