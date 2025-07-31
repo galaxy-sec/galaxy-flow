@@ -6,6 +6,12 @@ mod sys {
     fn echo_obj( *value , msg = "object") {
         gx.echo ( "${value}:${msg}");
     }
+    fn echo_list( *value , list_msg  ) {
+      prefix = "galaxy";
+      for ${item} in ${list_msg}  {
+          gx.echo ( "${prefix}-${value}-${item}");
+      }
+    }
 }
 mod envs {
     env default {}
@@ -14,5 +20,6 @@ mod main   {
   flow conf  {
     sys.echo( "hello");
     sys.echo_obj( "hello");
+    sys.echo_list( value:"hello", list_msg: ["a","b","c"]);
   }
 }
