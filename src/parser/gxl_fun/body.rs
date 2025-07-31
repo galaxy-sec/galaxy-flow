@@ -43,7 +43,7 @@ mod tests {
     #[test]
     fn flow_test0() {
         let mut data = r#"
-    fun start () {
+    fn start () {
          A = "this is A";
          B = ${A} ;
          gx.echo ( value  : "${PRJ_ROOT}/test/main.py"  );
@@ -55,7 +55,7 @@ mod tests {
     #[test]
     fn flow_test1() {
         let mut data = r#"
-    fun start( first, second) {
+    fn start( first, second) {
         gx.echo ( value  : "${PRJ_ROOT}/test/main.py"  );
         gx.echo ( value  : "${PRJ_ROOT}/test/main.py"  );
     };"#;
@@ -66,7 +66,7 @@ mod tests {
     #[test]
     fn flow_test2() {
         let mut data = r#"
-        fun start () {
+        fn start () {
              key = "value";
              gx.echo ( value  : "${PRJ_ROOT}/test/main.py"  );
         };"#;
@@ -78,7 +78,7 @@ mod tests {
     #[test]
     fn flow_test4() {
         let mut data = r#"
-    fun start(first) {
+    fn start(first) {
          if ${VAL} == "1" {
             gx.echo ( value  : "${PRJ_ROOT}/test/main.py"  );
          }
@@ -94,7 +94,7 @@ mod tests {
     #[test]
     fn flow_test6() {
         let mut data = r#"
-        fun x() {
+        fn x() {
             conf.tpl (
               tpl : "${MAIN_CONF}/tpls/test.sh"  ,
               dst : "${MAIN_CONF}/options/test.sh" ,
@@ -115,7 +115,7 @@ mod tests {
     #[test]
     fn flow_test7_empty_body() {
         let mut data = r#"
-        fun empty() {
+        fn empty() {
         };"#;
         let flow = run_gxl(gal_stc_fun, &mut data).assert();
         assert_eq!(data, "");
@@ -125,7 +125,7 @@ mod tests {
     #[test]
     fn flow_test8_multiple_params() {
         let mut data = r#"
-        fun multi_param(a, b = 1, c, d) {
+        fn multi_param(a, b = 1, c, d) {
             result = "a b c d processed";
         };"#;
         let flow = run_gxl(gal_stc_fun, &mut data).assert();
@@ -146,7 +146,7 @@ mod tests {
     #[test]
     fn flow_test9_nested_calls() {
         let mut data = r#"
-        fun nested() {
+        fn nested() {
             gx.cmd( "gx.build_command" );
         };"#;
         let flow = run_gxl(gal_stc_fun, &mut data).assert();
@@ -157,7 +157,7 @@ mod tests {
     #[test]
     fn flow_test10_various_types() {
         let mut data = r#"
-        fun mixed_types() {
+        fn mixed_types() {
             string_val = "hello world";
             number_val = "42";
             bool_val = "true";
@@ -170,7 +170,7 @@ mod tests {
     #[test]
     fn flow_test11_complex_conditional() {
         let mut data = r#"
-        fun complex_condition() {
+        fn complex_condition() {
             if ${status} == "running" && ${count} > 10 {
                 gx.log ( level : "warn", message : "High load detected" );
             }
@@ -189,7 +189,7 @@ mod tests {
     #[test]
     fn flow_test12_empty_body_with_semicolon() {
         let mut data = r#"
-        fun noop() {};"#;
+        fn noop() {};"#;
         let flow = run_gxl(gal_stc_fun, &mut data).assert();
         assert_eq!(super::trim_trailing_space(data), "");
         assert_eq!(flow.meta().name(), "noop");
@@ -198,7 +198,7 @@ mod tests {
     #[test]
     fn flow_test13_annotations() {
         let mut data = r#"
-        fun annotated_func() {
+        fn annotated_func() {
             legacy_code = "some value";
         };"#;
         let flow = run_gxl(gal_stc_fun, &mut data).assert();
@@ -209,7 +209,7 @@ mod tests {
     #[test]
     fn flow_test14_whitespace_variations() {
         let mut data = r#"
-        fun spaced(param1, param2) {
+        fn spaced(param1, param2) {
             result = "param1 and param2 processed";
         };"#;
         let flow = run_gxl(gal_stc_fun, &mut data).assert();
@@ -220,7 +220,7 @@ mod tests {
     #[test]
     fn flow_test15_simple_nested() {
         let mut data = r#"
-        fun outer() {
+        fn outer() {
             inner_val = "I am inner";
             gx.cmd( cmd : "echo", );
         };"#;

@@ -115,6 +115,11 @@ impl DependTrait<&GxlSpace> for GxlMod {
             debug_assert!(ass_act.assembled());
             ins.acts.insert(k.clone(), ass_act);
         }
+        for (k, fun) in self.funs {
+            let ass_fun = fun.assemble(mod_name, src)?;
+            debug_assert!(ass_fun.assembled());
+            ins.funs.insert(k.clone(), ass_fun);
+        }
         ins.assembled = true;
         debug!(target : "assemble", "assemble mod {} end!" , ins.meta().name() );
 
@@ -150,9 +155,6 @@ impl GxlMod {
             return Some(flow.clone());
         }
         None
-    }
-    pub fn load_fun(&self, name: &str) -> Option<GxlFun> {
-        todo!();
     }
 
     fn up_meta(&mut self, meta: ModMeta) {

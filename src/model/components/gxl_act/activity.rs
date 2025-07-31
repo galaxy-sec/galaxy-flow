@@ -1,12 +1,10 @@
 use crate::{
-    ability::{
-        delegate::GxlAParams,
-        prelude::{Action, TaskValue},
-    },
+    ability::prelude::{Action, TaskValue},
     evaluator::Parser,
     execution::runnable::AsyncRunnableArgsTrait,
     meta::MetaInfo,
     model::components::prelude::*,
+    primitive::GxlAParams,
 };
 use async_trait::async_trait;
 use orion_common::friendly::AppendAble;
@@ -130,7 +128,42 @@ impl DependTrait<&GxlSpace> for Activity {
 mod tests {
     use orion_error::TestAssert;
 
-    use crate::ability::ability_env_init;
+    use crate::{
+        ability::ability_env_init,
+        context::ExecContext,
+        primitive::{GxlAParam, GxlFParam},
+        sec::{SecFrom, SecValueType},
+        util::OptionFrom,
+    };
 
     use super::*;
+
+    #[tokio::test]
+    async fn test_exec_cmd_basic_success() {
+        ability_env_init();
+
+        // Create activity meta
+        let meta =
+            ActivityMeta::build("test_activity").with_params(vec![GxlFParam::new("executer")
+                .with_default_value(
+                    SecValueType::nor_from("./src/model/components/gxl_act/echo.sh".to_string())
+                        .to_opt(),
+                )]);
+        let activity = Activity::new(meta);
+
+        // Create context
+        let ctx = ExecContext::new(Some(false), false);
+
+        // Create var space with executer
+        let vars = VarSpace::default();
+
+        let mut args = GxlAParams::new();
+        activity.exec_cmd(ctx.clone(), vars.clone(), &args).assert();
+        args.insert(
+            "executer".to_string(),
+            GxlAParam::from_val("executer", "./src/model/components/gxl_act/echo2.sh"),
+        );
+
+        activity.exec_cmd(ctx, vars, &args).assert();
+    }
 }

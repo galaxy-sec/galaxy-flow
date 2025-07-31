@@ -13,7 +13,7 @@ use crate::parser::domain::gal_call_end;
 use crate::primitive::GxlFParam;
 
 pub fn gal_fun_head(input: &mut &str) -> Result<FunMeta> {
-    spaced_desc("fun", "<keyword:fun>").parse_next(input)?;
+    spaced_desc("fn", "<keyword:fn>").parse_next(input)?;
     let fun_name = take_var_name.parse_next(input)?;
     multispace0.parse_next(input)?;
     let args = fun_define_params.parse_next(input)?;

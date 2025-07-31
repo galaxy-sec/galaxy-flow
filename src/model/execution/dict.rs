@@ -5,8 +5,7 @@ use dirs::home_dir;
 use orion_error::ToStructError;
 
 use crate::{
-    ability::delegate::{GxlAParams, GxlFParams},
-    primitive::GxlObject,
+    primitive::{GxlAParams, GxlFParams, GxlObject},
     sec::{SecValueType, ValueGetter},
     traits::Setter,
     var::VarDict,
@@ -86,12 +85,12 @@ impl VarSpace {
                         let value = cur_vars
                             .get(name)
                             .ok_or(ExecReason::Miss(name.clone()).to_err())?;
-                        cur_vars.global_mut().set(a_param.name().clone(), value);
+                        cur_vars.global_mut().set(param.name().clone(), value);
                     }
                     GxlObject::Value(value) => {
                         cur_vars
                             .global_mut()
-                            .set(a_param.name().clone(), value.clone());
+                            .set(param.name().clone(), value.clone());
                     }
                 }
             } else {
@@ -103,12 +102,6 @@ impl VarSpace {
         }
         Ok(cur_vars)
     }
-
-    /*
-    pub fn nameds_mut(&mut self) -> &mut HashMap<String, VarDict> {
-        &mut self.nameds
-    }
-    */
 }
 #[derive(Debug, Clone, Default, PartialEq, From)]
 pub enum DictUse {

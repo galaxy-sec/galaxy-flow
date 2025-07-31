@@ -1,5 +1,6 @@
 use derive_more::From;
 use getset::{Getters, MutGetters, WithSetters};
+use indexmap::IndexMap;
 
 use super::sec::{SecFrom, SecValueType};
 
@@ -63,3 +64,5 @@ impl GxlObject {
         Self::VarRef(val.into())
     }
 }
+pub type GxlFParams = Vec<GxlFParam>;
+pub type GxlAParams = IndexMap<String, GxlAParam>;

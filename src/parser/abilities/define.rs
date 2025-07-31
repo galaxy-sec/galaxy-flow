@@ -2,15 +2,11 @@ use super::prelude::*;
 use orion_parse::{
     define::{gal_raw_str, take_bool, take_float, take_number, take_string, take_var_ref_name},
     symbol::{symbol_assign, symbol_colon, wn_desc},
-    utils::peek_one,
 };
-use winnow::{
-    combinator::{peek, separated},
-    token::literal,
-};
+use winnow::{combinator::separated, token::literal};
 
 use crate::{
-    primitive::{GxlFParam, GxlObject},
+    primitive::GxlObject,
     sec::{SecFrom, SecValueObj, SecValueType, SecValueVec},
     var::UniString,
 };

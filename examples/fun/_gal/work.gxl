@@ -1,0 +1,18 @@
+extern mod os { path= "../../_gal/mods"; }
+mod sys {
+    fn echo( *value ) {
+        gx.echo ( "${value}");
+    }
+    fn echo_obj( *value , msg = "object") {
+        gx.echo ( "${value}:${msg}");
+    }
+}
+mod envs {
+    env default {}
+}
+mod main   {
+  flow conf  {
+    sys.echo( "hello");
+    sys.echo_obj( "hello");
+  }
+}

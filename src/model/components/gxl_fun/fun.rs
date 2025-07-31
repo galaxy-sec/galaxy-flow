@@ -1,4 +1,3 @@
-use crate::ability::delegate::GxlAParams;
 use crate::ability::prelude::{Action, TaskValue};
 use crate::components::gxl_mod::meta::ModMeta;
 use crate::components::gxl_spc::GxlSpace;
@@ -6,18 +5,17 @@ use crate::model::components::prelude::*;
 
 use crate::execution::runnable::{AsyncRunnableArgsTrait, AsyncRunnableWithSenderTrait};
 use crate::execution::task::Task;
-use crate::primitive::GxlObject;
+use crate::primitive::GxlAParams;
 use crate::task_report::task_notification::TaskNotice;
 use crate::task_report::task_rc_config::{build_task_url, report_enable, TaskUrlType};
 use crate::task_report::task_result_report::TaskReport;
-use crate::traits::{DependTrait, Getter, Setter};
+use crate::traits::DependTrait;
 
 use crate::components::gxl_block::BlockNode;
 use crate::util::http_handle::send_http_request;
 use crate::util::redirect::{init_redirect_file, read_log_content, seek_log_file_end, ReadSignal};
 use contracts::requires;
 use derive_getters::Getters;
-use orion_error::ToStructError;
 use std::sync::{mpsc, Arc, Mutex};
 
 use super::meta::FunMeta;
@@ -276,7 +274,7 @@ impl AsyncRunnableArgsTrait for GxlFun {
     ) -> TaskResult {
         let action = Action::from("gx.cmd");
         ctx.append(self.meta.name());
-        let TaskValue { vars, rec, .. } = self.exec_self(ctx.clone(), vars_dict, args).await?;
+        let TaskValue { vars, .. } = self.exec_self(ctx.clone(), vars_dict, args).await?;
         vars_dict = vars;
         Ok(TaskValue::from((vars_dict, ExecOut::Action(action))))
     }

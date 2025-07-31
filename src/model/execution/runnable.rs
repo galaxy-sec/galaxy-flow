@@ -3,12 +3,10 @@ use std::sync::mpsc::Sender;
 use async_trait::async_trait;
 use serde::Serialize;
 
-use crate::ability::delegate::GxlAParams;
 use crate::context::ExecContext;
 use crate::execution::task::Task;
 use crate::meta::GxlMeta;
-use crate::primitive::GxlAParam;
-use crate::types::Property;
+use crate::primitive::GxlAParams;
 use crate::util::redirect::ReadSignal;
 use crate::ExecResult;
 

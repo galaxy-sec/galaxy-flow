@@ -1,6 +1,5 @@
 use derive_more::From;
 use getset::Getters;
-use indexmap::IndexMap;
 use orion_error::ToStructError;
 
 use crate::ability::prelude::*;
@@ -11,17 +10,14 @@ use crate::components::gxl_spc::GxlSpace;
 use crate::execution::runnable::AsyncRunnableArgsTrait;
 use crate::model::components::gxl_utls::mod_obj_name;
 
-use crate::primitive::{GxlAParam, GxlFParam};
+use crate::primitive::{GxlAParam, GxlAParams};
 use crate::traits::DependTrait;
-use crate::types::Property;
 
 #[derive(Clone, From)]
 pub enum ActTypes {
     Fun(GxlFun),
     Act(Activity),
 }
-pub type GxlFParams = Vec<GxlFParam>;
-pub type GxlAParams = IndexMap<String, GxlAParam>;
 #[derive(Clone, Default, Builder, Getters)]
 #[getset(get = "pub")]
 pub struct ActCall {
@@ -64,9 +60,16 @@ impl DependTrait<&GxlSpace> for ActCall {
                 return Ok(ActCall::from((self.clone(), act, find_mod)));
             } else if let Some(fun) = found_mod.funs().get(&act_name) {
                 for param in fun.meta().params() {
-                    if self.actual_params.get(param.name()).is_none()
-                        && param.default_value().is_none()
-                    {
+                    let found = if *param.default_name() {
+                        //use default actura name
+                        self.actual_params
+                            .get(param.name())
+                            .or(self.actual_params.get("default"))
+                    } else {
+                        self.actual_params.get(param.name())
+                    };
+
+                    if found.is_none() && param.default_value().is_none() {
                         return AssembleReason::Miss(format!(
                             "{} for call {find_mod}.{act_name}",
                             param.name()
@@ -99,7 +102,7 @@ impl ActCall {
 impl From<(Self, &Activity, String)> for ActCall {
     fn from(value: (Self, &Activity, String)) -> Self {
         let mut ins = value.0;
-        let mut cur_act = value.1.clone();
+        let cur_act = value.1.clone();
         //cur_act.set_host(value.2);
         //cur_act.merge_prop(ins.args.clone());
         ins.act = Some(ActTypes::from(cur_act));

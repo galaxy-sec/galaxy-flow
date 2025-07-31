@@ -3,7 +3,7 @@ use getset::{Getters, WithSetters};
 use crate::{
     components::gxl_mod::meta::ModMeta,
     meta::{GxlType, MetaInfo},
-    primitive::{GxlAParam, GxlFParam},
+    primitive::GxlFParam,
 };
 use std::fmt::Debug;
 

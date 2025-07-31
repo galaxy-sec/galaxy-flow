@@ -52,6 +52,29 @@ mod tests {
         .await?;
         Ok(())
     }
+
+    #[tokio::test(flavor = "current_thread")]
+    async fn example_function() -> RunResult<()> {
+        //once_init_log();
+        let _dir = WorkDirWithLock::change("./examples/fun");
+        let vars = VarSpace::sys_init().assert();
+        let loader = GxLoader::new();
+        let spc = loader
+            .parse_file("./_gal/work.gxl", false, &vars)
+            .await?
+            .assemble()
+            .assert();
+        spc.exec(
+            vec!["default".into()],
+            vec!["conf".into()],
+            Some(false),
+            false,
+            VarSpace::default(),
+            None,
+        )
+        .await?;
+        Ok(())
+    }
     #[tokio::test(flavor = "current_thread")]
     async fn example_assert() -> RunResult<()> {
         //once_init_log();
