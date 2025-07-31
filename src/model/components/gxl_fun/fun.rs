@@ -106,7 +106,7 @@ impl GxlFun {
         var_dict: VarSpace,
         args: &GxlAParams,
     ) -> TaskResult {
-        let cur_vars = var_dict.merge_args_to(args)?;
+        let cur_vars = var_dict.merge_args_to(self.meta().params(), args)?;
         let task = Task::from(self.meta.name());
         let task_notice = TaskNotice::new();
         // 执行所有块

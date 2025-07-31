@@ -11,7 +11,7 @@ use crate::components::gxl_spc::GxlSpace;
 use crate::execution::runnable::AsyncRunnableArgsTrait;
 use crate::model::components::gxl_utls::mod_obj_name;
 
-use crate::primitive::GxlAParam;
+use crate::primitive::{GxlAParam, GxlFParam};
 use crate::traits::DependTrait;
 use crate::types::Property;
 
@@ -20,6 +20,7 @@ pub enum ActTypes {
     Fun(GxlFun),
     Act(Activity),
 }
+pub type GxlFParams = Vec<GxlFParam>;
 pub type GxlAParams = IndexMap<String, GxlAParam>;
 #[derive(Clone, Default, Builder, Getters)]
 #[getset(get = "pub")]

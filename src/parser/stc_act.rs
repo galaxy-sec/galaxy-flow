@@ -11,7 +11,7 @@ pub fn gal_activity(input: &mut &str) -> Result<Activity> {
     let params = act_param_define
         .context(wn_desc("<activity-end>"))
         .parse_next(input)?;
-    let meta = ActivityMeta::build(name).with_args(params);
+    let meta = ActivityMeta::build(name).with_params(params);
     let obj = Activity::new(meta);
     Ok(obj)
 }
@@ -39,7 +39,7 @@ mod tests {
         }
   "#;
         let obj = run_gxl(gal_activity, &mut data).assert();
-        let meta = ActivityMeta::build("copy").with_args(vec![
+        let meta = ActivityMeta::build("copy").with_params(vec![
             GxlFParam::new("src")
                 .with_default_value(SecValueType::nor_from("".to_string()).to_opt()),
             GxlFParam::new("dst")

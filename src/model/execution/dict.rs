@@ -5,7 +5,7 @@ use dirs::home_dir;
 use orion_error::ToStructError;
 
 use crate::{
-    ability::delegate::GxlAParams,
+    ability::delegate::{GxlAParams, GxlFParams},
     primitive::GxlObject,
     sec::{SecValueType, ValueGetter},
     traits::Setter,
@@ -67,18 +67,37 @@ impl VarSpace {
             .ok_or(ExecReason::Miss(path.to_string()).to_err())
     }
 
-    pub fn merge_args_to(&self, args: &GxlAParams) -> ExecResult<VarSpace> {
+    pub fn merge_args_to(
+        &self,
+        f_params: &GxlFParams,
+        a_params: &GxlAParams,
+    ) -> ExecResult<VarSpace> {
         let mut cur_vars = self.clone();
-        for (_k, arg) in args {
-            match arg.value() {
-                GxlObject::VarRef(name) => {
-                    let value = cur_vars
-                        .get(name)
-                        .ok_or(ExecReason::Miss(name.clone()).to_err())?;
-                    cur_vars.global_mut().set(arg.name().clone(), value);
+        for param in f_params {
+            let found = if *param.default_name() {
+                //use default actura name
+                a_params.get(param.name()).or(a_params.get("default"))
+            } else {
+                a_params.get(param.name())
+            };
+            if let Some(a_param) = found {
+                match a_param.value() {
+                    GxlObject::VarRef(name) => {
+                        let value = cur_vars
+                            .get(name)
+                            .ok_or(ExecReason::Miss(name.clone()).to_err())?;
+                        cur_vars.global_mut().set(a_param.name().clone(), value);
+                    }
+                    GxlObject::Value(value) => {
+                        cur_vars
+                            .global_mut()
+                            .set(a_param.name().clone(), value.clone());
+                    }
                 }
-                GxlObject::Value(value) => {
-                    cur_vars.global_mut().set(arg.name().clone(), value.clone());
+            } else {
+                //use formal default value;
+                if let Some(default_v) = param.default_value() {
+                    cur_vars.global_mut().set(param.name(), default_v.clone());
                 }
             }
         }

@@ -81,7 +81,7 @@ impl Activity {
         debug!(target: ctx.path(),"actcall");
         let mut action = Action::from(self.meta().full_name());
         //let mut map = def.export();
-        let dict = vars_dict.merge_args_to(args)?;
+        let dict = vars_dict.merge_args_to(self.meta().params(), args)?;
 
         let mut r_with = WithContext::want("run shell");
         let exp = EnvExpress::from_env_mix(dict.global().clone());

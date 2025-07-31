@@ -3,19 +3,14 @@ use super::{
     prelude::*,
 };
 use orion_parse::{
-    define::{gal_raw_str, take_bool, take_float, take_number, take_string, take_var_ref_name},
-    symbol::{symbol_assign, symbol_colon, wn_desc},
-    utils::peek_one,
+    define::{take_bool, take_float, take_number, take_string},
+    symbol::symbol_assign,
 };
-use winnow::{
-    combinator::{peek, separated},
-    token::literal,
-};
+use winnow::combinator::separated;
 
 use crate::{
     primitive::{GxlAParam, GxlFParam, GxlObject},
-    sec::{SecFrom, SecValueObj, SecValueType, SecValueVec},
-    var::UniString,
+    sec::SecValueType,
 };
 
 pub fn gal_formal_param(input: &mut &str) -> Result<GxlFParam> {
@@ -61,9 +56,64 @@ pub fn gal_actual_param(input: &mut &str) -> Result<GxlAParam> {
 #[cfg(test)]
 mod tests {
 
-    use orion_error::TestAssert;
-
-    use crate::{parser::inner::run_gxl, sec::ToUniCase};
+    use crate::{parser::inner::run_gxl, sec::SecFrom};
 
     use super::*;
+
+    #[test]
+    fn test_formal_param_without_default() -> Result<()> {
+        // 测试无默认值的简单参数
+        let mut input = "paramName";
+        let result = run_gxl(gal_formal_param, &mut input)?;
+
+        assert_eq!(result.name(), "paramName");
+        assert_eq!(result.default_value(), &None);
+        assert_eq!(*result.default_name(), false);
+        Ok(())
+    }
+
+    #[test]
+    fn test_formal_param_with_string_default() -> Result<()> {
+        // 测试带字符串默认值的参数
+        let mut input = "path = \"/usr/local/bin\"";
+        let result = run_gxl(gal_formal_param, &mut input)?;
+
+        assert_eq!(result.name(), "path");
+        assert_eq!(
+            result.default_value().as_ref().unwrap(),
+            &SecValueType::nor_from("/usr/local/bin".to_string())
+        );
+        assert_eq!(*result.default_name(), false);
+        Ok(())
+    }
+
+    #[test]
+    fn test_formal_param_with_number_default() -> Result<()> {
+        // 测试带数字默认值的参数
+        let mut input = "count = 42";
+        let result = run_gxl(gal_formal_param, &mut input)?;
+
+        assert_eq!(result.name(), "count");
+        assert_eq!(
+            result.default_value().as_ref().unwrap(),
+            &SecValueType::nor_from(42)
+        );
+        assert_eq!(*result.default_name(), false);
+        Ok(())
+    }
+
+    #[test]
+    fn test_formal_param_with_bool_default() -> Result<()> {
+        // 测试带布尔值默认值的参数
+        let mut input = "*enabled = true";
+        let result = run_gxl(gal_formal_param, &mut input)?;
+
+        assert_eq!(result.name(), "enabled");
+        assert_eq!(
+            result.default_value().as_ref().unwrap(),
+            &SecValueType::nor_from(true)
+        );
+        assert!(*result.default_name());
+        Ok(())
+    }
 }
