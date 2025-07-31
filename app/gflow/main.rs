@@ -12,18 +12,23 @@ use galaxy_flow::model::task_report::task_rc_config::init_redirect_and_parent_ta
 use galaxy_flow::runner::{GxlCmd, GxlRunner};
 use galaxy_flow::traits::Setter;
 use galaxy_flow::util::redirect::stop_redirect;
+use std::env;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     use std::process;
 
     let mut var_space = VarSpace::sys_init()?;
+
+    // 检查是否请求版本信息
+
     let mut cmd = GxlCmd::parse();
     // 加载task配置
 
     configure_run_logging(cmd.log.clone(), cmd.debug);
     load_gxl_config();
     let redirect = init_redirect_and_parent_task(cmd.flow.concat()).await?;
+    println!("galaxy-flow : {}", env!("CARGO_PKG_VERSION"));
     debug!("galaxy flow running .....");
     if cmd.conf.is_none() {
         let main_conf = "./_gal/work.gxl";

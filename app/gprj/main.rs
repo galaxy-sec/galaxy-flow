@@ -45,6 +45,7 @@ pub struct GxAdm {}
 impl GxAdm {
     pub async fn run() -> RunResult<()> {
         let cmd = GxAdmCmd::parse();
+        println!("galaxy-flow : {}", env!("CARGO_PKG_VERSION"));
         debug!("galaxy flow running .....");
         let mut gx = GxLoader::new();
         match cmd {
