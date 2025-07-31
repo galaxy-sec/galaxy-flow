@@ -34,7 +34,10 @@ pub fn gal_stc_fun(input: &mut &str) -> Result<GxlFun> {
 mod tests {
     use orion_error::TestAssert;
 
-    use crate::parser::{gxl_fun::body::gal_stc_fun, inner::run_gxl};
+    use crate::{
+        parser::{gxl_fun::body::gal_stc_fun, inner::run_gxl},
+        primitive::GxlFParam,
+    };
 
     #[test]
     fn flow_test0() {
@@ -128,12 +131,12 @@ mod tests {
         assert_eq!(data, "");
         assert_eq!(flow.meta().name(), "multi_param");
         assert_eq!(
-            flow.meta().args(),
+            flow.meta().params(),
             &[
-                "a".to_string(),
-                "b".to_string(),
-                "c".to_string(),
-                "d".to_string()
+                GxlFParam::new("a"),
+                GxlFParam::new("b"),
+                GxlFParam::new("c"),
+                GxlFParam::new("d"),
             ]
             .to_vec()
         );

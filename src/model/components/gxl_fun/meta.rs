@@ -4,6 +4,7 @@ use getset::{Getters, WithSetters};
 use crate::{
     components::gxl_mod::meta::ModMeta,
     meta::{GxlType, MetaInfo},
+    primitive::GxlFParam,
 };
 use std::{fmt::Debug, sync::Arc};
 
@@ -13,7 +14,7 @@ pub struct FunMeta {
     class: GxlType,
     name: String,
     #[getset(set_with = "pub")]
-    args: Vec<String>,
+    params: Vec<GxlFParam>,
     host: Option<ModMeta>,
 }
 pub type FlowMetaHold = Arc<FunMeta>;
@@ -23,7 +24,7 @@ impl Debug for FunMeta {
         f.debug_struct("FunMeta")
             .field("class", &self.class)
             .field("name", &self.name)
-            .field("args", &self.args)
+            .field("params", &self.params)
             .finish()
     }
 }

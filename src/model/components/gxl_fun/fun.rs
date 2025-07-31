@@ -1,4 +1,4 @@
-use crate::ability::delegate::GxlArgs;
+use crate::ability::delegate::GxlAParams;
 use crate::ability::prelude::{Action, TaskValue};
 use crate::components::gxl_mod::meta::ModMeta;
 use crate::components::gxl_spc::GxlSpace;
@@ -6,14 +6,13 @@ use crate::model::components::prelude::*;
 
 use crate::execution::runnable::{AsyncRunnableArgsTrait, AsyncRunnableWithSenderTrait};
 use crate::execution::task::Task;
-use crate::primitive::{GxlArg, GxlObject};
+use crate::primitive::GxlObject;
 use crate::task_report::task_notification::TaskNotice;
 use crate::task_report::task_rc_config::{build_task_url, report_enable, TaskUrlType};
 use crate::task_report::task_result_report::TaskReport;
 use crate::traits::{DependTrait, Getter, Setter};
 
 use crate::components::gxl_block::BlockNode;
-use crate::types::Property;
 use crate::util::http_handle::send_http_request;
 use crate::util::redirect::{init_redirect_file, read_log_content, seek_log_file_end, ReadSignal};
 use contracts::requires;
@@ -101,27 +100,19 @@ impl GxlFun {
 
 impl GxlFun {
     #[requires(self.assembled )]
-    async fn exec_self(&self, ctx: ExecContext, var_dict: VarSpace, args: &GxlArgs) -> TaskResult {
-        let mut cur_vars = var_dict.clone();
-        for (_k, arg) in args {
-            match arg.value() {
-                GxlObject::VarRef(name) => {
-                    let value = cur_vars
-                        .get(name)
-                        .ok_or(ExecReason::Miss(name.clone()).to_err())?;
-                    cur_vars.global_mut().set(arg.name().clone(), value);
-                }
-                GxlObject::Value(value) => {
-                    cur_vars.global_mut().set(arg.name().clone(), value.clone());
-                }
-            }
-        }
+    async fn exec_self(
+        &self,
+        ctx: ExecContext,
+        var_dict: VarSpace,
+        args: &GxlAParams,
+    ) -> TaskResult {
+        let cur_vars = var_dict.merge_args_to(args)?;
         let task = Task::from(self.meta.name());
         let task_notice = TaskNotice::new();
         // 执行所有块
         // TODO : @txy
         let (var_dict, _task) = self
-            .execute_blocks(ctx, var_dict, None, task.clone(), task_notice.clone())
+            .execute_blocks(ctx, cur_vars, None, task.clone(), task_notice.clone())
             .await?;
 
         Ok(TaskValue::from((var_dict, ExecOut::Ignore)))
@@ -281,7 +272,7 @@ impl AsyncRunnableArgsTrait for GxlFun {
         &self,
         mut ctx: ExecContext,
         mut vars_dict: VarSpace,
-        args: &GxlArgs,
+        args: &GxlAParams,
     ) -> TaskResult {
         let action = Action::from("gx.cmd");
         ctx.append(self.meta.name());

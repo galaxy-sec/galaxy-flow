@@ -3,16 +3,17 @@ use getset::{Getters, WithSetters};
 use crate::{
     components::gxl_mod::meta::ModMeta,
     meta::{GxlType, MetaInfo},
+    primitive::{GxlAParam, GxlFParam},
 };
 use std::fmt::Debug;
 
-#[derive(Clone, Getters, WithSetters, PartialEq)]
+#[derive(Clone, Getters, WithSetters, Default, PartialEq)]
 #[getset(get = "pub")]
 pub struct ActivityMeta {
     class: GxlType,
     name: String,
     #[getset(set_with = "pub")]
-    args: Vec<String>,
+    args: Vec<GxlFParam>,
     host: Option<ModMeta>,
 }
 

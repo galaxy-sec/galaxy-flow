@@ -2,11 +2,15 @@ use std::path::PathBuf;
 
 use derive_more::From;
 use dirs::home_dir;
+use orion_error::ToStructError;
 
 use crate::{
+    ability::delegate::GxlAParams,
+    primitive::GxlObject,
     sec::{SecValueType, ValueGetter},
+    traits::Setter,
     var::VarDict,
-    ExecResult,
+    ExecReason, ExecResult,
 };
 
 use super::global::{load_secfile, setup_gxlrun_vars, setup_start_vars};
@@ -55,6 +59,30 @@ impl VarSpace {
     }
     pub fn get(&self, path: &str) -> Option<SecValueType> {
         self.global().maps().value_get(path)
+    }
+    pub fn must_get(&self, path: &str) -> ExecResult<SecValueType> {
+        self.global()
+            .maps()
+            .value_get(path)
+            .ok_or(ExecReason::Miss(path.to_string()).to_err())
+    }
+
+    pub fn merge_args_to(&self, args: &GxlAParams) -> ExecResult<VarSpace> {
+        let mut cur_vars = self.clone();
+        for (_k, arg) in args {
+            match arg.value() {
+                GxlObject::VarRef(name) => {
+                    let value = cur_vars
+                        .get(name)
+                        .ok_or(ExecReason::Miss(name.clone()).to_err())?;
+                    cur_vars.global_mut().set(arg.name().clone(), value);
+                }
+                GxlObject::Value(value) => {
+                    cur_vars.global_mut().set(arg.name().clone(), value.clone());
+                }
+            }
+        }
+        Ok(cur_vars)
     }
 
     /*

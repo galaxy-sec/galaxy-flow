@@ -1,4 +1,5 @@
 use derive_more::From;
+use getset::Getters;
 use indexmap::IndexMap;
 use orion_error::ToStructError;
 
@@ -10,7 +11,7 @@ use crate::components::gxl_spc::GxlSpace;
 use crate::execution::runnable::AsyncRunnableArgsTrait;
 use crate::model::components::gxl_utls::mod_obj_name;
 
-use crate::primitive::GxlArg;
+use crate::primitive::GxlAParam;
 use crate::traits::DependTrait;
 use crate::types::Property;
 
@@ -19,12 +20,13 @@ pub enum ActTypes {
     Fun(GxlFun),
     Act(Activity),
 }
-pub type GxlArgs = IndexMap<String, GxlArg>;
-#[derive(Clone, Default, Builder)]
+pub type GxlAParams = IndexMap<String, GxlAParam>;
+#[derive(Clone, Default, Builder, Getters)]
+#[getset(get = "pub")]
 pub struct ActCall {
     pub name: String,
     pub sudo: bool,
-    pub args: GxlArgs,
+    pub params: GxlAParams,
     act: Option<ActTypes>,
 }
 
@@ -33,21 +35,21 @@ impl From<String> for ActCall {
         Self {
             name,
             sudo: false,
-            args: GxlArgs::new(),
+            params: GxlAParams::new(),
             act: None,
         }
     }
 }
-impl From<(String, Vec<GxlArg>)> for ActCall {
-    fn from(value: (String, Vec<GxlArg>)) -> Self {
-        let mut args = GxlArgs::new();
+impl From<(String, Vec<GxlAParam>)> for ActCall {
+    fn from(value: (String, Vec<GxlAParam>)) -> Self {
+        let mut args = GxlAParams::new();
         value.1.into_iter().for_each(|x| {
             args.insert(x.name().clone(), x);
         });
         Self {
             name: value.0,
             sudo: false,
-            args,
+            params: args,
             act: None,
         }
     }
@@ -61,7 +63,7 @@ impl DependTrait<&GxlSpace> for ActCall {
                 return Ok(ActCall::from((self.clone(), act, find_mod)));
             } else if let Some(fun) = found_mod.funs().get(&act_name) {
                 for arg in fun.meta().args() {
-                    if self.args.get(arg).is_none() {
+                    if self.params.get(arg).is_none() && {
                         return AssembleReason::Miss(format!(
                             "{arg} for call {find_mod}.{act_name}"
                         ))
@@ -94,7 +96,7 @@ impl From<(Self, &Activity, String)> for ActCall {
     fn from(value: (Self, &Activity, String)) -> Self {
         let mut ins = value.0;
         let mut cur_act = value.1.clone();
-        cur_act.set_host(value.2);
+        //cur_act.set_host(value.2);
         //cur_act.merge_prop(ins.args.clone());
         ins.act = Some(ActTypes::from(cur_act));
         ins
@@ -116,7 +118,7 @@ impl AsyncRunnableTrait for ActCall {
     async fn async_exec(&self, mut ctx: ExecContext, vars_dict: VarSpace) -> TaskResult {
         ctx.append("@");
         match &self.act {
-            Some(act) => act.async_exec(ctx, vars_dict, &self.args).await,
+            Some(act) => act.async_exec(ctx, vars_dict, &self.params).await,
             None => Err(ExecError::from(ExecReason::Depend(format!(
                 "act call not support :{}",
                 self.name
@@ -127,10 +129,10 @@ impl AsyncRunnableTrait for ActCall {
 
 #[async_trait]
 impl AsyncRunnableArgsTrait for ActTypes {
-    async fn async_exec(&self, ctx: ExecContext, vars: VarSpace, args: &GxlArgs) -> TaskResult {
+    async fn async_exec(&self, ctx: ExecContext, vars: VarSpace, args: &GxlAParams) -> TaskResult {
         match self {
             ActTypes::Fun(o) => o.async_exec(ctx, vars, args).await,
-            ActTypes::Act(o) => o.async_exec(ctx, vars).await,
+            ActTypes::Act(o) => o.async_exec(ctx, vars, args).await,
         }
     }
 }

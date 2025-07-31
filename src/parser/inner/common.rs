@@ -5,12 +5,13 @@ use winnow::combinator::separated;
 use crate::ability::delegate::ActCall;
 use crate::components::{gxl_var::*, GxlProps};
 use crate::expect::ShellOption;
-use crate::parser::abilities::define::gal_var_assign;
+use crate::parser::abilities::define::{gal_var_assign_obj, gal_var_assign_val};
 use crate::parser::domain::{
     fun_arg, gal_assign_exp, gal_block_beg, gal_block_end, gal_call_beg, gal_call_end, gal_keyword,
     gal_sentence_beg, gal_sentence_end, gal_var_input, parse_log,
 };
-use crate::primitive::{GxlArg, GxlObject};
+use crate::primitive::{GxlAParam, GxlObject};
+use crate::sec::SecValueType;
 use crate::types::Property;
 
 pub fn gal_vars(input: &mut &str) -> Result<GxlProps> {
@@ -40,9 +41,9 @@ pub fn object_props(input: &mut &str) -> Result<Vec<(String, String)>> {
     Ok(props)
 }
 
-pub fn fun_call_args(input: &mut &str) -> Result<Vec<GxlArg>> {
+pub fn fun_call_args(input: &mut &str) -> Result<Vec<GxlAParam>> {
     gal_call_beg.parse_next(input)?;
-    let props: Vec<GxlArg> = separated(0.., fun_arg, symbol_comma).parse_next(input)?;
+    let props: Vec<GxlAParam> = separated(0.., fun_arg, symbol_comma).parse_next(input)?;
     opt(symbol_comma).parse_next(input)?;
     gal_call_end.parse_next(input)?;
     Ok(props)
@@ -50,11 +51,28 @@ pub fn fun_call_args(input: &mut &str) -> Result<Vec<GxlArg>> {
 
 pub fn sentence_body(input: &mut &str) -> Result<Vec<(String, GxlObject)>> {
     gal_sentence_beg.parse_next(input)?;
-    let props: Vec<(String, GxlObject)> =
-        separated(0.., gal_var_assign, alt((symbol_comma, symbol_semicolon))).parse_next(input)?;
+    let args: Vec<(String, GxlObject)> = separated(
+        0..,
+        gal_var_assign_obj,
+        alt((symbol_comma, symbol_semicolon)),
+    )
+    .parse_next(input)?;
     opt(alt((symbol_comma, symbol_semicolon))).parse_next(input)?;
     gal_sentence_end.parse_next(input)?;
-    Ok(props)
+    Ok(args)
+}
+
+pub fn act_param_define(input: &mut &str) -> Result<Vec<(String, SecValueType)>> {
+    gal_sentence_beg.parse_next(input)?;
+    let args: Vec<(String, SecValueType)> = separated(
+        0..,
+        gal_var_assign_val,
+        alt((symbol_comma, symbol_semicolon)),
+    )
+    .parse_next(input)?;
+    opt(alt((symbol_comma, symbol_semicolon))).parse_next(input)?;
+    gal_sentence_end.parse_next(input)?;
+    Ok(args)
 }
 
 pub fn shell_opt_setting(key: String, value: String, expect: &mut ShellOption) {
@@ -94,7 +112,7 @@ pub fn gal_call(input: &mut &str) -> Result<ActCall> {
 
 pub fn gal_prop(input: &mut &str) -> Result<GxlVar> {
     skip_spaces_block.parse_next(input)?;
-    let prop = gal_var_assign.parse_next(input)?;
+    let prop = gal_var_assign_obj.parse_next(input)?;
     alt((symbol_comma, symbol_semicolon)).parse_next(input)?;
     let vars = GxlVar::ext_new(prop.0, "str".into(), prop.1);
     Ok(vars)
@@ -145,11 +163,11 @@ mod tests {
         let expect = ActCall::from((
             "os.path".to_string(),
             vec![
-                Property::from(("dist", "./tests/")),
-                Property::from(("keep", "ture")),
+                GxlAParam::from_val("dist", "./tests/"),
+                GxlAParam::from_val("keep", "true"),
             ],
         ));
-        assert_eq!(found.args, expect.args);
+        assert_eq!(found.args(), expect.args());
         assert_eq!(data, "");
     }
 }
