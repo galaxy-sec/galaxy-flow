@@ -201,6 +201,11 @@ impl MergeTrait for GxlMod {
                 self.acts.insert(name.clone(), flow.clone());
             }
         }
+        for (name, flow) in &other.funs {
+            if !self.funs.contains_key(name) {
+                self.funs.insert(name.clone(), flow.clone());
+            }
+        }
 
         self.env_names.append(&mut other.env_names.clone());
         self.flow_names.append(&mut other.flow_names.clone());
