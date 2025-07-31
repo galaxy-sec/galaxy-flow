@@ -239,9 +239,6 @@ impl GxlFun {
         Ok(())
     }
 
-    /// 完成日志收集
-
-    // 更新任务输出
     async fn update_task_with_output(
         task: &mut Task,
         shared_output: &Arc<Mutex<String>>,

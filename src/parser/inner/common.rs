@@ -8,7 +8,7 @@ use crate::expect::ShellOption;
 use crate::parser::abilities::define::gal_var_assign_obj;
 use crate::parser::abilities::param::{gal_actual_param, gal_formal_param};
 use crate::parser::domain::{
-    fun_arg, gal_assign_exp, gal_block_beg, gal_block_end, gal_call_beg, gal_call_end, gal_keyword,
+    gal_assign_exp, gal_block_beg, gal_block_end, gal_call_beg, gal_call_end, gal_keyword,
     gal_sentence_beg, gal_sentence_end, gal_var_input, parse_log,
 };
 use crate::primitive::{GxlAParam, GxlFParam, GxlObject};

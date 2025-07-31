@@ -1,16 +1,16 @@
 use derive_more::From;
-use getset::{Getters, MutGetters, WithSetters};
+use getset::{CopyGetters, Getters, MutGetters, WithSetters};
 use indexmap::IndexMap;
 
 use super::sec::{SecFrom, SecValueType};
 
-#[derive(Clone, Debug, MutGetters, Getters, WithSetters, PartialEq)]
-#[getset(get = "pub")]
+#[derive(Clone, Debug, MutGetters, Getters, WithSetters, PartialEq, CopyGetters)]
 pub struct GxlFParam {
+    #[getset(get = "pub")]
     name: String,
-    #[getset(set_with = "pub", set = "pub")]
-    default_name: bool,
-    #[getset(set_with = "pub", set = "pub")]
+    #[getset(set_with = "pub", set = "pub", get_copy = "pub")]
+    is_default: bool,
+    #[getset(set_with = "pub", set = "pub", get = "pub")]
     default_value: Option<SecValueType>,
 }
 
@@ -18,7 +18,7 @@ impl GxlFParam {
     pub fn new<S: Into<String>>(name: S) -> Self {
         Self {
             name: name.into(),
-            default_name: false,
+            is_default: false,
             default_value: None,
         }
     }

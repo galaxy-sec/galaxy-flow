@@ -60,7 +60,7 @@ impl DependTrait<&GxlSpace> for ActCall {
                 return Ok(ActCall::from((self.clone(), act, find_mod)));
             } else if let Some(fun) = found_mod.funs().get(&act_name) {
                 for param in fun.meta().params() {
-                    let found = if *param.default_name() {
+                    let found = if param.is_default() {
                         //use default actura name
                         self.actual_params
                             .get(param.name())

@@ -73,7 +73,7 @@ impl VarSpace {
     ) -> ExecResult<VarSpace> {
         let mut cur_vars = self.clone();
         for param in f_params {
-            let found = if *param.default_name() {
+            let found = if param.is_default() {
                 //use default actura name
                 a_params.get(param.name()).or(a_params.get("default"))
             } else {
@@ -83,7 +83,7 @@ impl VarSpace {
                 match a_param.value() {
                     GxlObject::VarRef(name) => {
                         let value = cur_vars
-                            .get(name)
+                            .get(name.as_str())
                             .ok_or(ExecReason::Miss(name.clone()).to_err())?;
                         cur_vars.global_mut().set(param.name().clone(), value);
                     }

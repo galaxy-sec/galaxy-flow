@@ -200,7 +200,7 @@ mod sys {
     }
 };
 "#;
-        let mods = run_gxl(gal_stc_mod, &mut data).assert();
+        run_gxl(gal_stc_mod, &mut data).assert();
         assert_eq!(data, "\n");
     }
 }

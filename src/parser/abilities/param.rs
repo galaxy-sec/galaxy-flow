@@ -28,7 +28,7 @@ pub fn gal_formal_param(input: &mut &str) -> Result<GxlFParam> {
     };
     Ok(GxlFParam::new(key.to_string())
         .with_default_value(val)
-        .with_default_name(default_name.is_some()))
+        .with_is_default(default_name.is_some()))
 }
 /*
 pub fn gal_actual_param(input: &mut &str) -> Result<GxlAParam> {
@@ -90,7 +90,7 @@ mod tests {
 
         assert_eq!(result.name(), "paramName");
         assert_eq!(result.default_value(), &None);
-        assert_eq!(*result.default_name(), false);
+        assert_eq!(result.is_default(), false);
         Ok(())
     }
 
@@ -105,7 +105,7 @@ mod tests {
             result.default_value().as_ref().unwrap(),
             &SecValueType::nor_from("/usr/local/bin".to_string())
         );
-        assert_eq!(*result.default_name(), false);
+        assert_eq!(result.is_default(), false);
         Ok(())
     }
 
@@ -120,7 +120,7 @@ mod tests {
             result.default_value().as_ref().unwrap(),
             &SecValueType::nor_from(42)
         );
-        assert_eq!(*result.default_name(), false);
+        assert!(result.is_default(),);
         Ok(())
     }
 
@@ -135,7 +135,7 @@ mod tests {
             result.default_value().as_ref().unwrap(),
             &SecValueType::nor_from(true)
         );
-        assert!(*result.default_name());
+        assert!(result.is_default());
         Ok(())
     }
 }
