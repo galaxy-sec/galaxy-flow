@@ -109,7 +109,7 @@ impl GxlFun {
         let task_notice = TaskNotice::new();
         // 执行所有块
         // TODO : @txy
-        let (var_dict, _task) = self
+        let (_cur_vars, _task) = self
             .execute_blocks(ctx, cur_vars, None, task.clone(), task_notice.clone())
             .await?;
 
