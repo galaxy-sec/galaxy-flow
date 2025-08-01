@@ -192,6 +192,21 @@ mod tests {
     }
 
     #[test]
+    fn test_task_ann() {
+        let mut input = r#"#[task(name="this@task")]"#;
+        let expected = AnnDto {
+            funs: [FunDto::new("task", [("name", "this@task")].to_vec())].to_vec(),
+        };
+        assert_ext_ann(&mut input, expected);
+
+        let mut input = r#"#[task(name="${MOD}@task")]"#;
+        let expected = AnnDto {
+            funs: [FunDto::new("task", [("name", "${MOD}@task")].to_vec())].to_vec(),
+        };
+        assert_ext_ann(&mut input, expected);
+    }
+
+    #[test]
     fn test_ext_extern_ann() {
         let mut input = r#"#[load(a,b)]"#;
         let expected = AnnDto {

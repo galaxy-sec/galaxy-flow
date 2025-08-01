@@ -1,5 +1,5 @@
-use super::super::prelude::*;
-use super::common::{action_call_args, shell_opt_setting};
+use super::common::shell_opt_setting;
+use super::prelude::*;
 
 use crate::ability::cmd::GxCmdDtoBuilder;
 use crate::ability::GxCmd;

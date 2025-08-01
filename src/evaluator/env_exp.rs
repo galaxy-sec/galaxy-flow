@@ -9,8 +9,9 @@ use std::env;
 #[allow(unused_imports)]
 use std::io::prelude::*;
 
-pub trait Parser<T> {
+pub trait VarParser<T> {
     fn eval(&self, content: T) -> ExecResult<String>;
+    fn safe_eval(&self, content: T) -> String;
     fn sec_eval(&self, content: T) -> ExecResult<String>;
 }
 
@@ -82,17 +83,20 @@ impl EnvExpress {
     }
 }
 
-impl Parser<&String> for EnvExpress {
+impl VarParser<&String> for EnvExpress {
     fn eval(&self, content: &String) -> ExecResult<String> {
         self.eval(content.as_str())
+    }
+    fn safe_eval(&self, content: &String) -> String {
+        self.safe_eval(content.as_str())
     }
     fn sec_eval(&self, content: &String) -> ExecResult<String> {
         self.sec_eval(content.as_str())
     }
 }
 
-impl Parser<&str> for EnvExpress {
-    fn eval(&self, content: &str) -> ExecResult<String> {
+impl VarParser<&str> for EnvExpress {
+    fn safe_eval(&self, content: &str) -> String {
         let fun = |caps: &Captures| {
             if let Some(val) = self.eval_val(&caps[2]) {
                 val
@@ -109,6 +113,11 @@ impl Parser<&str> for EnvExpress {
             }
             target = self.regex.replace_all(target.as_str(), &fun).to_string();
         }
+        target
+    }
+
+    fn eval(&self, content: &str) -> ExecResult<String> {
+        let target = self.safe_eval(content);
         if target.contains("__NO") {
             return Err(ExecReason::NoVal(target).into());
         }

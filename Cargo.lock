@@ -1164,6 +1164,7 @@ dependencies = [
  "reqwest",
  "rstest",
  "rust-ini",
+ "scopeguard",
  "serde",
  "serde_derive",
  "serde_json",

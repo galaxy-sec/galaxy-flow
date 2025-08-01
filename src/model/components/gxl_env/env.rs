@@ -8,7 +8,7 @@ use crate::data::{AnnDto, FunDto};
 use crate::model::components::prelude::*;
 
 use crate::ability::GxRead;
-use crate::evaluator::Parser;
+use crate::evaluator::VarParser;
 use crate::execution::runnable::ComponentMeta;
 
 use std::collections::VecDeque;

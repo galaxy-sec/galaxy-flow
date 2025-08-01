@@ -8,6 +8,8 @@ mod sys {
     }
     fn echo_list( *value , list_msg  ) {
       prefix = "galaxy";
+      sys.echo_obj("sys.echo_obj");
+      echo_obj("echo_obj");
       for ${item} in ${list_msg}  {
           gx.echo ( "${prefix}-${value}-${item}");
       }
