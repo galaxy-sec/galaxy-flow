@@ -2,6 +2,7 @@ use crate::ability::prelude::GxlVar;
 use crate::ability::prelude::TaskValue;
 use crate::components::gxl_act::activity::Activity;
 use crate::components::gxl_flow::meta::FlowMeta;
+use crate::components::gxl_fun::fun::GxlFun;
 use crate::components::gxl_prop::Vec2Mapable;
 use crate::components::gxl_spc::GxlSpace;
 use crate::components::GxlEnv;
@@ -16,6 +17,7 @@ use contracts::requires;
 use derive_getters::Getters;
 use indexmap::IndexMap;
 use orion_error::UvsLogicFrom;
+use orion_infra::auto_exit_log;
 
 use std::io::Write;
 use std::sync::Arc;
@@ -27,6 +29,7 @@ pub enum ModItem {
     Env(GxlEnv),
     Flow(GxlFlow),
     Actv(Activity),
+    Fun(GxlFun),
 }
 impl ModItem {
     pub(crate) fn bind(&mut self, mod_meta: ModMeta) {
@@ -34,6 +37,7 @@ impl ModItem {
             ModItem::Env(o) => o.bind(mod_meta),
             ModItem::Flow(o) => o.bind(mod_meta),
             ModItem::Actv(o) => o.bind(mod_meta),
+            ModItem::Fun(o) => o.bind(mod_meta),
         }
     }
 }
@@ -46,6 +50,7 @@ pub struct GxlMod {
     flow_names: IndexMap<String, MenuItem>,
     envs: IndexMap<String, GxlEnv>,
     flows: IndexMap<String, GxlFlow>,
+    funs: IndexMap<String, GxlFun>,
     entrys: Vec<FlowMeta>,
     exits: Vec<FlowMeta>,
     acts: IndexMap<String, Activity>,
@@ -71,13 +76,12 @@ impl DependTrait<&GxlSpace> for GxlMod {
         if self.assembled {
             return Ok(self);
         }
-        debug!(target : "assemble", "will assemble mod {}" , self.meta().name() );
-        let mod_name = &self.meta.name();
+        let mod_name = &self.meta.name().clone();
+        let mut flag = auto_exit_log!(
+            info!(target: "assemble",  "assembled mod  success!:{mod_name}"),
+            error!(target: "assemble", "assembled mod  failed!:{mod_name}" )
+        );
         let mut ins = self.clone();
-        //let mut ins = GxlMod::from(self.meta().clone());
-
-        //ins.props = self.props().clone();
-
         for (k, env) in self.envs {
             let ass_env = env.assemble(mod_name, src)?;
             debug_assert!(ass_env.assembled());
@@ -111,9 +115,13 @@ impl DependTrait<&GxlSpace> for GxlMod {
             debug_assert!(ass_act.assembled());
             ins.acts.insert(k.clone(), ass_act);
         }
+        for (k, fun) in self.funs {
+            let ass_fun = fun.assemble(mod_name, src)?;
+            debug_assert!(ass_fun.assembled());
+            ins.funs.insert(k.clone(), ass_fun);
+        }
         ins.assembled = true;
-        debug!(target : "assemble", "assemble mod {} end!" , ins.meta().name() );
-
+        flag.mark_suc();
         Ok(ins)
     }
 }
@@ -158,7 +166,7 @@ impl GxlMod {
         if self.assembled {
             return Ok(self);
         }
-        debug!(target : "assemble", "will assemble mod {}" , self.meta().name() );
+        debug!(target : "assemble", "will assemble  mix mod {}" , self.meta().name() );
         let mix_name = self.meta().mix().clone();
         for mix in mix_name {
             let mix_mod = src
@@ -190,6 +198,11 @@ impl MergeTrait for GxlMod {
         for (name, flow) in &other.acts {
             if !self.acts.contains_key(name) {
                 self.acts.insert(name.clone(), flow.clone());
+            }
+        }
+        for (name, flow) in &other.funs {
+            if !self.funs.contains_key(name) {
+                self.funs.insert(name.clone(), flow.clone());
             }
         }
 
@@ -289,6 +302,15 @@ impl AppendAble<GxlEnv> for GxlMod {
     }
 }
 
+impl AppendAble<GxlFun> for GxlMod {
+    fn append(&mut self, hold: GxlFun) {
+        let meta = hold.meta();
+        debug!(target:format!("stc/mod({})",self.meta.name()).as_str(),
+            "append {:#?} {}, ",meta.class(), meta.name());
+        self.funs.insert(meta.name().clone(), hold);
+    }
+}
+
 impl AppendAble<GxlFlow> for GxlMod {
     fn append(&mut self, hold: GxlFlow) {
         let hold = hold.with_mod(self.meta.clone());
@@ -307,6 +329,7 @@ impl AppendAble<ModItem> for GxlMod {
     fn append(&mut self, now: ModItem) {
         match now {
             ModItem::Env(v) => self.append(v),
+            ModItem::Fun(v) => self.append(v),
             ModItem::Flow(v) => self.append(v),
             ModItem::Actv(v) => self.append(v),
         }

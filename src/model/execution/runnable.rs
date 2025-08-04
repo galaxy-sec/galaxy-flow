@@ -6,6 +6,7 @@ use serde::Serialize;
 use crate::context::ExecContext;
 use crate::execution::task::Task;
 use crate::meta::GxlMeta;
+use crate::primitive::GxlAParams;
 use crate::util::redirect::ReadSignal;
 use crate::ExecResult;
 
@@ -63,6 +64,11 @@ pub type TaskResult = ExecResult<TaskValue>;
 #[async_trait]
 pub trait AsyncRunnableTrait {
     async fn async_exec(&self, ctx: ExecContext, dict: VarSpace) -> TaskResult;
+}
+
+#[async_trait]
+pub trait AsyncRunnableArgsTrait {
+    async fn async_exec(&self, ctx: ExecContext, dict: VarSpace, args: &GxlAParams) -> TaskResult;
 }
 
 #[async_trait]

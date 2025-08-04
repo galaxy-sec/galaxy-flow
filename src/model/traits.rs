@@ -3,7 +3,7 @@ use std::sync::Arc;
 use orion_error::UvsLogicFrom;
 
 use crate::{
-    evaluator::{EnvExpress, Parser},
+    evaluator::{EnvExpress, VarParser},
     menu::GxMenu,
     sec::{SecFrom, SecValueObj, SecValueType, ToUniCase},
     util::str_utils::{StringCutter, UpperKeyMaker},

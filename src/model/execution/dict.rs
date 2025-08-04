@@ -2,11 +2,14 @@ use std::path::PathBuf;
 
 use derive_more::From;
 use dirs::home_dir;
+use orion_error::ToStructError;
 
 use crate::{
+    primitive::{GxlAParams, GxlFParams, GxlObject},
     sec::{SecValueType, ValueGetter},
+    traits::Setter,
     var::VarDict,
-    ExecResult,
+    ExecReason, ExecResult,
 };
 
 use super::global::{load_secfile, setup_gxlrun_vars, setup_start_vars};
@@ -56,12 +59,49 @@ impl VarSpace {
     pub fn get(&self, path: &str) -> Option<SecValueType> {
         self.global().maps().value_get(path)
     }
-
-    /*
-    pub fn nameds_mut(&mut self) -> &mut HashMap<String, VarDict> {
-        &mut self.nameds
+    pub fn must_get(&self, path: &str) -> ExecResult<SecValueType> {
+        self.global()
+            .maps()
+            .value_get(path)
+            .ok_or(ExecReason::Miss(path.to_string()).to_err())
     }
-    */
+
+    pub fn merge_args_to(
+        &self,
+        f_params: &GxlFParams,
+        a_params: &GxlAParams,
+    ) -> ExecResult<VarSpace> {
+        let mut cur_vars = self.clone();
+        for param in f_params {
+            let found = if param.is_default() {
+                //use default actura name
+                a_params.get(param.name()).or(a_params.get("default"))
+            } else {
+                a_params.get(param.name())
+            };
+            if let Some(a_param) = found {
+                match a_param.value() {
+                    GxlObject::VarRef(name) => {
+                        let value = cur_vars
+                            .get(name.as_str())
+                            .ok_or(ExecReason::Miss(name.clone()).to_err())?;
+                        cur_vars.global_mut().set(param.name().clone(), value);
+                    }
+                    GxlObject::Value(value) => {
+                        cur_vars
+                            .global_mut()
+                            .set(param.name().clone(), value.clone());
+                    }
+                }
+            } else {
+                //use formal default value;
+                if let Some(default_v) = param.default_value() {
+                    cur_vars.global_mut().set(param.name(), default_v.clone());
+                }
+            }
+        }
+        Ok(cur_vars)
+    }
 }
 #[derive(Debug, Clone, Default, PartialEq, From)]
 pub enum DictUse {

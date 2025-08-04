@@ -5,6 +5,7 @@ pub mod externs;
 pub mod abilities;
 pub mod cond;
 pub mod context;
+pub mod gxl_fun;
 pub mod inner;
 pub mod prelude;
 pub mod stc_act;

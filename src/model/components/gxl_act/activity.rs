@@ -1,8 +1,10 @@
 use crate::{
     ability::prelude::{Action, TaskValue},
-    evaluator::Parser,
+    evaluator::VarParser,
+    execution::runnable::AsyncRunnableArgsTrait,
+    meta::MetaInfo,
     model::components::prelude::*,
-    traits::Setter,
+    primitive::GxlAParams,
 };
 use async_trait::async_trait;
 use orion_common::friendly::AppendAble;
@@ -21,11 +23,10 @@ use crate::{
 
 use super::meta::ActivityMeta;
 
-#[derive(Debug, Default, Builder, Clone, Getters, PartialEq)]
+#[derive(Debug, Builder, Clone, Getters, PartialEq)]
 pub struct Activity {
     meta: ActivityMeta,
-    host: String,
-    dto: ActivityDTO,
+    //dto: ActivityDTO,
     assembled: bool,
 }
 #[derive(Clone, Debug, PartialEq, Builder, Default)]
@@ -50,79 +51,45 @@ impl ActivityDTO {
 }
 
 #[async_trait]
-impl AsyncRunnableTrait for Activity {
-    async fn async_exec(&self, ctx: ExecContext, vars_dict: VarSpace) -> TaskResult {
-        self.exec_cmd(ctx, vars_dict, &self.dto)
-        // Ok(ExecOut::Ignore)
+impl AsyncRunnableArgsTrait for Activity {
+    async fn async_exec(&self, ctx: ExecContext, vars: VarSpace, args: &GxlAParams) -> TaskResult {
+        self.exec_cmd(ctx, vars, args)
     }
 }
 impl ComponentMeta for Activity {
     fn gxl_meta(&self) -> GxlMeta {
-        GxlMeta::from(self.dto.name.as_str())
+        GxlMeta::from(self.meta().clone())
     }
 }
 
 impl Activity {
-    pub fn dto_new(dto: ActivityDTO) -> Self {
+    pub fn new(meta: ActivityMeta) -> Self {
         Activity {
-            host: String::new(),
-            dto,
-            ..Default::default()
-        }
-    }
-    pub fn set_host(&mut self, host: String) {
-        self.host = host;
-    }
-    pub fn merge_prop(&mut self, props: Vec<Property>) {
-        let default_props = self.dto.props.clone();
-        self.dto.props = props;
-        for prop in default_props {
-            if !self.dto.props.iter().any(|x| x.key == prop.key) {
-                self.dto.props.push(prop);
-            }
+            meta,
+            assembled: false,
         }
     }
     fn execute_impl(
         &self,
         mut ctx: ExecContext,
         vars_dict: VarSpace,
-        dto: &ActivityDTO,
+        args: &GxlAParams,
     ) -> TaskResult {
-        ctx.append(format!("{}.{}", self.host, dto.name));
+        ctx.append(self.meta().full_name());
         debug!(target: ctx.path(),"actcall");
-        let mut action = Action::from(dto.name.as_str());
+        let mut action = Action::from(self.meta().full_name());
         //let mut map = def.export();
-        let mut dict = vars_dict.clone();
+        let dict = vars_dict.merge_args_to(self.meta().params(), args)?;
 
-        let mut default_key = if let Some(param) = &self.dto.default_param {
-            param.clone()
-        } else {
-            "".into()
-        };
-        default_key.make_ascii_uppercase();
-        let mut use_default_key = false;
-        for prop in &dto.props {
-            let mut key = prop.key.clone();
-            key.make_ascii_uppercase();
-            if key == "DEFAULT" {
-                use_default_key = true;
-                dict.global_mut().set(&default_key, prop.val.clone());
-                debug!(target: ctx.path(),"set default to dict {}:{}", default_key,prop.val);
-            } else {
-                if key == default_key && use_default_key {
-                    debug!(target: ctx.path(),"use default not {}:{} ", key,prop.val);
-                    continue;
-                }
-                debug!(target: ctx.path(),"set to dict {}:{}", key,prop.val);
-                dict.global_mut().set(&key, prop.val.clone());
-            }
-        }
         let mut r_with = WithContext::want("run shell");
-        r_with.with("exec", dto.executer.clone());
-        r_with.with("dto", format!("{:?}", dto.props));
         let exp = EnvExpress::from_env_mix(dict.global().clone());
-        let cmd = exp.eval(&dto.executer).with(&r_with)?;
-        let mut opt = self.dto.expect.clone();
+        let cmd = exp
+            .eval(dict.must_get("executer")?.to_string().as_str())
+            .with(&r_with)?;
+        r_with.with("exec", cmd.clone());
+
+        //let mut opt = dict.get("expect").clone();
+        let mut opt = ShellOption::new();
         // 若未设置全局的输出模式，则使用局部模式
         if let Some(quiet) = ctx.quiet() {
             opt.quiet = quiet;
@@ -134,14 +101,14 @@ impl Activity {
             &cmd,
             &opt,
             &exp,
-            vars_dict.global()
+            dict.global()
         )
         .with(&r_with)?;
         action.finish();
         Ok(TaskValue::from((vars_dict, ExecOut::Action(action))))
     }
-    pub fn exec_cmd(&self, ctx: ExecContext, vars_dict: VarSpace, dto: &ActivityDTO) -> TaskResult {
-        self.execute_impl(ctx, vars_dict, dto)
+    pub fn exec_cmd(&self, ctx: ExecContext, vars_dict: VarSpace, args: &GxlAParams) -> TaskResult {
+        self.execute_impl(ctx, vars_dict, args)
     }
 
     pub(crate) fn bind(&mut self, mod_meta: ModMeta) {
@@ -161,40 +128,42 @@ impl DependTrait<&GxlSpace> for Activity {
 mod tests {
     use orion_error::TestAssert;
 
-    use crate::ability::ability_env_init;
+    use crate::{
+        ability::ability_env_init,
+        context::ExecContext,
+        primitive::{GxlAParam, GxlFParam},
+        sec::{SecFrom, SecValueType},
+        util::OptionFrom,
+    };
 
     use super::*;
 
-    #[ignore]
     #[tokio::test]
-    async fn act_test() {
-        let (context, def) = ability_env_init();
-        let expect = ShellOption::default();
-        let mut dto = ActivityDTOBuilder::default()
-            .name("os.copy".into())
-            .executer("./extern/gxl-lab-0.2.8/mods/os/copy_act.sh ${_FUN} ${SRC} ${DST} ".into())
-            .expect(expect)
-            .props(Vec::new())
-            .build()
-            .unwrap();
-        dto.append_prop(Property {
-            key: "src".into(),
-            val: "./example/conf/options/copy.txt".into(),
-        });
-        dto.append_prop(Property {
-            key: "dst".into(),
-            val: "./example/conf/used/copy_3.txt".into(),
-        });
+    async fn test_exec_cmd_basic_success() {
+        ability_env_init();
 
-        let act = Activity::dto_new(dto.clone());
-        let task_value = act.async_exec(context.clone(), def).await.assert();
-        match task_value.rec() {
-            ExecOut::Action(action) => {
-                assert_eq!(action.name(), "os.copy");
-            }
-            _ => unreachable!(),
-        }
-        //let mut dto = ActCall::default();
-        //dto.name = "deletage".to_string();
+        // Create activity meta
+        let meta =
+            ActivityMeta::build("test_activity").with_params(vec![GxlFParam::new("executer")
+                .with_default_value(
+                    SecValueType::nor_from("./src/model/components/gxl_act/echo.sh".to_string())
+                        .to_opt(),
+                )]);
+        let activity = Activity::new(meta);
+
+        // Create context
+        let ctx = ExecContext::new(Some(false), false);
+
+        // Create var space with executer
+        let vars = VarSpace::default();
+
+        let mut args = GxlAParams::new();
+        activity.exec_cmd(ctx.clone(), vars.clone(), &args).assert();
+        args.insert(
+            "executer".to_string(),
+            GxlAParam::from_val("executer", "./src/model/components/gxl_act/echo2.sh"),
+        );
+
+        activity.exec_cmd(ctx, vars, &args).assert();
     }
 }

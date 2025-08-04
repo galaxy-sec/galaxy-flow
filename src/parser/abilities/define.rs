@@ -51,7 +51,7 @@ pub fn gal_named_value(input: &mut &str) -> Result<(String, SecValueType)> {
     Ok((key.to_string(), val))
 }
 
-pub fn gal_var_assign(input: &mut &str) -> Result<(String, GxlObject)> {
+pub fn gal_var_assign_obj(input: &mut &str) -> Result<(String, GxlObject)> {
     let _ = multispace0.parse_next(input)?;
     let key = take_while(1.., ('0'..='9', 'A'..='Z', 'a'..='z', ['_', '.']))
         .context(wn_desc("<var-name>"))
@@ -60,7 +60,7 @@ pub fn gal_var_assign(input: &mut &str) -> Result<(String, GxlObject)> {
     let _ = multispace0.parse_next(input)?;
 
     let val = gal_gxl_object
-        .context(wn_desc("<var-val>"))
+        .context(wn_desc("<var-obj>"))
         .parse_next(input)?;
     multispace0(input)?;
     //(multispace0, alt((symbol_comma, symbol_semicolon))).parse_next(input)?;
@@ -114,7 +114,7 @@ mod tests {
     fn test_assign() {
         let mut data =
             "data= r#\"{\"branchs\" : [{ \"name\": \"develop\" }, { \"name\" : \"release/1\"}]}\"#;";
-        let (key, val) = run_gxl(gal_var_assign, &mut data).assert();
+        let (key, val) = run_gxl(gal_var_assign_obj, &mut data).assert();
         assert_eq!(key, "data".to_string());
         assert_eq!(
             val,

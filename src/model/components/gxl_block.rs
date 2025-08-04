@@ -33,7 +33,7 @@ pub enum BlockAction {
     Assert(GxAssert),
     Version(GxlVersion),
     Read(GxRead),
-    Delegate(Box<ActCall>),
+    Call(Box<ActCall>),
     Tpl(GxTpl),
     Artifact(GxArtifact),
     Tar(GxTar),
@@ -82,7 +82,7 @@ impl AsyncRunnableWithSenderTrait for BlockAction {
             BlockAction::Tpl(o) => o.async_exec(ctx, dct).await,
             BlockAction::Tar(o) => o.async_exec(ctx, dct).await,
             BlockAction::UnTar(o) => o.async_exec(ctx, dct).await,
-            BlockAction::Delegate(o) => o.async_exec(ctx, dct).await,
+            BlockAction::Call(o) => o.async_exec(ctx, dct).await,
             BlockAction::Version(o) => o.async_exec(ctx, dct).await,
             BlockAction::Read(o) => o.async_exec(ctx, dct).await,
             BlockAction::Artifact(o) => o.async_exec(ctx, dct).await,
@@ -140,9 +140,7 @@ impl DependTrait<&GxlSpace> for BlockNode {
                 BlockAction::Command(v) => BlockAction::Command(v.clone()),
                 BlockAction::Shell(v) => BlockAction::Shell(v.clone()),
                 BlockAction::GxlRun(v) => BlockAction::GxlRun(v.clone()),
-                BlockAction::Delegate(v) => {
-                    BlockAction::Delegate(Box::new(v.assemble(mod_name, src)?))
-                }
+                BlockAction::Call(v) => BlockAction::Call(Box::new(v.assemble(mod_name, src)?)),
                 BlockAction::Artifact(v) => BlockAction::Artifact(v.clone()),
                 BlockAction::DownLoad(v) => BlockAction::DownLoad(v.clone()),
                 BlockAction::UpLoad(v) => BlockAction::UpLoad(v.clone()),

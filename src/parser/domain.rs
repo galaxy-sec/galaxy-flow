@@ -1,4 +1,4 @@
-use crate::primitive::{GxlArg, GxlObject};
+use crate::primitive::{GxlAParam, GxlObject};
 
 use super::prelude::*;
 use orion_parse::{
@@ -103,7 +103,7 @@ pub fn gal_assign_exp(input: &mut &str) -> Result<(String, String)> {
     Ok((key.to_string(), val.to_string()))
 }
 
-pub fn fun_arg(input: &mut &str) -> Result<GxlArg> {
+pub fn fun_arg(input: &mut &str) -> Result<GxlAParam> {
     let _ = multispace0.parse_next(input)?;
     let key_opt = opt(
         take_while(1.., ('0'..='9', 'A'..='Z', 'a'..='z', ['_', '.']))
@@ -122,7 +122,7 @@ pub fn fun_arg(input: &mut &str) -> Result<GxlArg> {
     .context(wn_desc("<var-val>"))
     .parse_next(input)?;
     multispace0(input)?;
-    Ok(GxlArg::new(key_opt.unwrap_or("default"), val))
+    Ok(GxlAParam::new(key_opt.unwrap_or("default"), val))
 }
 
 pub fn gal_call_beg(input: &mut &str) -> Result<()> {
@@ -207,7 +207,7 @@ mod tests {
 
     use orion_error::TestAssert;
 
-    use crate::parser::{abilities::define::gal_var_assign, inner::run_gxl};
+    use crate::parser::{abilities::define::gal_var_assign_obj, inner::run_gxl};
 
     use super::*;
 
@@ -235,7 +235,7 @@ mod tests {
     fn test_assign() {
         let mut data =
             "data= r#\"{\"branchs\" : [{ \"name\": \"develop\" }, { \"name\" : \"release/1\"}]}\"#;";
-        let (key, val) = run_gxl(gal_var_assign, &mut data).assert();
+        let (key, val) = run_gxl(gal_var_assign_obj, &mut data).assert();
         assert_eq!(key, "data".to_string());
         assert_eq!(
             val,

@@ -11,7 +11,7 @@ use crate::{
         GxlMod,
     },
     meta::GxlType,
-    parser::stc_flow::body::gal_stc_flow_body,
+    parser::{gxl_fun::body::gal_stc_fun, stc_flow::body::gal_stc_flow_body},
 };
 
 use super::{
@@ -40,6 +40,11 @@ pub fn gal_stc_mod_item(input: &mut &str) -> Result<ModItem> {
         flow.set_anns(ann);
         return Ok(ModItem::Flow(flow));
     }
+    if starts_with("fn", input) {
+        let flow = gal_stc_fun.context(wn_desc("<fn>")).parse_next(input)?;
+        //flow.set_anns(ann);
+        return Ok(ModItem::Fun(flow));
+    }
     if starts_with("activity", input) {
         return gal_activity
             .context(wn_desc("<activity>"))
@@ -65,7 +70,10 @@ pub fn gal_stc_mod(input: &mut &str) -> Result<GxlMod> {
     obj.append(props);
     loop {
         skip_spaces_block.parse_next(input)?;
-        if starts_with((multispace0, alt(("activity", "env", "flow", "#["))), input) {
+        if starts_with(
+            (multispace0, alt(("activity", "env", "flow", "fn", "#["))),
+            input,
+        ) {
             let mut item = gal_stc_mod_item.parse_next(input)?;
             item.bind(meta.clone());
             obj.append(item);
@@ -173,5 +181,26 @@ mod main : mod_a {
 "#;
         let _rgmod = run_gxl(gal_stc_mod, &mut data).assert();
         assert_eq!(data, "");
+    }
+    #[test]
+    fn test_mod_fun() {
+        let mut data = r#"
+mod sys {
+    fn echo () {
+    }
+    fn echo1 (*a) {
+    }
+    fn echo2 (a,b) {
+    }
+    fn echo3 (a,b=1) {
+    }
+    fn echo3 (*a,b=1) {
+    }
+    fn echo4 (*a,b=1,c="~") {
+    }
+};
+"#;
+        run_gxl(gal_stc_mod, &mut data).assert();
+        assert_eq!(data, "\n");
     }
 }

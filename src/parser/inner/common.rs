@@ -1,17 +1,11 @@
-use super::super::prelude::*;
+use super::prelude::*;
 use orion_parse::symbol::symbol_comma;
 use winnow::combinator::separated;
 
-use crate::ability::delegate::ActCall;
 use crate::components::{gxl_var::*, GxlProps};
 use crate::expect::ShellOption;
-use crate::parser::abilities::define::gal_var_assign;
-use crate::parser::domain::{
-    fun_arg, gal_assign_exp, gal_block_beg, gal_block_end, gal_call_beg, gal_call_end, gal_keyword,
-    gal_sentence_beg, gal_sentence_end, gal_var_input, parse_log,
-};
-use crate::primitive::{GxlArg, GxlObject};
-use crate::types::Property;
+use crate::parser::abilities::define::gal_var_assign_obj;
+use crate::parser::abilities::param::gal_formal_param;
 
 pub fn gal_vars(input: &mut &str) -> Result<GxlProps> {
     let mut vars = GxlProps::default();
@@ -21,14 +15,6 @@ pub fn gal_vars(input: &mut &str) -> Result<GxlProps> {
         vars.insert(one.0, one.1);
     }
     Ok(vars)
-}
-pub fn action_call_args(input: &mut &str) -> Result<Vec<(String, String)>> {
-    gal_call_beg.parse_next(input)?;
-    let props: Vec<(String, String)> =
-        separated(0.., gal_var_input, symbol_comma).parse_next(input)?;
-    opt(symbol_comma).parse_next(input)?;
-    gal_call_end.parse_next(input)?;
-    Ok(props)
 }
 
 pub fn object_props(input: &mut &str) -> Result<Vec<(String, String)>> {
@@ -40,21 +26,27 @@ pub fn object_props(input: &mut &str) -> Result<Vec<(String, String)>> {
     Ok(props)
 }
 
-pub fn fun_call_args(input: &mut &str) -> Result<Vec<GxlArg>> {
-    gal_call_beg.parse_next(input)?;
-    let props: Vec<GxlArg> = separated(0.., fun_arg, symbol_comma).parse_next(input)?;
-    opt(symbol_comma).parse_next(input)?;
-    gal_call_end.parse_next(input)?;
-    Ok(props)
-}
-
 pub fn sentence_body(input: &mut &str) -> Result<Vec<(String, GxlObject)>> {
     gal_sentence_beg.parse_next(input)?;
-    let props: Vec<(String, GxlObject)> =
-        separated(0.., gal_var_assign, alt((symbol_comma, symbol_semicolon))).parse_next(input)?;
+    let args: Vec<(String, GxlObject)> = separated(
+        0..,
+        gal_var_assign_obj,
+        alt((symbol_comma, symbol_semicolon)),
+    )
+    .parse_next(input)?;
     opt(alt((symbol_comma, symbol_semicolon))).parse_next(input)?;
     gal_sentence_end.parse_next(input)?;
-    Ok(props)
+    Ok(args)
+}
+
+pub fn act_param_define(input: &mut &str) -> Result<Vec<GxlFParam>> {
+    gal_sentence_beg.parse_next(input)?;
+    let args: Vec<GxlFParam> =
+        separated(0.., gal_formal_param, alt((symbol_comma, symbol_semicolon)))
+            .parse_next(input)?;
+    opt(alt((symbol_comma, symbol_semicolon))).parse_next(input)?;
+    gal_sentence_end.parse_next(input)?;
+    Ok(args)
 }
 
 pub fn shell_opt_setting(key: String, value: String, expect: &mut ShellOption) {
@@ -83,22 +75,9 @@ pub fn shell_opt_setting(key: String, value: String, expect: &mut ShellOption) {
     }
 }
 
-pub fn gal_call(input: &mut &str) -> Result<ActCall> {
-    let name = take_var_path
-        .context(wn_desc("<call-name>"))
-        .parse_next(input)?;
-    let var_props = action_call_args.parse_next(input)?;
-    let mut props = Vec::new();
-    for v_prop in var_props {
-        props.push(Property::from(v_prop))
-    }
-    let dto = ActCall::from((name, props));
-    Ok(dto)
-}
-
 pub fn gal_prop(input: &mut &str) -> Result<GxlVar> {
     skip_spaces_block.parse_next(input)?;
-    let prop = gal_var_assign.parse_next(input)?;
+    let prop = gal_var_assign_obj.parse_next(input)?;
     alt((symbol_comma, symbol_semicolon)).parse_next(input)?;
     let vars = GxlVar::ext_new(prop.0, "str".into(), prop.1);
     Ok(vars)
@@ -122,7 +101,6 @@ where
 mod tests {
 
     use orion_common::friendly::New2;
-    use orion_error::TestAssert;
 
     use super::*;
 
@@ -140,20 +118,5 @@ mod tests {
         assert_eq!(var, expect);
         assert_eq!(data, "");
         Ok(())
-    }
-    #[test]
-    fn call_test() {
-        let mut data = r#"
-             os.path ( dist: "./tests/" , keep: "ture" ) ;"#;
-        let found = run_gxl(gal_call, &mut data).assert();
-        let expect = ActCall::from((
-            "os.path".to_string(),
-            vec![
-                Property::from(("dist", "./tests/")),
-                Property::from(("keep", "ture")),
-            ],
-        ));
-        assert_eq!(found.props, expect.props);
-        assert_eq!(data, "");
     }
 }
