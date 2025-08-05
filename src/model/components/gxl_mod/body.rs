@@ -17,6 +17,7 @@ use contracts::requires;
 use derive_getters::Getters;
 use indexmap::IndexMap;
 use orion_error::UvsLogicFrom;
+use orion_infra::auto_exit_log;
 
 use std::io::Write;
 use std::sync::Arc;
@@ -75,13 +76,12 @@ impl DependTrait<&GxlSpace> for GxlMod {
         if self.assembled {
             return Ok(self);
         }
-        debug!(target : "assemble", "will assemble mod {}" , self.meta().name() );
-        let mod_name = &self.meta.name();
+        let mod_name = &self.meta.name().clone();
+        let mut flag = auto_exit_log!(
+            info!(target: "assemble",  "assembled mod  success!:{mod_name}"),
+            error!(target: "assemble", "assembled mod  failed!:{mod_name}" )
+        );
         let mut ins = self.clone();
-        //let mut ins = GxlMod::from(self.meta().clone());
-
-        //ins.props = self.props().clone();
-
         for (k, env) in self.envs {
             let ass_env = env.assemble(mod_name, src)?;
             debug_assert!(ass_env.assembled());
@@ -121,8 +121,7 @@ impl DependTrait<&GxlSpace> for GxlMod {
             ins.funs.insert(k.clone(), ass_fun);
         }
         ins.assembled = true;
-        debug!(target : "assemble", "assemble mod {} end!" , ins.meta().name() );
-
+        flag.mark_suc();
         Ok(ins)
     }
 }
@@ -167,7 +166,7 @@ impl GxlMod {
         if self.assembled {
             return Ok(self);
         }
-        debug!(target : "assemble", "will assemble mod {}" , self.meta().name() );
+        debug!(target : "assemble", "will assemble  mix mod {}" , self.meta().name() );
         let mix_name = self.meta().mix().clone();
         for mix in mix_name {
             let mix_mod = src

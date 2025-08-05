@@ -1,3 +1,4 @@
+use super::inner::call::gal_call;
 use super::inner::cmd::gal_cmd_block;
 use super::inner::gxl::gal_run;
 use super::inner::shell::gal_shell;
@@ -14,7 +15,7 @@ use crate::parser::inner::archive::{gal_tar, gal_untar};
 use super::atom::spaced;
 use super::domain::{gal_block_beg, gal_block_end, gal_keyword};
 use super::inner::{
-    gal_artifact, gal_assert, gal_call, gal_cmd, gal_download, gal_echo, gal_prop, gal_read_cmd,
+    gal_artifact, gal_assert, gal_cmd, gal_download, gal_echo, gal_prop, gal_read_cmd,
     gal_read_file, gal_read_stdin, gal_tpl, gal_upload, gal_version,
 };
 
@@ -119,7 +120,7 @@ pub fn gal_sentens_item(input: &mut &str) -> Result<BlockAction> {
 
     gal_call
         .context(wn_desc("<flow-call>"))
-        .map(|x| BlockAction::Delegate(Box::new(x)))
+        .map(|x| BlockAction::Call(Box::new(x)))
         .parse_next(input)
 }
 

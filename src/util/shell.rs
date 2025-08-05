@@ -1,7 +1,7 @@
 use duct_sh;
 use std::collections::VecDeque;
 
-use crate::evaluator::{EnvExpress, Parser};
+use crate::evaluator::{EnvExpress, VarParser};
 use crate::expect::LogicScope;
 use crate::expect::ShellOption;
 use crate::var::VarDict;

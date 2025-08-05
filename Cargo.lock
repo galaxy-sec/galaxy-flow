@@ -1123,7 +1123,7 @@ dependencies = [
 
 [[package]]
 name = "galaxy_flow"
-version = "0.9.0"
+version = "0.9.1"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1164,6 +1164,7 @@ dependencies = [
  "reqwest",
  "rstest",
  "rust-ini",
+ "scopeguard",
  "serde",
  "serde_derive",
  "serde_json",

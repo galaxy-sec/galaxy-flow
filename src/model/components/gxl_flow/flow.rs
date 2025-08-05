@@ -4,6 +4,7 @@ use crate::components::gxl_mod::meta::ModMeta;
 use crate::components::gxl_spc::GxlSpace;
 use crate::components::gxl_utls::mod_obj_name;
 use crate::data::AnnDto;
+use crate::evaluator::VarParser;
 use crate::model::components::prelude::*;
 
 use crate::annotation::{ComUsage, Dryrunable, GetArgValue, TaskMessage, Transaction, FST_ARG_TAG};
@@ -171,7 +172,7 @@ impl GxlFlow {
         var_dict: VarSpace,
         sender: Option<mpsc::Sender<ReadSignal>>,
     ) -> TaskResult {
-        let task_description = self.task_description();
+        let task_description = self.task_description(&var_dict);
         let mut task = Task::from(self.meta.name());
         let mut task_notice = TaskNotice::new();
 
@@ -412,11 +413,12 @@ impl GxlFlow {
     }
 
     // 获取注解中的描述信息
-    pub fn task_description(&self) -> Option<String> {
+    pub fn task_description(&self, var_dict: &VarSpace) -> Option<String> {
         let annotation = self.meta.annotations();
         for ann in annotation {
             if ann.message().is_some() {
-                return ann.message();
+                let exp = EnvExpress::from_env_mix(var_dict.global().clone());
+                return ann.message().map(|msg| exp.safe_eval(msg.as_str()));
             }
         }
         None
@@ -463,7 +465,7 @@ impl AsyncRunnableWithSenderTrait for GxlFlow {
         sender: Option<mpsc::Sender<ReadSignal>>,
     ) -> TaskResult {
         let des = self
-            .task_description()
+            .task_description(&var_dict)
             .unwrap_or(self.meta.name().to_string());
         let mut job = Job::from(&des);
         ctx.append(self.meta.name());

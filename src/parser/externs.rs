@@ -49,7 +49,7 @@ impl ExternLocal {
         let mut ctx = WithContext::want("load code");
         let ee = EnvExpress::from_env();
         let gxl_full_path = format!("{}/{}.gxl", self.path.display(), name);
-        let gxl_full_path = crate::evaluator::Parser::eval(&ee, &gxl_full_path)?;
+        let gxl_full_path = crate::evaluator::VarParser::eval(&ee, &gxl_full_path)?;
         ctx.with("gxl", gxl_full_path.as_str());
         let code = read_to_string(gxl_full_path.as_str())
             .owe_rule()
@@ -102,7 +102,7 @@ impl ExternParser {
         vars_space: &VarSpace,
         file_exist_path: Option<&Path>,
     ) -> ExecResult<(String, DslStatus)> {
-        use crate::evaluator::Parser;
+        use crate::evaluator::VarParser;
         let extern_mods = gal_extern_mod
             .context(wn_desc("<extern-mod>"))
             .parse_next(cur)

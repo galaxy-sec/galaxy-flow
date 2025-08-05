@@ -16,6 +16,7 @@ use crate::util::http_handle::send_http_request;
 use crate::util::redirect::{init_redirect_file, read_log_content, seek_log_file_end, ReadSignal};
 use contracts::requires;
 use derive_getters::Getters;
+use orion_infra::auto_exit_log;
 use std::sync::{mpsc, Arc, Mutex};
 
 use super::meta::FunMeta;
@@ -48,22 +49,18 @@ impl DependTrait<&GxlSpace> for GxlFun {
     fn assemble(self, mod_name: &str, src: &GxlSpace) -> AResult<Self> {
         debug!(target : "assemble", "will assemble flow {}" , self.meta().name() );
         let mut target = GxlFun::from(self.meta().clone());
-        let buffer = Vec::new();
-        let linked = false;
+        let meta_name = target.meta().name().clone();
+        let mut flag = auto_exit_log!(
+            info!(target: "assemble", "assembled  success!:{meta_name}"),
+            error!(target: "assemble", "assembled failed!:{meta_name}" )
+        );
 
-        if linked {
-            info!(
-                target: "assemble",
-                "assemble flow  {} ",
-                String::from_utf8(buffer).unwrap()
-            );
-        }
         for block in self.blocks {
             let full_block = block.assemble(mod_name, src)?;
             target.append(full_block);
         }
         target.assembled = true;
-        debug!(target : "assemble", "assemble flow {} end" , target.meta().name() );
+        flag.mark_suc();
         Ok(target)
     }
 }
