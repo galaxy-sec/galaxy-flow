@@ -1,7 +1,7 @@
 #[macro_export]
 macro_rules! gxl_sh {
     ( $scope : expr ,$target : expr, $cmd : expr, $opt : expr , $exp : expr, $dict : expr) => {
-        $crate::util::os_sh($scope, $target, $cmd, $opt, $exp, $dict)
+        $crate::util::os_sh_realtime($scope, $target, $cmd, $opt, $exp, $dict)
     };
     ( $scope: expr ,$target : expr, $cmd : expr  ) => {
         $crate::utls::rg_sh(

@@ -9,6 +9,7 @@ pub mod task_report;
 pub mod traits;
 pub use crate::util::git::GitTools;
 pub use crate::util::shell::os_sh;
+pub use crate::util::shell::os_sh_realtime;
 pub mod opt;
 pub use crate::util::opt::OptionFrom;
 pub mod redirect;
