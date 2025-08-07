@@ -167,7 +167,6 @@ impl ComponentMeta for GxDownLoad {
 mod tests {
     use orion_error::TestAssertWithMsg;
     use orion_infra::path::ensure_path;
-    use orion_variate::tools::test_init;
 
     use crate::util::path::WorkDir;
 

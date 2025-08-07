@@ -5,7 +5,7 @@ use derive_getters::Getters;
 use galaxy_flow::runner::GxlCmd;
 
 #[derive(Debug, Parser)] // requires `derive` feature
-#[command(name = "gm")]
+#[command(name = "gprj adm")]
 #[command(version, about)]
 pub enum GxAdmCmd {
     #[command(subcommand)]
@@ -20,8 +20,12 @@ pub enum GxAdmCmd {
 
 #[derive(Debug, Subcommand)]
 pub enum InitCmd {
-    Local,
-    Remote(InitArgs),
+    /// init galaxy env
+    Env,
+    /// init project with local mod ;
+    PrjWithLocal,
+    /// init project with remote mod ;
+    Prj(InitArgs),
 }
 #[derive(Debug, Subcommand)]
 pub enum UpdateCmd {

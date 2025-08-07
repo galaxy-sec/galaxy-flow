@@ -20,6 +20,7 @@ use galaxy_flow::conf::conf_path;
 use galaxy_flow::const_val::gxl_const::CONFIG_FILE;
 use galaxy_flow::err::*;
 use galaxy_flow::execution::VarSpace;
+use galaxy_flow::galaxy::Galaxy;
 use galaxy_flow::infra::configure_run_logging;
 use galaxy_flow::runner::{GxlCmd, GxlRunner};
 use galaxy_flow::util::GitTools;
@@ -113,12 +114,13 @@ impl GxAdm {
         Ok(())
     }
 
-    async fn do_prj_cmd(load: &mut GxLoader, prj_cmd: InitCmd) -> RunResult<()> {
-        match prj_cmd {
-            InitCmd::Local => {
+    async fn do_prj_cmd(load: &mut GxLoader, cmd: InitCmd) -> RunResult<()> {
+        match cmd {
+            InitCmd::Env => Galaxy::env_init()?,
+            InitCmd::PrjWithLocal => {
                 init_local(None)?;
             }
-            InitCmd::Remote(args) => {
+            InitCmd::Prj(args) => {
                 configure_run_logging(args.log.clone(), args.debug);
 
                 //let repo = ModRepo::new(args.repo.as_str(), args.channel.as_str()).owe_res()?;

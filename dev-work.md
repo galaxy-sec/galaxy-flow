@@ -42,3 +42,7 @@
 **方案文档：**
 - `tasks/gxl-variable-syntax-enhancement.md` - 完整的设计方案文档
 - 包含：背景分析、语法规则、实现方案、兼容性策略、测试计划、实施时间表
+
+
+### 升级 orion_variate 到 "release/0.6"
+[]  分析crate的变更，制定升级修改方案
