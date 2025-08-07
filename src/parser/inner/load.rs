@@ -9,7 +9,7 @@ pub fn gal_download(input: &mut &str) -> Result<GxDownLoad> {
     let props = action_call_args.parse_next(input)?;
     for (k, v) in &props {
         if k == "url" {
-            down.svc_url(v.clone());
+            down.remote_url(v.clone());
         } else if k == "local_file" {
             down.local_file(v.clone());
         } else if k == "username" {
@@ -71,7 +71,7 @@ mod tests {
              ) ;"#;
         let obj = gal_download(&mut data).assert();
         assert_eq!(data, "");
-        assert_eq!(obj.svc_url(), "https://github/galaxy");
+        assert_eq!(obj.remote_url(), "https://github/galaxy");
     }
     #[test]
     fn parse_gx_upload() {

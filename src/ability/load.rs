@@ -28,7 +28,7 @@ pub struct GxUpLoad {
 #[builder(setter(into))]
 pub struct GxDownLoad {
     local_file: String,
-    svc_url: String,
+    remote_url: String,
     #[builder(default)]
     username: Option<String>,
     #[builder(default)]
@@ -81,9 +81,10 @@ impl ComponentMeta for GxUpLoad {
 
 #[async_trait]
 impl AsyncRunnableTrait for GxDownLoad {
-    async fn async_exec(&self, _ctx: ExecContext, vars_dict: VarSpace) -> TaskResult {
+    async fn async_exec(&self, mut ctx: ExecContext, vars_dict: VarSpace) -> TaskResult {
+        ctx.append("gx.download");
         let ex = EnvExpress::from_env_mix(vars_dict.global().clone());
-        let mut addr = HttpResource::from(ex.eval(self.svc_url())?);
+        let mut addr = HttpResource::from(ex.eval(self.remote_url())?);
         if let (Some(username), Some(password)) = (self.username(), self.password()) {
             let username = ex.eval(username)?;
             let password = ex.eval(password)?;
@@ -95,6 +96,7 @@ impl AsyncRunnableTrait for GxDownLoad {
 
         // 确定最终的下载路径
         let final_download_path = self.get_final_path(&local_file_path, &addr);
+        debug!(target: ctx.path(), "downlad  {} to {}", addr.url() ,final_download_path.display());
 
         let accessor = build_accessor(&vars_dict.global().clone().into());
         // 确保父目录存在
@@ -106,7 +108,8 @@ impl AsyncRunnableTrait for GxDownLoad {
                     &DownloadOptions::default(),
                 )
                 .await
-                .owe_res()?;
+                .owe_res()
+                .with(&final_download_path)?;
             action.finish();
             Ok(TaskValue::from((vars_dict, ExecOut::Action(action))))
         } else {
@@ -163,6 +166,8 @@ impl ComponentMeta for GxDownLoad {
 #[cfg(test)]
 mod tests {
     use orion_error::TestAssertWithMsg;
+    use orion_infra::path::ensure_path;
+    use orion_variate::tools::test_init;
 
     use crate::util::path::WorkDir;
 
@@ -170,11 +175,13 @@ mod tests {
 
     #[tokio::test]
     async fn test_gx_download_parent_exists() {
-        let temp_dir = tempfile::tempdir().unwrap();
-        let file_path = temp_dir.path().join("README").to_str().unwrap().to_string();
+        let temp_path = PathBuf::from("./temp/download");
+        ensure_path(&temp_path).assert("path");
+        let file_path = temp_path.join("README").to_str().unwrap().to_string();
+
         let download = GxDownLoadBuilder::default()
             .local_file(file_path.clone())
-            .svc_url("https://mirrors.aliyun.com/postgresql/".to_string())
+            .remote_url("https://mirrors.aliyun.com/postgresql/README".to_string())
             .build()
             .unwrap();
 
@@ -199,7 +206,7 @@ mod tests {
         // 构建下载配置：传入目录路径
         let download = GxDownLoadBuilder::default()
             .local_file(dir_path.clone()) // 传入目录路径
-            .svc_url("https://httpbin.org/json".to_string())
+            .remote_url("https://httpbin.org/json".to_string())
             .build()
             .unwrap();
 
@@ -228,7 +235,7 @@ mod tests {
         // 构建包含查询参数的URL下载配置
         let download = GxDownLoadBuilder::default()
             .local_file(file_path.to_str().unwrap().to_string()) // 使用具体文件路径
-            .svc_url("https://httpbin.org/json?param=value&test=123".to_string()) // 包含查询参数
+            .remote_url("https://httpbin.org/json?param=value&test=123".to_string()) // 包含查询参数
             .build()
             .unwrap();
 
@@ -257,7 +264,7 @@ mod tests {
         // 这种情况下 PathBuf::parent() 会返回 None
         let download = GxDownLoadBuilder::default()
             .local_file("test_file.json".to_string()) // 注意：没有路径分隔符，直接是文件名
-            .svc_url("https://httpbin.org/json".to_string())
+            .remote_url("https://httpbin.org/json".to_string())
             .build()
             .unwrap();
 
@@ -296,7 +303,7 @@ mod tests {
         // 构建下载配置
         let download = GxDownLoadBuilder::default()
             .local_file(nested_path.to_str().unwrap().to_string())
-            .svc_url("https://httpbin.org/json".to_string())
+            .remote_url("https://httpbin.org/json".to_string())
             .build()
             .unwrap();
 
