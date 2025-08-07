@@ -8,7 +8,7 @@ use galaxy_flow::util::path::WorkDir;
 use galaxy_flow::GxLoader;
 use orion_error::TestAssertWithMsg;
 use orion_infra::path::ensure_path;
-use orion_variate::addr::GitAddr;
+use orion_variate::addr::GitRepository;
 
 // use shells;
 #[ignore]
@@ -20,6 +20,7 @@ async fn init_test() {
     let path = PathBuf::from("./tests/temp/init");
     ensure_path(&path).assert("path");
     let _work_path = WorkDir::change(&path);
-    let addr = GitAddr::from("https://github.com/galaxy-sec/gal-init.git").with_branch("main");
+    let addr =
+        GitRepository::from("https://github.com/galaxy-sec/gal-init.git").with_branch("main");
     loader.init(addr, "example").await.assert("init");
 }

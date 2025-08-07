@@ -1123,7 +1123,7 @@ dependencies = [
 
 [[package]]
 name = "galaxy_flow"
-version = "0.9.1"
+version = "0.10.0"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2188,8 +2188,8 @@ dependencies = [
 
 [[package]]
 name = "orion_variate"
-version = "0.5.7"
-source = "git+https://github.com/galaxy-sec/orion-variate?tag=v0.5.7#b8a3e8a14ff635f907008ca4c4cb5a64f91e24b4"
+version = "0.6.0"
+source = "git+https://github.com/galaxy-sec/orion-variate?tag=v0.6.0#f2776da69508e2cdbe8a165a22698ac41fe137d8"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2225,6 +2225,7 @@ dependencies = [
  "toml 0.9.4",
  "tracing",
  "url",
+ "wildmatch",
  "winnow",
 ]
 

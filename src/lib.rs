@@ -45,9 +45,9 @@ pub mod parser;
 #[macro_use]
 pub mod util;
 
+pub mod galaxy;
 pub mod infra;
 pub mod runner;
 pub mod types;
-
 pub use crate::loader::{get_parse_code, GxLoader};
 pub use model::*;

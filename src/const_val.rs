@@ -1,5 +1,6 @@
 /// GXL相关常量定义
 pub mod gxl_const {
+
     /// 命令干运行标记
     pub const CMD_DRYRUN: &str = "GXL_CMD_DRYRUN";
     /// 模块更新标记
@@ -16,4 +17,5 @@ pub mod gxl_const {
     /// 错误消息前缀
     pub const ERROR_PREFIX: &str = "GXL ERROR: ";
     pub const CONFIG_FILE: &str = "conf.toml";
+    pub const REDIRECT_FILE: &str = ".galaxy/redirect.yml";
 }
