@@ -19,7 +19,7 @@
 
 **实际创建的文档：**
 - `docs/structure/ability-actual.md` - ability模块实际结构
-- `docs/structure/calculate-actual.md` - calculate模块实际结构  
+- `docs/structure/calculate-actual.md` - calculate模块实际结构
 - `docs/structure/conf-actual.md` - conf模块实际结构
 - `docs/structure/evaluator-actual.md` - evaluator模块实际结构
 - `docs/structure/model-actual.md` - model模块实际结构
@@ -44,5 +44,27 @@
 - 包含：背景分析、语法规则、实现方案、兼容性策略、测试计划、实施时间表
 
 
-### 升级 orion_variate 到 "release/0.6"
-[]  分析crate的变更，制定升级修改方案
+
+##  接入AI大模型, 结合GXL,实现可以完成 总结代码变化， 完成 git commit 的能力
+[x] 首先设计方案，强调Git Commit只是验证性和启动场景，而非最终目标
+
+**设计思维升级：**
+- ✅ **From Task to Platform**: 从"Git Commit工具"扩展为"AI驱动DevOps全流程平台"
+- ✅ **验证机制设计**: Git Commit作为MVP验证场景，测试AI理解代码的能力
+- ✅ **横向扩展机制**: 5个核心能力 → X个DevOps应用场景
+- ✅ **任务模板体系**: 标准化任务定义、复用机制、社区共享
+- ✅ **场景凭证**: Git Commit → Code Review → Security → Performance → Documentation
+
+**关键实现：**
+- ✅ **基线验证**: 变更理解 + 意图提取 + 格式化输出 = 95%成功率
+- ✅ **能力复用**: 80-90%代码复用在质量分析、安全审计等场景
+- ✅ **GXL原生**: 任务模板注册机制、GXL动作组合
+
+**方案包档：**
+- **`tasks/ai-git-commit-integration.md`** - 更新为平台化设计思维，Git Commit标识为"mvp_testcase"
+- **`tasks/ai-platform-extension-design.md`** - 专注横向扩展，定义任务模板体系与生态架构
+
+### 横向扩展路线图发布
+完整的AI能力平台演化路径：验证-复用-生态三步曲
+
+

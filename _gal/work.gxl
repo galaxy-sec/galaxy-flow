@@ -24,7 +24,7 @@ mod envs  {
   env default    : envs._common,debug;
 }
 
-mod main : ai_test  {
+mod main : ai_git {
       bld_bins = "target/${ENV_BUILD_NAME}" ;
       rls_bins = "target/release" ;
       HOME_BIN = "${HOME}/bin" ;
