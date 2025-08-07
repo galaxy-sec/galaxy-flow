@@ -5,6 +5,7 @@ use crate::parser::externs::ExternGit;
 use crate::parser::externs::ExternParser;
 use crate::parser::stc_spc::gal_stc_spc;
 use crate::parser::stc_spc::WinnowErrorEx;
+use crate::util::accessor::build_accessor;
 
 use std::fs;
 use std::fs::read_to_string;
@@ -19,11 +20,13 @@ use orion_error::ErrorConv;
 use orion_error::ErrorOwe;
 use orion_error::ErrorWith;
 use orion_error::WithContext;
-use orion_variate::addr::GitAddr;
-use orion_variate::addr::LocalAddr;
-use orion_variate::types::LocalUpdate;
-use orion_variate::update::UpdateOptions;
+use orion_variate::addr::Address;
+use orion_variate::addr::GitRepository;
+use orion_variate::addr::LocalPath;
+use orion_variate::types::ResourceDownloader;
+use orion_variate::update::DownloadOptions;
 use orion_variate::update::UpdateScope;
+use orion_variate::vars::EnvDict;
 use orion_variate::vars::ValueDict;
 
 static CODE_INSTANCE: OnceCell<String> = OnceCell::new();
@@ -75,9 +78,9 @@ impl GxLoader {
         let e_parser = ExternParser::new();
 
         let up_options = if update {
-            UpdateOptions::new(UpdateScope::RemoteCache, ValueDict::default())
+            DownloadOptions::new(UpdateScope::RemoteCache, ValueDict::default())
         } else {
-            UpdateOptions::new(UpdateScope::None, ValueDict::default())
+            DownloadOptions::new(UpdateScope::None, ValueDict::default())
         };
         let mut target_code = code.to_string();
 
@@ -113,8 +116,8 @@ impl GxLoader {
         Ok(gxl_space)
     }
 
-    pub async fn init(&self, addr: GitAddr, tpl: &str) -> RunResult<()> {
-        let up_options = UpdateOptions::new(UpdateScope::RemoteCache, ValueDict::default());
+    pub async fn init(&self, addr: GitRepository, tpl: &str) -> RunResult<()> {
+        let up_options = DownloadOptions::new(UpdateScope::RemoteCache, ValueDict::default());
         let local_git = ExternGit::pull(addr, &up_options).await.owe_res()?;
         let vender_path = format!("{}/tpl/{tpl}", local_git.position().display());
         let init_path = PathBuf::from("./_gal");
@@ -122,8 +125,13 @@ impl GxLoader {
             println!("init dir exists! ({})", init_path.display());
         } else {
             std::fs::create_dir(&init_path).owe_res()?;
-            LocalAddr::from(vender_path)
-                .update_local(&init_path, &up_options)
+            let accessor = build_accessor(&EnvDict::default());
+            accessor
+                .download_to_local(
+                    &Address::from(LocalPath::from(vender_path.as_str())),
+                    &init_path,
+                    &up_options,
+                )
                 .await
                 .owe_res()?;
         }

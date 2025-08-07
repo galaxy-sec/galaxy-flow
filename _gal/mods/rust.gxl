@@ -11,7 +11,7 @@ mod rust_flow  {
     rust_cmd.coverage ( log : "1" );
   }
   flow lint        {
-    gx.cmd ( "cargo fmt", log : "1" , out:"true"  );
+    gx.cmd ( "cargo fmt --check", log : "1" , out:"true"  );
     gx.cmd ( "cargo fix --allow-dirty", log : "1" , out:"true"  );
     gx.cmd ( "cargo clippy --all-targets --all-features -- -D warnings"  );
   }
