@@ -1,8 +1,10 @@
 use orion_error::ErrorOwe;
-use orion_variate::addr::GitAddr;
-use orion_variate::types::LocalUpdate;
+use orion_variate::addr::Address;
+use orion_variate::addr::GitRepository;
+use orion_variate::types::ResourceDownloader;
 use orion_variate::types::UpdateUnit;
-use orion_variate::update::UpdateOptions;
+use orion_variate::update::DownloadOptions;
+use orion_variate::vars::EnvDict;
 
 use crate::err::*;
 use crate::evaluator::*;
@@ -17,6 +19,8 @@ use std::fs::File;
 use std::io::prelude::*;
 use std::os::unix::fs::PermissionsExt;
 use std::path::PathBuf;
+
+use super::accessor::build_accessor;
 const RG_ROOT: &str = "${HOME}/.galaxy";
 const VENDOR_ROOT: &str = "${HOME}/.galaxy/vendor";
 #[derive(Default, Getters)]
@@ -40,10 +44,15 @@ impl GitTools {
     }
     pub async fn update_mod(
         &self,
-        addr: GitAddr,
-        up_options: &UpdateOptions,
+        addr: GitRepository,
+        options: &DownloadOptions,
     ) -> ExecResult<UpdateUnit> {
-        addr.update_local(&PathBuf::from(self.vendor_root()), up_options)
+        build_accessor(&EnvDict::default())
+            .download_to_local(
+                &Address::from(addr),
+                &PathBuf::from(self.vendor_root()),
+                options,
+            )
             .await
             .owe_res()
     }

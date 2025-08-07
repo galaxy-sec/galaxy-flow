@@ -26,7 +26,7 @@ use galaxy_flow::util::GitTools;
 use galaxy_flow::GxLoader;
 use include_dir::{include_dir, Dir};
 use orion_error::ErrorConv;
-use orion_variate::addr::GitAddr;
+use orion_variate::addr::GitRepository;
 
 const ASSETS_DIR: Dir = include_dir!("app/gprj/init");
 #[tokio::main]
@@ -122,7 +122,7 @@ impl GxAdm {
                 configure_run_logging(args.log.clone(), args.debug);
 
                 //let repo = ModRepo::new(args.repo.as_str(), args.channel.as_str()).owe_res()?;
-                let addr = GitAddr::from(args.repo.as_str());
+                let addr = GitRepository::from(args.repo.as_str());
                 let addr = if let Some(tag) = args.tag() {
                     addr.with_tag(tag)
                 } else if let Some(branch) = args.branch() {

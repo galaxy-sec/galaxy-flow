@@ -2,9 +2,9 @@ use std::path::PathBuf;
 
 use orion_common::serde::Configable;
 use orion_error::ToStructError;
-use orion_variate::{ext::ArtifactPackage, types::LocalUpdate, update::UpdateOptions};
+use orion_variate::{ext::ArtifactPackage, types::ResourceDownloader, update::DownloadOptions};
 
-use crate::ability::prelude::*;
+use crate::{ability::prelude::*, util::accessor::build_accessor};
 
 #[derive(Clone, Default, Debug, PartialEq, Builder, Getters)]
 #[builder(setter(into))]
@@ -30,10 +30,16 @@ impl AsyncRunnableTrait for GxArtifact {
             return ExecReason::Bug("only yml format support".into()).err_result();
         };
         let dst_path = PathBuf::from(dst_file);
+
+        let accessor = build_accessor(&vars_dict.global().clone().into());
         for artifact in artifact_pkg.iter() {
-            artifact
-                .origin_addr()
-                .update_local_rename(&dst_path, artifact.local(), &UpdateOptions::default())
+            accessor
+                .download_rename(
+                    artifact.origin_addr(),
+                    &dst_path,
+                    artifact.local(),
+                    &DownloadOptions::default(),
+                )
                 .await
                 .owe_res()?;
         }

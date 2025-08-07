@@ -1,9 +1,16 @@
-use std::path::{Path, PathBuf};
+use std::{
+    path::{Path, PathBuf},
+    str::FromStr,
+};
 
 use orion_error::ToStructError;
-use orion_variate::{addr::HttpAddr, update::UpdateOptions};
+use orion_variate::{
+    addr::{Address, HttpResource},
+    types::{ResourceDownloader, ResourceUploader},
+    update::{DownloadOptions, HttpMethod, UploadOptions},
+};
 
-use crate::ability::prelude::*;
+use crate::{ability::prelude::*, util::accessor::build_accessor};
 
 #[derive(Clone, Default, Debug, PartialEq, Builder, Getters)]
 #[builder(setter(into))]
@@ -32,7 +39,7 @@ pub struct GxDownLoad {
 impl AsyncRunnableTrait for GxUpLoad {
     async fn async_exec(&self, _ctx: ExecContext, vars_dict: VarSpace) -> TaskResult {
         let ex = EnvExpress::from_env_mix(vars_dict.global().clone());
-        let mut addr = HttpAddr::from(ex.eval(self.svc_url())?);
+        let mut addr = HttpResource::from(ex.eval(self.svc_url())?);
         if let (Some(username), Some(password)) = (self.username(), self.password()) {
             let username = ex.eval(username)?;
             let password = ex.eval(password)?;
@@ -41,9 +48,20 @@ impl AsyncRunnableTrait for GxUpLoad {
         let local_file = ex.eval(self.local_file())?;
         let mut action = Action::from("gx.upload").with_target(&local_file);
         let local_file_path = PathBuf::from(&local_file);
-        let method = ex.eval(self.method())?.to_uppercase();
+        let method = ex.eval(self.method())?;
+        let http_method = HttpMethod::from_str(method.as_str())
+            .owe(ExecReason::Args(format!("bad method:{method}")))?;
+
         if local_file_path.exists() {
-            addr.upload(&local_file_path, &method).await.owe_res()?;
+            let accessor = build_accessor(&vars_dict.global().clone().into());
+            accessor
+                .upload_from_local(
+                    &Address::from(addr),
+                    &local_file_path,
+                    &(UploadOptions::with_method(http_method)),
+                )
+                .await
+                .owe_res()?;
             action.finish();
             Ok(TaskValue::from((vars_dict, ExecOut::Action(action))))
         } else {
@@ -61,12 +79,11 @@ impl ComponentMeta for GxUpLoad {
     }
 }
 
-
 #[async_trait]
 impl AsyncRunnableTrait for GxDownLoad {
     async fn async_exec(&self, _ctx: ExecContext, vars_dict: VarSpace) -> TaskResult {
         let ex = EnvExpress::from_env_mix(vars_dict.global().clone());
-        let mut addr = HttpAddr::from(ex.eval(self.svc_url())?);
+        let mut addr = HttpResource::from(ex.eval(self.svc_url())?);
         if let (Some(username), Some(password)) = (self.username(), self.password()) {
             let username = ex.eval(username)?;
             let password = ex.eval(password)?;
@@ -79,9 +96,15 @@ impl AsyncRunnableTrait for GxDownLoad {
         // 确定最终的下载路径
         let final_download_path = self.get_final_path(&local_file_path, &addr);
 
+        let accessor = build_accessor(&vars_dict.global().clone().into());
         // 确保父目录存在
         if let Some(true) = local_file_path.parent().map(|x| x.exists()) {
-            addr.download(&final_download_path, &UpdateOptions::default())
+            accessor
+                .download_to_local(
+                    &Address::from(addr),
+                    &final_download_path,
+                    &DownloadOptions::default(),
+                )
                 .await
                 .owe_res()?;
             action.finish();
@@ -96,7 +119,7 @@ impl AsyncRunnableTrait for GxDownLoad {
 }
 
 impl GxDownLoad {
-    fn get_final_path(&self, local_file_path: &Path, addr: &HttpAddr) -> PathBuf {
+    fn get_final_path(&self, local_file_path: &Path, addr: &HttpResource) -> PathBuf {
         if local_file_path.is_dir() {
             // 如果传入的是目录，从URL中提取文件名
             let filename = addr
@@ -139,6 +162,8 @@ impl ComponentMeta for GxDownLoad {
 
 #[cfg(test)]
 mod tests {
+    use orion_error::TestAssertWithMsg;
+
     use crate::util::path::WorkDir;
 
     use super::*;
@@ -155,8 +180,10 @@ mod tests {
 
         let vars_dict = VarSpace::default();
         let ctx = ExecContext::default();
-        let result = download.async_exec(ctx, vars_dict).await;
-        assert!(result.is_ok());
+        download
+            .async_exec(ctx, vars_dict)
+            .await
+            .assert("exec fail");
     }
 
     /// 测试下载文件到已存在目录的功能
@@ -247,7 +274,7 @@ mod tests {
 
         // 验证错误类型
         if let Err(e) = result {
-            let error_str = format!("{:?}", e);
+            let error_str = format!("{e:?}");
             assert!(
                 error_str.contains("parent path not exists"),
                 "应该是父目录不存在的错误"
@@ -287,7 +314,7 @@ mod tests {
         // 调试信息
         match &result {
             Ok(_) => println!("✅ 下载成功"),
-            Err(e) => println!("❌ 下载失败: {:?}", e),
+            Err(e) => println!("❌ 下载失败: {e:?}",),
         }
 
         // 验证当前实现的行为：父目录不存在时会失败
@@ -295,7 +322,7 @@ mod tests {
 
         // 验证错误类型
         if let Err(e) = result {
-            let error_str = format!("{:?}", e);
+            let error_str = format!("{e:?}");
             assert!(
                 error_str.contains("parent path not exists"),
                 "应该是父目录不存在的错误"
