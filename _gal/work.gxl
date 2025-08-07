@@ -1,4 +1,4 @@
-extern mod head { path = "${GXL_START_ROOT}/_gal/"; }
+extern mod head,ai { path = "${GXL_START_ROOT}/_gal/"; }
 
 mod envs  {
    env _common  : rust_env.init   {
@@ -24,7 +24,7 @@ mod envs  {
   env default    : envs._common,debug;
 }
 
-mod main   {
+mod main : ai_test  {
       bld_bins = "target/${ENV_BUILD_NAME}" ;
       rls_bins = "target/release" ;
       HOME_BIN = "${HOME}/bin" ;
