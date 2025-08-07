@@ -61,7 +61,6 @@ impl ComponentMeta for GxUpLoad {
     }
 }
 
-
 #[async_trait]
 impl AsyncRunnableTrait for GxDownLoad {
     async fn async_exec(&self, _ctx: ExecContext, vars_dict: VarSpace) -> TaskResult {
