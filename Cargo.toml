@@ -14,6 +14,10 @@ path = "app/gflow/main.rs"
 name = "gprj"
 path = "app/gprj/main.rs"
 
+[[bin]]
+name = "gx-ai"
+path = "src/cmd/ai_command.rs"
+
 
 [workspace]
 members = [".", "crates/orion_parse"]
@@ -39,6 +43,7 @@ async-trait = "0.1"
 [dependencies]
 orion_common = { workspace = true }
 orion_infra = { workspace = true }
+uuid = "1.0.0"
 orion_parse = { path = "crates/orion_parse" }
 orion_variate = { workspace = true }
 derive-getters = "0.5"
