@@ -14,6 +14,7 @@ pub enum AiDevCapability {
     Understand,  // 项目架构理解
     Predict,     // 变更影响分析
     Collaborate, // 团队协作增强
+    Explain,
 }
 
 impl AiDevCapability {
@@ -47,6 +48,7 @@ impl AiDevCapability {
             AiDevCapability::Understand => "claude-3-5-sonnet",
             AiDevCapability::Predict => "gpt-4o",
             AiDevCapability::Collaborate => "gpt-4o-mini",
+            AiDevCapability::Explain => "gpt-4o-mini",
         }
     }
 
@@ -64,6 +66,7 @@ impl AiDevCapability {
             AiDevCapability::Understand => "understand",
             AiDevCapability::Predict => "predict",
             AiDevCapability::Collaborate => "collaborate",
+            AiDevCapability::Explain => "explain",
         }
     }
 }

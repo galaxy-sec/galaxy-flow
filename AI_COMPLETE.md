@@ -9,8 +9,6 @@
 |---|---|---|
 | **核心AI架构** | ✅ 完成 | 统一的trait-based提供商接口 |
 | **OpenAI Provider** | ✅ 完成 | 完整的gpt-4o/gpt-4o-mini支持 |
-| **Anthropic Provider** | ✅ 完成 | claude-3-5-sonnet完整支持 |
-| **Ollama Provider** | ✅ 完成 | 本地deepseek-coder支持 |
 | **Mock Provider** | ✅ 完成 | 无网络测试支持 |
 | **智能Git提交** | ✅ 完成 | 基于变更理解生成提交信息 |
 | **零配置启动** | ✅ 完成 | 仅需环境变量，无额外依赖 |
@@ -33,7 +31,6 @@ galaxy-flow/
 │   └── router.rs              # 智能路由
 ├── src/git_ai/
 │   └── smart_commit.rs        # 智能Git工作流
-├── src/cmd/ai_command.rs      # CLI命令实现
 └── AI_COMPLETE.md             # 你正在阅读的文件
 ```
 
@@ -50,11 +47,6 @@ cargo run --bin gx-ai test --message "Hello AI"
 # 智慧Git提交（最强大功能）
 cargo run --bin gx-ai smart-commit
 
-# 代码分析
-cargo run --bin gx-ai code-review --files main.rs
-
-# 查看所有可用功能
-cargo run --bin gx-ai list
 ```
 
 ## 🔧 实际工作流示例
@@ -65,19 +57,6 @@ echo "console.log('Enhanced error handling');" >> app.js
 git add app.js
 cargo run --bin gx-ai smart-commit
 # 输出: ✨ Add comprehensive error handling for user input validation
-```
-
-### 场景2：团队评审
-```bash
-cargo run --bin gx-ai code-review --files src/main.rs utils.rs
-# 输出: 完整的审查报告和修复建议
-```
-
-### 场景3：本地优先
-```bash
-export OLLAMA_MODEL=deepseek-coder
-cargo run --bin gx-ai test --message "Explain async Rust"
-# 使用本地免费AI，数据留在本地
 ```
 
 ## 💡 功能特性矩阵

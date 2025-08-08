@@ -10,3 +10,4 @@ pub use config::*;
 pub use context::*;
 pub use error::*;
 pub use router::*;
+mod tests;

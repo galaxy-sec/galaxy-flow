@@ -126,6 +126,7 @@ impl AiClient {
             AiDevCapability::Understand => "深入理解项目整体架构和设计模式".to_string(),
             AiDevCapability::Predict => "分析变更对系统的影响和潜在风险".to_string(),
             AiDevCapability::Collaborate => "提供团队协作和代码集成建议".to_string(),
+            AiDevCapability::Explain => "解析内容".to_string(),
         }
     }
 }

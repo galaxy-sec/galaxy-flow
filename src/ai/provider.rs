@@ -62,6 +62,7 @@ impl ModelInfo {
             AiDevCapability::Understand => true,
             AiDevCapability::Predict => true,
             AiDevCapability::Collaborate => true,
+            AiDevCapability::Explain => true,
         }
     }
 }

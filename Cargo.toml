@@ -3,7 +3,7 @@
 authors = ["wukong<sec-wukong@outlook.com>"]
 edition = "2021"
 name = "galaxy_flow"
-version = "0.10.0"
+version = "0.11.0"
 
 
 [[bin]]
@@ -13,11 +13,6 @@ path = "app/gflow/main.rs"
 [[bin]]
 name = "gprj"
 path = "app/gprj/main.rs"
-
-[[bin]]
-name = "gx-ai"
-path = "src/cmd/ai_command.rs"
-
 
 [workspace]
 members = [".", "crates/orion_parse"]
