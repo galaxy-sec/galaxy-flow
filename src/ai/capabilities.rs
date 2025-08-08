@@ -1,77 +1,96 @@
 use serde::{Deserialize, Serialize};
-use strum_macros::{Display, EnumString};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Display, EnumString)]
-#[strum(serialize_all = "snake_case")]
-pub enum AiCapability {
-    /// 深度代码理解 - 分析代码复杂度、结构、模式等
-    Analyze,
-
-    /// 基于上下文的智能建议
-    Suggest,
-
-    /// 问题检测和审查 - 安全、性能、可维护性
-    Check,
-
-    /// 代码/文档/配置生成
-    Generate,
-
-    /// 重构建议 - 改进代码结构和质量
-    Refactor,
-
-    /// 智能部署决策 - 部署策略和风险评估
-    Deploy,
-
-    /// Git提交信息生成 - 基于代码变更理解
-    Commit,
-
-    /// 代码审查和PR建议
-    Review,
-
-    /// 项目整体架构理解
-    Understand,
-
-    /// 变更影响分析
-    Predict,
-
-    /// 团队协作增强
-    Collaborate,
+/// AI能力枚举 - 定义各种AI功能和用途
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Hash)]
+pub enum AiDevCapability {
+    Analyze,     // 深度代码理解分析
+    Suggest,     // 基于上下文的智能建议
+    Check,       // 问题检测和审查
+    Generate,    // 代码/文档创建
+    Refactor,    // 重构建议
+    Deploy,      // 智能部署决策
+    Commit,      // Git提交信息生成
+    Review,      // 代码审查
+    Understand,  // 项目架构理解
+    Predict,     // 变更影响分析
+    Collaborate, // 团队协作增强
 }
 
-impl AiCapability {
+impl AiDevCapability {
     /// 检查该能力是否需要完整代码上下文
     pub fn needs_full_context(&self) -> bool {
-+        matches!(
-+            self,
-+            AiCapability::Review | AiCapability::Understand | AiCapability::Predict
-+        )
-+    }
-+
-+    /// 检查该能力是否对token敏感
-+    pub fn is_token_sensitive(&self) -> bool {
-+        matches!(
-+            self,
-+            AiCapability::Generate | AiCapability::Refactor | AiCapability::Understand
-+        )
-+    }
-+
-+    /// 获取该能力的推荐模型
-+    pub fn recommended_model(&self) -> &'static str {
-+        match self {
-+            AiCapability::Analyze => "gpt-4o-mini",
-+            AiCapability::Suggest => "gpt-4o-mini",
-+            AiCapability::Check => "gpt-4o",
-+            AiCapability::Generate => "gpt-4o",
-+            AiCapability::Refactor => "claude-3-5-sonnet",
-+            AiCapability::Deploy => "gpt-4o-mini",
-+            AiCapability::Commit => "gpt-4o-mini",
-+            AiCapability::Review => "claude-3-5-sonnet",
-+            AiCapability::Understand => "claude-3-5-sonnet",
-+            AiCapability::Predict => "gpt-4o",
-+            AiCapability::Collaborate => "gpt-4o-mini",
-+        }
-+    }
-+}
-```
+        matches!(
+            self,
+            AiDevCapability::Review | AiDevCapability::Understand | AiDevCapability::Predict
+        )
+    }
 
-## 7. 创建AI客户端和管理器
+    /// 检查该能力是否对token敏感
+    pub fn is_token_sensitive(&self) -> bool {
+        matches!(
+            self,
+            AiDevCapability::Generate | AiDevCapability::Refactor | AiDevCapability::Understand
+        )
+    }
+
+    /// 获取该能力的推荐模型
+    pub fn recommended_model(&self) -> &'static str {
+        match self {
+            AiDevCapability::Analyze => "gpt-4o-mini",
+            AiDevCapability::Suggest => "gpt-4o-mini",
+            AiDevCapability::Check => "gpt-4o",
+            AiDevCapability::Generate => "gpt-4o",
+            AiDevCapability::Refactor => "claude-3-5-sonnet",
+            AiDevCapability::Deploy => "gpt-4o-mini",
+            AiDevCapability::Commit => "gpt-4o-mini",
+            AiDevCapability::Review => "claude-3-5-sonnet",
+            AiDevCapability::Understand => "claude-3-5-sonnet",
+            AiDevCapability::Predict => "gpt-4o",
+            AiDevCapability::Collaborate => "gpt-4o-mini",
+        }
+    }
+
+    /// 获取能力的字符串表示
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            AiDevCapability::Analyze => "analyze",
+            AiDevCapability::Suggest => "suggest",
+            AiDevCapability::Check => "check",
+            AiDevCapability::Generate => "generate",
+            AiDevCapability::Refactor => "refactor",
+            AiDevCapability::Deploy => "deploy",
+            AiDevCapability::Commit => "commit",
+            AiDevCapability::Review => "review",
+            AiDevCapability::Understand => "understand",
+            AiDevCapability::Predict => "predict",
+            AiDevCapability::Collaborate => "collaborate",
+        }
+    }
+}
+
+impl std::fmt::Display for AiDevCapability {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.as_str())
+    }
+}
+
+impl std::str::FromStr for AiDevCapability {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.to_lowercase().as_str() {
+            "analyze" => Ok(AiDevCapability::Analyze),
+            "suggest" => Ok(AiDevCapability::Suggest),
+            "check" => Ok(AiDevCapability::Check),
+            "generate" => Ok(AiDevCapability::Generate),
+            "refactor" => Ok(AiDevCapability::Refactor),
+            "deploy" => Ok(AiDevCapability::Deploy),
+            "commit" => Ok(AiDevCapability::Commit),
+            "review" => Ok(AiDevCapability::Review),
+            "understand" => Ok(AiDevCapability::Understand),
+            "predict" => Ok(AiDevCapability::Predict),
+            "collaborate" => Ok(AiDevCapability::Collaborate),
+            _ => Err(format!("Unknown capability: {}", s)),
+        }
+    }
+}

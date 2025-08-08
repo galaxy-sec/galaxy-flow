@@ -3,10 +3,10 @@ use std::collections::HashMap;
 use std::env;
 use std::fs;
 
-use crate::ai::provider::AiProviderType;
 use crate::ai::error::AiResult;
+use crate::ai::provider::AiProviderType;
 
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AiConfig {
     pub providers: HashMap<AiProviderType, ProviderConfig>,
     pub routing: RoutingRules,
@@ -97,6 +97,32 @@ impl AiConfig {
             }
         }
     }
+
+    pub fn from_env() -> Option<Self> {
+        Some(Self {
+            providers: Default::default(),
+            routing: RoutingRules {
+                simple: env::var("GXL_SIMPLE_MODEL").unwrap_or_else(|_| "gpt-4o-mini".to_string()),
+                complex: env::var("GXL_COMPLEX_MODEL").unwrap_or_else(|_| "gpt-4o".to_string()),
+                free: env::var("GXL_FREE_MODEL").unwrap_or_else(|_| "deepseek-coder".to_string()),
+            },
+            limits: UsageLimits {
+                max_tokens_per_request: 16000,
+                commit_budget: env::var("GXL_COMMIT_BUDGET")
+                    .ok()
+                    .and_then(|s| s.parse().ok())
+                    .unwrap_or(150),
+                review_budget: env::var("GXL_REVIEW_BUDGET")
+                    .ok()
+                    .and_then(|s| s.parse().ok())
+                    .unwrap_or(2000),
+                analysis_budget: env::var("GXL_ANALYSIS_BUDGET")
+                    .ok()
+                    .and_then(|s| s.parse().ok())
+                    .unwrap_or(4000),
+            },
+        })
+    }
 }
 
 impl Default for AiConfig {
@@ -104,21 +130,30 @@ impl Default for AiConfig {
         let mut providers = HashMap::new();
 
         // 默认配置
-        providers.insert(AiProviderType::OpenAi, ProviderConfig {
-            api_key_env: "OPENAI_API_KEY".to_string(),
-            ..Default::default()
-        });
+        providers.insert(
+            AiProviderType::OpenAi,
+            ProviderConfig {
+                api_key_env: "OPENAI_API_KEY".to_string(),
+                ..Default::default()
+            },
+        );
 
-        providers.insert(AiProviderType::Anthropic, ProviderConfig {
-            api_key_env: "CLAUDE_API_KEY".to_string(),
-            ..Default::default()
-        });
+        providers.insert(
+            AiProviderType::Anthropic,
+            ProviderConfig {
+                api_key_env: "CLAUDE_API_KEY".to_string(),
+                ..Default::default()
+            },
+        );
 
-        providers.insert(AiProviderType::Ollama, ProviderConfig {
-            api_key_env: "OLLAMA_MODEL".to_string(),
-            base_url: Some("http://localhost:11434".to_string()),
-            ..Default::default()
-        });
+        providers.insert(
+            AiProviderType::Ollama,
+            ProviderConfig {
+                api_key_env: "OLLAMA_MODEL".to_string(),
+                base_url: Some("http://localhost:11434".to_string()),
+                ..Default::default()
+            },
+        );
 
         Self {
             providers,
@@ -127,22 +162,3 @@ impl Default for AiConfig {
         }
     }
 }
-
-impl AiConfig {
-    pub fn from_env() -> Option<Self> {
-        Some(Self {
-            providers: Default::default(),
-            routing: RoutingRules {
-                simple: env::var("GXL_SIMPLE_MODEL").unwrap_or_else(|_| "gpt-4o-mini".to_string()),
-                complex: env::var("GXL_COMPLEX_MODEL").unwrap_or_else(|_| "gpt-4o".to_string()),
-+                free: env::var("GXL_FREE_MODEL").unwrap_or_else(|_| "deepseek-coder".to_string()),
-+            },
-+            limits: UsageLimits {
-+                max_tokens_per_request: 16000,
-+                commit_budget: env::var("GXL_COMMIT_BUDGET")
-+                    .ok()
-+                    .and_then(|s| s.parse().ok())
-+                    .unwrap_or(150),
-+                review_budget: env::var("GXL_REVIEW_BUDGET")
-+                    .ok()
-+                    .and_then(|s| s

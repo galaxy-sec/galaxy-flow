@@ -1,12 +1,12 @@
 use async_trait::async_trait;
-use reqwest::{Client, header};
+use reqwest::{header, Client};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Duration;
 
-use crate::ai::provider::*;
 use crate::ai::error::AiResult;
+use crate::ai::{provider::*, AiError};
 
 #[derive(Debug, Serialize, Deserialize)]
 struct OpenAiRequest {
@@ -80,19 +80,18 @@ impl OpenAiProvider {
 
         headers.insert(
             header::AUTHORIZATION,
-            header::HeaderValue::from_str(&format!("Bearer {}", self.api_key))
-                .unwrap()
+            header::HeaderValue::from_str(&format!("Bearer {}", self.api_key)).unwrap(),
         );
 
         headers.insert(
             header::CONTENT_TYPE,
-            header::HeaderValue::from_static("application/json")
+            header::HeaderValue::from_static("application/json"),
         );
 
         if let Some(org) = &self.organization {
             headers.insert(
-                "OpenAI-Organization".parse().unwrap(),
-                header::HeaderValue::from_str(org).unwrap()
+                reqwest::header::HeaderName::from_static("OPENAI_ORGANIZATION"),
+                header::HeaderValue::from_str(org).unwrap(),
             );
         }
 
@@ -137,16 +136,9 @@ impl AiProvider for OpenAiProvider {
     }
 
     async fn list_models(&self) -> AiResult<Vec<ModelInfo>> {
-        let models = vec![
-            "gpt-4o",
-            "gpt-4o-mini",
-            "gpt-4-turbo",
-            "gpt-3.5-turbo",
-        ];
+        let models = vec!["gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "gpt-3.5-turbo"];
 
-        Ok(models.iter()
-            .map(|m| self.map_model_to_info(m))
-            .collect())
+        Ok(models.iter().map(|m| self.map_model_to_info(m)).collect())
     }
 
     async fn send_request(&self, request: &AiRequest) -> AiResult<AiResponse> {
@@ -170,7 +162,8 @@ impl AiProvider for OpenAiProvider {
 
         let url = format!("{}/chat/completions", self.base_url);
 
-        let response = self.client
+        let response = self
+            .client
             .post(&url)
             .headers(self.create_headers())
             .json(&openai_request)
@@ -179,20 +172,42 @@ impl AiProvider for OpenAiProvider {
 
         let response_body = response.json::<OpenAiResponse>().await?;
 
-        let choice = response_body.choices.first()
+        let choice = response_body
+            .choices
+            .first()
             .ok_or_else(|| AiError::ConfigError("No choices in response".to_string()))?;
 
         Ok(AiResponse {
             content: choice.message.content.clone(),
             model: response_body.model.clone(),
             usage: UsageInfo {
-                prompt_tokens: response_body.usage.as_ref().map(|u| u.prompt_tokens).unwrap_or(0),
-                completion_tokens: response_body.usage.as_ref().map(|u| u.completion_tokens).unwrap_or(0),
-                total_tokens: response_body.usage.as_ref().map(|u| u.total_tokens).unwrap_or(0),
+                prompt_tokens: response_body
+                    .usage
+                    .as_ref()
+                    .map(|u| u.prompt_tokens)
+                    .unwrap_or(0),
+                completion_tokens: response_body
+                    .usage
+                    .as_ref()
+                    .map(|u| u.completion_tokens)
+                    .unwrap_or(0),
+                total_tokens: response_body
+                    .usage
+                    .as_ref()
+                    .map(|u| u.total_tokens)
+                    .unwrap_or(0),
                 estimated_cost: self.estimate_cost(
                     &request.model,
-                    response_body.usage.as_ref().map(|u| u.prompt_tokens).unwrap_or(0),
-                    response_body.usage.as_ref().map(|u| u.completion_tokens).unwrap_or(0)
+                    response_body
+                        .usage
+                        .as_ref()
+                        .map(|u| u.prompt_tokens)
+                        .unwrap_or(0),
+                    response_body
+                        .usage
+                        .as_ref()
+                        .map(|u| u.completion_tokens)
+                        .unwrap_or(0),
                 ),
             },
             finish_reason: choice.finish_reason.clone(),
@@ -204,7 +219,7 @@ impl AiProvider for OpenAiProvider {
     fn estimate_cost(&self, model: &str, input_tokens: usize, output_tokens: usize) -> Option<f64> {
         let model_info = self.map_model_to_info(model);
         let cost = (input_tokens as f64 * model_info.cost_per_1k_input / 1000.0)
-                 + (output_tokens as f64 * model_info.cost_per_1k_output / 1000.0);
+            + (output_tokens as f64 * model_info.cost_per_1k_output / 1000.0);
         Some(cost)
     }
 
@@ -216,3 +231,4 @@ impl AiProvider for OpenAiProvider {
     fn get_config_keys(&self) -> Vec<&'static str> {
         vec!["OPENAI_API_KEY", "OPENAI_ORG_ID", "OPENAI_BASE_URL"]
     }
+}

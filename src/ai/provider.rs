@@ -1,23 +1,13 @@
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::time::Duration;
 
-use crate::ai::error::{AiError, AiResult};
+use crate::ai::error::AiResult;
 
-/// 统一的AI能力枚举
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-pub enum AiCapability {
-    Analyze,        // 代码理解分析
-    Suggest,        // 基于上下文的建议
-    Check,          // 问题检测和审查
-    Generate,       // 代码/文档创建
-    Refactor,       // 重构建议
-    Deploy,         // 智能部署决策
-}
+use super::capabilities::AiDevCapability;
 
 /// AI提供商类型
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Hash)]
 pub enum AiProviderType {
     OpenAi,
     Anthropic,
@@ -36,6 +26,17 @@ impl std::fmt::Display for AiProviderType {
     }
 }
 
+impl From<AiProviderType> for &'static str {
+    fn from(provider: AiProviderType) -> Self {
+        match provider {
+            AiProviderType::OpenAi => "openai",
+            AiProviderType::Anthropic => "anthropic",
+            AiProviderType::Ollama => "ollama",
+            AiProviderType::Mock => "mock",
+        }
+    }
+}
+
 /// 模型信息结构
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ModelInfo {
@@ -49,13 +50,18 @@ pub struct ModelInfo {
 }
 
 impl ModelInfo {
-    pub fn is_compatible(&self, capability: AiCapability) -> bool {
+    pub fn is_compatible(&self, capability: AiDevCapability) -> bool {
         match capability {
-            AiCapability::Analyze | AiCapability::Check => true,
-            AiCapability::Suggest => true,
-            AiCapability::Generate => true,
-            AiCapability::Refactor => true,
-            AiCapability::Deploy => true,
+            AiDevCapability::Analyze | AiDevCapability::Check => true,
+            AiDevCapability::Suggest => true,
+            AiDevCapability::Generate => true,
+            AiDevCapability::Refactor => true,
+            AiDevCapability::Deploy => true,
+            AiDevCapability::Commit => true,
+            AiDevCapability::Review => true,
+            AiDevCapability::Understand => true,
+            AiDevCapability::Predict => true,
+            AiDevCapability::Collaborate => true,
         }
     }
 }
@@ -68,9 +74,7 @@ pub struct AiRequest {
     pub user_prompt: String,
     pub max_tokens: Option<usize>,
     pub temperature: Option<f32>,
-    pub capabilities: Vec<AiCapability>,
-    pub context: HashMap<String, String>,
-    pub sensitive_filter: bool,
+    pub capability: AiDevCapability,
 }
 
 impl AiRequest {
@@ -79,28 +83,25 @@ impl AiRequest {
     }
 }
 
+/// AI请求构建器
 pub struct AiRequestBuilder {
     model: String,
     system_prompt: String,
     user_prompt: String,
     max_tokens: Option<usize>,
     temperature: Option<f32>,
-    capabilities: Vec<AiCapability>,
-    context: HashMap<String, String>,
-    sensitive_filter: bool,
+    capability: AiDevCapability,
 }
 
 impl AiRequestBuilder {
     pub fn new() -> Self {
         Self {
-            model: "gpt-4o".to_string(),
+            model: "gpt-4o-mini".to_string(),
             system_prompt: String::new(),
             user_prompt: String::new(),
             max_tokens: None,
             temperature: Some(0.7),
-            capabilities: vec![],
-            context: HashMap::new(),
-            sensitive_filter: true,
+            capability: AiDevCapability::Analyze,
         }
     }
 
@@ -129,18 +130,8 @@ impl AiRequestBuilder {
         self
     }
 
-    pub fn capability(mut self, cap: AiCapability) -> Self {
-        self.capabilities.push(cap);
-        self
-    }
-
-    pub fn context(mut self, key: impl Into<String>, value: impl Into<String>) -> Self {
-        self.context.insert(key.into(), value.into());
-        self
-    }
-
-    pub fn sensitive_filter(mut self, filter: bool) -> Self {
-        self.sensitive_filter = filter;
+    pub fn capability(mut self, cap: AiDevCapability) -> Self {
+        self.capability = cap;
         self
     }
 
@@ -151,9 +142,7 @@ impl AiRequestBuilder {
             user_prompt: self.user_prompt,
             max_tokens: self.max_tokens,
             temperature: self.temperature,
-            capabilities: self.capabilities,
-            context: self.context,
-            sensitive_filter: self.sensitive_filter,
+            capability: self.capability,
         }
     }
 }
@@ -167,44 +156,44 @@ pub struct AiResponse {
     pub finish_reason: Option<String>,
     pub provider: AiProviderType,
     pub metadata: HashMap<String, serde_json::Value>,
-+}
-+
-+#[derive(Debug, Clone, Serialize, Deserialize)]
-+pub struct UsageInfo {
-+    pub prompt_tokens: usize,
-+    pub completion_tokens: usize,
-+    pub total_tokens: usize,
-+    pub estimated_cost: Option<f64>,
-+}
-+
-+/// AI提供商trait定义
-+#[async_trait]
-+pub trait AiProvider: Send + Sync {
-+    /// 获取提供商类型
-+    fn provider_type(&self) -> AiProviderType;
-+
-+    /// 检查模型可用性
-+    async fn is_model_available(&self, model: &str) -> bool;
-+
-+    /// 获取可用模型列表
-+    async fn list_models(&self) -> AiResult<Vec<ModelInfo>>;
-+
-+    /// 发送AI请求
-+    async fn send_request(&self, request: &AiRequest) -> AiResult<AiResponse>;
-+
-+    /// 获取配置参数
-+    fn get_config_keys(&self) -> Vec<&'static str> {
-+        vec![]
-+    }
-+
-+    /// 健康检查
-+    async fn health_check(&self) -> AiResult<bool> {
-+        self.list_models().await.map(|_| true)
-+    }
-+
-+    /// 计算预估成本
-+    fn estimate_cost(&self, model: &str, input_tokens: usize, output_tokens: usize) -> Option<f64>;
-+
-+    /// 检查token限制
-+    fn check_token_limit(&self, model: &str, max_tokens: usize) -> bool;
-+}
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct UsageInfo {
+    pub prompt_tokens: usize,
+    pub completion_tokens: usize,
+    pub total_tokens: usize,
+    pub estimated_cost: Option<f64>,
+}
+
+/// AI提供商trait定义
+#[async_trait]
+pub trait AiProvider: Send + Sync {
+    /// 获取提供商类型
+    fn provider_type(&self) -> AiProviderType;
+
+    /// 检查模型可用性
+    async fn is_model_available(&self, model: &str) -> bool;
+
+    /// 获取可用模型列表
+    async fn list_models(&self) -> AiResult<Vec<ModelInfo>>;
+
+    /// 发送AI请求
+    async fn send_request(&self, request: &AiRequest) -> AiResult<AiResponse>;
+
+    /// 获取配置参数
+    fn get_config_keys(&self) -> Vec<&'static str> {
+        vec![]
+    }
+
+    /// 健康检查
+    async fn health_check(&self) -> AiResult<bool> {
+        self.list_models().await.map(|_| true)
+    }
+
+    /// 计算预估成本
+    fn estimate_cost(&self, model: &str, input_tokens: usize, output_tokens: usize) -> Option<f64>;
+
+    /// 检查token限制
+    fn check_token_limit(&self, model: &str, max_tokens: usize) -> bool;
+}

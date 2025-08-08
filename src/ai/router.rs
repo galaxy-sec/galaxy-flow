@@ -1,4 +1,4 @@
-use crate::ai::{config::AiConfig, error::AiResult, provider::*};
+use crate::ai::{config::AiConfig, provider::*};
 use std::collections::HashMap;
 
 #[derive(Debug, Clone)]
@@ -18,7 +18,7 @@ impl AiRouter {
         Self { rules }
     }
 
-    pub fn select_provider(&self, model_name: &str, config: &AiConfig) -> AiProviderType {
+    pub fn select_provider(&self, model_name: &str, _config: &AiConfig) -> AiProviderType {
         // 简单的路由逻辑：根据模型名前缀选择provider
         if model_name.starts_with("gpt-") {
             AiProviderType::OpenAi
@@ -29,8 +29,11 @@ impl AiRouter {
             || model_name.starts_with("llama")
         {
             AiProviderType::Ollama
+        } else if model_name == "mock" {
+            AiProviderType::Mock
         } else {
-            config.global.default_provider
+            // 默认使用OpenAI
+            AiProviderType::OpenAi
         }
     }
 

@@ -106,8 +106,6 @@ galaxy-flow/
 │   │   ├── capabilities.rs
 │   │   ├── providers/
 │   │   │   ├── openai.rs
-│   │   │   ├── anthropic.rs
-│   │   │   ├── ollama.rs
 │   │   │   └── mock.rs
 │   │   ├── config/
 │   │   │   ├── mod.rs
