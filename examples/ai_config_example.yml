@@ -1,0 +1,57 @@
+# Galaxy Flow AI配置文件示例
+# 位置: ~/.galaxy/ai.yml
+# 支持环境变量替换语法: ${VAR_NAME}、${VAR_NAME:-default}、${VAR_NAME:?}
+#
+# 使用说明:
+# - TOKEN类配置使用环境变量，保护敏感信息
+# - 其他配置使用具体值，方便直接引用和修改
+
+version: "1.0"
+enabled: true
+override_env: false # 是否覆盖环境变量配置
+
+# Provider配置
+providers:
+  openai:
+    enabled: true
+    api_key: "${OPENAI_API_KEY}" # 敏感TOKEN使用环境变量
+    base_url: "https://api.openai.com/v1"
+    timeout: 30
+    priority: 1
+    model_aliases:
+      "gpt-4": "gpt-4o"
+      "gpt-3.5": "gpt-3.5-turbo"
+
+  deepseek:
+    enabled: true
+    api_key: "${DEEPSEEK_API_KEY}" # 敏感TOKEN使用环境变量
+    base_url: "https://api.deepseek.com/v1"
+    timeout: 30
+    priority: 2 # 更高优先级
+
+  groq:
+    enabled: false
+    api_key: "${GROQ_API_KEY}" # 敏感TOKEN使用环境变量
+    base_url: "https://api.groq.com/openai/v1"
+    timeout: 30
+    priority: 3
+
+# 路由规则
+routing:
+  default_provider: "deepseek"
+  cost_optimization: true
+  model_mappings:
+    "gpt-4": "openai"
+    "deepseek-chat": "deepseek"
+    "mixtral": "groq"
+
+# 使用限制
+limits:
+  review_budget: 2000
+  analysis_budget: 4000
+
+# 偏好设置
+preferences:
+  fallback_provider: "openai"
+  retry_count: 3
+  log_level: "info"
