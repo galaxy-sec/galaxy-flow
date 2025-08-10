@@ -94,6 +94,10 @@ impl AiConfig {
                 AiProviderType::Anthropic => env::var("CLAUDE_API_KEY").ok(),
                 AiProviderType::Ollama => Some("ollama".to_string()), // 本地无需密钥
                 AiProviderType::Mock => Some("mock".to_string()),
+                AiProviderType::DeepSeek => env::var("DEEPSEEK_API_KEY").ok(),
+                AiProviderType::Groq => env::var("GROQ_API_KEY").ok(),
+                AiProviderType::Kimi => env::var("KIMI_API_KEY").ok(),
+                AiProviderType::Glm => env::var("GLM_API_KEY").ok(),
             }
         }
     }
@@ -152,6 +156,46 @@ impl Default for AiConfig {
                 api_key_env: "OLLAMA_MODEL".to_string(),
                 base_url: Some("http://localhost:11434".to_string()),
                 ..Default::default()
+            },
+        );
+
+        providers.insert(
+            AiProviderType::DeepSeek,
+            ProviderConfig {
+                api_key_env: "DEEPSEEK_API_KEY".to_string(),
+                base_url: Some("https://api.deepseek.com/v1".to_string()),
+                timeout: 30,
+                enabled: true,
+            },
+        );
+
+        providers.insert(
+            AiProviderType::Groq,
+            ProviderConfig {
+                api_key_env: "GROQ_API_KEY".to_string(),
+                base_url: Some("https://api.groq.com/openai/v1".to_string()),
+                timeout: 30,
+                enabled: true,
+            },
+        );
+
+        providers.insert(
+            AiProviderType::Kimi,
+            ProviderConfig {
+                api_key_env: "KIMI_API_KEY".to_string(),
+                base_url: Some("https://api.moonshot.cn/v1".to_string()),
+                timeout: 30,
+                enabled: true,
+            },
+        );
+
+        providers.insert(
+            AiProviderType::Glm,
+            ProviderConfig {
+                api_key_env: "GLM_API_KEY".to_string(),
+                base_url: Some("https://open.bigmodel.cn/api/paas/v4".to_string()),
+                timeout: 30,
+                enabled: true,
             },
         );
 

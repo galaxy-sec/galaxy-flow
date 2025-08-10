@@ -13,7 +13,7 @@ impl AiRouter {
         // 默认路由规则
         rules.insert("simple".to_string(), AiProviderType::OpenAi);
         rules.insert("complex".to_string(), AiProviderType::OpenAi);
-        rules.insert("free".to_string(), AiProviderType::Ollama);
+        rules.insert("free".to_string(), AiProviderType::DeepSeek);
 
         Self { rules }
     }
@@ -24,10 +24,14 @@ impl AiRouter {
             AiProviderType::OpenAi
         } else if model_name.starts_with("claude") || model_name.starts_with("anthropic") {
             AiProviderType::Anthropic
-        } else if model_name.starts_with("deepseek")
-            || model_name.starts_with("codellama")
-            || model_name.starts_with("llama")
+        } else if model_name.starts_with("deepseek") {
+            AiProviderType::DeepSeek
+        } else if model_name.starts_with("mixtral")
+            || model_name.starts_with("llama3")
+            || model_name.starts_with("gemma")
         {
+            AiProviderType::Groq
+        } else if model_name.starts_with("codellama") || model_name.starts_with("llama") {
             AiProviderType::Ollama
         } else if model_name == "mock" {
             AiProviderType::Mock

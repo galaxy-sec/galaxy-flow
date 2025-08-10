@@ -13,6 +13,10 @@ pub enum AiProviderType {
     Anthropic,
     Ollama,
     Mock,
+    DeepSeek,
+    Groq,
+    Kimi,
+    Glm,
 }
 
 impl std::fmt::Display for AiProviderType {
@@ -22,6 +26,10 @@ impl std::fmt::Display for AiProviderType {
             AiProviderType::Anthropic => write!(f, "anthropic"),
             AiProviderType::Ollama => write!(f, "ollama"),
             AiProviderType::Mock => write!(f, "mock"),
+            AiProviderType::DeepSeek => write!(f, "deepseek"),
+            AiProviderType::Groq => write!(f, "groq"),
+            AiProviderType::Kimi => write!(f, "kimi"),
+            AiProviderType::Glm => write!(f, "glm"),
         }
     }
 }
@@ -33,6 +41,10 @@ impl From<AiProviderType> for &'static str {
             AiProviderType::Anthropic => "anthropic",
             AiProviderType::Ollama => "ollama",
             AiProviderType::Mock => "mock",
+            AiProviderType::DeepSeek => "deepseek",
+            AiProviderType::Groq => "groq",
+            AiProviderType::Kimi => "kimi",
+            AiProviderType::Glm => "glm",
         }
     }
 }

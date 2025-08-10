@@ -5,8 +5,8 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Duration;
 
-use crate::ai::error::AiResult;
-use crate::ai::{provider::*, AiError};
+use crate::ai::error::{AiError, AiResult};
+use crate::ai::provider::*;
 
 #[derive(Debug, Serialize, Deserialize)]
 struct OpenAiRequest {
@@ -48,9 +48,11 @@ pub struct OpenAiProvider {
     api_key: String,
     base_url: String,
     organization: Option<String>,
+    provider_type: AiProviderType,
 }
 
 impl OpenAiProvider {
+    /// 创建标准的OpenAI Provider
     pub fn new(api_key: String) -> Self {
         let client = Client::builder()
             .timeout(Duration::from_secs(30))
@@ -62,6 +64,53 @@ impl OpenAiProvider {
             api_key,
             base_url: "https://api.openai.com/v1".to_string(),
             organization: None,
+            provider_type: AiProviderType::OpenAi,
+        }
+    }
+
+    /// 创建DeepSeek兼容Provider (100% OpenAI格式兼容)
+    pub fn deep_seek(api_key: String) -> Self {
+        let client = Client::builder()
+            .timeout(Duration::from_secs(30))
+            .build()
+            .unwrap_or_else(|_| Client::new());
+
+        Self {
+            client: Arc::new(client),
+            api_key,
+            base_url: "https://api.deepseek.com/v1".to_string(),
+            organization: None,
+            provider_type: AiProviderType::DeepSeek,
+        }
+    }
+    pub fn kimi_k2(api_key: String) -> Self {
+        let client = Client::builder()
+            .timeout(Duration::from_secs(30))
+            .build()
+            .unwrap_or_else(|_| Client::new());
+
+        Self {
+            client: Arc::new(client),
+            api_key,
+            base_url: "https://api.moonshot.cn/v1".to_string(),
+            organization: None,
+            provider_type: AiProviderType::Kimi,
+        }
+    }
+
+    /// 创建Groq兼容Provider (OpenAI格式)
+    pub fn groq(api_key: String) -> Self {
+        let client = Client::builder()
+            .timeout(Duration::from_secs(30))
+            .build()
+            .unwrap_or_else(|_| Client::new());
+
+        Self {
+            client: Arc::new(client),
+            api_key,
+            base_url: "https://api.groq.com/openai/v1".to_string(),
+            organization: None,
+            provider_type: AiProviderType::Groq,
         }
     }
 
@@ -90,7 +139,7 @@ impl OpenAiProvider {
 
         if let Some(org) = &self.organization {
             headers.insert(
-                reqwest::header::HeaderName::from_static("OPENAI_ORGANIZATION"),
+                reqwest::header::HeaderName::from_static("OpenAI-Organization"),
                 header::HeaderValue::from_str(org).unwrap(),
             );
         }
@@ -99,20 +148,79 @@ impl OpenAiProvider {
     }
 
     fn map_model_to_info(&self, model: &str) -> ModelInfo {
-        let model_map: HashMap<&str, (usize, bool, bool, f64, f64)> = HashMap::from([
-            ("gpt-4o", (128000, true, true, 0.005, 0.015)),
-            ("gpt-4o-mini", (128000, true, true, 0.00015, 0.00060)),
-            ("gpt-4-turbo", (128000, true, true, 0.01, 0.03)),
-            ("gpt-3.5-turbo", (4096, false, false, 0.0005, 0.0015)),
-        ]);
+        let model_map: HashMap<&str, (usize, bool, bool, f64, f64, AiProviderType)> =
+            HashMap::from([
+                (
+                    "glm-4.5",
+                    (128000, true, false, 0.00007, 0.00028, AiProviderType::Glm),
+                ),
+                // OpenAI models
+                (
+                    "gpt-4o",
+                    (128000, true, true, 0.005, 0.015, AiProviderType::OpenAi),
+                ),
+                // DeepSeek models (99.5% cost reduction)
+                (
+                    "deepseek-chat",
+                    (
+                        32768,
+                        true,
+                        false,
+                        0.00007,
+                        0.00028,
+                        AiProviderType::DeepSeek,
+                    ),
+                ),
+                (
+                    "deepseek-coder",
+                    (
+                        32768,
+                        true,
+                        false,
+                        0.00007,
+                        0.00028,
+                        AiProviderType::DeepSeek,
+                    ),
+                ),
+                (
+                    "deepseek-reasoner",
+                    (
+                        32768,
+                        true,
+                        true,
+                        0.00014,
+                        0.00056,
+                        AiProviderType::DeepSeek,
+                    ),
+                ),
+                // Groq models
+                (
+                    "mixtral-8x7b-32768",
+                    (32768, false, false, 0.00027, 0.00027, AiProviderType::Groq),
+                ),
+                (
+                    "llama3-70b-8192",
+                    (8192, false, false, 0.00059, 0.00079, AiProviderType::Groq),
+                ),
+                (
+                    "gemma2-9b-it",
+                    (8192, false, false, 0.00010, 0.00010, AiProviderType::Groq),
+                ),
+            ]);
 
-        let default = (4096, false, false, 0.001, 0.002);
-        let (max_tokens, supports_images, supports_reasoning, input_cost, output_cost) =
-            model_map.get(model).unwrap_or(&default);
+        let default = (4096, false, false, 0.001, 0.002, AiProviderType::OpenAi);
+        let (
+            max_tokens,
+            supports_images,
+            supports_reasoning,
+            input_cost,
+            output_cost,
+            provider_type,
+        ) = model_map.get(model).unwrap_or(&default);
 
         ModelInfo {
             name: model.to_string(),
-            provider: AiProviderType::OpenAi,
+            provider: *provider_type,
             max_tokens: *max_tokens,
             supports_images: *supports_images,
             supports_reasoning: *supports_reasoning,
@@ -125,7 +233,7 @@ impl OpenAiProvider {
 #[async_trait]
 impl AiProvider for OpenAiProvider {
     fn provider_type(&self) -> AiProviderType {
-        AiProviderType::OpenAi
+        self.provider_type
     }
 
     async fn is_model_available(&self, model: &str) -> bool {
@@ -136,7 +244,15 @@ impl AiProvider for OpenAiProvider {
     }
 
     async fn list_models(&self) -> AiResult<Vec<ModelInfo>> {
-        let models = vec!["gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "gpt-3.5-turbo"];
+        let models = match self.provider_type {
+            AiProviderType::Glm => vec!["glm-4.5"],
+            AiProviderType::OpenAi => vec!["gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "gpt-3.5-turbo"],
+            AiProviderType::DeepSeek => {
+                vec!["deepseek-chat", "deepseek-coder", "deepseek-reasoner"]
+            }
+            AiProviderType::Groq => vec!["mixtral-8x7b-32768", "llama3-70b-8192", "gemma2-9b-it"],
+            _ => vec!["gpt-4o-mini"],
+        };
 
         Ok(models.iter().map(|m| self.map_model_to_info(m)).collect())
     }
@@ -211,7 +327,7 @@ impl AiProvider for OpenAiProvider {
                 ),
             },
             finish_reason: choice.finish_reason.clone(),
-            provider: AiProviderType::OpenAi,
+            provider: self.provider_type,
             metadata: HashMap::new(),
         })
     }
@@ -229,6 +345,11 @@ impl AiProvider for OpenAiProvider {
     }
 
     fn get_config_keys(&self) -> Vec<&'static str> {
-        vec!["OPENAI_API_KEY", "OPENAI_ORG_ID", "OPENAI_BASE_URL"]
+        match self.provider_type {
+            AiProviderType::OpenAi => vec!["OPENAI_API_KEY", "OPENAI_ORG_ID", "OPENAI_BASE_URL"],
+            AiProviderType::DeepSeek => vec!["DEEPSEEK_API_KEY", "DEEPSEEK_BASE_URL"],
+            AiProviderType::Groq => vec!["GROQ_API_KEY", "GROQ_BASE_URL"],
+            _ => vec!["API_KEY", "BASE_URL"],
+        }
     }
 }

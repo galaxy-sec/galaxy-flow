@@ -24,6 +24,18 @@ impl AiClient {
             providers.insert(AiProviderType::OpenAi, Arc::new(provider));
         }
 
+        // 初始化DeepSeek
+        if let Some(key) = config.get_api_key(AiProviderType::DeepSeek) {
+            let provider = OpenAiProvider::deep_seek(key);
+            providers.insert(AiProviderType::DeepSeek, Arc::new(provider));
+        }
+
+        // 初始化Groq
+        if let Some(key) = config.get_api_key(AiProviderType::Groq) {
+            let provider = OpenAiProvider::groq(key);
+            providers.insert(AiProviderType::Groq, Arc::new(provider));
+        }
+
         // Mock provider for testing
         providers.insert(
             AiProviderType::Mock,
