@@ -18,4 +18,5 @@ pub mod gxl_const {
     pub const ERROR_PREFIX: &str = "GXL ERROR: ";
     pub const CONFIG_FILE: &str = "conf.toml";
     pub const REDIRECT_FILE: &str = ".galaxy/redirect.yml";
+    pub const NET_ACCS_CTRL_PATH_FILE: &str = ".galaxy/net_accessor_ctrl.yml";
 }

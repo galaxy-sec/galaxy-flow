@@ -1,5 +1,4 @@
 pub mod archive;
-pub mod artifact;
 pub mod assert;
 pub mod call;
 pub mod cmd;
@@ -14,7 +13,6 @@ pub mod ver;
 pub use assert::gal_assert;
 pub use cmd::gal_cmd;
 
-pub use artifact::gal_artifact;
 pub use common::*;
 pub use load::*;
 pub use read::*;
