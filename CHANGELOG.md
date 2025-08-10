@@ -11,10 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Galaxy Environment Initialization**: Added environment setup functionality for Galaxy platform, enabling automated configuration and initialization of Galaxy environments.
 - **Network Access Control Service**: Replaced the legacy redirect service with a new network access control service, providing better security and access management.
 - **Artifact Download Redirection Support**: Added redirect capabilities for artifact downloading, improving reliability and flexibility in artifact retrieval.
+- **Removed gx.artifact Ability**: Removed the legacy gx.artifact capability in favor of more flexible download alternatives (breaking change).
 - **Project Root Detection**: Added GXL_PRJ_ROOT environment variable for automatic project root discovery.
 
 ### Changed
-- **Dependency Updates**: Upgraded `orion_variate` from v0.6.0 to v0.6.1, bringing enhanced variable handling capabilities and minor bug fixes.
+- **Dependency Updates**: Upgraded `orion_variate` from v0.6.2 (tagged release), bringing enhanced variable handling capabilities and improved stability over branch-based dependencies.
 - **Workflow Enhancements**: Updated CI/CD workflows with improved build and release processes.
 
 ### Security
@@ -22,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - **Test Cases**: Resolved various test case issues and improved test reliability.
+- **Code Cleanup**: Removed deprecated artifact module and related parser code, reducing complexity and maintenance burden.
 
 ## [0.10.0] - 2025-08-07
 
@@ -55,6 +57,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Deprecated
 - **Legacy Redirect Service**: Marked for removal in favor of network access control service
+- **Legacy Artifact Service**: The gx.artifact ability has been removed in v0.10.1
 
 ### Fixed
 - **Command Environment Variables**: Fixed issues with environment variable propagation in command execution
@@ -79,12 +82,13 @@ Previous stable release. This changelog covers changes from 0.9.2-beta.1 to 0.10
 **Note**: Version 0.10.x represents a significant evolution from 0.9.x with major architectural improvements, especially in task management, configuration handling, and system integration.
 
 ### Migration Notes
-- Environment variable names have been standardized. Update scripts using `GXL_CMD_ARGS` to `GXL_CMD_ARG`
-- Task configuration files should be updated to use new YAML format for task reports
-- For using the new task system, refer to `examples/task-*.gxl` files for configuration patterns
-- Redirect URL request headers have been upgraded from legacy format to new access control format
-- Legacy `undo_flow` has been replaced with `undo_hold` for transaction operations
-- Command execution syntax updated with new block structure pattern, requiring updates to existing `.gxl` file syntax
+- **Environment variable names have been standardized. Update scripts using `GXL_CMD_ARGS` to `GXL_CMD_ARG`
+- **Task configuration files should be updated to use new YAML format for task reports
+- **For using the new task system, refer to `examples/task-*.gxl` files for configuration patterns
+- **Redirect URL request headers have been upgraded from legacy format to new access control format
+- **Legacy `undo_flow` has been replaced with `undo_hold` for transaction operations
+- **Command execution syntax updated with new block structure pattern, requiring updates to existing `.gxl` file syntax
+- **Migrate from gx.artifact**: Replace any gx.artifact usage with gx.download for better flexibility and control
 
 ### Upgrade Checklist
 - [ ] Update environment variable declarations from `GXL_CMD_ARGS` to `GXL_CMD_ARG`
