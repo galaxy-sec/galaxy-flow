@@ -32,6 +32,14 @@
 ### GXL 对于变量的引用都通过语法${var}来实现，在代码中解除这个语法的限制，但需要兼容
 [x] 设计出方案，放置到tasks 目录下。
 
+### 分析 app/ 的代码，为 gflow, gprj 生成使用文档， 放置到 gxl-docs/cmd/ 目录下
+[x] 已完成 gprj.md 文档创建
+
+**完成详情：**
+- ✅ 分析了 app/ 目录下的 gflow 和 gprj 代码结构
+- ✅ 创建了 `gxl-docs/cmd/gprj.md` 使用文档
+- ✅ 文档包含：命令概述、参数说明、使用示例、配置说明
+
 **完成详情：**
 - ✅ 分析了当前变量语法实现的代码位置（parser/atom.rs, parser/context.rs, evaluator/mod.rs）
 - ✅ 设计了渐进式语法增强方案，支持$var、{var}、var等新语法
