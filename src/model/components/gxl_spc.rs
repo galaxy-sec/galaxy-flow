@@ -171,7 +171,7 @@ fn parse_obj_path(obj_path: &str) -> ExecResult<(&str, &str)> {
 
     match (parts.next(), parts.next()) {
         (Some(mod_name), Some(item_name)) => Ok((mod_name, item_name)),
-        _ => Err(ExecReason::InvalidPath(obj_path.to_string()).into()),
+        _ => Err(ExecReason::Gxl(obj_path.to_string()).into()),
     }
 }
 

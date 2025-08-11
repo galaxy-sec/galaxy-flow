@@ -41,7 +41,7 @@ impl GxRead {
             ReadMode::CMD(o) => o.execute(ctx, dict),
             ReadMode::FILE(o) => o.execute(ctx, dict),
             ReadMode::STDIN(o) => o.execute(ctx, dict),
-            _ => Err(ExecReason::Exp(String::from("not implementation")).into()),
+            _ => Err(ExecReason::Gxl(String::from("not implementation")).into()),
         }
     }
 }

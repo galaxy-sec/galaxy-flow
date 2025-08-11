@@ -1,13 +1,15 @@
 mod capabilities;
 pub mod client;
-mod config;
-mod context;
-mod error;
-mod provider;
-mod providers;
-mod router;
+pub mod config;
+pub mod context;
+pub mod error;
+pub mod provider;
+pub mod providers;
+pub mod router;
 pub use config::*;
 pub use context::*;
 pub use error::*;
 pub use router::*;
-mod tests;
+// mod tests; // 已移除到 config 模块中
+
+// DeepSeek 测试模块

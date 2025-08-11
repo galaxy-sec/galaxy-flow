@@ -9,7 +9,6 @@ use std::sync::mpsc::Sender;
 
 use crate::ability::archive::GxTar;
 use crate::ability::archive::GxUnTar;
-use crate::ability::artifact::GxArtifact;
 use crate::ability::delegate::ActCall;
 use crate::ability::prelude::TaskValue;
 use crate::ability::shell::GxShell;
@@ -35,7 +34,6 @@ pub enum BlockAction {
     Read(GxRead),
     Call(Box<ActCall>),
     Tpl(GxTpl),
-    Artifact(GxArtifact),
     Tar(GxTar),
     UnTar(GxUnTar),
     DownLoad(GxDownLoad),
@@ -85,7 +83,6 @@ impl AsyncRunnableWithSenderTrait for BlockAction {
             BlockAction::Call(o) => o.async_exec(ctx, dct).await,
             BlockAction::Version(o) => o.async_exec(ctx, dct).await,
             BlockAction::Read(o) => o.async_exec(ctx, dct).await,
-            BlockAction::Artifact(o) => o.async_exec(ctx, dct).await,
             BlockAction::UpLoad(o) => o.async_exec(ctx, dct).await,
             BlockAction::DownLoad(o) => o.async_exec(ctx, dct).await,
         }
@@ -141,7 +138,6 @@ impl DependTrait<&GxlSpace> for BlockNode {
                 BlockAction::Shell(v) => BlockAction::Shell(v.clone()),
                 BlockAction::GxlRun(v) => BlockAction::GxlRun(v.clone()),
                 BlockAction::Call(v) => BlockAction::Call(Box::new(v.assemble(mod_name, src)?)),
-                BlockAction::Artifact(v) => BlockAction::Artifact(v.clone()),
                 BlockAction::DownLoad(v) => BlockAction::DownLoad(v.clone()),
                 BlockAction::UpLoad(v) => BlockAction::UpLoad(v.clone()),
             };

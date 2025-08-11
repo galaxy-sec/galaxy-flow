@@ -15,8 +15,8 @@ use crate::parser::inner::archive::{gal_tar, gal_untar};
 use super::atom::spaced;
 use super::domain::{gal_block_beg, gal_block_end, gal_keyword};
 use super::inner::{
-    gal_artifact, gal_assert, gal_cmd, gal_download, gal_echo, gal_prop, gal_read_cmd,
-    gal_read_file, gal_read_stdin, gal_tpl, gal_upload, gal_version,
+    gal_assert, gal_cmd, gal_download, gal_echo, gal_prop, gal_read_cmd, gal_read_file,
+    gal_read_stdin, gal_tpl, gal_upload, gal_version,
 };
 
 pub fn gal_block(input: &mut &str) -> Result<BlockNode> {
@@ -97,9 +97,7 @@ pub fn gal_sentens_item(input: &mut &str) -> Result<BlockAction> {
     if starts_with("gx.tpl", input) {
         return gal_tpl.map(BlockAction::Tpl).parse_next(input);
     }
-    if starts_with("gx.artifact", input) {
-        return gal_artifact.map(BlockAction::Artifact).parse_next(input);
-    }
+
     if starts_with("gx.tar", input) {
         return gal_tar.map(BlockAction::Tar).parse_next(input);
     }

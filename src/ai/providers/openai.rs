@@ -1,11 +1,12 @@
 use async_trait::async_trait;
+use orion_error::ErrorOwe;
 use reqwest::{header, Client};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Duration;
 
-use crate::ai::error::{AiError, AiResult};
+use crate::ai::error::{AiErrReason, AiResult};
 use crate::ai::provider::*;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -284,14 +285,15 @@ impl AiProvider for OpenAiProvider {
             .headers(self.create_headers())
             .json(&openai_request)
             .send()
-            .await?;
+            .await
+            .owe_res()?;
 
-        let response_body = response.json::<OpenAiResponse>().await?;
+        let response_body = response.json::<OpenAiResponse>().await.owe_data()?;
 
         let choice = response_body
             .choices
             .first()
-            .ok_or_else(|| AiError::ConfigError("No choices in response".to_string()))?;
+            .ok_or_else(|| AiErrReason::ConfigError("No choices in response".to_string()))?;
 
         Ok(AiResponse {
             content: choice.message.content.clone(),

@@ -1,11 +1,16 @@
 use home::home_dir;
 use orion_common::serde::Yamlable;
 use orion_error::{ErrorOwe, UvsResFrom};
+use orion_variate::addr::access_ctrl::{serv::NetAccessCtrl, Rule, Unit};
 
-use crate::err::{RunError, RunResult};
+use crate::{
+    ai::AiConfig,
+    err::{RunError, RunResult},
+};
 
 pub struct Galaxy {}
-
+const NET_ACCESS_CTRL_FILE: &str = "net_accessor_ctrl.yml";
+const AI_CONF_FILE: &str = "ai.yml";
 impl Galaxy {
     /// 初始化 Galaxy 环境
     ///
@@ -24,34 +29,34 @@ impl Galaxy {
         }
 
         // 构建正确的 RedirectService demo 数据
-        use orion_variate::addr::redirect::*;
-        let redirect_path = galaxy_dir.join("redirect.yml");
-        if redirect_path.exists() {
+
+        let net_ctrl_path = galaxy_dir.join(NET_ACCESS_CTRL_FILE);
+        if net_ctrl_path.exists() {
             println!(
-                " {} exists! , redirect init ignore",
-                redirect_path.display()
+                " {} exists! , net access ctrl init ignore",
+                net_ctrl_path.display()
             );
             return Ok(());
         }
 
-        // 创建演示重定向规则
-        let rules = vec![Rule::new("https://google.com/*", "https://google.cn/*")];
+        let rules = vec![Rule::new("https://google.com/*", "https://google.cn/")];
+        let unit = Unit::new(rules, None, None);
+        let service = NetAccessCtrl::new(vec![unit], true);
+        service.save_yml(&net_ctrl_path).owe_res()?;
 
-        // 创建重定向单元
-        let unit = Unit::new(rules, None);
-
-        // 创建服务实例
-        let service = serv::RedirectService::new(vec![unit], true);
-        service.save_yml(&redirect_path).owe_res()?;
+        let ai_conf_path = galaxy_dir.join(AI_CONF_FILE);
+        if ai_conf_path.exists() {
+            println!(" {} exists! , ai init ignore", ai_conf_path.display());
+            return Ok(());
+        }
+        AiConfig::example().save_yml(&ai_conf_path).owe_res()?;
         Ok(())
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use orion_common::serde::Yamlable;
     use orion_error::TestAssertWithMsg;
-    use orion_variate::addr::redirect::serv::RedirectService;
 
     use super::*;
     use std::{fs, path::PathBuf};
@@ -74,13 +79,13 @@ mod tests {
         // 执行初始化
         let result = Galaxy::env_init();
         assert!(result.is_ok(), "Environment init should succeed");
-        let conf_path = galaxy_dir.join("redirect.yml");
+        let conf_path = galaxy_dir.join(NET_ACCESS_CTRL_FILE);
 
         // 验证目录和文件创建
         assert!(galaxy_dir.exists());
         assert!(conf_path.exists());
 
-        RedirectService::from_yml(&conf_path).assert("redict");
+        NetAccessCtrl::from_yml(&conf_path).assert("redict");
         // 验证文件内容包含关键字段
         let content = fs::read_to_string(conf_path).unwrap();
         println!("{content}");

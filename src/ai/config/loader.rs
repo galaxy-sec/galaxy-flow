@@ -1,0 +1,157 @@
+use orion_error::UvsConfFrom;
+use serde_yaml;
+use std::env;
+use std::fs;
+use std::path::{Path, PathBuf};
+
+use crate::ai::AiError;
+use crate::ai::{AiErrReason, AiResult};
+
+use super::structures::{AiConfig, FileConfig};
+
+/// 配置加载器，支持文件加载和变量替换
+pub struct ConfigLoader {
+    // 配置加载器状态
+}
+
+impl ConfigLoader {
+    /// 创建新的配置加载器
+    pub fn new() -> Self {
+        Self {}
+    }
+
+    /// 确保配置目录存在
+    pub fn ensure_config_dir() -> AiResult<PathBuf> {
+        let config_dir = dirs::home_dir()
+            .ok_or_else(|| AiErrReason::ConfigError("Home directory not found".to_string()))?
+            .join(".galaxy");
+
+        if !config_dir.exists() {
+            fs::create_dir_all(&config_dir).map_err(|e| {
+                AiErrReason::ConfigError(format!("Failed to create config directory: {}", e))
+            })?;
+        }
+
+        Ok(config_dir)
+    }
+
+    /// 加载配置文件
+    pub fn load_file_config(&self) -> AiResult<FileConfig> {
+        let config_path = Self::ensure_config_dir()?.join("ai.yml");
+        self.load_config_from_path(&config_path)
+    }
+
+    /// 从指定路径加载配置文件
+    pub fn load_config_from_path(&self, config_path: &Path) -> AiResult<FileConfig> {
+        if !config_path.exists() {
+            return Err(AiError::from_conf(format!(
+                "Config file not found: {}",
+                config_path.display()
+            )));
+        }
+
+        let content = fs::read_to_string(config_path).map_err(|e| {
+            AiErrReason::ConfigError(format!(
+                "Failed to read config file {}: {}",
+                config_path.display(),
+                e
+            ))
+        })?;
+
+        // 使用 EnvEvalable 进行变量替换
+        let evaluated_content = self.evaluate_variables(&content)?;
+
+        let mut file_config: FileConfig =
+            serde_yaml::from_str(&evaluated_content).map_err(|e| {
+                AiErrReason::ConfigError(format!(
+                    "Invalid YAML in {}: {}",
+                    config_path.display(),
+                    e
+                ))
+            })?;
+
+        file_config.config_path = config_path.to_path_buf();
+
+        Ok(file_config)
+    }
+
+    /// 使用 std::env 进行变量替换
+    pub fn evaluate_variables(&self, content: &str) -> AiResult<String> {
+        // 支持的变量替换语法:
+        // ${VAR} - 基本变量
+        // ${VAR:-default} - 默认值
+        // ${VAR:?} - 必填变量
+
+        let re = regex::Regex::new(r"\$\{([^}]+)\}")
+            .map_err(|e| AiErrReason::ConfigError(format!("Failed to create regex: {}", e)))?;
+
+        let result = re
+            .replace_all(content, |caps: &regex::Captures| {
+                let var_expr = &caps[1];
+
+                if let Some((var_name, default)) = var_expr.split_once(":-") {
+                    // 默认值语法 ${VAR:-default}
+                    env::var(var_name).unwrap_or_else(|_| default.to_string())
+                } else if let Some(var_name) = var_expr.strip_suffix("?") {
+                    // 必填变量语法 ${VAR:?}
+                    env::var(var_name)
+                        .unwrap_or_else(|_| panic!("Required variable '{}' not found", var_name))
+                } else {
+                    // 基本变量语法 ${VAR}
+                    env::var(var_expr).unwrap_or_default()
+                }
+            })
+            .to_string();
+
+        Ok(result)
+    }
+
+    /// 加载完整配置（文件 + 环境变量）
+    pub fn load_config() -> AiResult<AiConfig> {
+        let loader = Self::new();
+
+        // 首先从环境变量加载基础配置
+        let mut config = AiConfig::from_env();
+
+        // 尝试加载配置文件
+        match loader.load_file_config() {
+            Ok(file_config) => {
+                println!("📄 File config loaded successfully, merging...");
+                // 合并配置文件内容
+                loader.merge_file_config(&mut config, file_config)?;
+                println!("✅ File config merged successfully");
+            }
+            Err(e) => {
+                // 配置文件不存在时的优雅降级
+                log::info!(
+                    "Config file not found or invalid, using environment variables only: {}",
+                    e
+                );
+            }
+        }
+
+        Ok(config)
+    }
+
+    /// 合并文件配置到主配置
+    pub fn merge_file_config(
+        &self,
+        config: &mut AiConfig,
+        file_config: FileConfig,
+    ) -> AiResult<()> {
+        config.file_config = Some(file_config.clone());
+
+        if !file_config.enabled {
+            return Ok(());
+        }
+
+        // 如果启用文件配置且要覆盖环境变量，则更新provider配置
+        if file_config.override_env {
+            // 这里后续可以添加从文件中读取provider配置的逻辑
+            // 目前保持向后兼容，以环境变量为准
+            log::info!("File config enabled, would merge provider settings");
+        }
+
+        Ok(())
+    }
+}

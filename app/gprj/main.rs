@@ -23,7 +23,6 @@ use galaxy_flow::execution::VarSpace;
 use galaxy_flow::galaxy::Galaxy;
 use galaxy_flow::infra::configure_run_logging;
 use galaxy_flow::runner::{GxlCmd, GxlRunner};
-use galaxy_flow::util::GitTools;
 use galaxy_flow::GxLoader;
 use include_dir::{include_dir, Dir};
 use orion_error::ErrorConv;
@@ -109,8 +108,6 @@ impl GxAdm {
             println!("Architecture: {arch}");
         }
         println!("evn path:{}", env!("PATH"));
-        let gtools = GitTools::new(false).err_conv()?;
-        gtools.check_run().err_conv()?;
         Ok(())
     }
 
