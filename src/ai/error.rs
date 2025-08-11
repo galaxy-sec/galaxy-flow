@@ -1,13 +1,11 @@
+use orion_error::{ErrorCode, StructError, UvsReason};
+use serde_derive::Serialize;
 use thiserror::Error;
 
-#[derive(Debug, Error)]
-pub enum AiError {
-    #[error("Network request failed: {0}")]
-    NetworkError(#[from] reqwest::Error),
-
-    #[error("JSON parsing error: {0}")]
-    JsonError(#[from] serde_json::Error),
-
+#[derive(Debug, PartialEq, Serialize, Error)]
+pub enum AiErrReason {
+    #[error("Network error: {0}")]
+    NetworkError(String),
     #[error("Configuration error: {0}")]
     ConfigError(String),
 
@@ -23,9 +21,6 @@ pub enum AiError {
     #[error("Context collection failed: {0}")]
     ContextError(String),
 
-    #[error("Git operation failed: {0}")]
-    GitError(#[from] git2::Error),
-
     #[error("No suitable provider found for request")]
     NoProviderAvailable,
 
@@ -37,24 +32,40 @@ pub enum AiError {
 
     #[error("Sensitive content filtered")]
     SensitiveContentFiltered,
+    #[error("{0}")]
+    Uvs(UvsReason),
 }
 
-impl AiError {
+impl From<UvsReason> for AiErrReason {
+    fn from(value: UvsReason) -> Self {
+        AiErrReason::Uvs(value)
+    }
+}
+impl ErrorCode for AiErrReason {
+    fn error_code(&self) -> i32 {
+        800
+    }
+}
+
+impl AiErrReason {
     pub fn is_retryable(&self) -> bool {
         matches!(
             self,
-            AiError::NetworkError(_) | AiError::RateLimitError(_) | AiError::TimeoutError(_)
+            AiErrReason::NetworkError(_)
+                | AiErrReason::RateLimitError(_)
+                | AiErrReason::TimeoutError(_)
         )
     }
 
     pub fn provider_name(&self) -> Option<&str> {
         match self {
-            AiError::AuthError(provider)
-            | AiError::RateLimitError(provider)
-            | AiError::InvalidModel(provider) => Some(provider),
+            AiErrReason::AuthError(provider)
+            | AiErrReason::RateLimitError(provider)
+            | AiErrReason::InvalidModel(provider) => Some(provider),
             _ => None,
         }
     }
 }
 
+pub type AiError = StructError<AiErrReason>;
 pub type AiResult<T> = Result<T, AiError>;

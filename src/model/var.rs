@@ -59,10 +59,10 @@ impl Display for VarDict {
     }
 }
 
-impl Into<EnvDict> for VarDict {
-    fn into(self) -> EnvDict {
+impl From<VarDict> for EnvDict {
+    fn from(value: VarDict) -> Self {
         let mut dict = EnvDict::new();
-        for (k, v) in self.maps {
+        for (k, v) in value.maps() {
             dict.insert(k.to_uppercase(), v.clone().no_sec());
         }
         dict

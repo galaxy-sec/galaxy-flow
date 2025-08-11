@@ -15,7 +15,7 @@
 
 ## 任务状态
 
-* 已完成：gx.assert, gx.cmd, gx.echo, gx.read, gx.vars, gx.tpl, gx.ver, gx.shell, gx.download/gx.upload, gx.tar/gx.untar, gx.artifact, gx.run, gx.defined 的文档生成
+* 已完成：gx.assert, gx.cmd, gx.echo, gx.read, gx.vars, gx.tpl, gx.ver, gx.shell, gx.download/gx.upload, gx.tar/gx.untar, gx.run, gx.defined 的文档生成
 * 文档已保存至 docs/inner/index.md
 * 每种能力的单独文档已生成至 docs/inner/ 目录下的独立文件中
 

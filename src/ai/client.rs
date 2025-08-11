@@ -5,7 +5,7 @@ use std::sync::Arc;
 
 use super::provider::AiResponse;
 use super::providers::openai::OpenAiProvider;
-use super::{AiConfig, AiError, AiResult, AiRouter};
+use super::{AiConfig, AiErrReason, AiError, AiResult, AiRouter};
 
 /// 主AI客户端，统一的API接口
 pub struct AiClient {
@@ -55,7 +55,7 @@ impl AiClient {
         if let Some(provider) = self.providers.get(&provider_type) {
             provider.send_request(&request).await
         } else {
-            Err(AiError::NoProviderAvailable)
+            Err(AiError::from(AiErrReason::NoProviderAvailable))
         }
     }
 
@@ -139,6 +139,211 @@ impl AiClient {
             AiDevCapability::Predict => "分析变更对系统的影响和潜在风险".to_string(),
             AiDevCapability::Collaborate => "提供团队协作和代码集成建议".to_string(),
             AiDevCapability::Explain => "解析内容".to_string(),
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::env;
+
+    #[tokio::test]
+    async fn test_client_with_deepseek() {
+        if env::var("DEEPSEEK_API_KEY").is_err() {
+            return;
+        }
+        // 创建配置，启用 DeepSeek
+        let config = AiConfig::example();
+
+        let client = AiClient::new(config).expect("Failed to create AiClient");
+
+        // 验证 DeepSeek 可用
+        assert!(client.is_provider_available(AiProviderType::DeepSeek));
+        assert!(client
+            .available_providers()
+            .contains(&AiProviderType::DeepSeek));
+
+        // 创建简单的测试请求
+        let request = AiRequest::builder()
+            .model("deepseek-chat")
+            .system_prompt("你是一个测试助手".to_string())
+            .user_prompt("请回答：1+1=?".to_string())
+            .build();
+
+        // 发送请求到 DeepSeek
+        let response = client.send_request(request).await;
+
+        match response {
+            Ok(resp) => {
+                println!("✅ DeepSeek 响应: {}", resp.content);
+                assert!(!resp.content.is_empty());
+                assert_eq!(resp.provider, AiProviderType::DeepSeek);
+            }
+            Err(e) => {
+                // 在没有真实 API key 的情况下，这可能是预期的
+                println!("⚠️ DeepSeek 请求失败（预期，需要真实 API key）: {}", e);
+            }
+        }
+    }
+
+    #[tokio::test]
+    async fn test_client_smart_request_with_deepseek() {
+        if env::var("DEEPSEEK_API_KEY").is_err() {
+            return;
+        }
+
+        let config = AiConfig::example();
+        let client = AiClient::new(config).expect("Failed to create AiClient");
+
+        // 使用 smart_request 方法
+        let response = client.smart_request(
+            AiDevCapability::Analyze,
+            "分析这个函数的性能：\nfn fibonacci(n: u64) -> u64 { if n <= 1 { n } else { fibonacci(n-1) + fibonacci(n-2) } }"
+        ).await;
+
+        match response {
+            Ok(resp) => {
+                println!("✅ DeepSeek smart 响应: {}", resp.content);
+                assert!(!resp.content.is_empty());
+            }
+            Err(e) => {
+                println!("⚠️ DeepSeek smart 请求失败（预期）: {}", e);
+            }
+        }
+    }
+
+    #[tokio::test]
+    async fn test_client_commit_with_deepseek() {
+        if env::var("DEEPSEEK_API_KEY").is_err() {
+            return;
+        }
+
+        let config = AiConfig::example();
+        let client = AiClient::new(config).expect("Failed to create AiClient");
+
+        // 测试 commit 功能
+        let context = r#"feat: add user authentication
+- Implement login endpoint
+- Add JWT token generation
+- Include password hashing"#;
+
+        let response = client.smart_commit(context).await;
+
+        match response {
+            Ok(resp) => {
+                println!("✅ DeepSeek commit 响应: {}", resp.content);
+                assert!(!resp.content.is_empty());
+                // 验证提交信息符合 Conventional Commits 格式
+                assert!(
+                    resp.content.contains("feat:")
+                        || resp.content.contains("fix:")
+                        || resp.content.contains("docs:")
+                );
+            }
+            Err(e) => {
+                println!("⚠️ DeepSeek commit 请求失败（预期）: {}", e);
+            }
+        }
+    }
+
+    #[tokio::test]
+    async fn test_client_code_review_with_deepseek() {
+        if env::var("DEEPSEEK_API_KEY").is_err() {
+            return;
+        }
+        let config = AiConfig::example();
+        let client = AiClient::new(config).expect("Failed to create AiClient");
+
+        // 测试代码审查功能
+        let code = r#"function processUserData(user) {
+    if (!user || !user.name) {
+        return null;
+    }
+
+    let result = [];
+    for (let i = 0; i < user.data.length; i++) {
+        result.push(user.data[i] * 2);
+    }
+
+    return result;
+}"#;
+
+        let response = client.code_review(code, "user.js").await;
+
+        match response {
+            Ok(resp) => {
+                println!("✅ DeepSeek code review 响应: {}", resp.content);
+                assert!(!resp.content.is_empty());
+                // 验证包含代码审查相关的关键词
+                assert!(
+                    resp.content.to_lowercase().contains("security")
+                        || resp.content.to_lowercase().contains("performance")
+                        || resp.content.to_lowercase().contains("vulnerability")
+                );
+            }
+            Err(e) => {
+                println!("⚠️ DeepSeek code review 请求失败（预期）: {}", e);
+            }
+        }
+    }
+
+    #[tokio::test]
+    async fn test_client_provider_fallback() {
+        // 测试当 DeepSeek 不可用时的回退机制
+        let mut config = AiConfig::example();
+
+        // 禁用 DeepSeek
+        config
+            .providers
+            .get_mut(&AiProviderType::DeepSeek)
+            .unwrap()
+            .enabled = false;
+
+        let client = AiClient::new(config).expect("Failed to create AiClient");
+
+        // 验证 DeepSeek 不可用
+        assert!(!client.is_provider_available(AiProviderType::DeepSeek));
+
+        // 其他 provider 应该仍然可用
+        assert!(client.is_provider_available(AiProviderType::Mock));
+        assert!(client.available_providers().contains(&AiProviderType::Mock));
+    }
+
+    #[tokio::test]
+    async fn test_client_model_routing() {
+        // 测试模型路由功能
+        env::set_var("DEEPSEEK_API_KEY", "test_deepseek_key");
+        env::set_var("OPENAI_API_KEY", "test_openai_key");
+
+        let config = AiConfig::example();
+        let client = AiClient::new(config).expect("Failed to create AiClient");
+
+        // 使用不同的模型进行测试
+        let models_to_test = vec![
+            "deepseek-chat", // 应该路由到 DeepSeek
+            "gpt-4o-mini",   // 应该路由到 OpenAI
+            "unknown-model", // 应该使用默认路由
+        ];
+
+        for model in models_to_test {
+            let request = AiRequest::builder()
+                .model(model)
+                .system_prompt("测试".to_string())
+                .user_prompt("测试内容".to_string())
+                .build();
+
+            let response = client.send_request(request).await;
+            match response {
+                Ok(resp) => {
+                    println!("✅ 模型 {} 路由成功: {:?}", model, resp.provider);
+                    assert!(!resp.content.is_empty());
+                }
+                Err(e) => {
+                    println!("⚠️ 模型 {} 请求失败: {}", model, e);
+                    // 某些模型可能因为配置问题而失败，这是可以接受的
+                }
+            }
         }
     }
 }

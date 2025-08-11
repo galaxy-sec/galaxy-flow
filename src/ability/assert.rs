@@ -47,7 +47,7 @@ impl AsyncRunnableTrait for GxAssert {
                 err_msg = exp.eval(&msg)?;
             }
             println!("{err_msg}");
-            return Err(ExecError::from(ExecReason::Check(format!(
+            return Err(ExecError::from(ExecReason::Assert(format!(
                 "assert fail! [{}], expect: {},\n value {}",
                 self.result, expect, value
             ))));

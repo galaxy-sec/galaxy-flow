@@ -1,3 +1,5 @@
+use orion_error::{ToStructError, UvsConfFrom, UvsReason};
+
 use crate::ability::prelude::*;
 
 use crate::execution::runnable::ComponentMeta;
@@ -128,7 +130,10 @@ impl AsyncRunnableTrait for GxlVersion {
             file.write_all(ver.to_string().as_bytes()).owe_res()?;
             Ok(TaskValue::from((dict, ExecOut::Ignore)))
         } else {
-            Err(ExecReason::Depend("version file parse failed!".to_string()).into())
+            Err(ExecReason::from(UvsReason::from_conf(
+                "version file parse failed!".to_string(),
+            ))
+            .to_err())
         }
     }
 }

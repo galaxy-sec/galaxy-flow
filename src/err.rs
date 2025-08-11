@@ -83,6 +83,9 @@ pub fn report_gxl_error(e: RunError) {
             UvsReason::ResError(e) => {
                 println!("RES ERROR: {e}\n",);
             }
+            //UvsReason::NetError(e) => {
+            //    println!("Net ERROR: {e}\n",);
+            //}
             UvsReason::ConfError(e) => {
                 println!("CONF ERROR: {e}\n",);
             }

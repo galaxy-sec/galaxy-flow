@@ -1,7 +1,10 @@
 use derive_more::From;
+use orion_common::serde::SerdeReason;
 use orion_error::{ErrorCode, StructError, UvsReason};
 use serde::Serialize;
 use thiserror::Error;
+
+use crate::ai::AiErrReason;
 
 #[derive(Debug, PartialEq, Serialize, From, Error)]
 pub enum AssembleReason {
@@ -23,24 +26,17 @@ pub type AResult<T> = Result<T, AssembleError>;
 #[derive(Debug, PartialEq, Serialize, Error)]
 pub enum ExecReason {
     #[error("cmd err : {1},{2}")]
-    //#[display("cmd: {_0}")]
     OsCmd(String, i32, String),
     #[error("io err : {0}")]
     Io(String),
-    #[error("invalid path: {0}")]
-    InvalidPath(String),
-    #[error("check err : {0}")]
-    Check(String),
+    #[error("gxl : {0}")]
+    Gxl(String),
+    #[error("serv: {0}")]
+    Serv(String),
+    #[error("assert fail! : {0}")]
+    Assert(String),
     #[error("args err : {0}")]
     Args(String),
-    #[error("depend err : {0}")]
-    Depend(String),
-    #[error("exp err : {0}")]
-    Exp(String),
-    #[error("bug : {0}")]
-    Bug(String),
-    #[error("no val: {0}")]
-    NoVal(String),
     #[error("miss : {0}")]
     Miss(String),
     #[error("{0}")]
@@ -67,6 +63,29 @@ impl From<reqwest::Error> for ExecReason {
 
 pub type ExecError = StructError<ExecReason>;
 pub type ExecResult<T> = Result<T, ExecError>;
+
+impl From<AiErrReason> for ExecReason {
+    fn from(value: AiErrReason) -> Self {
+        match value {
+            AiErrReason::NetworkError(_) => todo!(),
+            AiErrReason::ConfigError(_) => todo!(),
+            AiErrReason::AuthError(_) => todo!(),
+            AiErrReason::RateLimitError(_) => todo!(),
+            AiErrReason::TokenLimitError(_, _) => todo!(),
+            AiErrReason::ContextError(_) => todo!(),
+            AiErrReason::NoProviderAvailable => todo!(),
+            AiErrReason::TimeoutError(_) => todo!(),
+            AiErrReason::InvalidModel(_) => todo!(),
+            AiErrReason::SensitiveContentFiltered => todo!(),
+            AiErrReason::Uvs(uvs) => ExecReason::Uvs(uvs),
+        }
+    }
+}
+impl From<SerdeReason> for ExecReason {
+    fn from(value: SerdeReason) -> Self {
+        todo!()
+    }
+}
 
 /*
 impl From<SpecReason> for ExecReason {

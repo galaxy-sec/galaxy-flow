@@ -140,7 +140,7 @@ impl AsyncRunnableTrait for ActCall {
         ctx.append("@");
         match &self.act {
             Some(act) => act.async_exec(ctx, vars_dict, &self.actual_params).await,
-            None => Err(ExecError::from(ExecReason::Depend(format!(
+            None => Err(ExecError::from(ExecReason::Gxl(format!(
                 "act call not support :{}",
                 self.name
             )))),

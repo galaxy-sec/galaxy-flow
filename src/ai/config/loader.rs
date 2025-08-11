@@ -1,9 +1,11 @@
+use orion_error::UvsConfFrom;
 use serde_yaml;
 use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use crate::ai::{AiError, AiResult};
+use crate::ai::AiError;
+use crate::ai::{AiErrReason, AiResult};
 
 use super::structures::{AiConfig, FileConfig};
 
@@ -21,12 +23,12 @@ impl ConfigLoader {
     /// 确保配置目录存在
     pub fn ensure_config_dir() -> AiResult<PathBuf> {
         let config_dir = dirs::home_dir()
-            .ok_or_else(|| AiError::ConfigError("Home directory not found".to_string()))?
+            .ok_or_else(|| AiErrReason::ConfigError("Home directory not found".to_string()))?
             .join(".galaxy");
 
         if !config_dir.exists() {
             fs::create_dir_all(&config_dir).map_err(|e| {
-                AiError::ConfigError(format!("Failed to create config directory: {}", e))
+                AiErrReason::ConfigError(format!("Failed to create config directory: {}", e))
             })?;
         }
 
@@ -42,14 +44,14 @@ impl ConfigLoader {
     /// 从指定路径加载配置文件
     pub fn load_config_from_path(&self, config_path: &Path) -> AiResult<FileConfig> {
         if !config_path.exists() {
-            return Err(AiError::ConfigError(format!(
+            return Err(AiError::from_conf(format!(
                 "Config file not found: {}",
                 config_path.display()
             )));
         }
 
         let content = fs::read_to_string(config_path).map_err(|e| {
-            AiError::ConfigError(format!(
+            AiErrReason::ConfigError(format!(
                 "Failed to read config file {}: {}",
                 config_path.display(),
                 e
@@ -61,7 +63,11 @@ impl ConfigLoader {
 
         let mut file_config: FileConfig =
             serde_yaml::from_str(&evaluated_content).map_err(|e| {
-                AiError::ConfigError(format!("Invalid YAML in {}: {}", config_path.display(), e))
+                AiErrReason::ConfigError(format!(
+                    "Invalid YAML in {}: {}",
+                    config_path.display(),
+                    e
+                ))
             })?;
 
         file_config.config_path = config_path.to_path_buf();
@@ -77,7 +83,7 @@ impl ConfigLoader {
         // ${VAR:?} - 必填变量
 
         let re = regex::Regex::new(r"\$\{([^}]+)\}")
-            .map_err(|e| AiError::ConfigError(format!("Failed to create regex: {}", e)))?;
+            .map_err(|e| AiErrReason::ConfigError(format!("Failed to create regex: {}", e)))?;
 
         let result = re
             .replace_all(content, |caps: &regex::Captures| {

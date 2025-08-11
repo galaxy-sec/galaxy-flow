@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 
-use crate::ai::error::{AiError, AiResult};
+use crate::ai::error::{AiErrReason, AiResult};
 
 /// Git上下文信息收集
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -50,7 +50,7 @@ impl GitContext {
     /// 从当前目录收集Git上下文
     pub fn from_current_dir() -> AiResult<Option<GitContext>> {
         let current_dir =
-            std::env::current_dir().map_err(|e| AiError::ContextError(e.to_string()))?;
+            std::env::current_dir().map_err(|e| AiErrReason::ContextError(e.to_string()))?;
 
         if !Self::is_git_repository(&current_dir) {
             return Ok(None);
@@ -97,7 +97,7 @@ impl GitContext {
             .args(&["rev-parse", "--abbrev-ref", "HEAD"])
             .current_dir(repo_path)
             .output()
-            .map_err(|e| AiError::ContextError(e.to_string()))?;
+            .map_err(|e| AiErrReason::ContextError(e.to_string()))?;
 
         if output.status.success() {
             Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
@@ -130,7 +130,7 @@ impl GitContext {
 
         let output = cmd
             .output()
-            .map_err(|e| AiError::ContextError(e.to_string()))?;
+            .map_err(|e| AiErrReason::ContextError(e.to_string()))?;
 
         if !output.status.success() {
             return Ok(Vec::new());
@@ -158,7 +158,7 @@ impl GitContext {
             .args(&["diff", "--cached", "--no-color", "--no-ext-diff"])
             .current_dir(repo_path)
             .output()
-            .map_err(|e| AiError::ContextError(e.to_string()))?;
+            .map_err(|e| AiErrReason::ContextError(e.to_string()))?;
 
         if output.status.success() {
             Ok(String::from_utf8_lossy(&output.stdout).to_string())
@@ -173,7 +173,7 @@ impl GitContext {
             .args(&["log", "--oneline", "-10"])
             .current_dir(repo_path)
             .output()
-            .map_err(|e| AiError::ContextError(e.to_string()))?;
+            .map_err(|e| AiErrReason::ContextError(e.to_string()))?;
 
         if !output.status.success() {
             return Ok(Vec::new());
@@ -211,7 +211,7 @@ impl GitContext {
             .arg("ls-files")
             .current_dir(repo_path)
             .output()
-            .map_err(|e| AiError::ContextError(e.to_string()))?;
+            .map_err(|e| AiErrReason::ContextError(e.to_string()))?;
 
         if output.status.success() {
             let stdout = String::from_utf8_lossy(&output.stdout);

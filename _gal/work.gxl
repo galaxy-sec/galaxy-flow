@@ -1,4 +1,4 @@
-extern mod head,ai { path = "${GXL_START_ROOT}/_gal/"; }
+extern mod head,ai_git { path = "${GXL_START_ROOT}/_gal/"; }
 
 mod envs  {
    env _common  : rust_env.init   {

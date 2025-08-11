@@ -52,7 +52,7 @@ impl AiConfig {
             AiProviderType::OpenAi,
             ProviderConfig {
                 enabled: true,
-                api_key_env: "${OPENAI_API_KEY}".to_string(),
+                api_key_env: "OPENAI_API_KEY".to_string(),
                 base_url: Some("https://api.openai.com/v1".to_string()),
                 timeout: 30,
                 model_aliases: None,
@@ -65,7 +65,7 @@ impl AiConfig {
             AiProviderType::DeepSeek,
             ProviderConfig {
                 enabled: true,
-                api_key_env: "${DEEPSEEK_API_KEY}".to_string(),
+                api_key_env: "DEEPSEEK_API_KEY".to_string(),
                 base_url: Some("https://api.deepseek.com/v1".to_string()),
                 timeout: 30,
                 model_aliases: None,
@@ -78,7 +78,7 @@ impl AiConfig {
             AiProviderType::Glm,
             ProviderConfig {
                 enabled: true,
-                api_key_env: "${GLM_API_KEY}".to_string(),
+                api_key_env: "GLM_API_KEY".to_string(),
                 base_url: Some("https://open.bigmodel.cn/api/paas/v4".to_string()),
                 timeout: 30,
                 model_aliases: None,
@@ -91,7 +91,7 @@ impl AiConfig {
             AiProviderType::Kimi,
             ProviderConfig {
                 enabled: true,
-                api_key_env: "${KIMI_API_KEY}".to_string(),
+                api_key_env: "KIMI_API_KEY".to_string(),
                 base_url: Some("https://api.moonshot.cn/v1".to_string()),
                 timeout: 30,
                 model_aliases: None,
