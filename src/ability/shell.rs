@@ -1,5 +1,6 @@
 use chrono::Local;
 use orion_common::serde::*;
+use orion_error::ErrorConv;
 use rand::Rng;
 use std::path::PathBuf;
 
@@ -51,15 +52,19 @@ impl GxShell {
         }
         if let Some(arg_file) = &self.arg_file {
             let dict = if arg_file.extension() == PathBuf::from("data.json").extension() {
-                ValueDict::from_json(arg_file).owe_data()?
+                ValueDict::from_json(arg_file)
+                    .map_err(|e| ExecReason::Serde(format!("JSON解析失败: {}", e)))?
             } else if arg_file.extension() == PathBuf::from("data.yml").extension()
                 || arg_file.extension() == PathBuf::from("data.yaml").extension()
             {
-                ValueDict::from_yml(arg_file).owe_data()?
+                ValueDict::from_yml(arg_file)
+                    .map_err(|e| ExecReason::Serde(format!("YAML解析失败: {}", e)))?
             } else if arg_file.extension() == PathBuf::from("data.toml").extension() {
-                ValueDict::from_toml(arg_file).owe_data()?
+                ValueDict::from_toml(arg_file)
+                    .map_err(|e| ExecReason::Serde(format!("TOML解析失败: {}", e)))?
             } else if arg_file.extension() == PathBuf::from("data.ini").extension() {
-                ValueDict::from_ini(arg_file).owe_data()?
+                ValueDict::from_ini(arg_file)
+                    .map_err(|e| ExecReason::Serde(format!("INI解析失败: {}", e)))?
             } else {
                 return ExecError::from_logic(format!(
                     "unsupport this format {}",
@@ -101,7 +106,7 @@ impl GxShell {
             vars_dict
                 .global_mut()
                 .set(out_var.as_str(), file_out.trim());
-            std::fs::remove_file(out_data_path).owe_logic()?;
+            std::fs::remove_file(out_data_path).map_err(|e| ExecReason::Io(e.to_string()))?;
             res
         } else {
             gxl_sh!(

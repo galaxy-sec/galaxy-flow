@@ -1,6 +1,6 @@
 use derive_more::From;
 use orion_common::serde::SerdeReason;
-use orion_error::{ErrorCode, StructError, UvsReason};
+use orion_error::{DomainReason, ErrorCode, StructError, UvsReason};
 use serde::Serialize;
 use thiserror::Error;
 
@@ -39,6 +39,8 @@ pub enum ExecReason {
     Args(String),
     #[error("miss : {0}")]
     Miss(String),
+    #[error("serde err : {0}")]
+    Serde(String),
     #[error("{0}")]
     Uvs(UvsReason),
     #[error("{0}")]
@@ -83,7 +85,7 @@ impl From<AiErrReason> for ExecReason {
 }
 impl From<SerdeReason> for ExecReason {
     fn from(value: SerdeReason) -> Self {
-        todo!()
+        ExecReason::Serde(format!("Serde error: {}", value))
     }
 }
 
