@@ -39,12 +39,12 @@ impl GxAIChat {
         if let Some(prompt_file) = &self.prompt_file {
             let prompt_file = PathBuf::from(exp.eval(prompt_file)?);
             if !prompt_file.exists() {
-                return ExecReason::from_logic(format!("{} not exists", prompt_file.display()))
+                return ExecReason::from_logic(format!("{path} not exists", path = prompt_file.display()))
                     .err_result();
             }
             let data = std::fs::read_to_string(prompt_file.as_path())
                 .map_err(|e| ExecReason::from_res(format!("prompt_file:{e}")))?;
-            message.push_str("\n");
+            message.push('\n');
             message.push_str(data.as_str());
         }
 
@@ -67,8 +67,7 @@ impl GxAIChat {
         let timestamp = Local::now().to_rfc3339();
 
         println!(
-            "AI Response:\nContent: {}\nModel: {}\nTimestamp: {}\n",
-            response_content, response_provider, timestamp
+            "AI Response:\nContent: {response_content}\nModel: {response_provider}\nTimestamp: {timestamp}\n"
         );
 
         action.finish();

@@ -85,7 +85,7 @@ impl From<AiErrReason> for ExecReason {
 }
 impl From<SerdeReason> for ExecReason {
     fn from(value: SerdeReason) -> Self {
-        ExecReason::Serde(format!("Serde error: {}", value))
+        ExecReason::Serde(format!("Serde error: {value}"))
     }
 }
 

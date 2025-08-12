@@ -83,7 +83,7 @@ impl GitContext {
         Command::new("git")
             .arg("rev-parse")
             .arg("--git-dir")
-            .current_dir(path)
+            .current_dir(&path)
             .stdout(Stdio::null())
             .stderr(Stdio::null())
             .status()
@@ -94,8 +94,8 @@ impl GitContext {
     /// 获取当前分支
     fn get_current_branch<P: AsRef<Path>>(repo_path: P) -> AiResult<String> {
         let output = Command::new("git")
-            .args(&["rev-parse", "--abbrev-ref", "HEAD"])
-            .current_dir(repo_path)
+            .args(["rev-parse", "--abbrev-ref", "HEAD"])
+            .current_dir(&repo_path)
             .output()
             .map_err(|e| AiErrReason::ContextError(e.to_string()))?;
 
@@ -155,8 +155,8 @@ impl GitContext {
     /// 获取已暂存的diff内容
     fn get_staged_diff<P: AsRef<Path>>(repo_path: P) -> AiResult<String> {
         let output = Command::new("git")
-            .args(&["diff", "--cached", "--no-color", "--no-ext-diff"])
-            .current_dir(repo_path)
+            .args(["diff", "--cached", "--no-color", "--no-ext-diff"])
+            .current_dir(&repo_path)
             .output()
             .map_err(|e| AiErrReason::ContextError(e.to_string()))?;
 
@@ -170,8 +170,8 @@ impl GitContext {
     /// 获取最近的提交历史
     fn get_recent_commits<P: AsRef<Path>>(repo_path: P) -> AiResult<Vec<GitCommit>> {
         let output = Command::new("git")
-            .args(&["log", "--oneline", "-10"])
-            .current_dir(repo_path)
+            .args(["log", "--oneline", "-10"])
+            .current_dir(&repo_path)
             .output()
             .map_err(|e| AiErrReason::ContextError(e.to_string()))?;
 
@@ -209,7 +209,7 @@ impl GitContext {
 
         let output = Command::new("git")
             .arg("ls-files")
-            .current_dir(repo_path)
+            .current_dir(&repo_path)
             .output()
             .map_err(|e| AiErrReason::ContextError(e.to_string()))?;
 

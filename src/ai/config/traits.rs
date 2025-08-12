@@ -34,9 +34,9 @@ impl ConfigExt for AiConfig {
     fn is_valid(&self) -> bool {
         // 基本的验证逻辑
         !self.providers.is_empty()
-            && self.routing.simple.len() > 0
-            && self.routing.complex.len() > 0
-            && self.routing.free.len() > 0
+            && !self.routing.simple.is_empty()
+            && !self.routing.complex.is_empty()
+            && !self.routing.free.is_empty()
             && self.limits.review_budget > 0
             && self.limits.analysis_budget > 0
     }

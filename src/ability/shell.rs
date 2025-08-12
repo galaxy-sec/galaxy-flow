@@ -49,18 +49,18 @@ impl GxShell {
         if let Some(arg_file) = &self.arg_file {
             let dict = if arg_file.extension() == PathBuf::from("data.json").extension() {
                 ValueDict::from_json(arg_file)
-                    .map_err(|e| ExecReason::Serde(format!("JSON解析失败: {}", e)))?
+                    .map_err(|e| ExecReason::Serde(format!("JSON解析失败: {e}")))?
             } else if arg_file.extension() == PathBuf::from("data.yml").extension()
                 || arg_file.extension() == PathBuf::from("data.yaml").extension()
             {
                 ValueDict::from_yml(arg_file)
-                    .map_err(|e| ExecReason::Serde(format!("YAML解析失败: {}", e)))?
+                    .map_err(|e| ExecReason::Serde(format!("YAML解析失败: {e}")))?
             } else if arg_file.extension() == PathBuf::from("data.toml").extension() {
                 ValueDict::from_toml(arg_file)
-                    .map_err(|e| ExecReason::Serde(format!("TOML解析失败: {}", e)))?
+                    .map_err(|e| ExecReason::Serde(format!("TOML解析失败: {e}")))?
             } else if arg_file.extension() == PathBuf::from("data.ini").extension() {
                 ValueDict::from_ini(arg_file)
-                    .map_err(|e| ExecReason::Serde(format!("INI解析失败: {}", e)))?
+                    .map_err(|e| ExecReason::Serde(format!("INI解析失败: {e}")))?
             } else {
                 return ExecReason::from_logic(format!(
                     "unsupport this format {}",

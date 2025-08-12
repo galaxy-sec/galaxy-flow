@@ -4,7 +4,7 @@ use std::collections::HashMap;
 
 use crate::ai::error::AiResult;
 
-use super::capabilities::AiDevCapability;
+use super::capabilities::{AiTask, AiRole};
 
 /// AI提供商类型
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Hash)]
@@ -62,20 +62,36 @@ pub struct ModelInfo {
 }
 
 impl ModelInfo {
-    pub fn is_compatible(&self, capability: AiDevCapability) -> bool {
+    pub fn is_compatible(&self, capability: AiTask) -> bool {
         match capability {
-            AiDevCapability::Analyze | AiDevCapability::Check => true,
-            AiDevCapability::Suggest => true,
-            AiDevCapability::Generate => true,
-            AiDevCapability::Refactor => true,
-            AiDevCapability::Deploy => true,
-            AiDevCapability::Commit => true,
-            AiDevCapability::Review => true,
-            AiDevCapability::Understand => true,
-            AiDevCapability::Predict => true,
-            AiDevCapability::Collaborate => true,
-            AiDevCapability::Explain => true,
+            // 开发者场景任务
+            AiTask::Coding | AiTask::Optimizing | AiTask::Testing | AiTask::Documenting => true,
+            AiTask::Refactoring | AiTask::Debugging => true,
+            // 项目管理类任务
+            AiTask::Planning | AiTask::Committing | AiTask::Branching | AiTask::Releasing => true,
+            // 运维人员场景任务
+            AiTask::Deploying | AiTask::Installing | AiTask::Configuring => true,
+            AiTask::BackingUp | AiTask::Scaling | AiTask::Securing => true,
+            // 监控诊断类任务
+            AiTask::Analyzing | AiTask::Reviewing | AiTask::Troubleshooting => true,
+            // 通用知识管理任务
+            AiTask::Explaining | AiTask::Learning | AiTask::Searching => true,
+            AiTask::Consulting => true,
+            // 其他任务类型
+            AiTask::Restarting | AiTask::Monitoring | AiTask::Auditing => true,
         }
+    }
+
+    /// 检查模型是否与指定角色兼容
+    pub fn is_compatible_with_role(&self, role: AiRole) -> bool {
+        // 检查角色下的所有任务是否兼容
+        role.supported_tasks().iter().all(|task| self.is_compatible(*task))
+    }
+
+    /// 检查模型是否为角色的推荐模型
+    pub fn is_recommended_for_role(&self, role: AiRole) -> bool {
+        let recommended_models = role.recommended_models();
+        recommended_models.contains(&self.name.as_str())
     }
 }
 
@@ -87,7 +103,8 @@ pub struct AiRequest {
     pub user_prompt: String,
     pub max_tokens: Option<usize>,
     pub temperature: Option<f32>,
-    pub capability: AiDevCapability,
+    pub capability: AiTask,
+    pub role: Option<AiRole>,
 }
 
 impl AiRequest {
@@ -103,7 +120,14 @@ pub struct AiRequestBuilder {
     user_prompt: String,
     max_tokens: Option<usize>,
     temperature: Option<f32>,
-    capability: AiDevCapability,
+    capability: AiTask,
+    role: Option<AiRole>,
+}
+
+impl Default for AiRequestBuilder {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl AiRequestBuilder {
@@ -114,7 +138,8 @@ impl AiRequestBuilder {
             user_prompt: String::new(),
             max_tokens: None,
             temperature: Some(0.7),
-            capability: AiDevCapability::Analyze,
+            capability: AiTask::Analyzing,
+            role: None,
         }
     }
 
@@ -143,8 +168,13 @@ impl AiRequestBuilder {
         self
     }
 
-    pub fn capability(mut self, cap: AiDevCapability) -> Self {
+    pub fn capability(mut self, cap: AiTask) -> Self {
         self.capability = cap;
+        self
+    }
+
+    pub fn role(mut self, role: AiRole) -> Self {
+        self.role = Some(role);
         self
     }
 
@@ -156,6 +186,7 @@ impl AiRequestBuilder {
             max_tokens: self.max_tokens,
             temperature: self.temperature,
             capability: self.capability,
+            role: self.role,
         }
     }
 }

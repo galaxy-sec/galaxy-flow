@@ -1,4 +1,4 @@
-use crate::ai::capabilities::AiDevCapability;
+use crate::ai::capabilities::AiTask;
 use crate::ai::client::AiClient;
 use crate::ai::config::AiConfig;
 use crate::ai::provider::AiProviderType;
@@ -9,7 +9,6 @@ use std::env;
 ///
 /// 这个模块包含所有与 DeepSeek 相关的测试用例，
 /// 包括基本功能测试、性能测试、错误处理测试等。
-
 /// DeepSeek 基础功能测试
 mod basic {
     use super::*;
@@ -114,8 +113,7 @@ fn main() {
             .model("deepseek-chat")
             .system_prompt("你是一个代码分析专家，请分析以下代码的性能和复杂度。".to_string())
             .user_prompt(format!(
-                "请分析这段代码的性能特点和改进建议：\n{}",
-                test_code
+                "请分析这段代码的性能特点和改进建议：\n{test_code}"
             ))
             .build();
 
@@ -127,7 +125,7 @@ fn main() {
                 println!("分析结果: {}", response.content);
             }
             Err(e) => {
-                println!("⚠️ DeepSeek 代码分析请求失败（可能需要真实API key）: {}", e);
+                println!("⚠️ DeepSeek 代码分析请求失败（可能需要真实API key）: {e}");
             }
         }
     }
@@ -142,7 +140,7 @@ fn main() {
         let prompt = "帮我优化这段Python代码：\nfor i in range(len(my_list)):\n    if my_list[i] > 0:\n        print(my_list[i])";
 
         match client
-            .smart_request(AiDevCapability::Refactor, prompt)
+            .smart_request(AiTask::Coding, prompt)
             .await
         {
             Ok(response) => {
@@ -151,7 +149,7 @@ fn main() {
                 println!("重构建议: {}", response.content);
             }
             Err(e) => {
-                println!("⚠️ DeepSeek 智能重构请求失败（可能需要真实API key）: {}", e);
+                println!("⚠️ DeepSeek 智能重构请求失败（可能需要真实API key）: {e}");
             }
         }
     }
@@ -188,7 +186,7 @@ index abc123..def456 100644
                 println!("生成的提交消息: {}", response.content);
             }
             Err(e) => {
-                println!("⚠️ DeepSeek 提交消息生成失败（可能需要真实API key）: {}", e);
+                println!("⚠️ DeepSeek 提交消息生成失败（可能需要真实API key）: {e}");
             }
         }
     }
@@ -226,7 +224,7 @@ index abc123..def456 100644
                 println!("审查结果: {}", response.content);
             }
             Err(e) => {
-                println!("⚠️ DeepSeek 代码审查失败（可能需要真实API key）: {}", e);
+                println!("⚠️ DeepSeek 代码审查失败（可能需要真实API key）: {e}");
             }
         }
     }
@@ -254,7 +252,7 @@ mod performance {
                 let request = crate::ai::provider::AiRequest::builder()
                     .model("deepseek-chat")
                     .system_prompt("你是一个助手".to_string())
-                    .user_prompt(format!("请简单回答：1+{}=?", i))
+                    .user_prompt(format!("请简单回答：1+{i}=?"))
                     .build();
 
                 client.send_request(request).await
@@ -275,7 +273,7 @@ mod performance {
                 Ok(Err(e)) => {
                     error_count += 1;
                     let error_msg = e.to_string();
-                    println!("请求失败: {}", error_msg);
+                    println!("请求失败: {error_msg}");
 
                     // 统计网络错误
                     if error_msg.contains("Network")
@@ -287,14 +285,13 @@ mod performance {
                 }
                 Err(e) => {
                     error_count += 1;
-                    println!("任务执行失败: {}", e);
+                    println!("任务执行失败: {e}");
                 }
             }
         }
 
         println!(
-            "✅ 并发测试结果：成功 {}, 失败 {}, 网络错误 {}",
-            success_count, error_count, let_network_errors
+            "✅ 并发测试结果：成功 {success_count}, 失败 {error_count}, 网络错误 {let_network_errors}"
         );
 
         // 在测试环境中，网络错误是预期的
@@ -329,13 +326,13 @@ mod performance {
                 let duration = start_time.elapsed();
                 assert!(!response.content.is_empty());
 
-                println!("✅ DeepSeek 响应时间: {:?}", duration);
+                println!("✅ DeepSeek 响应时间: {duration:?}");
 
                 // 响应时间应该在合理范围内（网络延迟可能影响）
                 // 这里只是记录，不做硬性断言
             }
             Err(e) => {
-                println!("⚠️ DeepSeek 响应时间测试失败（可能需要真实API key）: {}", e);
+                println!("⚠️ DeepSeek 响应时间测试失败（可能需要真实API key）: {e}");
             }
         }
     }
@@ -387,7 +384,7 @@ mod error_handling {
                 println!("✅ DeepSeek 大上下文处理测试通过");
             }
             Err(e) => {
-                println!("⚠️ DeepSeek 大上下文处理失败（可能需要真实API key）: {}", e);
+                println!("⚠️ DeepSeek 大上下文处理失败（可能需要真实API key）: {e}");
             }
         }
     }
@@ -412,7 +409,7 @@ mod error_handling {
                 println!("✅ DeepSeek 复杂请求处理测试通过");
             }
             Err(e) => {
-                println!("⚠️ DeepSeek 复杂请求处理失败（可能需要真实API key）: {}", e);
+                println!("⚠️ DeepSeek 复杂请求处理失败（可能需要真实API key）: {e}");
             }
         }
     }
@@ -451,7 +448,7 @@ mod integration {
                     println!("✅ 模型 {} 路由到 {:?} 成功", model, resp.provider);
                 }
                 Err(e) => {
-                    println!("⚠️ 模型 {} 路由失败: {}", model, e);
+                    println!("⚠️ 模型 {model} 路由失败: {e}");
                 }
             }
         }
@@ -474,7 +471,7 @@ mod integration {
                 println!("✅ DeepSeek 真实配置测试通过");
             }
             Err(e) => {
-                println!("⚠️ 使用真实配置加载失败: {}", e);
+                println!("⚠️ 使用真实配置加载失败: {e}");
             }
         }
     }
