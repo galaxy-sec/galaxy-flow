@@ -6,6 +6,12 @@ use crate::ai::{error::AiResult, provider::*};
 
 pub struct MockProvider;
 
+impl Default for MockProvider {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl MockProvider {
     pub fn new() -> Self {
         Self

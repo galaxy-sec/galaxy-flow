@@ -4,7 +4,7 @@ use std::collections::HashMap;
 
 use crate::ai::error::AiResult;
 
-use super::capabilities::AiDevCapability;
+use super::capabilities::AiTask;
 
 /// AI提供商类型
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Hash)]
@@ -62,19 +62,20 @@ pub struct ModelInfo {
 }
 
 impl ModelInfo {
-    pub fn is_compatible(&self, capability: AiDevCapability) -> bool {
+    pub fn is_compatible(&self, capability: AiTask) -> bool {
         match capability {
-            AiDevCapability::Analyze | AiDevCapability::Check => true,
-            AiDevCapability::Suggest => true,
-            AiDevCapability::Generate => true,
-            AiDevCapability::Refactor => true,
-            AiDevCapability::Deploy => true,
-            AiDevCapability::Commit => true,
-            AiDevCapability::Review => true,
-            AiDevCapability::Understand => true,
-            AiDevCapability::Predict => true,
-            AiDevCapability::Collaborate => true,
-            AiDevCapability::Explain => true,
+            // 代码开发类任务
+            AiTask::Coding | AiTask::Optimizing | AiTask::Testing | AiTask::Documenting => true,
+            // 项目管理类任务
+            AiTask::Planning | AiTask::Committing | AiTask::Branching | AiTask::Releasing => true,
+            // 系统运维类任务
+            AiTask::Deploying | AiTask::Installing | AiTask::Configuring => true,
+            // 监控诊断类任务
+            AiTask::Analyzing | AiTask::Reviewing | AiTask::Troubleshooting => true,
+            // 知识管理类任务
+            AiTask::Explaining | AiTask::Learning | AiTask::Searching => true,
+            // 其他任务类型
+            AiTask::Restarting | AiTask::Monitoring | AiTask::Auditing => true,
         }
     }
 }
@@ -87,7 +88,7 @@ pub struct AiRequest {
     pub user_prompt: String,
     pub max_tokens: Option<usize>,
     pub temperature: Option<f32>,
-    pub capability: AiDevCapability,
+    pub capability: AiTask,
 }
 
 impl AiRequest {
@@ -103,7 +104,13 @@ pub struct AiRequestBuilder {
     user_prompt: String,
     max_tokens: Option<usize>,
     temperature: Option<f32>,
-    capability: AiDevCapability,
+    capability: AiTask,
+}
+
+impl Default for AiRequestBuilder {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl AiRequestBuilder {
@@ -114,7 +121,7 @@ impl AiRequestBuilder {
             user_prompt: String::new(),
             max_tokens: None,
             temperature: Some(0.7),
-            capability: AiDevCapability::Analyze,
+            capability: AiTask::Analyzing,
         }
     }
 
@@ -143,7 +150,7 @@ impl AiRequestBuilder {
         self
     }
 
-    pub fn capability(mut self, cap: AiDevCapability) -> Self {
+    pub fn capability(mut self, cap: AiTask) -> Self {
         self.capability = cap;
         self
     }

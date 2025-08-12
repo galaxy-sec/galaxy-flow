@@ -2144,6 +2144,7 @@ dependencies = [
 [[package]]
 name = "orion-error"
 version = "0.3.2"
+source = "git+https://github.com/galaxy-sec/orion-error.git?tag=v0.3.2#2a22645654f302c2b09c4cdc4ea65c2b09b39a4a"
 dependencies = [
  "derive-getters",
  "derive_more",

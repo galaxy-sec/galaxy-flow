@@ -44,8 +44,8 @@ default: ${NON_EXISTENT:-default_value}"#;
     assert!(result.is_ok());
 
     let evaluated = result.unwrap();
-    println!("Original content: {}", content);
-    println!("Evaluated content: {}", evaluated);
+    println!("Original content: {content}");
+    println!("Evaluated content: {evaluated}");
     assert!(evaluated.contains("test_value"));
     assert!(evaluated.contains("default_value"));
 }
@@ -92,7 +92,7 @@ deepseek_provider: "${DEEPSEEK_API_KEY:-deepseek_default}"
 
     // 创建临时文件
     let mut temp_file = NamedTempFile::new().unwrap();
-    write!(temp_file, "{}", config_content).unwrap();
+    write!(temp_file, "{config_content}").unwrap();
     let temp_path = temp_file.into_temp_path();
 
     // 修改 ConfigLoader 以使用临时文件路径
@@ -119,7 +119,7 @@ deepseek_provider: "${DEEPSEEK_API_KEY:-deepseek_default}"
             assert!(config.file_config.is_some());
         }
         Err(e) => {
-            panic!("Failed to load config file: {}", e);
+            panic!("Failed to load config file: {e}");
         }
     }
 }

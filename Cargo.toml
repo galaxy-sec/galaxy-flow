@@ -24,7 +24,8 @@ license = "Apache-2.0"
 
 [workspace.dependencies]
 winnow = "0.7.11"
-orion-error = { path = "../orion-error" }
+#orion-error = { path = "../orion-error" }
+orion-error= { git = "https://github.com/galaxy-sec/orion-error.git", tag= "v0.3.2" }
 orion_common = { git = "https://github.com/galaxy-sec/orion-common.git", branch = "main" }
 orion_infra = { git = "https://github.com/galaxy-sec/orion-infra.git", branch = "main" }
 orion_variate = { git = "https://github.com/galaxy-sec/orion-variate.git", tag = "v0.6.2" }

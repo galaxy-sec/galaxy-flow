@@ -10,6 +10,7 @@ use orion_error::ToStructError;
 
 use orion_error::UvsConfFrom;
 /// 配置加载器，支持文件加载和变量替换
+#[derive(Default)]
 pub struct ConfigLoader {
     // 配置加载器状态
 }
@@ -17,7 +18,7 @@ pub struct ConfigLoader {
 impl ConfigLoader {
     /// 创建新的配置加载器
     pub fn new() -> Self {
-        Self {}
+        Self::default()
     }
 
     /// 确保配置目录存在
@@ -28,7 +29,7 @@ impl ConfigLoader {
 
         if !config_dir.exists() {
             fs::create_dir_all(&config_dir).map_err(|e| {
-                AiErrReason::ConfigError(format!("Failed to create config directory: {}", e))
+                AiErrReason::ConfigError(format!("Failed to create config directory: {e}"))
             })?;
         }
 
@@ -84,7 +85,7 @@ impl ConfigLoader {
         // ${VAR:?} - 必填变量
 
         let re = regex::Regex::new(r"\$\{([^}]+)\}")
-            .map_err(|e| AiErrReason::ConfigError(format!("Failed to create regex: {}", e)))?;
+            .map_err(|e| AiErrReason::ConfigError(format!("Failed to create regex: {e}")))?;
 
         let result = re
             .replace_all(content, |caps: &regex::Captures| {
@@ -96,7 +97,7 @@ impl ConfigLoader {
                 } else if let Some(var_name) = var_expr.strip_suffix("?") {
                     // 必填变量语法 ${VAR:?}
                     env::var(var_name)
-                        .unwrap_or_else(|_| panic!("Required variable '{}' not found", var_name))
+                        .unwrap_or_else(|_| panic!("Required variable '{var_name}' not found"))
                 } else {
                     // 基本变量语法 ${VAR}
                     env::var(var_expr).unwrap_or_default()
@@ -125,8 +126,7 @@ impl ConfigLoader {
             Err(e) => {
                 // 配置文件不存在时的优雅降级
                 log::info!(
-                    "Config file not found or invalid, using environment variables only: {}",
-                    e
+                    "Config file not found or invalid, using environment variables only: {e}",
                 );
             }
         }

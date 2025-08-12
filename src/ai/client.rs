@@ -1,4 +1,4 @@
-use crate::ai::capabilities::AiDevCapability;
+use crate::ai::capabilities::AiTask;
 use crate::ai::provider::{AiProvider, AiProviderType, AiRequest};
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -61,11 +61,11 @@ impl AiClient {
 
     pub async fn smart_request(
         &self,
-        capability: AiDevCapability,
+        capability: AiTask,
         prompt: &str,
     ) -> AiResult<AiResponse> {
         let model = capability.recommended_model();
-        let system_prompt = self.build_system_prompt(capability.clone());
+        let system_prompt = self.build_system_prompt(capability);
 
         let request = AiRequest::builder()
             .model(model)
@@ -84,9 +84,8 @@ impl AiClient {
         let request = AiRequest::builder()
             .model("gpt-4o-mini")
             .system_prompt(system_prompt)
-            .user_prompt(&format!(
-                "分析以下代码变更，生成简洁的提交信息（最多50个字符）：\n{}",
-                context
+            .user_prompt(format!(
+                "分析以下代码变更，生成简洁的提交信息（最多50个字符）：\n{context}"
             ))
             .max_tokens(75)
             .temperature(0.7)
@@ -101,9 +100,8 @@ impl AiClient {
         let request = AiRequest::builder()
             .model("claude-3-5-sonnet")
             .system_prompt(system_prompt)
-            .user_prompt(&format!(
-                "审查{}中的代码并指出潜在问题：\n{}",
-                file_path, code
+            .user_prompt(format!(
+                "审查{file_path}中的代码并指出潜在问题：\n{code}"
             ))
             .max_tokens(2000)
             .temperature(0.3)
@@ -122,23 +120,35 @@ impl AiClient {
         self.providers.contains_key(&provider)
     }
 
-    /// 根据能力选择合适的模型和provider
-    fn build_system_prompt(&self, capability: AiDevCapability) -> String {
+    /// 根据任务选择合适的模型和provider
+    fn build_system_prompt(&self, capability: AiTask) -> String {
         match capability {
-            AiDevCapability::Analyze => {
-                "深入分析代码的复杂度、结构和设计模式，提供技术洞察".to_string()
-            }
-            AiDevCapability::Suggest => "基于代码上下文提供改进建议，保持简洁实用".to_string(),
-            AiDevCapability::Check => "检查代码的安全、性能和可维护性问题".to_string(),
-            AiDevCapability::Generate => "生成高质量、可直接使用的代码或文档".to_string(),
-            AiDevCapability::Refactor => "提供具体的重构建议，确保代码优雅可维护".to_string(),
-            AiDevCapability::Deploy => "提供智能部署策略和风险评估建议".to_string(),
-            AiDevCapability::Commit => "理解代码变更并生成精准的提交信息".to_string(),
-            AiDevCapability::Review => "专注安全性、性能和可维护性的代码审查".to_string(),
-            AiDevCapability::Understand => "深入理解项目整体架构和设计模式".to_string(),
-            AiDevCapability::Predict => "分析变更对系统的影响和潜在风险".to_string(),
-            AiDevCapability::Collaborate => "提供团队协作和代码集成建议".to_string(),
-            AiDevCapability::Explain => "解析内容".to_string(),
+            // 代码开发类任务
+            AiTask::Coding => "生成高质量、可直接使用的代码或文档".to_string(),
+            AiTask::Optimizing => "基于代码上下文提供改进建议，保持简洁实用".to_string(),
+            AiTask::Testing => "设计全面的测试用例和测试策略".to_string(),
+            AiTask::Documenting => "生成清晰、准确的技术文档".to_string(),
+            // 项目管理类任务
+            AiTask::Planning => "分析变更对系统的影响和潜在风险".to_string(),
+            AiTask::Committing => "理解代码变更并生成精准的提交信息".to_string(),
+            AiTask::Branching => "提供分支管理和合并策略建议".to_string(),
+            AiTask::Releasing => "制定发布规划和执行策略".to_string(),
+            // 系统运维类任务
+            AiTask::Deploying => "提供智能部署策略和风险评估建议".to_string(),
+            AiTask::Installing => "提供软件安装和配置指导".to_string(),
+            AiTask::Configuring => "提供系统配置和优化建议".to_string(),
+            // 监控诊断类任务
+            AiTask::Analyzing => "深入分析代码的复杂度、结构和设计模式，提供技术洞察".to_string(),
+            AiTask::Reviewing => "专注安全性、性能和可维护性的代码审查".to_string(),
+            AiTask::Troubleshooting => "诊断和解决代码问题，提供调试建议".to_string(),
+            // 知识管理类任务
+            AiTask::Explaining => "深入理解项目整体架构和设计模式".to_string(),
+            AiTask::Learning => "提供团队协作和代码集成建议".to_string(),
+            AiTask::Searching => "搜索和分析相关信息，提供准确答案".to_string(),
+            // 其他任务类型
+            AiTask::Restarting => "提供服务重启和管理建议".to_string(),
+            AiTask::Monitoring => "提供系统监控和告警建议".to_string(),
+            AiTask::Auditing => "提供安全审计和合规检查建议".to_string(),
         }
     }
 }
@@ -182,7 +192,7 @@ mod tests {
             }
             Err(e) => {
                 // 在没有真实 API key 的情况下，这可能是预期的
-                println!("⚠️ DeepSeek 请求失败（预期，需要真实 API key）: {}", e);
+                println!("⚠️ DeepSeek 请求失败（预期，需要真实 API key）: {e}");
             }
         }
     }
@@ -198,7 +208,7 @@ mod tests {
 
         // 使用 smart_request 方法
         let response = client.smart_request(
-            AiDevCapability::Analyze,
+            AiTask::Analyzing,
             "分析这个函数的性能：\nfn fibonacci(n: u64) -> u64 { if n <= 1 { n } else { fibonacci(n-1) + fibonacci(n-2) } }"
         ).await;
 
@@ -208,7 +218,7 @@ mod tests {
                 assert!(!resp.content.is_empty());
             }
             Err(e) => {
-                println!("⚠️ DeepSeek smart 请求失败（预期）: {}", e);
+                println!("⚠️ DeepSeek smart 请求失败（预期）: {e}");
             }
         }
     }
@@ -242,7 +252,7 @@ mod tests {
                 );
             }
             Err(e) => {
-                println!("⚠️ DeepSeek commit 请求失败（预期）: {}", e);
+                println!("⚠️ DeepSeek commit 请求失败（预期）: {e}");
             }
         }
     }
@@ -283,7 +293,7 @@ mod tests {
                 );
             }
             Err(e) => {
-                println!("⚠️ DeepSeek code review 请求失败（预期）: {}", e);
+                println!("⚠️ DeepSeek code review 请求失败（预期）: {e}");
             }
         }
     }
@@ -340,7 +350,7 @@ mod tests {
                     assert!(!resp.content.is_empty());
                 }
                 Err(e) => {
-                    println!("⚠️ 模型 {} 请求失败: {}", model, e);
+                    println!("⚠️ 模型 {model} 请求失败: {e}");
                     // 某些模型可能因为配置问题而失败，这是可以接受的
                 }
             }
