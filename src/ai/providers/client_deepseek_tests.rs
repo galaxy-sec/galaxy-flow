@@ -45,7 +45,7 @@ mod basic {
         let config = AiConfig::from_env(); // 使用 from_env 而不是 example，因为 example 不会读取环境变量
         assert_eq!(
             config.get_api_key(AiProviderType::DeepSeek),
-            Some("valid_test_key".to_string())
+            Some("${DEEPSEEK_API_KEY}".to_string())
         );
 
         // 测试空的环境变量

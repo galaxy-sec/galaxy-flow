@@ -1,5 +1,5 @@
 use orion_common::serde::Yamlable;
-use orion_error::{UvsConfFrom, UvsResFrom};
+use orion_error::{ToStructError, UvsConfFrom, UvsResFrom};
 use orion_variate::vars::{EnvDict, EnvEvalable};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -50,11 +50,16 @@ impl AiConfig {
         let galaxy_dir = home_dir()
             .ok_or_else(|| ExecReason::from_res("Cannot find home directory".into()))?
             .join(".galaxy");
-        let ai_conf_path = galaxy_dir.join(AI_CONF_FILE);
-        if !ai_conf_path.exists() {
-            todo!();
-        }
-        let conf = AiConfig::from_yml(&ai_conf_path)
+        let gal_ai_conf = galaxy_dir.join(AI_CONF_FILE);
+        let prj_ai_conf = PathBuf::from("./_gal").join(AI_CONF_FILE);
+        let ai_conf = if prj_ai_conf.exists() {
+            prj_ai_conf
+        } else if gal_ai_conf.exists() {
+            gal_ai_conf
+        } else {
+            return ExecReason::from_conf("miss ai config".to_string()).err_result();
+        };
+        let conf = AiConfig::from_yml(&ai_conf)
             .map_err(|e| ExecReason::from_conf(format!("ai_conf :{e}")))?;
         Ok(conf.env_eval(dict))
     }
@@ -69,7 +74,7 @@ impl AiConfig {
             AiProviderType::OpenAi,
             ProviderConfig {
                 enabled: true,
-                api_key_env: "${OPENAI_API_KEY}".to_string(),
+                api_key: "${OPENAI_API_KEY}".to_string(),
                 base_url: Some("https://api.openai.com/v1".to_string()),
                 timeout: 30,
                 model_aliases: None,
@@ -82,7 +87,7 @@ impl AiConfig {
             AiProviderType::DeepSeek,
             ProviderConfig {
                 enabled: true,
-                api_key_env: "${DEEPSEEK_API_KEY}".to_string(),
+                api_key: "${DEEPSEEK_API_KEY}".to_string(),
                 base_url: Some("https://api.deepseek.com/v1".to_string()),
                 timeout: 30,
                 model_aliases: None,
@@ -95,7 +100,7 @@ impl AiConfig {
             AiProviderType::Glm,
             ProviderConfig {
                 enabled: true,
-                api_key_env: "${GLM_API_KEY}".to_string(),
+                api_key: "${GLM_API_KEY}".to_string(),
                 base_url: Some("https://open.bigmodel.cn/api/paas/v4".to_string()),
                 timeout: 30,
                 model_aliases: None,
@@ -108,7 +113,7 @@ impl AiConfig {
             AiProviderType::Kimi,
             ProviderConfig {
                 enabled: true,
-                api_key_env: "${KIMI_API_KEY}".to_string(),
+                api_key: "${KIMI_API_KEY}".to_string(),
                 base_url: Some("https://api.moonshot.cn/v1".to_string()),
                 timeout: 30,
                 model_aliases: None,
@@ -133,7 +138,7 @@ impl AiConfig {
             AiProviderType::OpenAi,
             ProviderConfig {
                 enabled: true,
-                api_key_env: "OPENAI_API_KEY".to_string(),
+                api_key: "${OPENAI_API_KEY}".to_string(),
                 base_url: Some("https://api.openai.com/v1".to_string()),
                 timeout: 30,
                 model_aliases: None,
@@ -145,7 +150,7 @@ impl AiConfig {
             AiProviderType::DeepSeek,
             ProviderConfig {
                 enabled: true,
-                api_key_env: "DEEPSEEK_API_KEY".to_string(),
+                api_key: "${DEEPSEEK_API_KEY}".to_string(),
                 base_url: Some("https://api.deepseek.com/v1".to_string()),
                 timeout: 30,
                 model_aliases: None,
@@ -157,7 +162,7 @@ impl AiConfig {
             AiProviderType::Groq,
             ProviderConfig {
                 enabled: false,
-                api_key_env: "GROQ_API_KEY".to_string(),
+                api_key: "${GROQ_API_KEY}".to_string(),
                 base_url: Some("https://api.groq.com/openai/v1".to_string()),
                 timeout: 30,
                 model_aliases: None,
@@ -169,7 +174,7 @@ impl AiConfig {
             AiProviderType::Mock,
             ProviderConfig {
                 enabled: true,
-                api_key_env: "MOCK_API_KEY".to_string(),
+                api_key: "mock".to_string(),
                 base_url: None,
                 timeout: 30,
                 model_aliases: None,
@@ -181,7 +186,7 @@ impl AiConfig {
             AiProviderType::Anthropic,
             ProviderConfig {
                 enabled: false,
-                api_key_env: "CLAUDE_API_KEY".to_string(),
+                api_key: "${CLAUDE_API_KEY}".to_string(),
                 base_url: None,
                 timeout: 30,
                 model_aliases: None,
@@ -193,7 +198,7 @@ impl AiConfig {
             AiProviderType::Ollama,
             ProviderConfig {
                 enabled: false,
-                api_key_env: "OLLAMA_MODEL".to_string(),
+                api_key: "${OLLAMA_MODEL}".to_string(),
                 base_url: Some("http://localhost:11434".to_string()),
                 timeout: 30,
                 model_aliases: None,
@@ -213,7 +218,8 @@ impl AiConfig {
     pub fn get_api_key(&self, provider: AiProviderType) -> Option<String> {
         if let Some(config) = self.providers.get(&provider) {
             if config.enabled {
-                std::env::var(&config.api_key_env).ok()
+                // 直接返回 api_key 值，变量替换已经在 env_eval 中实现
+                Some(config.api_key.clone())
             } else {
                 None
             }
@@ -257,7 +263,7 @@ impl EnvEvalable<FileConfig> for FileConfig {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ProviderConfig {
     pub enabled: bool,
-    pub api_key_env: String,
+    pub api_key: String,
     pub base_url: Option<String>,
     pub timeout: u64,
     pub model_aliases: Option<HashMap<String, String>>,
@@ -266,13 +272,13 @@ pub struct ProviderConfig {
 
 impl EnvEvalable<ProviderConfig> for ProviderConfig {
     fn env_eval(self, dict: &EnvDict) -> Self {
-        let api_key_env = self.api_key_env.env_eval(dict);
+        let api_key = self.api_key.env_eval(dict);
         let base_url = Self::eval_base_url(self.base_url, dict);
         let model_aliases = Self::eval_model_aliases(self.model_aliases, dict);
 
         Self {
             enabled: self.enabled,
-            api_key_env,
+            api_key,
             base_url,
             timeout: self.timeout,
             model_aliases,
@@ -338,7 +344,7 @@ impl Default for ProviderConfig {
     fn default() -> Self {
         Self {
             enabled: true,
-            api_key_env: "OPENAI_API_KEY".to_string(),
+            api_key: "${OPENAI_API_KEY}".to_string(),
             base_url: None,
             timeout: 30,
             model_aliases: None,

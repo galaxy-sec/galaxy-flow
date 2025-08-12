@@ -37,17 +37,15 @@ impl GxAIChat {
 
         let message = if let Some(prompt_file) = &self.prompt_file {
             let prompt_file = PathBuf::from(exp.eval(prompt_file)?);
-            if prompt_file.exists() {
-                return ExecReason::from_logic(format!(
-                    "unsupport this format {}",
-                    prompt_file.display()
-                ))
-                .err_result();
+            if !prompt_file.exists() {
+                return ExecReason::from_logic(format!("{} not exists", prompt_file.display()))
+                    .err_result();
             }
             //std::fs::read_to_string(prompt_file.as_path()).owe(AiErrReason::from(
             //    UvsReason::DataError("prompat file read error".into(), None),
             //))?
-            std::fs::read_to_string(prompt_file.as_path()).map_err(|e| ExecReason::from_res(format!("prompt_file:{e}")))?
+            std::fs::read_to_string(prompt_file.as_path())
+                .map_err(|e| ExecReason::from_res(format!("prompt_file:{e}")))?
         } else if let Some(prompt_msg) = &self.prompt_msg {
             prompt_msg.clone()
         } else {
@@ -85,6 +83,19 @@ impl GxAIChat {
 #[cfg(test)]
 mod tests {
 
+    use orion_error::TestAssert;
+
     use crate::{
+        ability::{ability_env_init, ai::GxAIChat, prelude::AsyncRunnableTrait},
+        traits::Setter,
+        util::OptionFrom,
     };
+    #[tokio::test]
+    async fn ai_chat() {
+        let (context, mut def) = ability_env_init();
+        def.global_mut()
+            .set("CONF_ROOT", "${GXL_PRJ_ROOT}/tests/material");
+        let res = GxAIChat::default().with_prompt_msg(" 1 + 1 = ?".to_opt());
+        let _ = res.async_exec(context, def).await.assert();
+    }
 }

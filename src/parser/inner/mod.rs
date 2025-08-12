@@ -13,6 +13,7 @@ pub mod ver;
 pub use assert::gal_assert;
 pub use cmd::gal_cmd;
 
+pub mod ai;
 pub use common::*;
 pub use load::*;
 pub use read::*;
