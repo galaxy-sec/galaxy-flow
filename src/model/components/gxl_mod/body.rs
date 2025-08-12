@@ -171,7 +171,7 @@ impl GxlMod {
         for mix in mix_name {
             let mix_mod = src
                 .get(mix.as_str())
-                .ok_or(AssembleError::from_logic(format!("no mix: {mix} ")))?;
+                .ok_or(AssembleReason::from_logic(format!("no mix: {mix} ")))?;
             self.merge(mix_mod);
         }
         Ok(self)

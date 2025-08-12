@@ -1,12 +1,12 @@
 use crate::{
-    err::{RunError, RunResult},
+    err::{RunReason, RunResult},
     execution::VarSpace,
     infra::DfxArgsGetter,
     util::redirect::ReadSignal,
     GxLoader,
 };
 use clap::ArgAction;
-use orion_error::{ErrorConv, ErrorWith, StructError, UvsConfFrom};
+use orion_error::{ErrorConv, ErrorWith, UvsConfFrom};
 use std::{path::Path, sync::mpsc::Sender};
 
 pub struct GxlRunner {}
@@ -19,7 +19,7 @@ impl GxlRunner {
         let loader = GxLoader::new();
         if let Some(conf) = cmd.conf {
             if !Path::new(conf.as_str()).exists() {
-                return Err(StructError::from_conf("gflow conf not exists".to_string()))
+                return Err(RunReason::from_conf("gflow conf not exists".to_string()).into())
                     .with(("conf", conf));
             }
 
@@ -45,7 +45,7 @@ impl GxlRunner {
             }
             Ok(())
         } else {
-            Err(RunError::from_conf("gflow conf is empty".to_string()))
+            Err(RunReason::from_conf("gflow conf is empty".to_string()).into())
         }
     }
 }

@@ -1,10 +1,15 @@
+use orion_common::serde::Yamlable;
+use orion_error::{UvsConfFrom, UvsResFrom};
 use orion_variate::vars::{EnvDict, EnvEvalable};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
+use std::env::home_dir;
 use std::path::PathBuf;
 
 use crate::ai::provider::AiProviderType;
+use crate::const_val::gxl_const::AI_CONF_FILE;
+use crate::{ExecReason, ExecResult};
 
 /// AI配置主结构
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -41,6 +46,18 @@ impl AiConfig {
             .map(|(k, v)| (k, v.env_eval(dict)))
             .collect()
     }
+    pub fn galaxy_load(dict: &EnvDict) -> ExecResult<Self> {
+        let galaxy_dir = home_dir()
+            .ok_or_else(|| ExecReason::from_res("Cannot find home directory".into()))?
+            .join(".galaxy");
+        let ai_conf_path = galaxy_dir.join(AI_CONF_FILE);
+        if !ai_conf_path.exists() {
+            todo!();
+        }
+        let conf = AiConfig::from_yml(&ai_conf_path)
+            .map_err(|e| ExecReason::from_conf(format!("ai_conf :{e}")))?;
+        Ok(conf.env_eval(dict))
+    }
 
     /// 提供 deepseek,openai, glm,kimi 的访问配置。
     /// TOKEN 使用环量变量表示
@@ -52,7 +69,7 @@ impl AiConfig {
             AiProviderType::OpenAi,
             ProviderConfig {
                 enabled: true,
-                api_key_env: "OPENAI_API_KEY".to_string(),
+                api_key_env: "${OPENAI_API_KEY}".to_string(),
                 base_url: Some("https://api.openai.com/v1".to_string()),
                 timeout: 30,
                 model_aliases: None,
@@ -65,7 +82,7 @@ impl AiConfig {
             AiProviderType::DeepSeek,
             ProviderConfig {
                 enabled: true,
-                api_key_env: "DEEPSEEK_API_KEY".to_string(),
+                api_key_env: "${DEEPSEEK_API_KEY}".to_string(),
                 base_url: Some("https://api.deepseek.com/v1".to_string()),
                 timeout: 30,
                 model_aliases: None,
@@ -78,7 +95,7 @@ impl AiConfig {
             AiProviderType::Glm,
             ProviderConfig {
                 enabled: true,
-                api_key_env: "GLM_API_KEY".to_string(),
+                api_key_env: "${GLM_API_KEY}".to_string(),
                 base_url: Some("https://open.bigmodel.cn/api/paas/v4".to_string()),
                 timeout: 30,
                 model_aliases: None,
@@ -91,7 +108,7 @@ impl AiConfig {
             AiProviderType::Kimi,
             ProviderConfig {
                 enabled: true,
-                api_key_env: "KIMI_API_KEY".to_string(),
+                api_key_env: "${KIMI_API_KEY}".to_string(),
                 base_url: Some("https://api.moonshot.cn/v1".to_string()),
                 timeout: 30,
                 model_aliases: None,

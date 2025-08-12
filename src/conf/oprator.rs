@@ -4,7 +4,7 @@ use orion_infra::path::ensure_path;
 use std::path::PathBuf;
 
 use crate::{
-    err::{RunError, RunResult},
+    err::{RunReason, RunResult},
     task_report::task_rc_config::TASK_REPORT_CENTER,
 };
 
@@ -62,7 +62,7 @@ pub fn conf_init() -> RunResult<()> {
         conf.save_toml(&conf_file).owe_res()?;
         return Ok(());
     }
-    Err(RunError::from_sys("get home dir failed!".to_string()))
+    Err(RunReason::from_sys("get home dir failed!".to_string()).into())
 }
 
 #[cfg(test)]

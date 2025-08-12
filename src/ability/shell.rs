@@ -1,22 +1,18 @@
 use chrono::Local;
 use orion_common::serde::*;
-use orion_error::ErrorConv;
 use rand::Rng;
 use std::path::PathBuf;
 
 use crate::{ability::prelude::*, expect::LogicScope, traits::Setter, var::VarDict};
 use getset::{Getters, MutGetters, Setters, WithSetters};
-use orion_error::UvsLogicFrom;
+use orion_error::{ToStructError, UvsLogicFrom};
 use orion_variate::vars::ValueDict;
 #[derive(Clone, Debug, Default, PartialEq, Getters, Setters, WithSetters, MutGetters)]
+#[getset(get = "pub", set = "pub", get_mut, set_with)]
 pub struct GxShell {
-    #[getset(get = "pub", set = "pub", get_mut, set_with)]
     arg_file: Option<PathBuf>,
-    #[getset(get = "pub", set = "pub", get_mut, set_with)]
     out_var: Option<String>,
-    #[getset(get = "pub", set = "pub", get_mut, set_with)]
     shell: String,
-    #[getset(get, set = "pub", get_mut, set_with)]
     expect: ShellOption,
 }
 #[async_trait]
@@ -66,11 +62,11 @@ impl GxShell {
                 ValueDict::from_ini(arg_file)
                     .map_err(|e| ExecReason::Serde(format!("INI解析失败: {}", e)))?
             } else {
-                return ExecError::from_logic(format!(
+                return ExecReason::from_logic(format!(
                     "unsupport this format {}",
                     arg_file.display()
                 ))
-                .err();
+                .err_result();
             };
             vars_dict.global_mut().merge_dict(VarDict::from(dict));
         }

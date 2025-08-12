@@ -1,14 +1,14 @@
-use orion_error::UvsConfFrom;
 use serde_yaml;
 use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use crate::ai::AiError;
 use crate::ai::{AiErrReason, AiResult};
 
 use super::structures::{AiConfig, FileConfig};
+use orion_error::ToStructError;
 
+use orion_error::UvsConfFrom;
 /// 配置加载器，支持文件加载和变量替换
 pub struct ConfigLoader {
     // 配置加载器状态
@@ -44,10 +44,11 @@ impl ConfigLoader {
     /// 从指定路径加载配置文件
     pub fn load_config_from_path(&self, config_path: &Path) -> AiResult<FileConfig> {
         if !config_path.exists() {
-            return Err(AiError::from_conf(format!(
+            return AiErrReason::from_conf(format!(
                 "Config file not found: {}",
                 config_path.display()
-            )));
+            ))
+            .err_result();
         }
 
         let content = fs::read_to_string(config_path).map_err(|e| {

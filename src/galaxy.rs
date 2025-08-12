@@ -5,12 +5,12 @@ use orion_variate::addr::access_ctrl::{serv::NetAccessCtrl, Rule, Unit};
 
 use crate::{
     ai::AiConfig,
-    err::{RunError, RunResult},
+    const_val::gxl_const::{AI_CONF_FILE, NET_ACCESS_CTRL_FILE},
+    err::{RunReason, RunResult},
 };
 
 pub struct Galaxy {}
-const NET_ACCESS_CTRL_FILE: &str = "net_accessor_ctrl.yml";
-const AI_CONF_FILE: &str = "ai.yml";
+
 impl Galaxy {
     /// 初始化 Galaxy 环境
     ///
@@ -20,7 +20,7 @@ impl Galaxy {
     pub fn env_init() -> RunResult<()> {
         // 获取家目录并构建环境目录
         let galaxy_dir = home_dir()
-            .ok_or_else(|| RunError::from_res("Cannot find home directory".into()))?
+            .ok_or_else(|| RunReason::from_res("Cannot find home directory".into()))?
             .join(".galaxy");
 
         // 创建目录
@@ -36,20 +36,20 @@ impl Galaxy {
                 " {} exists! , net access ctrl init ignore",
                 net_ctrl_path.display()
             );
-            return Ok(());
+        } else {
+            let rules = vec![Rule::new("https://google.com/*", "https://google.cn/")];
+            let unit = Unit::new(rules, None, None);
+            let service = NetAccessCtrl::new(vec![unit], true);
+            service.save_yml(&net_ctrl_path).owe_res()?;
         }
-
-        let rules = vec![Rule::new("https://google.com/*", "https://google.cn/")];
-        let unit = Unit::new(rules, None, None);
-        let service = NetAccessCtrl::new(vec![unit], true);
-        service.save_yml(&net_ctrl_path).owe_res()?;
 
         let ai_conf_path = galaxy_dir.join(AI_CONF_FILE);
         if ai_conf_path.exists() {
             println!(" {} exists! , ai init ignore", ai_conf_path.display());
             return Ok(());
+        } else {
+            AiConfig::example().save_yml(&ai_conf_path).owe_res()?;
         }
-        AiConfig::example().save_yml(&ai_conf_path).owe_res()?;
         Ok(())
     }
 }

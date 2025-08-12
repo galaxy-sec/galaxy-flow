@@ -10,7 +10,6 @@ use crate::evaluator::EnvExpress;
 use crate::evaluator::VarParser;
 use crate::ExecResult;
 
-use std::io::prelude::*;
 use std::path::PathBuf;
 
 use super::accessor::build_accessor;

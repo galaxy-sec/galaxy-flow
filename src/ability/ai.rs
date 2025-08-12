@@ -5,7 +5,7 @@ use crate::ability::prelude::*;
 use crate::ai::provider::AiRequest;
 use crate::ai::{client::AiClient, config::AiConfig};
 use getset::{Getters, MutGetters, Setters, WithSetters};
-use orion_error::{ErrorConv, UvsLogicFrom};
+use orion_error::{ErrorConv, ToStructError, UvsLogicFrom, UvsResFrom};
 #[derive(Clone, Debug, Default, PartialEq, Getters, Setters, WithSetters, MutGetters)]
 #[getset(get = "pub", set = "pub", get_mut = "pub", set_with = "pub")]
 pub struct GxAIChat {
@@ -30,7 +30,7 @@ impl GxAIChat {
             ..Default::default()
         }
     }
-    async fn execute_impl(&self, mut ctx: ExecContext, mut vars_dict: VarSpace) -> TaskResult {
+    async fn execute_impl(&self, mut ctx: ExecContext, vars_dict: VarSpace) -> TaskResult {
         ctx.append("gx.shell");
         let mut action = Action::from("gx.ai_chat");
         let exp = EnvExpress::from_env_mix(vars_dict.global().clone());
@@ -38,24 +38,24 @@ impl GxAIChat {
         let message = if let Some(prompt_file) = &self.prompt_file {
             let prompt_file = PathBuf::from(exp.eval(prompt_file)?);
             if prompt_file.exists() {
-                return ExecError::from_logic(format!(
+                return ExecReason::from_logic(format!(
                     "unsupport this format {}",
                     prompt_file.display()
                 ))
-                .err();
+                .err_result();
             }
             //std::fs::read_to_string(prompt_file.as_path()).owe(AiErrReason::from(
             //    UvsReason::DataError("prompat file read error".into(), None),
             //))?
-            std::fs::read_to_string(prompt_file.as_path()).unwrap()
+            std::fs::read_to_string(prompt_file.as_path()).map_err(|e| ExecReason::from_res(format!("prompt_file:{e}")))?
         } else if let Some(prompt_msg) = &self.prompt_msg {
             prompt_msg.clone()
         } else {
             "not need help".to_string()
         };
 
-        // call ai client
-        let ai_config = AiConfig::example();
+        // call ai clien
+        let ai_config = AiConfig::galaxy_load(&vars_dict.global().export().into())?;
         let ai_client = AiClient::new(ai_config).err_conv()?;
 
         // 创建 AI 请求

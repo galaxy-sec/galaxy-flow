@@ -47,12 +47,15 @@ impl FileDTO {
                 if let Some(name) = self.name.clone() {
                     vars_dict.global_mut().set(name, SecValueType::from(list));
                 } else {
-                    return ExecError::from_logic("list cannot set to VarSpace by no name ".into())
-                        .err();
+                    return ExecReason::from_logic(
+                        "list cannot set to VarSpace by no name ".into(),
+                    )
+                    .err_result();
                 }
             }
             _ => {
-                return ExecError::from_logic("read file only support list and map ".into()).err();
+                return ExecReason::from_logic("read file only support list and map ".into())
+                    .err_result();
             }
         }
         Ok(TaskValue::from((vars_dict, ExecOut::Ignore)))

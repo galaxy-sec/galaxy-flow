@@ -1,6 +1,6 @@
 use derive_more::From;
 use orion_common::serde::SerdeReason;
-use orion_error::{DomainReason, ErrorCode, StructError, UvsReason};
+use orion_error::{ErrorCode, StructError, UvsReason};
 use serde::Serialize;
 use thiserror::Error;
 

@@ -1,13 +1,13 @@
 use std::sync::Arc;
 
-use orion_error::UvsLogicFrom;
+use orion_error::{ToStructError, UvsLogicFrom};
 
 use crate::{
     evaluator::{EnvExpress, VarParser},
     menu::GxMenu,
     sec::{SecFrom, SecValueObj, SecValueType, ToUniCase},
     util::str_utils::{StringCutter, UpperKeyMaker},
-    ExecError,
+    ExecReason,
 };
 
 use super::{
@@ -56,7 +56,7 @@ pub trait PropsTrait {
                         info!(target: ctx.path(),"{old_ver_key:10} = {val}",);
                         obj.insert(prop.key().to_unicase(), val.clone());
                     } else {
-                        return ExecError::from_logic(format!("nor var ref {x}")).err();
+                        return ExecReason::from_logic(format!("nor var ref {x}")).err_result();
                     }
                 }
                 crate::primitive::GxlObject::Value(x) => {
