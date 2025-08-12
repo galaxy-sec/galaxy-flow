@@ -1,4 +1,4 @@
-use crate::ai::capabilities::AiTask;
+use crate::ai::capabilities::AiRole;
 use crate::ai::client::AiClient;
 use crate::ai::config::AiConfig;
 use crate::ai::provider::AiProviderType;
@@ -140,7 +140,7 @@ fn main() {
         let prompt = "帮我优化这段Python代码：\nfor i in range(len(my_list)):\n    if my_list[i] > 0:\n        print(my_list[i])";
 
         match client
-            .smart_request(AiTask::Coding, prompt)
+            .smart_role_request(AiRole::Developer, prompt)
             .await
         {
             Ok(response) => {
@@ -154,80 +154,9 @@ fn main() {
         }
     }
 
-    #[tokio::test]
-    async fn test_deepseek_commit_message_generation() {
-        env::set_var("DEEPSEEK_API_KEY", "test_deepseek_key");
 
-        let config = AiConfig::example();
-        let client = AiClient::new(config).expect("Failed to create AiClient");
 
-        let git_diff = r#"diff --git a/src/main.rs b/src/main.rs
-index abc123..def456 100644
---- a/src/main.rs
-+++ b/src/main.rs
-@@ -10,6 +10,10 @@ fn main() {
-         println!("Updated user profile: {}", username);
-     }
 
-+    // 添加数据库连接池
-+    let pool = establish_connection_pool();
-+    println!("Database pool established");
-+
-     let result = fibonacci(10);
-     println!("Fibonacci result: {}", result);
- }"#;
-
-        match client.smart_commit(git_diff).await {
-            Ok(response) => {
-                assert!(!response.content.is_empty());
-                // 验证提交消息格式
-                assert!(response.content.contains("feat:") || response.content.contains("fix:"));
-                println!("✅ DeepSeek 提交消息生成测试通过");
-                println!("生成的提交消息: {}", response.content);
-            }
-            Err(e) => {
-                println!("⚠️ DeepSeek 提交消息生成失败（可能需要真实API key）: {e}");
-            }
-        }
-    }
-
-    #[tokio::test]
-    async fn test_deepseek_code_review() {
-        env::set_var("DEEPSEEK_API_KEY", "test_deepseek_key");
-
-        let config = AiConfig::example();
-        let client = AiClient::new(config).expect("Failed to create AiClient");
-
-        let unsafe_code = r#"function processUserData(user) {
-    if (!user) return null;
-
-    // 潜在的安全风险：直接执行用户输入
-    eval(user.code);
-
-    // 性能问题：循环中创建函数
-    for (let i = 0; i < 1000; i++) {
-        setTimeout(() => { console.log(i); }, 0);
-    }
-}"#;
-
-        match client.code_review(unsafe_code, "security.js").await {
-            Ok(response) => {
-                assert!(!response.content.is_empty());
-                // 验证代码审查包含安全相关的关键词
-                let content_lower = response.content.to_lowercase();
-                assert!(
-                    content_lower.contains("security")
-                        || content_lower.contains("vulnerability")
-                        || content_lower.contains("risk")
-                );
-                println!("✅ DeepSeek 代码审查测试通过");
-                println!("审查结果: {}", response.content);
-            }
-            Err(e) => {
-                println!("⚠️ DeepSeek 代码审查失败（可能需要真实API key）: {e}");
-            }
-        }
-    }
 }
 
 /// DeepSeek 性能和负载测试

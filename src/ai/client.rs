@@ -1,21 +1,24 @@
-use crate::ai::capabilities::{AiTask, AiRole};
+use crate::ai::capabilities::AiRole;
 use crate::ai::provider::{AiProvider, AiProviderType, AiRequest};
+use crate::ai::config::{RoleConfigManager, RoleConfigLoader};
+use crate::ai::error::{AiError, AiResult};
 use std::collections::HashMap;
 use std::sync::Arc;
 
 use super::provider::AiResponse;
 use super::providers::openai::OpenAiProvider;
-use super::{AiConfig, AiErrReason, AiError, AiResult, AiRouter};
+use super::{AiConfig, AiErrReason, AiResult as OriginalAiResult, AiRouter};
 
 /// 主AI客户端，统一的API接口
 pub struct AiClient {
     providers: HashMap<AiProviderType, Arc<dyn AiProvider>>,
     config: Arc<AiConfig>,
     router: AiRouter,
+    role_config_manager: Arc<RoleConfigManager>,
 }
 
 impl AiClient {
-    pub fn new(config: AiConfig) -> AiResult<Self> {
+    pub fn new(config: AiConfig) -> OriginalAiResult<Self> {
         let mut providers: HashMap<AiProviderType, Arc<dyn AiProvider>> = HashMap::new();
 
         // 初始化支持的provider
@@ -42,10 +45,15 @@ impl AiClient {
             Arc::new(crate::ai::providers::mock::MockProvider::new()),
         );
 
+        // 初始化角色配置管理器
+        let role_config_manager = RoleConfigLoader::load_default()
+            .unwrap_or_else(|_| RoleConfigManager::default());
+
         Ok(Self {
             providers,
             config: Arc::new(config),
             router: AiRouter::new(),
+            role_config_manager: Arc::new(role_config_manager),
         })
     }
 
@@ -59,50 +67,27 @@ impl AiClient {
         }
     }
 
-    pub async fn smart_request(
-        &self,
-        capability: AiTask,
-        prompt: &str,
-    ) -> AiResult<AiResponse> {
-        let model = capability.recommended_model();
-        let system_prompt = self.build_system_prompt(capability);
-
-        let request = AiRequest::builder()
-            .model(model)
-            .system_prompt(system_prompt)
-            .user_prompt(prompt)
-            .capability(capability)
-            .build();
-
-        self.send_request(request).await
-    }
-
-    /// 基于角色的智能请求处理 - 用户只需选择角色，系统自动推断任务类型
+    /// 基于角色的智能请求处理 - 用户只需选择角色，系统自动选择推荐模型
     pub async fn smart_role_request(
         &self,
         role: AiRole,
         user_input: &str,
     ) -> AiResult<AiResponse> {
-        // 智能推断任务类型
-        let inferred_task = role.infer_task(user_input);
-        
-        // 使用角色推荐模型（优先于任务推荐模型）
+        // 使用角色推荐模型
         let model = role.recommended_model();
-        let system_prompt = self.build_role_system_prompt(role, inferred_task);
+        let system_prompt = self.build_role_system_prompt(role);
 
         let request = AiRequest::builder()
             .model(model)
             .system_prompt(system_prompt)
             .user_prompt(user_input)
-            .capability(inferred_task)
             .build();
 
-        // 在响应中添加角色和任务推断信息
+        // 在响应中添加角色信息
         let mut response = self.send_request(request).await?;
         response.content = format!(
-            "[角色: {} | 任务: {}]\n\n{}",
+            "[角色: {}]\n\n{}",
             role.description(),
-            inferred_task.as_str(),
             response.content
         );
         
@@ -110,47 +95,20 @@ impl AiClient {
     }
 
     /// 构建基于角色的系统提示
-    fn build_role_system_prompt(&self, role: AiRole, task: AiTask) -> String {
-        let role_description = role.description();
-        let task_prompt = self.build_system_prompt(task);
-        
-        format!(
-            "你是{role_description}。你的工作流程是连续的，能够智能处理该角色下的各种任务。{task_prompt}"
-        )
+    fn build_role_system_prompt(&self, role: AiRole) -> String {
+        // 从配置文件中获取角色系统提示词
+        if let Some(role_config) = self.role_config_manager.get_role_config(&role.to_string()) {
+            role_config.system_prompt.clone()
+        } else {
+            // 回退到原有的硬编码描述
+            let role_description = role.description();
+            format!(
+                "你是{role_description}。你的工作流程是连续的，能够智能处理该角色下的各种任务。"
+            )
+        }
     }
 
-    pub async fn smart_commit(&self, context: &str) -> AiResult<AiResponse> {
-        let system_prompt =
-            "你是一名资深工程师，专门理解代码变更并生成符合Conventional Commits标准的提交信息。";
 
-        let request = AiRequest::builder()
-            .model("gpt-4o-mini")
-            .system_prompt(system_prompt)
-            .user_prompt(format!(
-                "分析以下代码变更，生成简洁的提交信息（最多50个字符）：\n{context}"
-            ))
-            .max_tokens(75)
-            .temperature(0.7)
-            .build();
-
-        self.send_request(request).await
-    }
-
-    pub async fn code_review(&self, code: &str, file_path: &str) -> AiResult<AiResponse> {
-        let system_prompt = "你是一名代码审查专家，专注于安全性、性能和可维护性。";
-
-        let request = AiRequest::builder()
-            .model("claude-3-5-sonnet")
-            .system_prompt(system_prompt)
-            .user_prompt(format!(
-                "审查{file_path}中的代码并指出潜在问题：\n{code}"
-            ))
-            .max_tokens(2000)
-            .temperature(0.3)
-            .build();
-
-        self.send_request(request).await
-    }
 
     /// 获取所有可用的provider
     pub fn available_providers(&self) -> Vec<AiProviderType> {
@@ -160,44 +118,6 @@ impl AiClient {
     /// 检查特定provider是否可用
     pub fn is_provider_available(&self, provider: AiProviderType) -> bool {
         self.providers.contains_key(&provider)
-    }
-
-    /// 根据任务选择合适的模型和provider
-    fn build_system_prompt(&self, capability: AiTask) -> String {
-        match capability {
-            // 开发者场景任务
-            AiTask::Coding => "生成高质量、可直接使用的代码或文档".to_string(),
-            AiTask::Optimizing => "基于代码上下文提供改进建议，保持简洁实用".to_string(),
-            AiTask::Testing => "设计全面的测试用例和测试策略".to_string(),
-            AiTask::Documenting => "生成清晰、准确的技术文档".to_string(),
-            AiTask::Refactoring => "重构代码结构，提升可读性和可维护性".to_string(),
-            AiTask::Debugging => "诊断代码问题，提供调试解决方案".to_string(),
-            // 项目管理类任务
-            AiTask::Planning => "分析变更对系统的影响和潜在风险".to_string(),
-            AiTask::Committing => "理解代码变更并生成精准的提交信息".to_string(),
-            AiTask::Branching => "提供分支管理和合并策略建议".to_string(),
-            AiTask::Releasing => "制定发布规划和执行策略".to_string(),
-            // 运维人员场景任务
-            AiTask::Deploying => "提供智能部署策略和风险评估建议".to_string(),
-            AiTask::Installing => "提供软件安装和配置指导".to_string(),
-            AiTask::Configuring => "提供系统配置和优化建议".to_string(),
-            AiTask::BackingUp => "提供数据备份和恢复策略建议".to_string(),
-            AiTask::Scaling => "提供系统扩展和性能优化建议".to_string(),
-            AiTask::Securing => "提供安全加固和防护建议".to_string(),
-            // 监控诊断类任务
-            AiTask::Analyzing => "深入分析代码的复杂度、结构和设计模式，提供技术洞察".to_string(),
-            AiTask::Reviewing => "专注安全性、性能和可维护性的代码审查".to_string(),
-            AiTask::Troubleshooting => "诊断和解决代码问题，提供调试建议".to_string(),
-            // 通用知识管理任务
-            AiTask::Explaining => "深入理解项目整体架构和设计模式".to_string(),
-            AiTask::Learning => "提供团队协作和代码集成建议".to_string(),
-            AiTask::Searching => "搜索和分析相关信息，提供准确答案".to_string(),
-            AiTask::Consulting => "提供技术咨询和最佳实践建议".to_string(),
-            // 其他任务类型
-            AiTask::Restarting => "提供服务重启和管理建议".to_string(),
-            AiTask::Monitoring => "提供系统监控和告警建议".to_string(),
-            AiTask::Auditing => "提供安全审计和合规检查建议".to_string(),
-        }
     }
 }
 
@@ -254,9 +174,9 @@ mod tests {
         let config = AiConfig::example();
         let client = AiClient::new(config).expect("Failed to create AiClient");
 
-        // 使用 smart_request 方法
-        let response = client.smart_request(
-            AiTask::Analyzing,
+        // 使用 smart_role_request 方法
+        let response = client.smart_role_request(
+            AiRole::Developer,
             "分析这个函数的性能：\nfn fibonacci(n: u64) -> u64 { if n <= 1 { n } else { fibonacci(n-1) + fibonacci(n-2) } }"
         ).await;
 
@@ -271,80 +191,7 @@ mod tests {
         }
     }
 
-    #[tokio::test]
-    async fn test_client_commit_with_deepseek() {
-        if env::var("DEEPSEEK_API_KEY").is_err() {
-            return;
-        }
 
-        let config = AiConfig::example();
-        let client = AiClient::new(config).expect("Failed to create AiClient");
-
-        // 测试 commit 功能
-        let context = r#"feat: add user authentication
-- Implement login endpoint
-- Add JWT token generation
-- Include password hashing"#;
-
-        let response = client.smart_commit(context).await;
-
-        match response {
-            Ok(resp) => {
-                println!("✅ DeepSeek commit 响应: {}", resp.content);
-                assert!(!resp.content.is_empty());
-                // 验证提交信息符合 Conventional Commits 格式
-                assert!(
-                    resp.content.contains("feat:")
-                        || resp.content.contains("fix:")
-                        || resp.content.contains("docs:")
-                );
-            }
-            Err(e) => {
-                println!("⚠️ DeepSeek commit 请求失败（预期）: {e}");
-            }
-        }
-    }
-
-    #[tokio::test]
-    async fn test_client_code_review_with_deepseek() {
-        if env::var("DEEPSEEK_API_KEY").is_err() {
-            return;
-        }
-        let config = AiConfig::example();
-        let client = AiClient::new(config).expect("Failed to create AiClient");
-
-        // 测试代码审查功能
-        let code = r#"function processUserData(user) {
-    if (!user || !user.name) {
-        return null;
-    }
-
-    let result = [];
-    for (let i = 0; i < user.data.length; i++) {
-        result.push(user.data[i] * 2);
-    }
-
-    return result;
-}"#;
-
-        let response = client.code_review(code, "user.js").await;
-
-        match response {
-            Ok(resp) => {
-                println!("✅ DeepSeek code review 响应: {}", resp.content);
-                assert!(!resp.content.is_empty());
-                // 验证包含代码审查相关的关键词
-                assert!(
-                    resp.content.to_lowercase().contains("security")
-                        || resp.content.to_lowercase().contains("performance")
-                        || resp.content.to_lowercase().contains("vulnerability")
-                );
-            }
-            Err(e) => {
-                println!("⚠️ DeepSeek code review 请求失败（预期）: {e}");
-            }
-        }
-    }
 
     #[tokio::test]
     async fn test_client_provider_fallback() {
