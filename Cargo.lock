@@ -1152,7 +1152,7 @@ dependencies = [
  "log",
  "mockall",
  "once_cell",
- "orion-error 0.3.2",
+ "orion-error 0.4.0",
  "orion_common",
  "orion_infra",
  "orion_parse",
@@ -2143,7 +2143,7 @@ dependencies = [
 
 [[package]]
 name = "orion-error"
-version = "0.3.2"
+version = "0.4.0"
 dependencies = [
  "derive-getters",
  "derive_more",
