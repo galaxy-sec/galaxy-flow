@@ -34,23 +34,19 @@ impl GxAIChat {
         ctx.append("gx.shell");
         let mut action = Action::from("gx.ai_chat");
         let exp = EnvExpress::from_env_mix(vars_dict.global().clone());
+        let mut message = self.prompt_msg.clone().unwrap_or("".to_string());
 
-        let message = if let Some(prompt_file) = &self.prompt_file {
+        if let Some(prompt_file) = &self.prompt_file {
             let prompt_file = PathBuf::from(exp.eval(prompt_file)?);
             if !prompt_file.exists() {
                 return ExecReason::from_logic(format!("{} not exists", prompt_file.display()))
                     .err_result();
             }
-            //std::fs::read_to_string(prompt_file.as_path()).owe(AiErrReason::from(
-            //    UvsReason::DataError("prompat file read error".into(), None),
-            //))?
-            std::fs::read_to_string(prompt_file.as_path())
-                .map_err(|e| ExecReason::from_res(format!("prompt_file:{e}")))?
-        } else if let Some(prompt_msg) = &self.prompt_msg {
-            prompt_msg.clone()
-        } else {
-            "not need help".to_string()
-        };
+            let data = std::fs::read_to_string(prompt_file.as_path())
+                .map_err(|e| ExecReason::from_res(format!("prompt_file:{e}")))?;
+            message.push_str("\n");
+            message.push_str(data.as_str());
+        }
 
         // call ai clien
         let ai_config = AiConfig::galaxy_load(&vars_dict.global().export().into())?;

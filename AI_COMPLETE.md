@@ -355,3 +355,5 @@ cargo run -- --model mixtral "快速推理"
 4. 通过配置文件精细控制AI Provider的行为
 
 **主要价值**: 通过配置文件实现了Provider选择的环境变量替换支持，为用户提供了更灵活、更可维护的配置管理方式。
+
+[] 在 _gal 目录下建立 AI 规则文件，在AiClient 时可以加载使用
