@@ -1,0 +1,152 @@
+# 角色配置文件 - 主配置文件
+# 支持多文件配置的角色系统
+# 引用各个角色的详细配置
+
+# 角色定义（轻量级配置）
+test_role:
+  name: "测试角色"
+  description: "这是一个测试角色"
+  system_prompt: "你是一个测试角色"
+  recommended_model: "test-model"
+  recommended_models:
+    - "test-model"
+    - "backup-model"
+  # 引用规则配置
+  rules_config: "roles/common/default-rules.yaml"
+
+developer:
+  name: "开发者"
+  description: "专注于代码开发的技术专家"
+  system_prompt: "你是一个专业的开发者，擅长高质量的代码实现、系统设计和技术问题解决。"
+  recommended_model: "gpt-4"
+  recommended_models:
+    - "gpt-4"
+    - "claude-3-sonnet"
+    - "deepseek-coder"
+    - "gemini-pro"
+  # 引用详细规则配置
+  rules_config: "roles/developer/config.yaml"
+
+analyst:
+  name: "分析师"
+  description: "专注于数据分析和洞察"
+  system_prompt: "你是一个数据分析师，擅长从数据中发现规律和趋势"
+  recommended_model: "gpt-4"
+  recommended_models:
+    - "gpt-4"
+    - "claude-3-sonnet"
+    - "deepseek-chat"
+  # 引用规则配置
+  rules_config: "roles/analyst/config.yaml"
+
+writer:
+  name: "作家"
+  description: "专注于创意写作和文档生成"
+  system_prompt: "你是一个专业的作家，擅长创作各种类型的文本内容"
+  recommended_model: "claude-3-opus"
+  recommended_models:
+    - "claude-3-opus"
+    - "gpt-4"
+    - "deepseek-chat"
+  # 引用规则配置
+  rules_config: "roles/writer/config.yaml"
+
+debugger:
+  name: "调试专家"
+  description: "专注于代码调试和问题排查"
+  system_prompt: "你是一个资深的调试专家，擅长发现和解决代码中的各种问题"
+  recommended_model: "deepseek-coder"
+  recommended_models:
+    - "deepseek-coder"
+    - "gpt-4"
+    - "claude-3-sonnet"
+  # 引用规则配置
+  rules_config: "roles/debugger/config.yaml"
+
+reviewer:
+  name: "代码审查员"
+  description: "专注于代码质量审查和改进建议"
+  system_prompt: "你是一个资深的代码审查员，能够提供有价值的代码改进建议"
+  recommended_model: "gpt-4"
+  recommended_models:
+    - "gpt-4"
+    - "claude-3-sonnet"
+    - "deepseek-chat"
+  # 引用规则配置
+  rules_config: "roles/reviewer/config.yaml"
+
+# 全局规则配置引用
+global_rules:
+  # 工作流程公共规则
+  workflow_rules: "roles/common/workflow.yaml"
+  # 能力定义公共规则
+  capability_definitions: "roles/common/capabilities.yaml"
+  # 协作模板公共规则
+  collaboration_templates: "roles/common/collaboration.yaml"
+  # 模式定义公共规则
+  mode_definitions: "roles/common/modes.yaml"
+
+# 配置管理规则
+config_management:
+  # 支持的配置文件格式
+  supported_formats: ["yaml", "json"]
+  # 配置文件搜索路径
+  search_paths:
+    - "roles/"
+    - "roles/common/"
+    - "roles/*/config.yaml"
+    - "roles/*/rules.yaml"
+  # 配置文件缓存设置
+  cache:
+    enabled: true
+    ttl: 3600 # 1小时缓存
+    max_size: 1000 # 最大缓存条目数
+
+# 动态规则加载
+dynamic_rules:
+  # 启用动态加载
+  enabled: true
+  # 加载策略
+  loading_strategy: "lazy" # lazy: 按需加载, eager: 预加载
+  # 加载优先级
+  priority_order:
+    - "roles/common/" # 公共规则最高优先级
+    - "roles/developer/" # 开发者角色
+    - "roles/analyst/" # 分析师角色
+    - "roles/writer/" # 作家角色
+    - "roles/debugger/" # 调试专家
+    - "roles/reviewer/" # 代码审查员
+
+# 规则验证配置
+rule_validation:
+  # 启用规则验证
+  enabled: true
+  # 验证级别
+  validation_level: "strict" # strict: 严格模式, warn: 警告模式
+  # 验证规则
+  validation_rules:
+    # 配置文件完整性验证
+    file_integrity:
+      - 检查必需字段存在
+      - 检查文件引用有效性
+      - 检查数据格式正确性
+    # 规则一致性验证
+    rule_consistency:
+      - 检查模式与工作流程兼容性
+      - 检查能力边界合理性
+      - 检查协作规则完整性
+    # 冲突检测
+    conflict_detection:
+      - 检测规则冲突
+      - 检测重复配置
+      - 检测循环引用
+
+# 配置版本信息
+metadata:
+  version: "2.0.0"
+  last_updated: "2025-06-17"
+  description: "多文件配置的角色系统主配置文件"
+  author: "galaxy-flow"
+  changelog:
+    - "2.0.0": "支持多文件配置，引入规则系统"
+    - "1.0.0": "基础角色配置"
