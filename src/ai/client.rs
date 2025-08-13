@@ -102,7 +102,19 @@ impl AiClient {
     fn build_role_system_prompt(&self, role: AiRole) -> String {
         // 从配置文件中获取角色系统提示词
         if let Some(role_config) = self.role_config_manager.get_role_config(&role.to_string()) {
-            role_config.system_prompt.clone()
+            let mut system_prompt = role_config.system_prompt.clone();
+            
+            // 尝试加载角色特定的规则配置
+            if let Ok(Some(role_rules)) = self.role_config_manager.get_role_rules_config(&role.to_string()) {
+                system_prompt = self.enhance_system_prompt_with_rules(system_prompt, &role_rules);
+            } else {
+                // 如果没有角色特定规则，尝试加载全局规则
+                if let Ok(global_rules) = self.role_config_manager.load_global_rules_config() {
+                    system_prompt = self.enhance_system_prompt_with_rules(system_prompt, &global_rules);
+                }
+            }
+            
+            system_prompt
         } else {
             // 回退到原有的硬编码描述
             let role_description = role.description();
@@ -110,6 +122,21 @@ impl AiClient {
                 "你是{role_description}。你的工作流程是连续的，能够智能处理该角色下的各种任务。"
             )
         }
+    }
+
+    /// 使用规则增强系统提示词
+    fn enhance_system_prompt_with_rules(&self, base_prompt: String, rules: &crate::ai::config::roles::RulesConfig) -> String {
+        let mut enhanced_prompt = base_prompt;
+        
+        // 添加规则集合
+        if !rules.rules.is_empty() {
+            enhanced_prompt.push_str("\n\n## 规则\n");
+            for rule in &rules.rules {
+                enhanced_prompt.push_str(&format!("- {rule}\n"));
+            }
+        }
+        
+        enhanced_prompt
     }
 
     /// 获取所有可用的provider
@@ -144,15 +171,13 @@ mod tests {
     #[tokio::test]
     async fn test_client_with_deepseek() {
         once_init_log();
-        let dict = if let Some(dict) = load_key_dict("sec_deepseek_api_key") {
-            dict
+        let config= if let Some(dict) = load_key_dict("sec_deepseek_api_key") {
+             AiConfig::example().env_eval(&dict)
         } else {
             return;
         };
         // 创建配置，启用 DeepSeek
-        let config = AiConfig::example();
-
-        let client = AiClient::new(config.env_eval(&dict)).expect("Failed to create AiClient");
+        let client = AiClient::new(config).expect("Failed to create AiClient");
 
         // 验证 DeepSeek 可用
         assert!(client.is_provider_available(AiProviderType::DeepSeek));
@@ -186,14 +211,12 @@ mod tests {
     #[tokio::test]
     async fn test_client_smart_request_with_deepseek() {
         once_init_log();
-        let dict = if let Some(dict) = load_key_dict("sec_deepseek_api_key") {
-            dict
+        let config= if let Some(dict) = load_key_dict("sec_deepseek_api_key") {
+             AiConfig::example().env_eval(&dict)
         } else {
             return;
         };
-
-        let config = AiConfig::example();
-        let client = AiClient::new(config.env_eval(&dict)).expect("Failed to create AiClient");
+        let client = AiClient::new(config).expect("Failed to create AiClient");
         // 使用 smart_role_request 方法
         let response = client.smart_role_request(
             AiRole::Developer,

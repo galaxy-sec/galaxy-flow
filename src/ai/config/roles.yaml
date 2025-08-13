@@ -12,7 +12,7 @@ test_role:
     - "test-model"
     - "backup-model"
   # 引用规则配置
-  rules_config: "roles/common/default-rules.yaml"
+  rules_config: "rules/test_role.yaml"
 
 developer:
   name: "开发者"
@@ -25,7 +25,7 @@ developer:
     - "deepseek-coder"
     - "gemini-pro"
   # 引用详细规则配置
-  rules_config: "roles/developer/config.yaml"
+  rules_config: "rules/developer.yaml"
 
 analyst:
   name: "分析师"
@@ -37,7 +37,7 @@ analyst:
     - "claude-3-sonnet"
     - "deepseek-chat"
   # 引用规则配置
-  rules_config: "roles/analyst/config.yaml"
+  rules_config: "rules/analyst.yaml"
 
 writer:
   name: "作家"
@@ -49,7 +49,7 @@ writer:
     - "gpt-4"
     - "deepseek-chat"
   # 引用规则配置
-  rules_config: "roles/writer/config.yaml"
+  rules_config: "rules/writer.yaml"
 
 debugger:
   name: "调试专家"
@@ -61,7 +61,7 @@ debugger:
     - "gpt-4"
     - "claude-3-sonnet"
   # 引用规则配置
-  rules_config: "roles/debugger/config.yaml"
+  rules_config: "rules/debugger.yaml"
 
 reviewer:
   name: "代码审查员"
@@ -73,7 +73,7 @@ reviewer:
     - "claude-3-sonnet"
     - "deepseek-chat"
   # 引用规则配置
-  rules_config: "roles/reviewer/config.yaml"
+  rules_config: "rules/reviewer.yaml"
 
 # 全局规则配置引用
 global_rules:

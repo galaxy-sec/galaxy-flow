@@ -5,25 +5,6 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
 
-/// 简化角色配置结构
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct SimplifiedRoleConfig {
-    /// 角色名称
-    pub name: String,
-    /// 角色描述
-    pub description: String,
-    /// 系统提示词
-    pub system_prompt: String,
-    /// 推荐模型
-    pub recommended_model: String,
-    /// 推荐模型列表
-    pub recommended_models: Vec<String>,
-    /// 核心能力
-    pub capabilities: Option<Vec<String>>,
-    /// 工作流程步骤
-    pub workflow: Option<Vec<String>>,
-}
-
 /// 角色配置结构
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RoleConfig {
@@ -37,6 +18,15 @@ pub struct RoleConfig {
     pub recommended_model: String,
     /// 推荐模型列表
     pub recommended_models: Vec<String>,
+    /// 规则配置文件路径
+    pub rules_config: Option<String>,
+}
+
+/// 规则配置结构
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RulesConfig {
+    /// 规则集合
+    pub rules: Vec<String>,
 }
 
 /// 角色配置管理器
@@ -148,6 +138,105 @@ impl RoleConfigManager {
         self.roles.get(role_key)
     }
 
+    /// 加载规则配置文件
+    pub fn load_rules_config(&self, rules_path: &str) -> AiResult<RulesConfig> {
+        let path = Path::new(rules_path);
+
+        if !path.exists() {
+            return Err(AiError::from(AiErrReason::ConfigError(format!(
+                "规则配置路径不存在: {rules_path}"
+            ))));
+        }
+
+        // 判断是文件还是目录
+        if path.is_file() {
+            // 如果是文件，直接读取内容到rules数组
+            let content = fs::read_to_string(path).map_err(|e| {
+                AiError::from(AiErrReason::ConfigError(format!(
+                    "读取规则配置文件失败: {e}"
+                )))
+            })?;
+            
+            // 将文件内容按行分割，过滤空行
+            let rules: Vec<String> = content
+                .lines()
+                .map(|line| line.trim().to_string())
+                .filter(|line| !line.is_empty())
+                .collect();
+            
+            Ok(RulesConfig { rules })
+        } else if path.is_dir() {
+            // 如果是目录，加载所有*.mdc文件
+            let mut rules = Vec::new();
+            
+            let entries = fs::read_dir(path).map_err(|e| {
+                AiError::from(AiErrReason::ConfigError(format!(
+                    "读取规则配置目录失败: {e}"
+                )))
+            })?;
+            
+            for entry in entries {
+                let entry = entry.map_err(|e| {
+                    AiError::from(AiErrReason::ConfigError(format!(
+                        "读取目录条目失败: {e}"
+                    )))
+                })?;
+                
+                let file_path = entry.path();
+                if file_path.extension().and_then(|s| s.to_str()) == Some("mdc") {
+                    let content = fs::read_to_string(&file_path).map_err(|e| {
+                        AiError::from(AiErrReason::ConfigError(format!(
+                            "读取规则文件 {:?} 失败: {e}",
+                            file_path.file_name().unwrap_or_default()
+                        )))
+                    })?;
+                    
+                    // 将文件内容按行分割，过滤空行
+                    let file_rules: Vec<String> = content
+                        .lines()
+                        .map(|line| line.trim().to_string())
+                        .filter(|line| !line.is_empty())
+                        .collect();
+                    
+                    rules.extend(file_rules);
+                }
+            }
+            
+            Ok(RulesConfig { rules })
+        } else {
+            Err(AiError::from(AiErrReason::ConfigError(format!(
+                "规则配置路径既不是文件也不是目录: {rules_path}"
+            ))))
+        }
+    }
+
+    /// 获取角色规则配置
+    pub fn get_role_rules_config(&self, role_key: &str) -> AiResult<Option<RulesConfig>> {
+        if let Some(role_config) = self.roles.get(role_key) {
+            if let Some(rules_path) = &role_config.rules_config {
+                let full_path = Path::new(&self.config_path)
+                    .parent()
+                    .unwrap()
+                    .join(rules_path);
+                let rules_config = self.load_rules_config(full_path.to_str().unwrap())?;
+                Ok(Some(rules_config))
+            } else {
+                Ok(None)
+            }
+        } else {
+            Ok(None)
+        }
+    }
+
+    /// 加载全局规则配置
+    pub fn load_global_rules_config(&self) -> AiResult<RulesConfig> {
+        let global_path = Path::new(&self.config_path)
+            .parent()
+            .unwrap()
+            .join("rules/global.yaml");
+        self.load_rules_config(global_path.to_str().unwrap())
+    }
+
     /// 获取所有可用的角色
     pub fn get_available_roles(&self) -> Vec<&String> {
         self.roles.keys().collect()
@@ -164,60 +253,16 @@ impl RoleConfigManager {
         self.roles.contains_key(role_key)
     }
 
-    /// 加载简化角色配置
-    pub fn load_simplified_config(&mut self, config_path: &str) -> AiResult<()> {
-        let path = Path::new(config_path);
-
-        if !path.exists() {
-            return Err(AiError::from(AiErrReason::ConfigError(format!(
-                    "简化角色配置文件不存在: {config_path}",
-                ))));
-        }
-
-        let content = fs::read_to_string(path).map_err(|e| {
-            AiError::from(AiErrReason::ConfigError(format!(
-                "读取简化角色配置文件失败: {e}"
-            )))
-        })?;
-
-        let simplified_roles: HashMap<String, SimplifiedRoleConfig> =
-            serde_yaml::from_str(&content).map_err(|e| {
-                AiError::from(AiErrReason::ConfigError(format!(
-                    "解析简化角色配置文件失败: {e}"
-                )))
-            })?;
-
-        // 转换为标准RoleConfig格式
-        for (key, simplified_role) in simplified_roles {
-            let role_config = RoleConfig {
-                name: simplified_role.name,
-                description: simplified_role.description,
-                system_prompt: simplified_role.system_prompt,
-                recommended_model: simplified_role.recommended_model,
-                recommended_models: simplified_role.recommended_models,
-            };
-            self.roles.insert(key, role_config);
-        }
-
-        Ok(())
-    }
-
-    /// 自动检测并加载配置（优先尝试简化配置）
-    pub fn auto_load_config(&mut self, simplified_path: &str, legacy_path: &str) -> AiResult<()> {
-        // 首先尝试加载简化配置
-        if Path::new(simplified_path).exists() {
-            println!("📄 Loading simplified roles configuration...");
-            return self.load_simplified_config(simplified_path);
-        }
-        
-        // 回退到传统配置
+    /// 自动检测并加载配置（只使用roles.yaml）
+    pub fn auto_load_config(&mut self, _simplified_path: &str, legacy_path: &str) -> AiResult<()> {
+        // 只加载传统配置
         if Path::new(legacy_path).exists() {
-            println!("📄 Loading legacy roles configuration...");
+            println!("📄 Loading roles configuration from {legacy_path}...");
             return self.load_config();
         }
         
         Err(AiError::from(AiErrReason::ConfigError(
-            "Neither simplified nor legacy configuration file found".to_string()
+            format!("Configuration file not found: {legacy_path}")
         )))
     }
 }
@@ -256,20 +301,12 @@ impl RoleConfigLoader {
         Self::load(None)
     }
 
-    /// 加载简化角色配置管理器
-    pub fn load_simplified(config_path: Option<String>) -> AiResult<RoleConfigManager> {
-        let path = config_path.unwrap_or_else(|| "src/ai/config/roles_simplified.yaml".to_string());
-        let mut manager = RoleConfigManager::new(path.clone());
-        manager.load_simplified_config(&path)?;
-        Ok(manager)
-    }
-
-    /// 自动加载角色配置管理器（优先简化配置）
-    pub fn auto_load(simplified_path: Option<String>, legacy_path: Option<String>) -> AiResult<RoleConfigManager> {
-        let simplified = simplified_path.unwrap_or_else(|| "src/ai/config/roles_simplified.yaml".to_string());
+    /// 自动加载角色配置管理器（只使用roles.yaml）
+    pub fn auto_load(_simplified_path: Option<String>, legacy_path: Option<String>) -> AiResult<RoleConfigManager> {
         let legacy = legacy_path.unwrap_or_else(|| "src/ai/config/roles.yaml".to_string());
-        let mut manager = RoleConfigManager::new(legacy.clone()); // 使用legacy作为默认路径
-        manager.auto_load_config(&simplified, &legacy)?;
+        let mut manager = RoleConfigManager::new(legacy.clone());
+        println!("📄 Loading roles configuration from {legacy}...");
+        manager.load_config()?;
         Ok(manager)
     }
 }
