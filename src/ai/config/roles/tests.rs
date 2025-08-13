@@ -1,6 +1,5 @@
-use crate::ai::config::roles::types::{RoleConfig, RulesConfig};
-use crate::ai::config::roles::manager::RoleConfigManager;
 use crate::ai::config::roles::loader::RoleConfigLoader;
+use crate::ai::config::roles::manager::RoleConfigManager;
 use std::io::Write;
 use tempfile::NamedTempFile;
 

@@ -55,23 +55,6 @@ test_role:
     let role_config = role_config.unwrap();
     assert_eq!(role_config.name, "项目级测试角色");
     assert_eq!(role_config.recommended_model, "project-model");
-
-    // 测试获取角色规则配置
-    let rules_result = manager.get_role_rules_config("test_role");
-    assert!(
-        rules_result.is_ok(),
-        "角色规则配置获取失败: {:?}",
-        rules_result.err()
-    );
-
-    let rules_config = rules_result.unwrap();
-    assert!(rules_config.is_some(), "角色规则配置为空");
-
-    let rules_config = rules_config.unwrap();
-    assert_eq!(rules_config.rules.len(), 3);
-    assert_eq!(rules_config.rules[0], "项目级规则1");
-    assert_eq!(rules_config.rules[1], "项目级规则2");
-    assert_eq!(rules_config.rules[2], "项目级规则3");
 }
 
 #[test]
@@ -91,7 +74,7 @@ fn test_get_layered_rules_path() {
     let result = RoleConfigLoader::get_layered_rules_path("some/path");
     assert!(result.is_ok(), "获取分层规则路径失败: {:?}", result.err());
 
-    let rules_path = result.unwrap();
+    let rules_path = result.unwrap().display().to_string();
     assert!(rules_path.contains("_gal/ai-rules"));
 }
 

@@ -60,52 +60,13 @@ impl ConfigLoader {
             ))
         })?;
 
-        // 使用 EnvEvalable 进行变量替换
-        let evaluated_content = self.evaluate_variables(&content)?;
-
-        let mut file_config: FileConfig =
-            serde_yaml::from_str(&evaluated_content).map_err(|e| {
-                AiErrReason::ConfigError(format!(
-                    "Invalid YAML in {}: {}",
-                    config_path.display(),
-                    e
-                ))
-            })?;
+        let mut file_config: FileConfig = serde_yaml::from_str(&content).map_err(|e| {
+            AiErrReason::ConfigError(format!("Invalid YAML in {}: {}", config_path.display(), e))
+        })?;
 
         file_config.config_path = config_path.to_path_buf();
 
         Ok(file_config)
-    }
-
-    /// 使用 std::env 进行变量替换
-    pub fn evaluate_variables(&self, content: &str) -> AiResult<String> {
-        // 支持的变量替换语法:
-        // ${VAR} - 基本变量
-        // ${VAR:-default} - 默认值
-        // ${VAR:?} - 必填变量
-
-        let re = regex::Regex::new(r"\$\{([^}]+)\}")
-            .map_err(|e| AiErrReason::ConfigError(format!("Failed to create regex: {e}")))?;
-
-        let result = re
-            .replace_all(content, |caps: &regex::Captures| {
-                let var_expr = &caps[1];
-
-                if let Some((var_name, default)) = var_expr.split_once(":-") {
-                    // 默认值语法 ${VAR:-default}
-                    env::var(var_name).unwrap_or_else(|_| default.to_string())
-                } else if let Some(var_name) = var_expr.strip_suffix("?") {
-                    // 必填变量语法 ${VAR:?}
-                    env::var(var_name)
-                        .unwrap_or_else(|_| panic!("Required variable '{var_name}' not found"))
-                } else {
-                    // 基本变量语法 ${VAR}
-                    env::var(var_expr).unwrap_or_default()
-                }
-            })
-            .to_string();
-
-        Ok(result)
     }
 
     /// 加载完整配置（文件 + 环境变量）

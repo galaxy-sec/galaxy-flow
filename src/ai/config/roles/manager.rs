@@ -1,9 +1,9 @@
-use crate::ai::error::{AiErrReason, AiError, AiResult};
 use crate::ai::config::roles::types::{RoleConfig, RulesConfig};
+use crate::ai::error::{AiErrReason, AiError, AiResult};
 use serde_yaml;
 use std::collections::HashMap;
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 /// 角色配置管理器
 #[derive(Debug)]
@@ -115,12 +115,13 @@ impl RoleConfigManager {
     }
 
     /// 加载规则配置文件
-    pub fn load_rules_config(&self, rules_path: &str) -> AiResult<RulesConfig> {
+    pub fn load_rules_config(&self, rules_path: &PathBuf) -> AiResult<RulesConfig> {
         let path = Path::new(rules_path);
 
         if !path.exists() {
             return Err(AiError::from(AiErrReason::ConfigError(format!(
-                "规则配置路径不存在: {rules_path}"
+                "规则配置路径不存在: {}",
+                rules_path.display()
             ))));
         }
 
@@ -133,7 +134,7 @@ impl RoleConfigManager {
                 )))
             })?;
 
-            info!("加载角色RULE文件: {}", rules_path);
+            info!("加载角色RULE文件: {}", rules_path.display());
             // 将文件内容按行分割，过滤空行
             let rules: Vec<String> = content
                 .lines()
@@ -181,7 +182,8 @@ impl RoleConfigManager {
             Ok(RulesConfig { rules })
         } else {
             Err(AiError::from(AiErrReason::ConfigError(format!(
-                "规则配置路径既不是文件也不是目录: {rules_path}"
+                "规则配置路径既不是文件也不是目录: {}",
+                rules_path.display()
             ))))
         }
     }
@@ -191,7 +193,10 @@ impl RoleConfigManager {
         if let Some(role_config) = self.roles.get(role_key) {
             if let Some(rules_path) = &role_config.rules_path {
                 // 使用分层规则配置路径
-                let layered_rules_path = crate::ai::config::roles::loader::RoleConfigLoader::get_layered_rules_path(rules_path)?;
+                let layered_rules_path =
+                    crate::ai::config::roles::loader::RoleConfigLoader::get_layered_rules_path(
+                        rules_path,
+                    )?;
 
                 info!("加载角色RULE: {role_key}");
                 let rules_config = self.load_rules_config(&layered_rules_path)?;
@@ -206,11 +211,11 @@ impl RoleConfigManager {
 
     /// 加载全局规则配置
     pub fn load_global_rules_config(&self) -> AiResult<RulesConfig> {
-        let global_path = Path::new(&self.config_path)
+        let global_path = PathBuf::from(self.config_path.as_str())
             .parent()
             .unwrap()
             .join("rules/global.yaml");
-        self.load_rules_config(global_path.to_str().unwrap())
+        self.load_rules_config(&global_path)
     }
 
     /// 获取所有可用的角色

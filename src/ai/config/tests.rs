@@ -33,24 +33,6 @@ fn test_ensure_config_dir() {
 }
 
 #[test]
-fn test_variable_evaluation() {
-    std::env::set_var("TEST_VAR", "test_value");
-
-    let loader = ConfigLoader::new();
-    let content = r#"test: ${TEST_VAR}
-default: ${NON_EXISTENT:-default_value}"#;
-
-    let result = loader.evaluate_variables(content);
-    assert!(result.is_ok());
-
-    let evaluated = result.unwrap();
-    println!("Original content: {content}");
-    println!("Evaluated content: {evaluated}");
-    assert!(evaluated.contains("test_value"));
-    assert!(evaluated.contains("default_value"));
-}
-
-#[test]
 fn test_get_api_key() {
     std::env::set_var("OPENAI_API_KEY", "test_openai_key");
     std::env::set_var("MOCK_API_KEY", "mock_value");
