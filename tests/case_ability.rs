@@ -1,3 +1,5 @@
+mod thread_integration_test;
+
 extern crate galaxy_flow;
 
 use galaxy_flow::execution::VarSpace;

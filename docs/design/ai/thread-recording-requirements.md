@@ -294,6 +294,30 @@ In summary, this refactoring approach improves code maintainability by separatin
 
 ## 9. 技术实现方案
 
+### 9.1 AI通知功能扩展
+
+在原有的Thread记录功能基础上，增加了AI通知功能，允许用户选择是否告知AI当前对话正在被记录。
+
+#### 9.1.1 设计原理
+- **非侵入性设计**: AI通知作为可选功能，不影响原有的Thread记录流程
+- **安全性考虑**: 通过系统提示通知AI，避免了循环调用的问题
+- **灵活性**: 用户可以自定义通知消息，满足不同场景需求
+- **向后兼容**: 默认关闭AI通知，不影响现有使用方式
+
+#### 9.1.2 实现机制
+AI通知通过在系统提示中添加特定的通知消息来实现：
+```rust
+// 原始系统提示
+"你是AI助手"
+
+// 启用AI通知后的系统提示
+"你是AI助手
+
+【Thread记录已启用】本次对话正在被记录，请确保回答内容适合记录和分析。"
+```
+
+这样AI能够了解当前对话的记录状态，并相应调整其回答内容和方式。
+
 ### 9.1 总体架构设计
 
 采用**装饰器模式 + 简单文件追加 + 配置文件控制**的组合方案，将Thread配置直接集成到现有的`ai.yaml`配置文件中。
@@ -341,9 +365,17 @@ pub struct ThreadConfig {
     pub max_summary_length: usize,
     
     /// 总结关键字列表
-    #[serde(default = "default_summary_keywords")]
+    #[serde(default = "default_thread_summary_keywords")]
     pub summary_keywords: Vec<String>,
-}
+
+    /// 是否告知AI正在被记录
+    #[serde(default = "default_thread_inform_ai")]
+    pub inform_ai: bool,
+
+    /// 告知AI的通知消息
+    #[serde(default = "default_thread_inform_message")]
+    pub inform_message: String,
+  }
 ```
 
 #### 9.2.2 完整的ai.yaml配置示例
@@ -395,6 +427,14 @@ thread:
     - "summary"
     - "conclusion"
     - "in summary"
+  
+  # AI通知配置
+  inform_ai: false                 # 是否告知AI正在被记录
+  inform_message: "【Thread记录已启用】本次对话正在被记录，请确保回答内容适合记录和分析。"  # 通知消息
+  
+  # AI通知配置
+  inform_ai: false                 # 是否告知AI正在被记录
+  inform_message: "【Thread记录已启用】本次对话正在被记录，请确保回答内容适合记录和分析。"  # 通知消息
 
 # 路由配置
 router:
@@ -413,21 +453,40 @@ roles:
 
 ### 9.3 装饰器模式实现
 
-#### 9.3.1 核心架构
-
+### 9.3.1 核心架构
 ```rust
 /// AI客户端trait，用于装饰器模式
-pub trait AiClientTrait {
+pub trait AiClientTrait: Send + Sync {
     async fn send_request(&self, request: AiRequest) -> AiResult<AiResponse>;
     async fn smart_role_request(&self, role: AiRole, user_input: &str) -> AiResult<AiResponse>;
 }
 
 /// Thread记录装饰器
 pub struct ThreadRecordingClient<T: AiClientTrait> {
-    inner: Arc<T>,                          // 被装饰的AiClient
-    config: Arc<ThreadConfig>,              // Thread配置
-    file_manager: Arc<ThreadFileManager>,   // 文件管理器
+    inner: Arc<T>,                        // 被装饰的AiClient
+    config: Arc<ThreadConfig>,            // Thread配置
+    file_manager: Arc<ThreadFileManager>, // 文件管理器
 }
+```
+
+### 9.3.2 AI通知功能实现
+```rust
+impl<T: AiClientTrait> ThreadRecordingClient<T> {
+    /// 构建带有Thread通知的请求
+    fn build_request_with_thread_info(&self, mut request: AiRequest) -> AiRequest {
+        if self.config.inform_ai {
+            // 在系统提示中添加Thread记录通知
+            request.system_prompt = format!(
+                "{}\n\n{}",
+                request.system_prompt, self.config.inform_message
+            );
+        }
+        request
+    }
+}
+```
+
+当`inform_ai`设置为`true`时，系统会自动在AI请求的系统提示中添加通知消息，让AI知道当前对话正在被记录。
 
 impl<T: AiClientTrait> ThreadRecordingClient<T> {
     pub fn new(inner: T, config: ThreadConfig) -> Self {
@@ -790,8 +849,12 @@ impl AiConfig {
 **文档状态**: 技术方案设计完成，准备进入实现阶段
 
 **下一步**: 
-1. 实现Thread配置结构体和默认值
-2. 实现ThreadRecordingClient装饰器
-3. 实现ThreadFileManager和SummaryExtractor
-4. 集成到现有的AiClient创建流程
-5. 编写单元测试和集成测试
+1. 实现Thread配置结构体和默认值 ✅
+2. 实现ThreadRecordingClient装饰器 ✅
+3. 实现ThreadFileManager和SummaryExtractor ✅
+4. 集成到现有的AiClient创建流程 ✅
+5. 编写单元测试和集成测试 ✅
+6. 实现AI通知功能 ✅
+7. 验证完整功能 ✅
+
+**功能状态**: 完全实现并通过所有测试
