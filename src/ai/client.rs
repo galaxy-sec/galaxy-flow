@@ -266,6 +266,8 @@ impl AiClient {
 
 #[cfg(test)]
 mod tests {
+    use orion_variate::vars::{EnvDict, EnvEvalable};
+
     use super::*;
     use std::env;
 
@@ -277,7 +279,7 @@ mod tests {
         // 创建配置，启用 DeepSeek
         let config = AiConfig::example();
 
-        let client = AiClient::new(config).expect("Failed to create AiClient");
+        let client = AiClient::new(config.env_eval(&EnvDict::default())).expect("Failed to create AiClient");
 
         // 验证 DeepSeek 可用
         assert!(client.is_provider_available(AiProviderType::DeepSeek));
@@ -315,8 +317,7 @@ mod tests {
         }
 
         let config = AiConfig::example();
-        let client = AiClient::new(config).expect("Failed to create AiClient");
-
+       let client = AiClient::new(config.env_eval(&EnvDict::default())).expect("Failed to create AiClient");
         // 使用 smart_role_request 方法
         let response = client.smart_role_request(
             AiRole::Developer,
