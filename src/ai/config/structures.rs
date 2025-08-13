@@ -17,7 +17,6 @@ pub struct AiConfig {
     pub providers: HashMap<AiProviderType, ProviderConfig>,
     pub routing: RoutingRules,
     pub limits: UsageLimits,
-    pub file_config: Option<FileConfig>,
     #[serde(default = "default_thread_config")]
     pub thread: ThreadConfig,
 }
@@ -27,14 +26,12 @@ impl EnvEvalable<AiConfig> for AiConfig {
         let providers = Self::eval_providers_hashmap(self.providers, dict);
         let routing = self.routing.env_eval(dict);
         let limits = self.limits.env_eval(dict);
-        let file_config = self.file_config.map(|fc| fc.env_eval(dict));
         let thread = self.thread.env_eval(dict);
 
         Self {
             providers,
             routing,
             limits,
-            file_config,
             thread,
         }
     }
@@ -171,7 +168,6 @@ impl AiConfig {
             providers,
             routing: RoutingRules::default(),
             limits: UsageLimits::default(),
-            file_config: None,
             thread: ThreadConfig::default(),
         }
     }
@@ -257,7 +253,6 @@ impl AiConfig {
             providers,
             routing: RoutingRules::default(),
             limits: UsageLimits::default(),
-            file_config: None,
             thread: ThreadConfig::default(),
         }
     }

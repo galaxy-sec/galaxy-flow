@@ -2,7 +2,6 @@ use super::*;
 use orion_variate::vars::{EnvDict, EnvEvalable};
 use std::collections::HashMap;
 use std::io::Write;
-use std::path::PathBuf;
 use tempfile::NamedTempFile;
 
 use crate::ai::provider::AiProviderType;
@@ -92,13 +91,6 @@ deepseek_provider: "${DEEPSEEK_API_KEY:-deepseek_default}"
             );
             assert!(file_config.enabled);
             assert_eq!(file_config.version, "1.0");
-
-            // 测试完整的配置加载流程
-            let mut config = AiConfig::from_env();
-            loader.merge_file_config(&mut config, file_config).unwrap();
-
-            println!("✅ Successfully merged config");
-            assert!(config.file_config.is_some());
         }
         Err(e) => {
             panic!("Failed to load config file: {e}");
@@ -207,36 +199,6 @@ fn test_env_evalable_with_model_aliases() {
 }
 
 #[test]
-fn test_env_evalable_with_file_config() {
-    // 创建一个包含 file_config 的测试配置
-    let mut config = AiConfig::from_env();
-
-    // 创建 FileConfig 并设置变量
-    let file_config = FileConfig {
-        enabled: true,
-        override_env: false,
-        version: "${CONFIG_VERSION:-1.0}".to_string(),
-        config_path: PathBuf::new(),
-    };
-    config.file_config = Some(file_config);
-
-    // 创建 EnvDict
-    let mut env_dict: EnvDict = EnvDict::new();
-    env_dict.insert("CONFIG_VERSION".to_string(), "2.0".into());
-
-    // 执行变量替换
-    let evaluated_config = config.env_eval(&env_dict);
-
-    // 验证 file_config 中的变量替换
-    assert!(evaluated_config.file_config.is_some());
-    let evaluated_file_config = evaluated_config.file_config.unwrap();
-    assert_eq!(evaluated_file_config.version, "2.0");
-    assert!(evaluated_file_config.enabled);
-
-    println!("✅ Variable substitution in FileConfig works correctly");
-}
-
-#[test]
 fn test_config_example() {
     let config = AiConfig::example();
 
@@ -269,9 +231,6 @@ fn test_config_example() {
     assert_eq!(config.routing.free, "deepseek-chat");
     assert_eq!(config.limits.review_budget, 2000);
     assert_eq!(config.limits.analysis_budget, 4000);
-
-    // 检查没有file_config
-    assert!(config.file_config.is_none());
 
     println!("✅ AiConfig::example() works correctly");
 }

@@ -1,19 +1,8 @@
 use crate::ai::provider::AiProviderType;
-use crate::ai::AiResult;
 
 use super::structures::AiConfig;
 
-impl AiConfig {
-    /// 加载配置（支持环境变量和配置文件）
-    pub fn load() -> AiResult<Self> {
-        super::loader::ConfigLoader::load_config()
-    }
-
-    /// 兼容性方法 - 加载配置（优先使用配置文件）
-    pub fn load_with_file() -> AiResult<Self> {
-        Self::load()
-    }
-}
+impl AiConfig {}
 
 /// 配置相关的扩展 trait
 pub trait ConfigExt {

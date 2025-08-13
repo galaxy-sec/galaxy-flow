@@ -1,4 +1,4 @@
-use galaxy_flow::ai::config::roles::{RoleConfigLoader, RoleConfigManager};
+use galaxy_flow::ai::config::roles::RoleConfigLoader;
 use std::fs;
 use tempfile::TempDir;
 

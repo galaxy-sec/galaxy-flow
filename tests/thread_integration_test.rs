@@ -4,7 +4,7 @@ use tokio::runtime::Runtime;
 use galaxy_flow::ai::factory::AiClientEnum;
 use galaxy_flow::ai::{
     provider::{AiProviderType, AiRequest},
-    AiConfig, AiRole, ProviderConfig, ThreadConfig,
+    AiConfig, ProviderConfig, ThreadConfig,
 };
 use std::collections::HashMap;
 
@@ -34,7 +34,6 @@ fn test_thread_integration_basic() {
         providers,
         routing: galaxy_flow::ai::config::RoutingRules::default(),
         limits: galaxy_flow::ai::config::UsageLimits::default(),
-        file_config: None,
         thread: ThreadConfig {
             enabled: true,
             storage_path: storage_path.to_path_buf(),
@@ -110,7 +109,6 @@ fn test_thread_inform_ai_functionality() {
         providers,
         routing: galaxy_flow::ai::config::RoutingRules::default(),
         limits: galaxy_flow::ai::config::UsageLimits::default(),
-        file_config: None,
         thread: ThreadConfig {
             enabled: true,
             storage_path: storage_path.to_path_buf(),
@@ -186,7 +184,6 @@ fn test_thread_without_inform_ai() {
         providers,
         routing: galaxy_flow::ai::config::RoutingRules::default(),
         limits: galaxy_flow::ai::config::UsageLimits::default(),
-        file_config: None,
         thread: ThreadConfig {
             enabled: true,
             storage_path: storage_path.to_path_buf(),
@@ -258,7 +255,6 @@ fn test_thread_integration_with_disabled_config() {
         providers,
         routing: galaxy_flow::ai::config::RoutingRules::default(),
         limits: galaxy_flow::ai::config::UsageLimits::default(),
-        file_config: None,
         thread: ThreadConfig {
             enabled: false, // 禁用Thread记录
             storage_path: storage_path.to_path_buf(),
@@ -310,7 +306,7 @@ fn test_thread_config_validation() {
     valid_config.thread.max_summary_length = 250;
 
     // 添加必要的provider配置
-    use galaxy_flow::ai::provider::{AiProvider, AiProviderType};
+    use galaxy_flow::ai::provider::AiProviderType;
     let mut providers = std::collections::HashMap::new();
     providers.insert(
         AiProviderType::Mock,
