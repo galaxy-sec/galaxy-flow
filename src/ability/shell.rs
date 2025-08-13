@@ -73,7 +73,7 @@ impl GxShell {
             let out_data_path = PathBuf::from(format!(
                 "/tmp/gx_out_{out_var}_{}_{}",
                 Local::now().format("%Y%m%d_%H%M%S"),
-                rand::thread_rng().gen::<u32>()
+                rand::rng().random::<u32>()
             ));
 
             if out_data_path.exists() {
