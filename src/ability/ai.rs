@@ -2,6 +2,7 @@ use chrono::Local;
 use std::path::PathBuf;
 
 use crate::ability::prelude::*;
+use crate::ai::client::AiClientTrait;
 use crate::ai::provider::AiRequest;
 use crate::ai::{client::AiClient, config::AiConfig};
 use getset::{Getters, MutGetters, Setters, WithSetters};
@@ -39,8 +40,11 @@ impl GxAIChat {
         if let Some(prompt_file) = &self.prompt_file {
             let prompt_file = PathBuf::from(exp.eval(prompt_file)?);
             if !prompt_file.exists() {
-                return ExecReason::from_logic(format!("{path} not exists", path = prompt_file.display()))
-                    .err_result();
+                return ExecReason::from_logic(format!(
+                    "{path} not exists",
+                    path = prompt_file.display()
+                ))
+                .err_result();
             }
             let data = std::fs::read_to_string(prompt_file.as_path())
                 .map_err(|e| ExecReason::from_res(format!("prompt_file:{e}")))?;

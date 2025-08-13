@@ -8,24 +8,7 @@ pub enum AiRole {
     /// 运维人员角色 - 专注于系统部署、监控和维护
     Operations,
     /// 通用知识管理角色 - 专注于知识获取、解释和咨询
-    KnowledgeManager,
-}
-
-/// 旧版本的能力枚举，用于向后兼容
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Hash)]
-pub enum LegacyAiDevCapability {
-    Analyze,
-    Suggest,
-    Check,
-    Generate,
-    Refactor,
-    Deploy,
-    Commit,
-    Review,
-    Understand,
-    Predict,
-    Collaborate,
-    Explain,
+    Knowledger,
 }
 
 impl AiRole {
@@ -34,7 +17,7 @@ impl AiRole {
         match self {
             AiRole::Developer => "开发者角色 - 专注于代码开发、优化和项目管理",
             AiRole::Operations => "运维人员角色 - 专注于系统部署、监控和维护",
-            AiRole::KnowledgeManager => "通用知识管理角色 - 专注于知识获取、解释和咨询",
+            AiRole::Knowledger => "通用知识管理角色 - 专注于知识获取、解释和咨询",
         }
     }
 
@@ -43,7 +26,7 @@ impl AiRole {
         match self {
             AiRole::Developer => "deepseek-coder", // 开发者首选代码专用模型
             AiRole::Operations => "gpt-4o",        // 运维需要综合能力强的模型
-            AiRole::KnowledgeManager => "gpt-4o-mini", // 知识管理使用轻量级模型
+            AiRole::Knowledger => "gpt-4o-mini",   // 知识管理使用轻量级模型
         }
     }
 
@@ -52,7 +35,7 @@ impl AiRole {
         match self {
             AiRole::Developer => vec!["deepseek-coder", "claude-3-5-sonnet", "gpt-4o"],
             AiRole::Operations => vec!["gpt-4o", "deepseek-chat", "claude-3-5-sonnet"],
-            AiRole::KnowledgeManager => vec!["gpt-4o-mini", "deepseek-chat", "qwen-turbo"],
+            AiRole::Knowledger => vec!["gpt-4o-mini", "deepseek-chat", "qwen-turbo"],
         }
     }
 }
@@ -71,7 +54,9 @@ impl std::str::FromStr for AiRole {
         match s.to_lowercase().as_str() {
             "developer" | "dev" | "开发" | "开发者" => Ok(AiRole::Developer),
             "operations" | "ops" | "运维" | "运维人员" => Ok(AiRole::Operations),
-            "knowledge_manager" | "km" | "知识管理" | "知识管理员" => Ok(AiRole::KnowledgeManager),
+            "knowledge_manager" | "km" | "知识管理" | "知识管理员" => {
+                Ok(AiRole::Knowledger)
+            }
             _ => Err(format!("Unknown role: {s}")),
         }
     }
@@ -83,32 +68,7 @@ impl AiRole {
         match self {
             AiRole::Developer => "developer",
             AiRole::Operations => "operations",
-            AiRole::KnowledgeManager => "knowledge_manager",
-        }
-    }
-}
-
-
-
-// 为向后兼容性实现 FromStr
-impl std::str::FromStr for LegacyAiDevCapability {
-    type Err = String;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s.to_lowercase().as_str() {
-            "analyze" => Ok(LegacyAiDevCapability::Analyze),
-            "suggest" => Ok(LegacyAiDevCapability::Suggest),
-            "check" => Ok(LegacyAiDevCapability::Check),
-            "generate" => Ok(LegacyAiDevCapability::Generate),
-            "refactor" => Ok(LegacyAiDevCapability::Refactor),
-            "deploy" => Ok(LegacyAiDevCapability::Deploy),
-            "commit" => Ok(LegacyAiDevCapability::Commit),
-            "review" => Ok(LegacyAiDevCapability::Review),
-            "understand" => Ok(LegacyAiDevCapability::Understand),
-            "predict" => Ok(LegacyAiDevCapability::Predict),
-            "collaborate" => Ok(LegacyAiDevCapability::Collaborate),
-            "explain" => Ok(LegacyAiDevCapability::Explain),
-            _ => Err(format!("Unknown capability: {s}")),
+            AiRole::Knowledger => "knowledge_manager",
         }
     }
 }

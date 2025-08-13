@@ -267,19 +267,19 @@ fn test_config_example() {
     // 检查配置是否启用
     let openai_config = config.providers.get(&AiProviderType::OpenAi).unwrap();
     assert!(openai_config.enabled);
-    assert_eq!(openai_config.api_key, "${OPENAI_API_KEY}");
+    assert_eq!(openai_config.api_key, "${SEC_OPENAI_API_KEY}");
 
     let deepseek_config = config.providers.get(&AiProviderType::DeepSeek).unwrap();
     assert!(deepseek_config.enabled);
-    assert_eq!(deepseek_config.api_key, "${DEEPSEEK_API_KEY}");
+    assert_eq!(deepseek_config.api_key, "${SEC_DEEPSEEK_API_KEY}");
 
     let glm_config = config.providers.get(&AiProviderType::Glm).unwrap();
     assert!(glm_config.enabled);
-    assert_eq!(glm_config.api_key, "${GLM_API_KEY}");
+    assert_eq!(glm_config.api_key, "${SEC_GLM_API_KEY}");
 
     let kimi_config = config.providers.get(&AiProviderType::Kimi).unwrap();
     assert!(kimi_config.enabled);
-    assert_eq!(kimi_config.api_key, "${KIMI_API_KEY}");
+    assert_eq!(kimi_config.api_key, "${SEC_KIMI_API_KEY}");
 
     // 检查路由和限制配置
     assert_eq!(config.routing.simple, "gpt-4o-mini");

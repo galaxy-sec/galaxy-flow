@@ -82,8 +82,8 @@ impl RoleConfigManager {
 
         if !path.exists() {
             return Err(AiError::from(AiErrReason::ConfigError(format!(
-                    "配置文件不存在: {config_path}",
-                ))));
+                "配置文件不存在: {config_path}",
+            ))));
         }
 
         let content = fs::read_to_string(path).map_err(|e| {
@@ -96,7 +96,7 @@ impl RoleConfigManager {
 
         Ok(())
     }
-    
+
     /// 创建新的角色配置管理器
     pub fn new(config_path: String) -> Self {
         Self {
@@ -156,7 +156,7 @@ impl RoleConfigManager {
                     "读取规则配置文件失败: {e}"
                 )))
             })?;
-            
+
             info!("加载角色RULE文件: {}", rules_path);
             // 将文件内容按行分割，过滤空行
             let rules: Vec<String> = content
@@ -164,25 +164,23 @@ impl RoleConfigManager {
                 .map(|line| line.trim().to_string())
                 .filter(|line| !line.is_empty())
                 .collect();
-            
+
             Ok(RulesConfig { rules })
         } else if path.is_dir() {
             // 如果是目录，加载所有*.mdc文件
             let mut rules = Vec::new();
-            
+
             let entries = fs::read_dir(path).map_err(|e| {
                 AiError::from(AiErrReason::ConfigError(format!(
                     "读取规则配置目录失败: {e}"
                 )))
             })?;
-            
+
             for entry in entries {
                 let entry = entry.map_err(|e| {
-                    AiError::from(AiErrReason::ConfigError(format!(
-                        "读取目录条目失败: {e}"
-                    )))
+                    AiError::from(AiErrReason::ConfigError(format!("读取目录条目失败: {e}")))
                 })?;
-                
+
                 let file_path = entry.path();
                 info!("加载角色RULE文件: {}", file_path.display());
                 if file_path.extension().and_then(|s| s.to_str()) == Some("mdc") {
@@ -192,18 +190,18 @@ impl RoleConfigManager {
                             file_path.file_name().unwrap_or_default()
                         )))
                     })?;
-                    
+
                     // 将文件内容按行分割，过滤空行
                     let file_rules: Vec<String> = content
                         .lines()
                         .map(|line| line.trim().to_string())
                         .filter(|line| !line.is_empty())
                         .collect();
-                    
+
                     rules.extend(file_rules);
                 }
             }
-            
+
             Ok(RulesConfig { rules })
         } else {
             Err(AiError::from(AiErrReason::ConfigError(format!(
@@ -218,8 +216,8 @@ impl RoleConfigManager {
             if let Some(rules_path) = &role_config.rules_path {
                 // 使用分层规则配置路径
                 let layered_rules_path = RoleConfigLoader::get_layered_rules_path(rules_path)?;
-                
-                info!("加载角色RULE: {role_key}" );
+
+                info!("加载角色RULE: {role_key}");
                 let rules_config = self.load_rules_config(&layered_rules_path)?;
                 Ok(Some(rules_config))
             } else {
@@ -262,10 +260,10 @@ impl RoleConfigManager {
             println!("📄 Loading roles configuration from {legacy_path}...");
             return self.load_config();
         }
-        
-        Err(AiError::from(AiErrReason::ConfigError(
-            format!("Configuration file not found: {legacy_path}")
-        )))
+
+        Err(AiError::from(AiErrReason::ConfigError(format!(
+            "Configuration file not found: {legacy_path}"
+        ))))
     }
 }
 
@@ -304,7 +302,10 @@ impl RoleConfigLoader {
     }
 
     /// 自动加载角色配置管理器（只使用roles.yaml）
-    pub fn auto_load(_simplified_path: Option<String>, legacy_path: Option<String>) -> AiResult<RoleConfigManager> {
+    pub fn auto_load(
+        _simplified_path: Option<String>,
+        legacy_path: Option<String>,
+    ) -> AiResult<RoleConfigManager> {
         let legacy = legacy_path.unwrap_or_else(|| "src/ai/config/roles.yaml".to_string());
         let mut manager = RoleConfigManager::new(legacy.clone());
         println!("📄 Loading roles configuration from {legacy}...");
@@ -318,14 +319,14 @@ impl RoleConfigLoader {
         // 检查项目级配置是否存在
         let project_roles_path = "_gal/ai-roles.yaml";
         let _project_rules_path = "_gal/ai-rules";
-        
+
         // 检查用户级配置路径
         let user_home = dirs::home_dir().ok_or_else(|| {
             AiError::from(AiErrReason::ConfigError("无法获取用户主目录".to_string()))
         })?;
         let user_roles_path = user_home.join(".galaxy/ai-roles.yaml");
         let _user_rules_path = user_home.join(".galaxy/ai-rules");
-        
+
         // 优先使用项目级配置
         if Path::new(project_roles_path).exists() {
             println!("📄 Loading project-level roles configuration from {project_roles_path}...");
@@ -333,20 +334,25 @@ impl RoleConfigLoader {
             manager.load_config()?;
             return Ok(manager);
         }
-        
+
         // 其次使用用户级配置
         if user_roles_path.exists() {
             let user_roles_str = user_roles_path.to_str().ok_or_else(|| {
-                AiError::from(AiErrReason::ConfigError("用户级配置路径转换失败".to_string()))
+                AiError::from(AiErrReason::ConfigError(
+                    "用户级配置路径转换失败".to_string(),
+                ))
             })?;
-            println!("📄 Loading user-level roles configuration from {}...", user_roles_str);
+            println!(
+                "📄 Loading user-level roles configuration from {}...",
+                user_roles_str
+            );
             let mut manager = RoleConfigManager::new(user_roles_str.to_string());
             manager.load_config()?;
             return Ok(manager);
         }
-        
+
         Err(AiError::from(AiErrReason::ConfigError(
-            "未找到有效的角色配置文件".to_string()
+            "未找到有效的角色配置文件".to_string(),
         )))
     }
 
@@ -358,18 +364,23 @@ impl RoleConfigLoader {
         if Path::new(project_rules_path).exists() {
             return Ok(project_rules_path.to_string());
         }
-        
+
         // 检查用户级规则配置
         let user_home = dirs::home_dir().ok_or_else(|| {
             AiError::from(AiErrReason::ConfigError("无法获取用户主目录".to_string()))
         })?;
         let user_rules_path = user_home.join(".galaxy/ai-rules");
         if user_rules_path.exists() {
-            return Ok(user_rules_path.to_str().ok_or_else(|| {
-                AiError::from(AiErrReason::ConfigError("用户级规则路径转换失败".to_string()))
-            })?.to_string());
+            return Ok(user_rules_path
+                .to_str()
+                .ok_or_else(|| {
+                    AiError::from(AiErrReason::ConfigError(
+                        "用户级规则路径转换失败".to_string(),
+                    ))
+                })?
+                .to_string());
         }
-        
+
         // 如果都没有找到，返回原始路径
         Ok(base_rules_path.to_string())
     }
