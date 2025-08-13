@@ -3,30 +3,21 @@ use std::sync::Arc;
 
 use super::ThreadFileManager;
 use crate::ai::capabilities::AiRole;
-use crate::ai::client::AiClientEnum;
+use crate::ai::client::{AiClientTrait, AiSendClient};
 use crate::ai::config::ThreadConfig;
 use crate::ai::error::AiResult;
 use crate::ai::provider::{AiRequest, AiResponse};
 
-/*
-pub enum AiClientEnum {
-    Basic(AiClient),
-}
-pub struct ThreadRecordingClient {
-    inner : AiClientEnum,
-}
-*/
-
 /// Thread记录客户端 - 嵌套式静态分发
-pub struct ThreadRecordingClient {
-    inner: AiClientEnum,       // 内部是AiClientEnum
+pub struct ThreadClient {
+    inner: AiSendClient,       // 内部是AiClientEnum
     config: Arc<ThreadConfig>, // Thread配置
     file_manager: Arc<ThreadFileManager>,
 }
 
-impl ThreadRecordingClient {
+impl ThreadClient {
     /// 创建新的Thread记录客户端
-    pub fn new(inner: AiClientEnum, config: ThreadConfig) -> Self {
+    pub fn new(inner: AiSendClient, config: ThreadConfig) -> Self {
         let config_arc = Arc::new(config);
         Self {
             inner,
@@ -62,13 +53,7 @@ impl ThreadRecordingClient {
         } else {
             request.clone()
         };
-
-        // 直接转发给内部client，避免递归调用
-        let response = match &self.inner {
-            AiClientEnum::Basic(client) => client.send_request(enhanced_request).await,
-            // 注意：这里不直接调用ThreadRecordingClient的send_request，避免递归
-            _ => panic!("ThreadRecordingClient should not wrap another ThreadRecordingClient"),
-        };
+        let response = self.inner.send_request(enhanced_request).await;
 
         // 如果启用Thread记录且响应成功，则记录交互
         if self.is_thread_enabled() {
@@ -109,11 +94,7 @@ impl ThreadRecordingClient {
         };
 
         // 直接转发给内部client，避免递归调用
-        let response = match &self.inner {
-            AiClientEnum::Basic(client) => client.send_request(enhanced_request).await,
-            // 注意：这里不直接调用ThreadRecordingClient的send_request，避免递归
-            _ => panic!("ThreadRecordingClient should not wrap another ThreadRecordingClient"),
-        };
+        let response = self.inner.send_request(enhanced_request).await;
 
         // 如果启用Thread记录且响应成功，则记录交互
         if self.is_thread_enabled() {

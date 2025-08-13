@@ -86,6 +86,8 @@ mod basic {
 
 /// DeepSeek 功能测试
 mod functionality {
+    use crate::ai::client::AiClientTrait;
+
     use super::*;
 
     #[tokio::test]
@@ -112,9 +114,7 @@ fn main() {
         let request = crate::ai::provider::AiRequest::builder()
             .model("deepseek-chat")
             .system_prompt("你是一个代码分析专家，请分析以下代码的性能和复杂度。".to_string())
-            .user_prompt(format!(
-                "请分析这段代码的性能特点和改进建议：\n{test_code}"
-            ))
+            .user_prompt(format!("请分析这段代码的性能特点和改进建议：\n{test_code}"))
             .build();
 
         match client.send_request(request).await {
@@ -139,10 +139,7 @@ fn main() {
 
         let prompt = "帮我优化这段Python代码：\nfor i in range(len(my_list)):\n    if my_list[i] > 0:\n        print(my_list[i])";
 
-        match client
-            .smart_role_request(AiRole::Developer, prompt)
-            .await
-        {
+        match client.smart_role_request(AiRole::Developer, prompt).await {
             Ok(response) => {
                 assert!(!response.content.is_empty());
                 println!("✅ DeepSeek 智能重构请求测试通过");
@@ -153,14 +150,12 @@ fn main() {
             }
         }
     }
-
-
-
-
 }
 
 /// DeepSeek 性能和负载测试
 mod performance {
+    use crate::ai::client::AiClientTrait;
+
     use super::*;
 
     #[tokio::test]
@@ -269,6 +264,8 @@ mod performance {
 
 /// DeepSeek 错误处理测试
 mod error_handling {
+    use crate::ai::client::AiClientTrait;
+
     use super::*;
 
     #[tokio::test]
@@ -346,6 +343,8 @@ mod error_handling {
 
 /// DeepSeek 配置和集成测试
 mod integration {
+    use crate::ai::client::AiClientTrait;
+
     use super::*;
 
     #[tokio::test]

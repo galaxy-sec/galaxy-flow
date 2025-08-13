@@ -1,7 +1,7 @@
 use tempfile::TempDir;
 use tokio::runtime::Runtime;
 
-use galaxy_flow::ai::client::AiClientEnum;
+use galaxy_flow::ai::factory::AiClientEnum;
 use galaxy_flow::ai::{
     provider::{AiProviderType, AiRequest},
     AiConfig, AiRole, ProviderConfig, ThreadConfig,

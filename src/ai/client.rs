@@ -2,8 +2,8 @@ use crate::ai::capabilities::AiRole;
 use crate::ai::config::{RoleConfigLoader, RoleConfigManager};
 use crate::ai::error::{AiError, AiResult};
 use crate::ai::provider::{AiProvider, AiProviderType, AiRequest};
-use crate::ai::thread::recorder::ThreadRecordingClient;
 use crate::execution::VarSpace;
+use async_trait::async_trait;
 use orion_variate::vars::EnvDict;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -12,76 +12,28 @@ use super::provider::AiResponse;
 use super::providers::openai::OpenAiProvider;
 use super::{AiConfig, AiErrReason, AiResult as OriginalAiResult, AiRouter};
 
-/// AI客户端枚举，支持静态分发
-pub enum AiClientEnum {
-    Basic(AiClient),
-    ThreadRecording(Box<ThreadRecordingClient>),
-}
-
+/// AI客户端发送类型枚举
 pub enum AiSendClient {
     Basic(AiClient),
 }
 
-impl AiClientEnum {
-    /// 创建基础AiClient
-    pub fn new(config: AiConfig) -> AiResult<Self> {
-        // 验证配置
-        let mut validated_config = config.clone();
-        validated_config.validate_and_postprocess().map_err(|e| {
-            AiError::from(AiErrReason::ConfigError(format!(
-                "Configuration validation failed: {}",
-                e
-            )))
-        })?;
+/// AI客户端trait定义
+#[async_trait]
+pub trait AiClientTrait: Send + Sync {
+    async fn send_request(&self, request: AiRequest) -> AiResult<AiResponse>;
+    async fn smart_role_request(&self, role: AiRole, user_input: &str) -> AiResult<AiResponse>;
+}
 
-        Ok(Self::Basic(AiClient::new(config)?))
-    }
-
-    /// 创建Thread记录客户端
-    pub fn new_with_thread_recording(config: AiConfig) -> AiResult<Self> {
-        let inner_config = config.clone();
-        let basic_client = Self::new(inner_config)?;
-        let thread_config = config.thread.clone();
-
-        Ok(Self::ThreadRecording(Box::new(ThreadRecordingClient::new(
-            basic_client,
-            thread_config,
-        ))))
-    }
-
-    /// 根据配置自动选择客户端类型
-    pub fn new_auto(config: AiConfig) -> AiResult<Self> {
-        // 验证配置
-        let mut validated_config = config;
-        validated_config.validate_and_postprocess().map_err(|e| {
-            AiError::from(AiErrReason::ConfigError(format!(
-                "Configuration validation failed: {}",
-                e
-            )))
-        })?;
-
-        if validated_config.thread.enabled {
-            Self::new_with_thread_recording(validated_config)
-        } else {
-            Self::new(validated_config)
+#[async_trait]
+impl AiClientTrait for AiSendClient {
+    async fn send_request(&self, request: AiRequest) -> AiResult<AiResponse> {
+        match self {
+            Self::Basic(o) => o.send_request(request).await,
         }
     }
-
-    /// 发送AI请求
-    pub async fn send_request(&self, request: AiRequest) -> AiResult<AiResponse> {
+    async fn smart_role_request(&self, role: AiRole, user_input: &str) -> AiResult<AiResponse> {
         match self {
-            Self::Basic(client) => client.send_request(request).await,
-            Self::ThreadRecording(client) => client.as_ref().send_request(request).await,
-        }
-    }
-
-    /// 基于角色的智能请求
-    pub async fn smart_role_request(&self, role: AiRole, user_input: &str) -> AiResult<AiResponse> {
-        match self {
-            Self::Basic(client) => client.smart_role_request(role, user_input).await,
-            Self::ThreadRecording(client) => {
-                client.as_ref().smart_role_request(role, user_input).await
-            }
+            Self::Basic(o) => o.smart_role_request(role, user_input).await,
         }
     }
 }
@@ -92,6 +44,44 @@ pub struct AiClient {
     config: Arc<AiConfig>,
     router: AiRouter,
     role_config_manager: Arc<RoleConfigManager>,
+}
+
+#[async_trait]
+impl AiClientTrait for AiClient {
+    async fn send_request(&self, request: AiRequest) -> AiResult<AiResponse> {
+        let provider_type = self.router.select_provider(&request.model, &self.config);
+
+        if let Some(provider) = self.providers.get(&provider_type) {
+            provider.send_request(&request).await
+        } else {
+            Err(AiError::from(AiErrReason::NoProviderAvailable))
+        }
+    }
+
+    /// 基于角色的智能请求处理 - 用户只需选择角色，系统自动选择推荐模型
+    async fn smart_role_request(&self, role: AiRole, user_input: &str) -> AiResult<AiResponse> {
+        let _role_name = &role.to_string();
+
+        // 1. 使用角色推荐模型
+        let model = role.recommended_model();
+
+        // 2. 构建系统提示词
+        let system_prompt = self.build_role_system_prompt(role);
+
+        let request = AiRequest::builder()
+            .model(model)
+            .system_prompt(system_prompt)
+            .user_prompt(user_input.to_string())
+            .build();
+
+        // 3. 发送请求
+        let mut response = self.send_request(request).await?;
+
+        // 4. 在响应中添加角色信息
+        response.content = format!("[角色: {}]\n\n{}", role.description(), response.content);
+
+        Ok(response)
+    }
 }
 
 impl AiClient {
@@ -133,41 +123,6 @@ impl AiClient {
             router: AiRouter::new(),
             role_config_manager: Arc::new(role_config_manager),
         })
-    }
-
-    pub async fn send_request(&self, request: AiRequest) -> AiResult<AiResponse> {
-        let provider_type = self.router.select_provider(&request.model, &self.config);
-
-        if let Some(provider) = self.providers.get(&provider_type) {
-            provider.send_request(&request).await
-        } else {
-            Err(AiError::from(AiErrReason::NoProviderAvailable))
-        }
-    }
-
-    /// 基于角色的智能请求处理 - 用户只需选择角色，系统自动选择推荐模型
-    pub async fn smart_role_request(&self, role: AiRole, user_input: &str) -> AiResult<AiResponse> {
-        let _role_name = &role.to_string();
-
-        // 1. 使用角色推荐模型
-        let model = role.recommended_model();
-
-        // 2. 构建系统提示词
-        let system_prompt = self.build_role_system_prompt(role);
-
-        let request = AiRequest::builder()
-            .model(model)
-            .system_prompt(system_prompt)
-            .user_prompt(user_input.to_string())
-            .build();
-
-        // 3. 发送请求
-        let mut response = self.send_request(request).await?;
-
-        // 4. 在响应中添加角色信息
-        response.content = format!("[角色: {}]\n\n{}", role.description(), response.content);
-
-        Ok(response)
     }
 
     /// 构建基于角色的系统提示
