@@ -57,10 +57,7 @@ impl RoleConfigLoader {
                     "用户级配置路径转换失败".to_string(),
                 ))
             })?;
-            println!(
-                "📄 Loading user-level roles configuration from {}...",
-                user_roles_str
-            );
+            println!("📄 Loading user-level roles configuration from {user_roles_str}...");
             let mut manager = RoleConfigManager::new(user_roles_str.to_string());
             manager.load_config()?;
             return Ok(manager);

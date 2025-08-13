@@ -66,12 +66,12 @@ fn test_thread_integration_basic() {
 
     // 验证Thread文件是否创建
     let date_str = chrono::Utc::now().format("%Y-%m-%d").to_string();
-    let expected_file = storage_path.join(format!("test-thread-{}.md", date_str));
+    let expected_file = storage_path.join(format!("test-thread-{date_str}.md"));
     assert!(expected_file.exists());
 
     // 验证文件内容
     let content = std::fs::read_to_string(&expected_file).unwrap();
-    println!("Thread file content:\n{}", content);
+    println!("Thread file content:\n{content}");
 
     // 检查基本的Thread结构
     assert!(content.contains("# Thread记录"));
@@ -140,12 +140,12 @@ fn test_thread_inform_ai_functionality() {
 
     // 验证Thread文件是否创建
     let date_str = chrono::Utc::now().format("%Y-%m-%d").to_string();
-    let expected_file = storage_path.join(format!("test-inform-{}.md", date_str));
+    let expected_file = storage_path.join(format!("test-inform-{date_str}.md"));
     assert!(expected_file.exists());
 
     // 验证文件内容
     let content = std::fs::read_to_string(&expected_file).unwrap();
-    println!("Thread file content with AI notification:\n{}", content);
+    println!("Thread file content with AI notification:\n{content}");
 
     // 检查基本的Thread结构
     assert!(content.contains("# Thread记录"));
@@ -215,12 +215,12 @@ fn test_thread_without_inform_ai() {
 
     // 验证Thread文件是否创建
     let date_str = chrono::Utc::now().format("%Y-%m-%d").to_string();
-    let expected_file = storage_path.join(format!("test-no-inform-{}.md", date_str));
+    let expected_file = storage_path.join(format!("test-no-inform-{date_str}.md"));
     assert!(expected_file.exists());
 
     // 验证文件内容
     let content = std::fs::read_to_string(&expected_file).unwrap();
-    println!("Thread file content without AI notification:\n{}", content);
+    println!("Thread file content without AI notification:\n{content}");
 
     // 检查基本的Thread结构
     assert!(content.contains("# Thread记录"));
@@ -285,7 +285,7 @@ fn test_thread_integration_with_disabled_config() {
 
     // 验证Thread文件没有被创建
     let date_str = chrono::Utc::now().format("%Y-%m-%d").to_string();
-    let expected_file = storage_path.join(format!("test-thread-{}.md", date_str));
+    let expected_file = storage_path.join(format!("test-thread-{date_str}.md"));
     assert!(!expected_file.exists());
 }
 

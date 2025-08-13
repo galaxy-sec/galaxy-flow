@@ -40,12 +40,10 @@ impl SummaryExtractor {
 
     /// 寻找包含总结关键字的段落
     fn find_summary_paragraph<'a>(&self, paragraphs: &'a [&str]) -> Option<&'a str> {
-        for &paragraph in paragraphs {
-            if self.contains_summary_keyword(paragraph) {
-                return Some(paragraph);
-            }
-        }
-        None
+        paragraphs
+            .iter()
+            .find(|&&paragraph| self.contains_summary_keyword(paragraph))
+            .copied()
     }
 
     /// 检查文本是否包含总结关键字

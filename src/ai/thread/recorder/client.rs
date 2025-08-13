@@ -63,7 +63,7 @@ impl ThreadClient {
                     .record_interaction(start_time, &request, resp)
                     .await
                 {
-                    eprintln!("Warning: Failed to record thread interaction: {}", e);
+                    eprintln!("Warning: Failed to record thread interaction: {e}");
                 }
             }
         }
@@ -104,7 +104,7 @@ impl ThreadClient {
                     .record_interaction(start_time, &base_request, resp)
                     .await
                 {
-                    eprintln!("Warning: Failed to record thread interaction: {}", e);
+                    eprintln!("Warning: Failed to record thread interaction: {e}");
                 }
             }
         }

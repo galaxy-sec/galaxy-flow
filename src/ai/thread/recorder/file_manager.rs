@@ -58,18 +58,17 @@ impl ThreadFileManager {
     }
 
     /// 解析存储路径中的环境变量
-    fn resolve_storage_path(storage_path: &PathBuf) -> PathBuf {
+    fn resolve_storage_path(storage_path: &Path) -> PathBuf {
         let path_str = storage_path.to_string_lossy();
 
         // 简单的环境变量替换
-        if path_str.starts_with('$') {
-            let env_var = &path_str[1..];
+        if let Some(env_var) = path_str.strip_prefix('$') {
             if let Ok(env_value) = std::env::var(env_var) {
                 return PathBuf::from(env_value);
             }
         }
 
-        storage_path.clone()
+        storage_path.to_path_buf()
     }
 
     /// 生成每日文件路径
@@ -84,7 +83,7 @@ impl ThreadFileManager {
         let filename = if filename.ends_with(".md") {
             filename
         } else {
-            format!("{}.md", filename)
+            format!("{filename}.md")
         };
 
         self.base_path.join(filename)
@@ -158,7 +157,7 @@ impl ThreadFileManager {
         // 如果文件是刚创建的，添加标题
         if !file_exists {
             let date_str = chrono::Utc::now().format("%Y-%m-%d").to_string();
-            let title = format!("# Thread记录 - {}\n\n", date_str);
+            let title = format!("# Thread记录 - {date_str}\n\n");
             file.write_all(title.as_bytes()).await.map_err(|e| {
                 AiError::from(AiErrReason::ContextError(format!(
                     "Failed to write title to file {}: {}",
@@ -240,7 +239,7 @@ mod tests {
 
         // 检查文件是否创建
         let date_str = timestamp.format("%Y-%m-%d").to_string();
-        let expected_file = storage_path.join(format!("test-{}.md", date_str));
+        let expected_file = storage_path.join(format!("test-{date_str}.md"));
         assert!(expected_file.exists());
 
         // 检查文件内容

@@ -21,12 +21,11 @@ impl AiClientEnum {
         let mut validated_config = config.clone();
         validated_config.validate_and_postprocess().map_err(|e| {
             AiError::from(AiErrReason::ConfigError(format!(
-                "Configuration validation failed: {}",
-                e
+                "Configuration validation failed: {e}"
             )))
         })?;
 
-        Ok(AiClient::new(config)?)
+        AiClient::new(config)
     }
 
     /// 创建Thread记录客户端
@@ -47,8 +46,7 @@ impl AiClientEnum {
         let mut validated_config = config;
         validated_config.validate_and_postprocess().map_err(|e| {
             AiError::from(AiErrReason::ConfigError(format!(
-                "Configuration validation failed: {}",
-                e
+                "Configuration validation failed: {e}"
             )))
         })?;
 
