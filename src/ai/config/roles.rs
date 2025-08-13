@@ -19,7 +19,7 @@ pub struct RoleConfig {
     /// 推荐模型列表
     pub recommended_models: Vec<String>,
     /// 规则配置文件路径
-    pub rules_config: Option<String>,
+    pub rules_path: Option<String>,
 }
 
 /// 规则配置结构
@@ -215,14 +215,12 @@ impl RoleConfigManager {
     /// 获取角色规则配置
     pub fn get_role_rules_config(&self, role_key: &str) -> AiResult<Option<RulesConfig>> {
         if let Some(role_config) = self.roles.get(role_key) {
-            if let Some(rules_path) = &role_config.rules_config {
-                let full_path = Path::new(&self.config_path)
-                    .parent()
-                    .unwrap()
-                    .join(rules_path);
+            if let Some(rules_path) = &role_config.rules_path {
+                // 使用分层规则配置路径
+                let layered_rules_path = RoleConfigLoader::get_layered_rules_path(rules_path)?;
                 
                 info!("加载角色RULE: {role_key}" );
-                let rules_config = self.load_rules_config(full_path.to_str().unwrap())?;
+                let rules_config = self.load_rules_config(&layered_rules_path)?;
                 Ok(Some(rules_config))
             } else {
                 Ok(None)
@@ -312,6 +310,68 @@ impl RoleConfigLoader {
         println!("📄 Loading roles configuration from {legacy}...");
         manager.load_config()?;
         Ok(manager)
+    }
+
+    /// 分层加载角色配置管理器
+    /// 优先级：项目级配置 > 用户级配置
+    pub fn layered_load() -> AiResult<RoleConfigManager> {
+        // 检查项目级配置是否存在
+        let project_roles_path = "_gal/ai-roles.yaml";
+        let _project_rules_path = "_gal/ai-rules";
+        
+        // 检查用户级配置路径
+        let user_home = dirs::home_dir().ok_or_else(|| {
+            AiError::from(AiErrReason::ConfigError("无法获取用户主目录".to_string()))
+        })?;
+        let user_roles_path = user_home.join(".galaxy/ai-roles.yaml");
+        let _user_rules_path = user_home.join(".galaxy/ai-rules");
+        
+        // 优先使用项目级配置
+        if Path::new(project_roles_path).exists() {
+            println!("📄 Loading project-level roles configuration from {project_roles_path}...");
+            let mut manager = RoleConfigManager::new(project_roles_path.to_string());
+            manager.load_config()?;
+            return Ok(manager);
+        }
+        
+        // 其次使用用户级配置
+        if user_roles_path.exists() {
+            let user_roles_str = user_roles_path.to_str().ok_or_else(|| {
+                AiError::from(AiErrReason::ConfigError("用户级配置路径转换失败".to_string()))
+            })?;
+            println!("📄 Loading user-level roles configuration from {}...", user_roles_str);
+            let mut manager = RoleConfigManager::new(user_roles_str.to_string());
+            manager.load_config()?;
+            return Ok(manager);
+        }
+        
+        Err(AiError::from(AiErrReason::ConfigError(
+            "未找到有效的角色配置文件".to_string()
+        )))
+    }
+
+    /// 获取分层规则配置路径
+    /// 优先级：项目级配置 > 用户级配置
+    pub fn get_layered_rules_path(base_rules_path: &str) -> AiResult<String> {
+        // 检查项目级规则配置
+        let project_rules_path = "_gal/ai-rules";
+        if Path::new(project_rules_path).exists() {
+            return Ok(project_rules_path.to_string());
+        }
+        
+        // 检查用户级规则配置
+        let user_home = dirs::home_dir().ok_or_else(|| {
+            AiError::from(AiErrReason::ConfigError("无法获取用户主目录".to_string()))
+        })?;
+        let user_rules_path = user_home.join(".galaxy/ai-rules");
+        if user_rules_path.exists() {
+            return Ok(user_rules_path.to_str().ok_or_else(|| {
+                AiError::from(AiErrReason::ConfigError("用户级规则路径转换失败".to_string()))
+            })?.to_string());
+        }
+        
+        // 如果都没有找到，返回原始路径
+        Ok(base_rules_path.to_string())
     }
 }
 
