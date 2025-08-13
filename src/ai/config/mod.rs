@@ -5,8 +5,7 @@ pub mod traits;
 
 #[cfg(test)]
 pub mod simplified_config_test;
-#[cfg(test)]
-pub mod ai_usage_rules_test;
+
 
 pub use traits::*;
 

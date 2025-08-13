@@ -3,6 +3,7 @@ use std::path::PathBuf;
 use derive_more::From;
 use dirs::home_dir;
 use orion_error::ToStructError;
+use orion_variate::vars::EnvDict;
 
 use crate::{
     primitive::{GxlAParams, GxlFParams, GxlObject},
@@ -19,6 +20,12 @@ pub struct VarSpace {
     inherited: VarDict,
     global: VarDict,
     //nameds: HashMap<String, VarDict>,
+}
+
+impl From<&VarSpace> for EnvDict {
+    fn from(value: &VarSpace) -> Self {
+        EnvDict::from(value.global.export().clone())
+    }
 }
 
 pub fn sec_value_default_path() -> PathBuf {
