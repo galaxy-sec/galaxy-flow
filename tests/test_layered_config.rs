@@ -1,6 +1,5 @@
 use galaxy_flow::ai::config::roles::{RoleConfigLoader, RoleConfigManager};
 use std::fs;
-use std::path::Path;
 use tempfile::TempDir;
 
 #[test]

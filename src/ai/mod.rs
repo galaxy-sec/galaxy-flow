@@ -1,7 +1,6 @@
 mod capabilities;
 pub mod client;
 pub mod config;
-pub mod context;
 mod error;
 pub mod factory;
 pub mod provider;
@@ -12,7 +11,6 @@ pub mod thread;
 // 重新导出主要类型和trait
 pub use capabilities::*;
 pub use config::*;
-pub use context::*;
 pub use error::*;
 pub use factory::AiClientEnum;
 pub use router::*;

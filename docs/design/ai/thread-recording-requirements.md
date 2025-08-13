@@ -335,11 +335,11 @@ Thread配置作为`AiConfig`结构体的一个字段直接集成：
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AiConfig {
     pub providers: HashMap<AiProviderType, ProviderConfig>,
-    
+
     /// Thread记录配置
     #[serde(default = "default_thread_config")]
     pub thread: ThreadConfig,
-    
+
     pub router: RouterConfig,
     pub roles: RolesConfig,
 }
@@ -350,23 +350,23 @@ pub struct ThreadConfig {
     /// 是否启用Thread记录
     #[serde(default = "default_enabled")]
     pub enabled: bool,
-    
+
     /// Thread文件存储路径
     #[serde(default = "default_storage_path")]
     pub storage_path: PathBuf,
-    
+
     /// 文件名模板
     #[serde(default = "default_filename_template")]
     pub filename_template: String,
-    
+
     /// 最小总结字数
     #[serde(default = "default_min_summary_length")]
     pub min_summary_length: usize,
-    
+
     /// 最大总结字数
     #[serde(default = "default_max_summary_length")]
     pub max_summary_length: usize,
-    
+
     /// 总结关键字列表
 <<<<<<< HEAD
     #[serde(default = "default_summary_keywords")]
@@ -402,7 +402,7 @@ providers:
       - "gpt-4o"
       - "gpt-4o-mini"
       - "gpt-3.5-turbo"
-  
+
   deepseek:
     enabled: true
     api_key: "${DEEPSEEK_API_KEY}"
@@ -410,7 +410,7 @@ providers:
     models:
       - "deepseek-chat"
       - "deepseek-coder"
-  
+
   groq:
     enabled: true
     api_key: "${GROQ_API_KEY}"
@@ -427,7 +427,7 @@ thread:
   filename_template: "thread-YYYY-MM-DD.md"  # 文件名模板
   min_summary_length: 200          # 最小总结字数
   max_summary_length: 250          # 最大总结字数
-  
+
   # 总结关键字配置（可覆盖默认值）
   summary_keywords:
     - "总结"
@@ -438,11 +438,11 @@ thread:
     - "in summary"
 <<<<<<< HEAD
 =======
-  
+
   # AI通知配置
   inform_ai: false                 # 是否告知AI正在被记录
   inform_message: "【Thread记录已启用】本次对话正在被记录，请确保回答内容适合记录和分析。"  # 通知消息
-  
+
   # AI通知配置
   inform_ai: false                 # 是否告知AI正在被记录
   inform_message: "【Thread记录已启用】本次对话正在被记录，请确保回答内容适合记录和分析。"  # 通知消息
@@ -523,7 +523,7 @@ impl<T: AiClientTrait> ThreadRecordingClient<T> {
             file_manager: Arc::new(ThreadFileManager::new(config.clone())),
         }
     }
-    
+
     /// 检查是否启用Thread记录
     fn is_thread_enabled(&self) -> bool {
         self.config.enabled
@@ -533,10 +533,10 @@ impl<T: AiClientTrait> ThreadRecordingClient<T> {
 impl<T: AiClientTrait> AiClientTrait for ThreadRecordingClient<T> {
     async fn send_request(&self, request: AiRequest) -> AiResult<AiResponse> {
         let start_time = Utc::now();
-        
+
         // 调用内部客户端
         let response = self.inner.send_request(request.clone()).await;
-        
+
         // 如果启用Thread记录且响应成功，则记录交互
         if self.is_thread_enabled() {
             if let Ok(ref resp) = response {
@@ -550,30 +550,30 @@ impl<T: AiClientTrait> AiClientTrait for ThreadRecordingClient<T> {
                 }
             }
         }
-        
+
         response
     }
-    
+
     async fn smart_role_request(&self, role: AiRole, user_input: &str) -> AiResult<AiResponse> {
         let start_time = Utc::now();
-        
+
         // 调用内部客户端
         let response = self.inner.smart_role_request(role, user_input).await;
-        
+
         // 如果启用Thread记录且响应成功，则记录交互
         if self.is_thread_enabled() {
             if let Ok(ref resp) = response {
                 // 为smart_role_request构建等效的AiRequest用于记录
                 let model = role.recommended_model();
                 let system_prompt = format!("角色: {}", role.description());
-                
+
                 let request = AiRequest::builder()
                     .model(model)
                     .system_prompt(system_prompt)
                     .user_prompt(user_input.to_string())
                     .role(role)
                     .build();
-                
+
                 if let Err(e) = self.file_manager.record_interaction(
                     start_time,
                     &request,
@@ -583,7 +583,7 @@ impl<T: AiClientTrait> AiClientTrait for ThreadRecordingClient<T> {
                 }
             }
         }
-        
+
         response
     }
 }
@@ -603,14 +603,14 @@ pub struct ThreadFileManager {
 impl ThreadFileManager {
     pub fn new(config: ThreadConfig) -> Self {
         let base_path = Self::resolve_storage_path(&config.storage_path);
-        
+
         Self {
             config: Arc::new(config),
             interaction_counter: AtomicUsize::new(1),
             base_path,
         }
     }
-    
+
     pub async fn record_interaction(
         &self,
         timestamp: chrono::DateTime<chrono::Utc>,
@@ -619,13 +619,13 @@ impl ThreadFileManager {
     ) -> AiResult<()> {
         // 1. 生成今日文件路径
         let file_path = self.generate_daily_file_path(&timestamp);
-        
+
         // 2. 确保目录存在
         self.ensure_directory_exists(&file_path)?;
-        
+
         // 3. 提取总结性内容
         let summary_content = self.extract_summary_content(&response.content);
-        
+
         // 4. 格式化记录内容
         let interaction_number = self.interaction_counter.fetch_add(1, Ordering::SeqCst);
         let record_content = self.format_interaction_record(
@@ -634,26 +634,26 @@ impl ThreadFileManager {
             request,
             &summary_content,
         );
-        
+
         // 5. 追加写入文件
         self.append_to_file(&file_path, &record_content).await
     }
-    
+
     fn generate_daily_file_path(&self, timestamp: &chrono::DateTime<chrono::Utc>) -> PathBuf {
         let date_str = timestamp.format("%Y-%m-%d").to_string();
         let filename = self.config.filename_template
             .replace("YYYY-MM-DD", &date_str);
-        
+
         // 确保文件名以.md结尾
         let filename = if filename.ends_with(".md") {
             filename
         } else {
             format!("{}.md", filename)
         };
-        
+
         self.base_path.join(filename)
     }
-    
+
     fn format_interaction_record(
         &self,
         timestamp: chrono::DateTime<chrono::Utc>,
@@ -662,7 +662,7 @@ impl ThreadFileManager {
         summary_content: &str,
     ) -> String {
         let role_str = request.role.map_or("None".to_string(), |r| r.to_string());
-        
+
         format!(
             "## 交互记录 {}\n**时间**: {}\n**模型**: {}\n**角色**: {}\n\n### 用户请求\n```text\n{}```\n\n### AI响应（总结）\n{}\n\n",
             interaction_number,
@@ -673,7 +673,7 @@ impl ThreadFileManager {
             summary_content
         )
     }
-    
+
     async fn append_to_file(&self, path: &Path, content: &str) -> AiResult<()> {
         let mut file = tokio::fs::OpenOptions::new()
             .create(true)
@@ -681,22 +681,22 @@ impl ThreadFileManager {
             .open(path)
             .await
             .map_err(|e| AiError::from(AiErrReason::IoError(format!(
-                "Failed to open file {}: {}", 
+                "Failed to open file {}: {}",
                 path.display(), e
             ))))?;
-        
+
         file.write_all(content.as_bytes()).await
             .map_err(|e| AiError::from(AiErrReason::IoError(format!(
-                "Failed to write to file {}: {}", 
+                "Failed to write to file {}: {}",
                 path.display(), e
             ))))?;
-        
+
         file.flush().await
             .map_err(|e| AiError::from(AiErrReason::IoError(format!(
-                "Failed to flush file {}: {}", 
+                "Failed to flush file {}: {}",
                 path.display(), e
             ))))?;
-        
+
         Ok(())
     }
 }
@@ -719,24 +719,24 @@ impl SummaryExtractor {
             max_length: 250,
         }
     }
-    
+
     pub fn extract_with_length_limits(&self, content: &str, min_len: usize, max_len: usize) -> String {
         let paragraphs: Vec<&str> = content.split('\n').filter(|p| !p.trim().is_empty()).collect();
-        
+
         // 1. 寻找包含总结关键字的段落
         if let Some(summary_paragraph) = self.find_summary_paragraph(&paragraphs) {
             return self.truncate_to_length(summary_paragraph, max_len);
         }
-        
+
         // 2. 如果没有找到，使用最后一段
         if let Some(last_paragraph) = paragraphs.last() {
             return self.truncate_to_length(last_paragraph, max_len);
         }
-        
+
         // 3. 如果没有段落，返回空字符串
         String::new()
     }
-    
+
     fn find_summary_paragraph(&self, paragraphs: &[&str]) -> Option<&str> {
         for paragraph in paragraphs {
             if self.contains_summary_keyword(paragraph) {
@@ -745,19 +745,19 @@ impl SummaryExtractor {
         }
         None
     }
-    
+
     fn contains_summary_keyword(&self, text: &str) -> bool {
         let lower_text = text.to_lowercase();
         self.keywords.iter().any(|keyword| {
             lower_text.contains(&keyword.to_lowercase())
         })
     }
-    
+
     fn truncate_to_length(&self, text: &str, max_len: usize) -> String {
         if text.len() <= max_len {
             return text.to_string();
         }
-        
+
         // 在句子边界处截断
         let truncated = &text[..max_len];
         if let Some(last_sentence_end) = self.find_last_sentence_end(truncated) {
@@ -766,7 +766,7 @@ impl SummaryExtractor {
             truncated.to_string()
         }
     }
-    
+
     fn find_last_sentence_end(&self, text: &str) -> Option<usize> {
         // 寻找最后一个句号、问号或感叹号
         let sentence_endings = ['。', '？', '！', '.', '?', '!'];
@@ -787,7 +787,7 @@ impl AiClient {
     /// 创建支持Thread记录的AiClient
     pub fn new_with_thread_support(config: AiConfig) -> AiResult<Box<dyn AiClientTrait>> {
         let base_client = Self::new(config.clone())?;
-        
+
         // 根据配置决定是否使用装饰器
         if config.thread.enabled {
             let decorated_client = ThreadRecordingClient::new(base_client, config.thread);
@@ -796,7 +796,7 @@ impl AiClient {
             Ok(Box::new(base_client))
         }
     }
-    
+
     /// 保持原有接口不变，内部透明使用装饰器
     pub fn new(config: AiConfig) -> AiResult<Self> {
         // 现有实现...
@@ -812,36 +812,36 @@ impl AiConfig {
     pub fn load() -> AiResult<Self> {
         let config_path = Self::find_config_path()
             .ok_or_else(|| AiErrReason::ConfigError("Cannot find ai.yaml".to_string()))?;
-        
+
         let content = std::fs::read_to_string(&config_path)
             .map_err(|e| AiErrReason::ConfigError(format!("Failed to read config file: {}", e)))?;
-        
+
         let mut config: AiConfig = serde_yaml::from_str(&content)
             .map_err(|e| AiErrReason::ConfigError(format!("Failed to parse YAML: {}", e)))?;
-        
+
         // 验证和后处理配置
         config.validate_and_postprocess()?;
-        
+
         Ok(config)
     }
-    
+
     /// 验证和后处理配置
     fn validate_and_postprocess(&mut self) -> AiResult<()> {
         // 验证Thread配置
         self.validate_thread_config()?;
-        
+
         // 其他配置验证...
-        
+
         Ok(())
     }
-    
+
     /// 验证Thread配置
     fn validate_thread_config(&mut self) -> AiResult<()> {
         // 验证存储路径
         if self.thread.storage_path.as_os_str().is_empty() {
             self.thread.storage_path = PathBuf::from("./threads");
         }
-        
+
         // 验证字数范围的合理性
         if self.thread.min_summary_length == 0 {
             self.thread.min_summary_length = 200;
@@ -849,23 +849,23 @@ impl AiConfig {
         if self.thread.max_summary_length == 0 {
             self.thread.max_summary_length = 250;
         }
-        
+
         // 确保最小值不大于最大值
         if self.thread.min_summary_length > self.thread.max_summary_length {
             return Err(AiErrReason::ConfigError(
                 "Thread min_summary_length cannot be greater than max_summary_length".to_string()
             ));
         }
-        
+
         // 验证关键字列表不为空
         if self.thread.summary_keywords.is_empty() {
             self.thread.summary_keywords = default_summary_keywords();
         }
-        
+
         // 去重关键字
         self.thread.summary_keywords.sort();
         self.thread.summary_keywords.dedup();
-        
+
         Ok(())
     }
 }
@@ -875,14 +875,8 @@ impl AiConfig {
 
 **文档状态**: 技术方案设计完成，准备进入实现阶段
 
-**下一步**: 
-<<<<<<< HEAD
-1. 实现Thread配置结构体和默认值
-2. 实现ThreadRecordingClient装饰器
-3. 实现ThreadFileManager和SummaryExtractor
-4. 集成到现有的AiClient创建流程
-5. 编写单元测试和集成测试
-=======
+**下一步**:
+
 1. 实现Thread配置结构体和默认值 ✅
 2. 实现ThreadRecordingClient装饰器 ✅
 3. 实现ThreadFileManager和SummaryExtractor ✅
@@ -892,4 +886,3 @@ impl AiConfig {
 7. 验证完整功能 ✅
 
 **功能状态**: 完全实现并通过所有测试
->>>>>>> features/ai-thread
