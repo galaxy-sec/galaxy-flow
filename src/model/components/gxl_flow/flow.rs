@@ -184,7 +184,7 @@ impl GxlFlow {
         self.notify_log_collection(sender.clone()).await?;
 
         // 执行所有块
-        let (var_dict, task) = match self
+        let (var_dict, task) = self
             .execute_blocks(
                 ctx,
                 var_dict,
@@ -192,16 +192,7 @@ impl GxlFlow {
                 task.clone(),
                 task_notice.clone(),
             )
-            .await
-        {
-            Ok((var_dict, task)) => (var_dict, task),
-            Err(e) => {
-                task.stdout.push_str(&e.to_string());
-                task.result = Err(e.to_string());
-                self.report_task_status(&task, &task_notice).await?;
-                return Err(e);
-            }
-        };
+            .await?;
 
         // 完成日志收集
         self.finalize_log_collection(sender).await?;
@@ -251,6 +242,7 @@ impl GxlFlow {
         task_notice: TaskNotice,
     ) -> Result<(VarSpace, Task), ExecError> {
         for item in &self.blocks {
+            // 执行需要重定向日志的块
             if task_description.is_some() && report_enable().await {
                 let (var_dict_new, task_new) = self
                     .execute_block_with_monitoring(
@@ -335,18 +327,27 @@ impl GxlFlow {
                 Ok(())
             });
         let sender_option = task_description.as_ref().map(|_| cur_sender.clone());
-        let TaskValue { vars, rec, .. } = block.async_exec(ctx, var_dict, sender_option).await?;
+        let TaskValue { vars, .. } = match block.async_exec(ctx, var_dict, sender_option).await {
+            Ok(TaskValue { vars, rec }) => {
+                task.clone().append(rec);
+                Self::update_task_with_output(&mut task, &shared_output, start_pos).await?;
 
+                if task_description.is_some() {
+                    self.report_task_status(&task, &task_notice).await?;
+                }
+                TaskValue::from((vars, ExecOut::Task(task.clone())))
+            }
+            Err(e) => {
+                task.result = Err(e.to_string());
+                Self::update_task_with_output(&mut task, &shared_output, start_pos).await?;
+                if task_description.is_some() {
+                    self.report_task_status(&task, &task_notice).await?;
+                }
+                return Err(ExecError::from(e));
+            }
+        };
         drop(cur_sender);
         drop(monitor_handle);
-
-        task.append(rec);
-        Self::update_task_with_output(&mut task, &shared_output, start_pos).await?;
-
-        if task_description.is_some() {
-            self.report_task_status(&task, &task_notice).await?;
-        }
-
         Ok((vars, task))
     }
 

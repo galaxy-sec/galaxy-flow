@@ -51,7 +51,9 @@ impl From<String> for Task {
             name,
             begin: OffsetDateTime::now_local().unwrap_or_else(|_| OffsetDateTime::now_utc()),
             stdout: String::new(),
-            result: Err("unknow".into()),
+            result: Ok(RunningTime {
+                running_time: String::new(),
+            }),
             actions: vec![],
         }
     }
