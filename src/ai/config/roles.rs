@@ -157,6 +157,7 @@ impl RoleConfigManager {
                 )))
             })?;
             
+            info!("加载角色RULE文件: {}", rules_path);
             // 将文件内容按行分割，过滤空行
             let rules: Vec<String> = content
                 .lines()
@@ -183,6 +184,7 @@ impl RoleConfigManager {
                 })?;
                 
                 let file_path = entry.path();
+                info!("加载角色RULE文件: {}", file_path.display());
                 if file_path.extension().and_then(|s| s.to_str()) == Some("mdc") {
                     let content = fs::read_to_string(&file_path).map_err(|e| {
                         AiError::from(AiErrReason::ConfigError(format!(
@@ -218,6 +220,8 @@ impl RoleConfigManager {
                     .parent()
                     .unwrap()
                     .join(rules_path);
+                
+                info!("加载角色RULE: {role_key}" );
                 let rules_config = self.load_rules_config(full_path.to_str().unwrap())?;
                 Ok(Some(rules_config))
             } else {
