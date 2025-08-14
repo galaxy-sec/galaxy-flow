@@ -51,10 +51,10 @@ impl GxAIChat {
         // call ai clien
         let ai_config = AiConfig::galaxy_load(&vars_dict.global().export().into())?;
         let ai_client = AiClient::new(ai_config).err_conv()?;
-        let role = ai_client.roles().default_role.clone();
+        let role = ai_client.roles().default_role;
         //ai_config
         let ai_response = ai_client
-            .smart_role_request(role.clone(), message.as_str())
+            .smart_role_request(role, message.as_str())
             .await
             .err_conv()
             .with(format!("role:{role}"))?;

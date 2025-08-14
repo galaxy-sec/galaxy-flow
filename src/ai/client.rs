@@ -473,7 +473,7 @@ mod tests {
 
         // 验证可选字段的默认值
         assert!(request.max_tokens.is_none());
-        assert!(request.temperature == Some(0.7) || request.temperature == None);
+        assert!(request.temperature == Some(0.7) || request.temperature.is_none());
         assert!(request.role.is_some());
         assert_eq!(request.role.unwrap(), AiRole::Developer);
     }

@@ -72,7 +72,7 @@ impl ThreadClient {
     }
 
     /// 基于角色的智能请求处理
-    pub async fn smart_role_request(&self, role: AiRole, user_input: &str) -> AiResult<AiResponse> {
+    pub async fn smart_role_request(&self, _role: AiRole, _user_input: &str) -> AiResult<AiResponse> {
         todo!();
     }
 }

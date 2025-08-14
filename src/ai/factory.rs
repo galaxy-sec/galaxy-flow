@@ -10,13 +10,13 @@ use super::provider::AiResponse;
 use super::{AiConfig, AiErrReason};
 /// AI客户端枚举，支持静态分发
 pub enum AiClientEnum {
-    Basic(AiClient),
+    Basic(Box<AiClient>),
     ThreadRecording(Box<ThreadClient>),
 }
 impl AiClientEnum {
     /// 创建基础AiClient
     pub fn new(config: AiConfig) -> AiResult<Self> {
-        Ok(Self::Basic(Self::new_core(config)?))
+        Ok(Self::Basic(Box::new(Self::new_core(config)?)))
     }
     fn new_core(config: AiConfig) -> AiResult<AiClient> {
         // 验证配置
