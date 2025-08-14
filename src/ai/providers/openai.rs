@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use orion_error::{ErrorOwe, UvsConfFrom};
+use orion_error::{ErrorOwe, ErrorWith, UvsConfFrom};
 use reqwest::{header, Client};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -276,9 +276,10 @@ impl AiProvider for OpenAiProvider {
             temperature: request.temperature,
             stream: false,
         };
+        debug!("send client request: {:#?}", openai_request);
 
         let url = format!("{}/chat/completions", self.base_url);
-
+        debug!("send client url: {url}");
         let response = self
             .client
             .post(&url)
@@ -286,8 +287,10 @@ impl AiProvider for OpenAiProvider {
             .json(&openai_request)
             .send()
             .await
-            .owe_res()?;
+            .owe_res()
+            .with(url)?;
 
+        debug!("client response: {:#?}", response);
         let response_body = response.json::<OpenAiResponse>().await.owe_data()?;
 
         let choice = response_body

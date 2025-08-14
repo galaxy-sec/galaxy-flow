@@ -54,7 +54,7 @@ test_role:
 
     let role_config = role_config.unwrap();
     assert_eq!(role_config.name, "项目级测试角色");
-    assert_eq!(role_config.recommended_model, "project-model");
+    assert_eq!(role_config.used_model, "project-model");
 }
 
 #[test]

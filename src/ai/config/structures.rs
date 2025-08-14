@@ -102,6 +102,7 @@ impl AiConfig {
         } else {
             return ExecReason::from_conf("miss ai config".to_string()).err_result();
         };
+        info!("ai config {}", ai_conf.display());
         let conf = AiConfig::from_yml(&ai_conf)
             .map_err(|e| ExecReason::from_conf(format!("ai_conf :{e}")))?;
         Ok(conf.env_eval(dict))

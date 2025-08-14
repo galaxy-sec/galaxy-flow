@@ -13,16 +13,13 @@ test_role:
   description: "这是一个测试角色"
   system_prompt: "你是一个测试角色"
   recommended_model: "test-model"
-  recommended_models:
-    - "test-model"
-    - "backup-model"
-        "#;
+"#;
 
     let mut temp_file = NamedTempFile::new().unwrap();
     temp_file.write_all(test_config.as_bytes()).unwrap();
     let temp_path = temp_file.path();
 
-    let manager = RoleConfigManager::from_yml(&temp_path).assert();
+    let manager = RoleConfigManager::from_yml(temp_path).assert();
 
     let role_config = manager.get_role_config("test_role");
     assert!(role_config.is_some());
@@ -31,11 +28,7 @@ test_role:
     assert_eq!(config.name, "测试角色");
     assert_eq!(config.description, "这是一个测试角色");
     assert_eq!(config.system_prompt, "你是一个测试角色");
-    assert_eq!(config.recommended_model, "test-model");
-    assert_eq!(
-        config.recommended_models,
-        vec!["test-model", "backup-model"]
-    );
+    assert_eq!(config.used_model, "test-model");
 }
 
 #[test]
@@ -69,11 +62,7 @@ fn test_role_config_loader_with_yaml() {
       description: "专注于数据分析和洞察"
       system_prompt: "你是一个数据分析师，擅长从数据中发现规律和趋势"
       recommended_model: "gpt-4"
-      recommended_models:
-        - "gpt-4"
-        - "claude-3-sonnet"
-        - "deepseek-chat"
-            "#;
+      "#;
 
     let mut temp_file = NamedTempFile::new().unwrap();
     temp_file.write_all(test_config.as_bytes()).unwrap();
@@ -89,11 +78,7 @@ fn test_role_config_loader_with_yaml() {
     assert!(role_config.is_some());
     let config = role_config.unwrap();
     assert_eq!(config.name, "分析师");
-    assert_eq!(config.recommended_model, "gpt-4");
-    assert_eq!(
-        config.recommended_models,
-        vec!["gpt-4", "claude-3-sonnet", "deepseek-chat"]
-    );
+    assert_eq!(config.used_model, "gpt-4");
 }
 
 #[test]
@@ -143,16 +128,15 @@ debugger:
 
     let dev_config = manager.get_role_config("developer").unwrap();
     assert_eq!(dev_config.name, "开发者");
-    assert_eq!(dev_config.recommended_model, "gpt-4");
-    assert_eq!(dev_config.recommended_models.len(), 3);
+    assert_eq!(dev_config.used_model, "gpt-4");
 
     let writer_config = manager.get_role_config("writer").unwrap();
     assert_eq!(writer_config.name, "作家");
-    assert_eq!(writer_config.recommended_model, "claude-3-opus");
+    assert_eq!(writer_config.used_model, "claude-3-opus");
 
     let debugger_config = manager.get_role_config("debugger").unwrap();
     assert_eq!(debugger_config.name, "调试专家");
-    assert_eq!(debugger_config.recommended_model, "deepseek-coder");
+    assert_eq!(debugger_config.used_model, "deepseek-coder");
 }
 
 #[test]
@@ -192,5 +176,4 @@ analyst:
 
     let dev_config = manager.get_role_config("developer").unwrap();
     assert_eq!(dev_config.name, "开发者");
-    assert_eq!(dev_config.recommended_models, vec!["gpt-4", "claude-3"]);
 }

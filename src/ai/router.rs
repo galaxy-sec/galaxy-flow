@@ -20,7 +20,9 @@ impl AiRouter {
 
     pub fn select_provider(&self, model_name: &str, _config: &AiConfig) -> AiProviderType {
         // 简单的路由逻辑：根据模型名前缀选择provider
-        if model_name.starts_with("gpt-") {
+        if model_name.starts_with("glm") {
+            AiProviderType::Glm
+        } else if model_name.starts_with("gpt-") {
             AiProviderType::OpenAi
         } else if model_name.starts_with("claude") || model_name.starts_with("anthropic") {
             AiProviderType::Anthropic

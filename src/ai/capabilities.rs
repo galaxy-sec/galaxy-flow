@@ -23,16 +23,6 @@ impl AiRole {
             AiRole::GalactiWard => "Galaxy专家 - 专注于 Galaxy 生态的使用的诊断和建议",
         }
     }
-
-    /// 获取角色的推荐模型
-    pub fn recommended_model(&self) -> &'static str {
-        match self {
-            AiRole::Developer => "deepseek-coder", // 开发者首选代码专用模型
-            AiRole::Operations => "gpt-4o",        // 运维需要综合能力强的模型
-            AiRole::Knowledger => "gpt-4o-mini",   // 知识管理使用轻量级模型
-            AiRole::GalactiWard => "gml-4.5",
-        }
-    }
 }
 
 impl std::fmt::Display for AiRole {
@@ -63,7 +53,7 @@ impl AiRole {
             AiRole::Developer => "developer",
             AiRole::Operations => "operations",
             AiRole::Knowledger => "knowledger",
-            AiRole::GalactiWard => "galaxyor",
+            AiRole::GalactiWard => "galactiward",
         }
     }
 }

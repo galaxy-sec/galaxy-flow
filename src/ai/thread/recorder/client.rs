@@ -73,47 +73,6 @@ impl ThreadClient {
 
     /// 基于角色的智能请求处理
     pub async fn smart_role_request(&self, role: AiRole, user_input: &str) -> AiResult<AiResponse> {
-        let start_time = Utc::now();
-
-        // 构建基础的role请求
-        let model = role.recommended_model();
-        let system_prompt = format!("角色: {}", role.description());
-
-        let base_request = AiRequest::builder()
-            .model(model)
-            .system_prompt(system_prompt)
-            .user_prompt(user_input.to_string())
-            .role(role)
-            .build();
-
-        // 如果需要通知AI，构建增强的请求
-        let enhanced_request = if self.config.inform_ai {
-            self.build_request_with_thread_info(base_request.clone())
-        } else {
-            base_request.clone()
-        };
-
-        // 直接转发给内部client，避免递归调用
-        let response = self.inner.send_request(enhanced_request).await;
-
-        // 如果启用Thread记录且响应成功，则记录交互
-        if self.is_thread_enabled() {
-            if let Ok(ref resp) = response {
-                if let Err(e) = self
-                    .file_manager
-                    .record_interaction(start_time, &base_request, resp)
-                    .await
-                {
-                    eprintln!("Warning: Failed to record thread interaction: {e}");
-                }
-            }
-        }
-
-        // 在响应中添加角色信息
-        let response = response?;
-        let mut response = response;
-        response.content = format!("[角色: {}]\n\n{}", role.description(), response.content);
-
-        Ok(response)
+        todo!();
     }
 }
