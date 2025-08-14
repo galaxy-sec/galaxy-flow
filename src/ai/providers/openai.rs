@@ -290,9 +290,17 @@ impl AiProvider for OpenAiProvider {
             .owe_res()
             .with(url)?;
 
-        debug!("client response: {:#?}", response);
+        debug!("Client response: {:#?}", response);
         println!("{} think....", request.model);
-        let response_body = response.json::<OpenAiResponse>().await.owe_data()?;
+
+        // Get raw response text first
+        let response_text = response.text().await.owe_data()?;
+        debug!("Raw response body: {}", response_text);
+
+        // Then parse JSON manually
+        let response_body: OpenAiResponse = serde_json::from_str(&response_text)
+            .owe_data()
+            .with(response_text)?;
 
         let choice = response_body
             .choices

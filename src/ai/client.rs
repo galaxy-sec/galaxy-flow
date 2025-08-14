@@ -1,17 +1,18 @@
 use crate::ai::capabilities::AiRole;
-use crate::ai::config::{RoleConfigLoader, RoleConfigManager};
+use crate::ai::config::{ProviderConfig, RoleConfigLoader, RoleConfigManager};
 use crate::ai::error::{AiError, AiResult};
 use crate::ai::provider::{AiProvider, AiProviderType, AiRequest};
 use crate::execution::VarSpace;
 use async_trait::async_trait;
 use getset::Getters;
+use log::{debug, warn};
 use orion_error::{ErrorWith, ToStructError, UvsConfFrom};
 use orion_variate::vars::EnvDict;
 use std::collections::HashMap;
 use std::sync::Arc;
 
 use super::provider::AiResponse;
-use super::providers::openai::OpenAiProvider;
+use super::providers::{mock, openai};
 use super::{AiConfig, AiErrReason, AiRouter};
 
 /// AI客户端发送类型枚举
@@ -61,7 +62,10 @@ impl AiClientTrait for AiClient {
                 .await
                 .with(format!("provide: {provider_type}"))
         } else {
-            Err(AiError::from(AiErrReason::NoProviderAvailable))
+            for key in self.providers().keys() {
+                error!("registed provider: {key}");
+            }
+            Err(AiError::from(AiErrReason::NoProviderAvailable)).with(provider_type.to_string())
         }
     }
 
@@ -83,29 +87,8 @@ impl AiClient {
     pub fn new(config: AiConfig) -> AiResult<Self> {
         let mut providers: HashMap<AiProviderType, Arc<dyn AiProvider>> = HashMap::new();
 
-        // 初始化支持的provider
-        if let Some(key) = config.get_api_key(AiProviderType::OpenAi) {
-            let provider = OpenAiProvider::new(key);
-            providers.insert(AiProviderType::OpenAi, Arc::new(provider));
-        }
-
-        // 初始化DeepSeek
-        if let Some(key) = config.get_api_key(AiProviderType::DeepSeek) {
-            let provider = OpenAiProvider::deep_seek(key);
-            providers.insert(AiProviderType::DeepSeek, Arc::new(provider));
-        }
-
-        // 初始化Groq
-        if let Some(key) = config.get_api_key(AiProviderType::Groq) {
-            let provider = OpenAiProvider::groq(key);
-            providers.insert(AiProviderType::Groq, Arc::new(provider));
-        }
-
-        // Mock provider for testing
-        providers.insert(
-            AiProviderType::Mock,
-            Arc::new(crate::ai::providers::mock::MockProvider::new()),
-        );
+        // 从配置注册provider
+        Self::register_providers_from_config(&mut providers, &config.providers)?;
 
         // 初始化角色配置管理器 - 优先使用简化配置
         let roles_manager = RoleConfigLoader::layered_load()?;
@@ -116,6 +99,73 @@ impl AiClient {
             router: AiRouter::new(),
             roles: roles_manager,
         })
+    }
+
+    /// 从配置注册providers
+    fn register_providers_from_config(
+        providers: &mut HashMap<AiProviderType, Arc<dyn AiProvider>>,
+        provider_configs: &HashMap<AiProviderType, ProviderConfig>,
+    ) -> AiResult<()> {
+        for (provider_type, config) in provider_configs {
+            if !config.enabled {
+                debug!("Provider {} is disabled, skipping", provider_type);
+                continue;
+            }
+
+            let provider = match provider_type {
+                AiProviderType::OpenAi => {
+                    let mut provider = openai::OpenAiProvider::new(config.api_key.clone());
+                    if let Some(base_url) = &config.base_url {
+                        provider = provider.with_base_url(base_url.clone());
+                    }
+                    Arc::new(provider) as Arc<dyn AiProvider>
+                }
+                AiProviderType::DeepSeek => {
+                    let mut provider = openai::OpenAiProvider::deep_seek(config.api_key.clone());
+                    if let Some(base_url) = &config.base_url {
+                        provider = provider.with_base_url(base_url.clone());
+                    }
+                    Arc::new(provider) as Arc<dyn AiProvider>
+                }
+                AiProviderType::Groq => {
+                    let mut provider = openai::OpenAiProvider::groq(config.api_key.clone());
+                    if let Some(base_url) = &config.base_url {
+                        provider = provider.with_base_url(base_url.clone());
+                    }
+                    Arc::new(provider) as Arc<dyn AiProvider>
+                }
+                AiProviderType::Kimi => {
+                    let mut provider = openai::OpenAiProvider::kimi_k2(config.api_key.clone());
+                    if let Some(base_url) = &config.base_url {
+                        provider = provider.with_base_url(base_url.clone());
+                    }
+                    Arc::new(provider) as Arc<dyn AiProvider>
+                }
+                AiProviderType::Glm => {
+                    let mut provider = openai::OpenAiProvider::new(config.api_key.clone());
+                    if let Some(base_url) = &config.base_url {
+                        provider = provider.with_base_url(base_url.clone());
+                    }
+                    Arc::new(provider) as Arc<dyn AiProvider>
+                }
+                AiProviderType::Mock => Arc::new(mock::MockProvider::new()) as Arc<dyn AiProvider>,
+                AiProviderType::Anthropic | AiProviderType::Ollama => {
+                    warn!(
+                        "Provider {} is not yet implemented, skipping",
+                        provider_type
+                    );
+                    continue;
+                }
+            };
+
+            debug!(
+                "Registered provider: {} with priority: {:?}",
+                provider_type, config.priority
+            );
+            providers.insert(*provider_type, provider);
+        }
+
+        Ok(())
     }
 
     /// 构建基于角色的系统提示
@@ -177,6 +227,18 @@ impl AiClient {
             .user_prompt(user_input.to_string())
             .role(role)
             .build())
+    }
+
+    /// 列出指定provider的所有可用模型
+    pub async fn list_models(
+        &self,
+        provider: &AiProviderType,
+    ) -> AiResult<Vec<crate::ai::provider::ModelInfo>> {
+        if let Some(provider_arc) = self.providers.get(provider) {
+            provider_arc.list_models().await
+        } else {
+            Err(AiErrReason::from_conf(format!("Provider {} not available", provider)).to_err())
+        }
     }
 }
 

@@ -89,10 +89,11 @@ pub async fn build_task_url(url_type: TaskUrlType) -> Option<String> {
 /// 初始化重定向和父任务
 pub async fn init_redirect_and_parent_task(
     task_name: String,
+    ai_diagnose: bool,
 ) -> Result<Option<StdoutRedirect>, ExecError> {
     let mut redirect: Option<StdoutRedirect> = None;
 
-    if report_enable().await {
+    if ai_diagnose || report_enable().await {
         // 处理日志路径
         let log_path = init_redirect_file()
             .map_err(|e| ExecReason::Io(format!("Failed to initialize log file: {e}")))?;
