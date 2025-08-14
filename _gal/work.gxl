@@ -72,7 +72,7 @@ mod main  {
   }
   flow ci_msg {
     gx.cmd("git diff > code_diff.txt");
-    gx.ai_chat( "Generate git commit message", prompt_file : "./code_diff.txt");
+    gx.ai_chat( "Generate a brief summary for the git commit message", prompt_file : "./code_diff.txt");
   }
 
 

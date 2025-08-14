@@ -291,6 +291,7 @@ impl AiProvider for OpenAiProvider {
             .with(url)?;
 
         debug!("client response: {:#?}", response);
+        println!("{} think....", request.model);
         let response_body = response.json::<OpenAiResponse>().await.owe_data()?;
 
         let choice = response_body
