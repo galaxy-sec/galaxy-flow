@@ -20,18 +20,10 @@ impl From<UvsReason> for RunReason {
         Self::Uvs(value)
     }
 }
+
 impl From<AiErrReason> for RunReason {
     fn from(value: AiErrReason) -> Self {
-        match value {
-            AiErrReason::AuthError(_) => todo!(),
-            AiErrReason::RateLimitError(_) => todo!(),
-            AiErrReason::TokenLimitError(_, _) => todo!(),
-            AiErrReason::ContextError(_) => todo!(),
-            AiErrReason::NoProviderAvailable => todo!(),
-            AiErrReason::InvalidModel(_) => todo!(),
-            AiErrReason::SensitiveContentFiltered => todo!(),
-            AiErrReason::Uvs(uvs) => RunReason::Uvs(uvs),
-        }
+        UvsReason::from(value).into()
     }
 }
 

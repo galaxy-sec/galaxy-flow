@@ -212,6 +212,7 @@ mod tests {
             cmd_arg: String::new(),
             dryrun: false,
             mod_update: false,
+            ai: false,
         })
         .await
         .assert();

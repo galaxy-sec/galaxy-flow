@@ -68,16 +68,7 @@ pub type ExecResult<T> = Result<T, ExecError>;
 
 impl From<AiErrReason> for ExecReason {
     fn from(value: AiErrReason) -> Self {
-        match value {
-            AiErrReason::AuthError(_) => todo!(),
-            AiErrReason::RateLimitError(_) => todo!(),
-            AiErrReason::TokenLimitError(_, _) => todo!(),
-            AiErrReason::ContextError(_) => todo!(),
-            AiErrReason::NoProviderAvailable => todo!(),
-            AiErrReason::InvalidModel(_) => todo!(),
-            AiErrReason::SensitiveContentFiltered => todo!(),
-            AiErrReason::Uvs(uvs) => ExecReason::Uvs(uvs),
-        }
+        UvsReason::from(value).into()
     }
 }
 impl From<SerdeReason> for ExecReason {
@@ -85,17 +76,3 @@ impl From<SerdeReason> for ExecReason {
         ExecReason::Serde(format!("Serde error: {value}"))
     }
 }
-
-/*
-impl From<SpecReason> for ExecReason {
-    fn from(value: SpecReason) -> Self {
-        match value {
-            SpecReason::UnKnow => todo!(),
-            SpecReason::Uvs(uvs_reason) => Self::Uvs(uvs_reason),
-            SpecReason::Localize(r) => Self::Depend(r.to_string()),
-            SpecReason::Element(r) => Self::Depend(r.to_string()),
-        }
-    }
-}
-
-*/

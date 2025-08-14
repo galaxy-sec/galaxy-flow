@@ -5,9 +5,6 @@ use thiserror::Error;
 
 #[derive(Debug, PartialEq, Serialize, Error)]
 pub enum AiErrReason {
-    #[error("API authentication failed for provider: {0}")]
-    AuthError(String),
-
     #[error("API rate limit exceeded for provider: {0}")]
     RateLimitError(String),
 
@@ -48,16 +45,27 @@ impl ErrorCode for AiErrReason {
     }
 }
 
-impl AiErrReason {
-    pub fn provider_name(&self) -> Option<&str> {
-        match self {
-            AiErrReason::AuthError(provider)
-            | AiErrReason::RateLimitError(provider)
-            | AiErrReason::InvalidModel(provider) => Some(provider),
-            _ => None,
+pub type AiError = StructError<AiErrReason>;
+pub type AiResult<T> = Result<T, AiError>;
+
+impl From<AiErrReason> for UvsReason {
+    fn from(value: AiErrReason) -> Self {
+        match value {
+            AiErrReason::RateLimitError(msg) => {
+                UvsReason::DataError(format!("rate limit {msg}").into(), None)
+            }
+            AiErrReason::TokenLimitError(limit, max) => {
+                UvsReason::DataError(format!("token limit {limit} {max}").into(), None)
+            }
+            AiErrReason::ContextError(msg) => {
+                UvsReason::DataError(format!("ai context error: {msg}").into(), None)
+            }
+            AiErrReason::NoProviderAvailable => UvsReason::core_conf("no provider"),
+            AiErrReason::InvalidModel(msg) => UvsReason::core_conf(format!("invalid model: {msg}")),
+            AiErrReason::SensitiveContentFiltered => {
+                UvsReason::validation_error("sensitive content filtered")
+            }
+            AiErrReason::Uvs(uvs) => uvs,
         }
     }
 }
-
-pub type AiError = StructError<AiErrReason>;
-pub type AiResult<T> = Result<T, AiError>;
