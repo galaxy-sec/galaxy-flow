@@ -1,4 +1,4 @@
-extern mod head,ai_git { path = "${GXL_START_ROOT}/_gal/"; }
+extern mod head { path = "${GXL_START_ROOT}/_gal/"; }
 
 mod envs  {
    env _common  : rust_env.init   {
@@ -24,13 +24,13 @@ mod envs  {
   env default    : envs._common,debug;
 }
 
-mod main : ai_git {
+mod main  {
       bld_bins = "target/${ENV_BUILD_NAME}" ;
       rls_bins = "target/release" ;
       HOME_BIN = "${HOME}/bin" ;
 
     #[auto_load(entry)]
-    flow __into  {
+    flow __into | _conf {
         DIST_REPO = "unkonw";
         if defined(${GXL_OS_SYS}) {
              gx.echo (  "${GXL_OS_SYS} is defined " )
@@ -46,24 +46,11 @@ mod main : ai_git {
 
     }
     #[task(name="config")]
-    flow conf  {
-
-      gx.echo ( "HOME_BIN : ${MAIN_HOME_BIN} " );
-
-      gx.echo (  "ENV_BUILD_FLAG :  ${ENV_BUILD_FLAG}  " );
-      gx.echo (  "ENV_TARGET_FLAG : ${ENV_TARGET_FLAG} " );
-      gx.cmd (  " hostname " , out : "false" );
+    flow _conf  {
     }
 
-
-  #[usage(desp="use project cargo conf")]
-  flow cargo_env {
-    gx.cmd  ( cmd : "cp -f build/cargo.conf $CARGO_HOME/config" );
-  }
-  flow coverage : rust_flow.coverage ;
-
   #[task(name="${ENV_PRJ_KEY}@build")]
-  flow ver.use | conf | rust_flow.build | @build | pub_local {
+  flow ver.use | _conf | rust_flow.build | @build | _pub_local {
       gx.echo(  "${MAIN_HOME_BIN}" );
       //os.path (  "${MAIN_HOME_BIN}" );
   }
@@ -74,21 +61,18 @@ mod main : ai_git {
   flow build |  @test  {
     gx.cmd ( "cargo test --all ${ENV_BUILD_FLAG}", log : "1" , out:"true"  );
   }
-  flow  main.build | @sys_test {
-    gx.cmd ( "cargo test --test sys_tests  --all-features  ${ENV_BUILD_FLAG}", log : "1" , out:"true"  );
-  }
-
-  flow debug_ut  {
-    gx.cmd ( "RUST_LOG=debug cargo test ${GXL_CMD_ARG} -- --nocapture ", log : "1" , out:"true"  );
-  }
 
   #[task(name="pub to local")]
-  flow pub_local   {
+  flow _pub_local   {
 
     AP = "${ENV_AFT_PREFIX}";
     gx.cmd (  "mkdir -p ${MAIN_HOME_BIN}" );
     gx.cmd (  "cp ${MAIN_BLD_BINS}/gflow ${MAIN_HOME_BIN}/${AP}flow"  );
     gx.cmd (  "cp ${MAIN_BLD_BINS}/gprj ${MAIN_HOME_BIN}/${AP}prj"  );
+  }
+  flow ci_msg {
+    gx.cmd("git diff > code_diff.txt");
+    gx.ai_chat( "Generate git commit message", prompt_file : "./code_diff.txt");
   }
 
 
