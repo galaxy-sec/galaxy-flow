@@ -137,12 +137,6 @@ impl AiClient {
                 .get_role_rules_config(&role.to_string())
             {
                 system_prompt = self.enhance_system_prompt_with_rules(system_prompt, &role_rules);
-            } else {
-                // 如果没有角色特定规则，尝试加载全局规则
-                if let Ok(global_rules) = self.role_config_manager.load_global_rules_config() {
-                    system_prompt =
-                        self.enhance_system_prompt_with_rules(system_prompt, &global_rules);
-                }
             }
             system_prompt
         } else {

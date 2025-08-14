@@ -23,12 +23,12 @@ impl ConfigLoader {
     /// 确保配置目录存在
     pub fn ensure_config_dir() -> AiResult<PathBuf> {
         let config_dir = dirs::home_dir()
-            .ok_or_else(|| AiErrReason::ConfigError("Home directory not found".to_string()))?
+            .ok_or_else(|| AiErrReason::from_conf("Home directory not found".to_string()))?
             .join(".galaxy");
 
         if !config_dir.exists() {
             fs::create_dir_all(&config_dir).map_err(|e| {
-                AiErrReason::ConfigError(format!("Failed to create config directory: {e}"))
+                AiErrReason::from_conf(format!("Failed to create config directory: {e}"))
             })?;
         }
 
@@ -46,7 +46,7 @@ impl ConfigLoader {
         }
 
         let content = fs::read_to_string(config_path).map_err(|e| {
-            AiErrReason::ConfigError(format!(
+            AiErrReason::from_conf(format!(
                 "Failed to read config file {}: {}",
                 config_path.display(),
                 e
@@ -54,7 +54,7 @@ impl ConfigLoader {
         })?;
 
         let mut file_config: FileConfig = serde_yaml::from_str(&content).map_err(|e| {
-            AiErrReason::ConfigError(format!("Invalid YAML in {}: {}", config_path.display(), e))
+            AiErrReason::from_conf(format!("Invalid YAML in {}: {}", config_path.display(), e))
         })?;
 
         file_config.config_path = config_path.to_path_buf();

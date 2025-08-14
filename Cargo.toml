@@ -25,10 +25,13 @@ license = "Apache-2.0"
 [workspace.dependencies]
 winnow = "0.7.11"
 #orion-error = { path = "../orion-error" }
-orion-error= { git = "https://github.com/galaxy-sec/orion-error.git", tag= "v0.3.2" }
-orion_common = { git = "https://github.com/galaxy-sec/orion-common.git", branch = "main" }
-orion_infra = { git = "https://github.com/galaxy-sec/orion-infra.git", branch = "main" }
-orion_variate = { git = "https://github.com/galaxy-sec/orion-variate.git", tag = "v0.6.2" }
+orion-error = { git = "https://github.com/galaxy-sec/orion-error.git", tag = "v0.4.0" }
+orion_common = { git = "https://github.com/galaxy-sec/orion-common.git", tag = "v0.3.0" }
+orion_infra = { git = "https://github.com/galaxy-sec/orion-infra.git", tag = "v0.3.0" }
+orion_variate = { git = "https://github.com/galaxy-sec/orion-variate.git", tag = "v0.7.0" }
+#orion_variate = { path = "../orion_variate" }
+#orion_infra = { path = "../orion_infra" }
+#orion_common = { path = "../orion_common" }
 #orion_variate = { path = "../orion_variate" }
 #orion-syspec = { path = "../orion-syspec" }
 tokio = { version = "~1.47", features = ["full"] }

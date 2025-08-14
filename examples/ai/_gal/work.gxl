@@ -9,7 +9,7 @@ mod main   {
 
   flow ci_msg {
     gx.cmd("git diff > code_diff.txt");
-    gx.ai_chat( "生成简要的 git commit message", prompt_file : "./code_diff.txt");
+    gx.ai_chat( "Generate git commit message", prompt_file : "./code_diff.txt");
   }
 
 }

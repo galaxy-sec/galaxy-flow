@@ -71,32 +71,38 @@ pub fn report_gxl_error(e: RunError) {
             UvsReason::LogicError(e) => {
                 println!("LOGIC ERROR: {e}\n",);
             }
-            UvsReason::BizError(e) => {
+            UvsReason::BusinessError(e) => {
                 println!("BIZ ERROR: {e}\n",);
             }
             UvsReason::DataError(e, _) => {
                 println!("DATA ERROR: {e}\n",);
             }
-            UvsReason::SysError(e) => {
+            UvsReason::SystemError(e) => {
                 println!("SYS ERROR: {e}\n",);
             }
-            UvsReason::ResError(e) => {
+            UvsReason::ResourceError(e) => {
                 println!("RES ERROR: {e}\n",);
             }
-            UvsReason::NetError(e) => {
+            UvsReason::NetworkError(e) => {
                 println!("Net ERROR: {e}\n",);
             }
-            UvsReason::Timeout(e) => {
+            UvsReason::TimeoutError(e) => {
                 println!("Timeout: {e}\n",);
             }
-            UvsReason::ConfError(e) => {
+            UvsReason::ConfigError(e) => {
                 println!("CONF ERROR: {e}\n",);
             }
-            UvsReason::RuleError(e) => {
-                println!("RULE ERROR: {e}\n",);
+            UvsReason::PermissionError(e) => {
+                println!("Permiss ERROR: {e}\n",);
             }
-            UvsReason::PrivacyError(e) => {
-                println!("PRIVACY ERROR: {e}\n",);
+            UvsReason::ValidationError(e) => {
+                println!("Validate ERROR: {e}\n",);
+            }
+            UvsReason::ExternalError(e) => {
+                println!("External ERROR: {e}\n",);
+            }
+            UvsReason::NotFoundError(e) => {
+                println!("Not Found: {e}\n",);
             }
         },
         RunReason::Gxl(e) => {

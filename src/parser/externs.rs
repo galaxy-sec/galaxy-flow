@@ -4,6 +4,7 @@ use crate::evaluator::EnvExpress;
 use crate::execution::VarSpace;
 use crate::parser::abilities::addr::gal_extern_mod;
 use crate::parser::abilities::addr::gal_git_path;
+use crate::ExecReason;
 use crate::ExecResult;
 use orion_error::ErrorOwe;
 use orion_error::ErrorWith;
@@ -52,7 +53,7 @@ impl ExternLocal {
         let gxl_full_path = crate::evaluator::VarParser::eval(&ee, &gxl_full_path)?;
         ctx.with("gxl", gxl_full_path.as_str());
         let code = read_to_string(gxl_full_path.as_str())
-            .owe_rule()
+            .owe(ExecReason::Gxl("read mod file fail!".to_string()))
             .with(&ctx)?;
         Ok(code)
     }
@@ -106,13 +107,14 @@ impl ExternParser {
         let extern_mods = gal_extern_mod
             .context(wn_desc("<extern-mod>"))
             .parse_next(cur)
-            .owe_rule()?;
+            .owe(ExecReason::Gxl("parse extern mod fail!".to_string()))?;
         let exp = EnvExpress::from_env_mix(vars_space.global().clone());
         let local = match extern_mods.addr() {
             ModAddr::Git(git_addr) => {
                 let git_url = exp.eval(git_addr.remote())?;
                 let cl_git_url = git_url.clone();
-                let (_host, repo_name) = gal_git_path(&mut git_url.as_str()).owe_rule()?;
+                let (_host, repo_name) = gal_git_path(&mut git_url.as_str())
+                    .owe(ExecReason::Gxl("parse git repo fail!".to_string()))?;
 
                 debug!("git url: {cl_git_url}");
                 debug!("git repo : {repo_name}",);

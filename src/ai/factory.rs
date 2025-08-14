@@ -1,3 +1,5 @@
+use orion_error::UvsConfFrom;
+
 use crate::ai::capabilities::AiRole;
 use crate::ai::error::{AiError, AiResult};
 use crate::ai::provider::AiRequest;
@@ -20,7 +22,7 @@ impl AiClientEnum {
         // 验证配置
         let mut validated_config = config.clone();
         validated_config.validate_and_postprocess().map_err(|e| {
-            AiError::from(AiErrReason::ConfigError(format!(
+            AiError::from(AiErrReason::from_conf(format!(
                 "Configuration validation failed: {e}"
             )))
         })?;
@@ -45,7 +47,7 @@ impl AiClientEnum {
         // 验证配置
         let mut validated_config = config;
         validated_config.validate_and_postprocess().map_err(|e| {
-            AiError::from(AiErrReason::ConfigError(format!(
+            AiError::from(AiErrReason::from_conf(format!(
                 "Configuration validation failed: {e}"
             )))
         })?;

@@ -6,7 +6,7 @@ use crate::ai::client::AiClientTrait;
 use crate::ai::provider::AiRequest;
 use crate::ai::{client::AiClient, config::AiConfig};
 use getset::{Getters, MutGetters, Setters, WithSetters};
-use orion_error::{ErrorConv, ToStructError, UvsLogicFrom, UvsResFrom};
+use orion_error::{ErrorConv, ToStructError, UvsResFrom};
 #[derive(Clone, Debug, Default, PartialEq, Getters, Setters, WithSetters, MutGetters)]
 #[getset(get = "pub", set = "pub", get_mut = "pub", set_with = "pub")]
 pub struct GxAIChat {
@@ -40,11 +40,8 @@ impl GxAIChat {
         if let Some(prompt_file) = &self.prompt_file {
             let prompt_file = PathBuf::from(exp.eval(prompt_file)?);
             if !prompt_file.exists() {
-                return ExecReason::from_logic(format!(
-                    "{path} not exists",
-                    path = prompt_file.display()
-                ))
-                .err_result();
+                return ExecReason::Gxl(format!("{path} not exists", path = prompt_file.display()))
+                    .err_result();
             }
             let data = std::fs::read_to_string(prompt_file.as_path())
                 .map_err(|e| ExecReason::from_res(format!("prompt_file:{e}")))?;

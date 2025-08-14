@@ -1,114 +1,55 @@
 use crate::ai::config::roles::types::{RoleConfig, RulesConfig};
 use crate::ai::error::{AiErrReason, AiError, AiResult};
-use serde_yaml;
+use crate::ai::AiRole;
+use orion_error::{ToStructError, UvsConfFrom};
+use serde_derive::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 
 /// 角色配置管理器
-#[derive(Debug)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RoleConfigManager {
     /// 角色配置映射
     pub roles: HashMap<String, RoleConfig>,
-    /// 配置文件路径
-    pub config_path: String,
+    pub default_role: String,
+}
+impl Default for RoleConfigManager {
+    fn default() -> Self {
+        let mut roles = HashMap::new();
+        roles.insert(
+            AiRole::Developer.to_string(),
+            RoleConfig {
+                name: "developer".to_string(),
+                description: "专注于代码开发的技术专家".to_string(),
+                system_prompt:
+                    "你是一个专业的开发者，擅长高质量的代码实现、系统设计和技术问题解决。"
+                        .to_string(),
+                recommended_model: "glm-4.5".to_string(),
+                recommended_models: vec!["glm-4.5".to_string(), "deepseek".to_string()],
+                rules_path: Some("developer".to_string()),
+            },
+        );
+        roles.insert(
+            AiRole::Operations.to_string(),
+            RoleConfig {
+                name: "operations".to_string(),
+                description: "专注于系统运维的专家".to_string(),
+                system_prompt: "你是一个专业的运维专家，擅长诊断系统问题、和解决问题。".to_string(),
+                recommended_model: "glm-4.5".to_string(),
+                recommended_models: vec!["glm-4.5".to_string(), "deepseek".to_string()],
+                rules_path: Some("operations".to_string()),
+            },
+        );
+
+        Self {
+            roles,
+            default_role: "developer".to_string(),
+        }
+    }
 }
 
 impl RoleConfigManager {
-    /// 保存角色配置到YAML文件
-    pub fn save_config(&self) -> AiResult<()> {
-        let path = Path::new(&self.config_path);
-
-        let content = serde_yaml::to_string(&self.roles).map_err(|e| {
-            AiError::from(AiErrReason::ConfigError(format!("序列化角色配置失败: {e}")))
-        })?;
-
-        fs::write(path, content).map_err(|e| {
-            AiError::from(AiErrReason::ConfigError(format!(
-                "写入角色配置文件失败: {e}"
-            )))
-        })?;
-
-        Ok(())
-    }
-
-    /// 创建默认的角色配置YAML文件
-    pub fn create_default_config(config_path: &str) -> AiResult<()> {
-        let default_roles: HashMap<String, RoleConfig> = HashMap::new();
-        let path = Path::new(config_path);
-
-        let content = serde_yaml::to_string(&default_roles).map_err(|e| {
-            AiError::from(AiErrReason::ConfigError(format!(
-                "序列化默认角色配置失败: {e}"
-            )))
-        })?;
-
-        fs::write(path, content).map_err(|e| {
-            AiError::from(AiErrReason::ConfigError(format!(
-                "创建默认角色配置文件失败: {e}"
-            )))
-        })?;
-
-        Ok(())
-    }
-
-    /// 验证YAML配置文件格式
-    pub fn validate_config_file(config_path: &str) -> AiResult<()> {
-        let path = Path::new(config_path);
-
-        if !path.exists() {
-            return Err(AiError::from(AiErrReason::ConfigError(format!(
-                "配置文件不存在: {config_path}",
-            ))));
-        }
-
-        let content = fs::read_to_string(path).map_err(|e| {
-            AiError::from(AiErrReason::ConfigError(format!("读取配置文件失败: {e}")))
-        })?;
-
-        serde_yaml::from_str::<HashMap<String, RoleConfig>>(&content).map_err(|e| {
-            AiError::from(AiErrReason::ConfigError(format!("YAML格式验证失败: {e}")))
-        })?;
-
-        Ok(())
-    }
-
-    /// 创建新的角色配置管理器
-    pub fn new(config_path: String) -> Self {
-        Self {
-            roles: HashMap::new(),
-            config_path,
-        }
-    }
-
-    /// 从文件加载角色配置
-    pub fn load_config(&mut self) -> AiResult<()> {
-        let path = Path::new(&self.config_path);
-
-        if !path.exists() {
-            return Err(AiError::from(AiErrReason::ConfigError(format!(
-                "角色配置文件不存在: {}",
-                self.config_path
-            ))));
-        }
-
-        let content = fs::read_to_string(path).map_err(|e| {
-            AiError::from(AiErrReason::ConfigError(format!(
-                "读取角色配置文件失败: {e}"
-            )))
-        })?;
-
-        let roles_config: HashMap<String, RoleConfig> =
-            serde_yaml::from_str(&content).map_err(|e| {
-                AiError::from(AiErrReason::ConfigError(format!(
-                    "解析角色配置文件失败: {e}"
-                )))
-            })?;
-
-        self.roles = roles_config;
-        Ok(())
-    }
-
     /// 获取角色配置
     pub fn get_role_config(&self, role_key: &str) -> Option<&RoleConfig> {
         self.roles.get(role_key)
@@ -119,19 +60,18 @@ impl RoleConfigManager {
         let path = Path::new(rules_path);
 
         if !path.exists() {
-            return Err(AiError::from(AiErrReason::ConfigError(format!(
+            return Err(AiErrReason::from_conf(format!(
                 "规则配置路径不存在: {}",
                 rules_path.display()
-            ))));
+            ))
+            .to_err());
         }
 
         // 判断是文件还是目录
         if path.is_file() {
             // 如果是文件，直接读取内容到rules数组
             let content = fs::read_to_string(path).map_err(|e| {
-                AiError::from(AiErrReason::ConfigError(format!(
-                    "读取规则配置文件失败: {e}"
-                )))
+                AiError::from(AiErrReason::from_conf(format!("读取规则配置文件失败: {e}")))
             })?;
 
             info!("加载角色RULE文件: {}", rules_path.display());
@@ -148,21 +88,19 @@ impl RoleConfigManager {
             let mut rules = Vec::new();
 
             let entries = fs::read_dir(path).map_err(|e| {
-                AiError::from(AiErrReason::ConfigError(format!(
-                    "读取规则配置目录失败: {e}"
-                )))
+                AiError::from(AiErrReason::from_conf(format!("读取规则配置目录失败: {e}")))
             })?;
 
             for entry in entries {
                 let entry = entry.map_err(|e| {
-                    AiError::from(AiErrReason::ConfigError(format!("读取目录条目失败: {e}")))
+                    AiError::from(AiErrReason::from_conf(format!("读取目录条目失败: {e}")))
                 })?;
 
                 let file_path = entry.path();
                 info!("加载角色RULE文件: {}", file_path.display());
                 if file_path.extension().and_then(|s| s.to_str()) == Some("mdc") {
                     let content = fs::read_to_string(&file_path).map_err(|e| {
-                        AiError::from(AiErrReason::ConfigError(format!(
+                        AiError::from(AiErrReason::from_conf(format!(
                             "读取规则文件 {:?} 失败: {e}",
                             file_path.file_name().unwrap_or_default()
                         )))
@@ -181,7 +119,7 @@ impl RoleConfigManager {
 
             Ok(RulesConfig { rules })
         } else {
-            Err(AiError::from(AiErrReason::ConfigError(format!(
+            Err(AiError::from(AiErrReason::from_conf(format!(
                 "规则配置路径既不是文件也不是目录: {}",
                 rules_path.display()
             ))))
@@ -209,47 +147,13 @@ impl RoleConfigManager {
         }
     }
 
-    /// 加载全局规则配置
-    pub fn load_global_rules_config(&self) -> AiResult<RulesConfig> {
-        let global_path = PathBuf::from(self.config_path.as_str())
-            .parent()
-            .unwrap()
-            .join("rules/global.yaml");
-        self.load_rules_config(&global_path)
-    }
-
     /// 获取所有可用的角色
     pub fn get_available_roles(&self) -> Vec<&String> {
         self.roles.keys().collect()
     }
 
-    /// 重新加载配置
-    pub fn reload_config(&mut self) -> AiResult<()> {
-        self.roles.clear();
-        self.load_config()
-    }
-
     /// 检查角色是否存在
     pub fn role_exists(&self, role_key: &str) -> bool {
         self.roles.contains_key(role_key)
-    }
-
-    /// 自动检测并加载配置（只使用roles.yaml）
-    pub fn auto_load_config(&mut self, _simplified_path: &str, legacy_path: &str) -> AiResult<()> {
-        // 只加载传统配置
-        if Path::new(legacy_path).exists() {
-            println!("📄 Loading roles configuration from {legacy_path}...");
-            return self.load_config();
-        }
-
-        Err(AiError::from(AiErrReason::ConfigError(format!(
-            "Configuration file not found: {legacy_path}"
-        ))))
-    }
-}
-
-impl Default for RoleConfigManager {
-    fn default() -> Self {
-        Self::new("src/ai/config/roles.yaml".to_string())
     }
 }

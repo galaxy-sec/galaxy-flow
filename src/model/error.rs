@@ -69,14 +69,11 @@ pub type ExecResult<T> = Result<T, ExecError>;
 impl From<AiErrReason> for ExecReason {
     fn from(value: AiErrReason) -> Self {
         match value {
-            AiErrReason::NetworkError(_) => todo!(),
-            AiErrReason::ConfigError(_) => todo!(),
             AiErrReason::AuthError(_) => todo!(),
             AiErrReason::RateLimitError(_) => todo!(),
             AiErrReason::TokenLimitError(_, _) => todo!(),
             AiErrReason::ContextError(_) => todo!(),
             AiErrReason::NoProviderAvailable => todo!(),
-            AiErrReason::TimeoutError(_) => todo!(),
             AiErrReason::InvalidModel(_) => todo!(),
             AiErrReason::SensitiveContentFiltered => todo!(),
             AiErrReason::Uvs(uvs) => ExecReason::Uvs(uvs),

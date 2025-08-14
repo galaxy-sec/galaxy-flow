@@ -1153,7 +1153,7 @@ dependencies = [
  "log",
  "mockall",
  "once_cell",
- "orion-error 0.3.2",
+ "orion-error 0.4.0",
  "orion_common",
  "orion_infra",
  "orion_parse",
@@ -2150,8 +2150,8 @@ dependencies = [
 
 [[package]]
 name = "orion-error"
-version = "0.3.2"
-source = "git+https://github.com/galaxy-sec/orion-error.git?tag=v0.3.2#2a22645654f302c2b09c4cdc4ea65c2b09b39a4a"
+version = "0.4.0"
+source = "git+https://github.com/galaxy-sec/orion-error.git?tag=v0.4.0#f0c8c95ef47aa44f3d80ffe991988cfd6b6a97e3"
 dependencies = [
  "derive-getters",
  "derive_more",
@@ -2161,15 +2161,15 @@ dependencies = [
 
 [[package]]
 name = "orion_common"
-version = "0.2.0"
-source = "git+https://github.com/galaxy-sec/orion-common.git?branch=main#e045f1e938bf68d9b1cfb022a17ed6542e2a744d"
+version = "0.3.0"
+source = "git+https://github.com/galaxy-sec/orion-common.git?tag=v0.3.0#918ef5bd7676bc50d76004d452b55858b43f13fe"
 dependencies = [
  "anyhow",
  "chrono",
  "derive-getters",
  "derive_more",
  "ipnet",
- "orion-error 0.3.1",
+ "orion-error 0.4.0",
  "serde",
  "serde_derive",
  "serde_ini",
@@ -2183,7 +2183,7 @@ dependencies = [
 [[package]]
 name = "orion_infra"
 version = "0.2.0"
-source = "git+https://github.com/galaxy-sec/orion-infra.git?branch=main#56db20a9a3f6f5e9c68bc9e4a6dc4cdb9ecb28b6"
+source = "git+https://github.com/galaxy-sec/orion-infra.git?tag=v0.3.0#56db20a9a3f6f5e9c68bc9e4a6dc4cdb9ecb28b6"
 dependencies = [
  "anyhow",
  "derive_more",
@@ -2207,8 +2207,8 @@ dependencies = [
 
 [[package]]
 name = "orion_variate"
-version = "0.6.2"
-source = "git+https://github.com/galaxy-sec/orion-variate.git?tag=v0.6.2#ffb1c6e5716d75f7553692048aadaf4608f492bc"
+version = "0.7.0"
+source = "git+https://github.com/galaxy-sec/orion-variate.git?tag=v0.7.0#4f73d3f060119404c57ffabdbc63920f5c9d9ccd"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2227,7 +2227,7 @@ dependencies = [
  "indicatif",
  "lazy_static",
  "log",
- "orion-error 0.3.1",
+ "orion-error 0.4.0",
  "orion_common",
  "orion_infra",
  "os_info",

@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use orion_error::ErrorOwe;
+use orion_error::{ErrorOwe, UvsConfFrom};
 use reqwest::{header, Client};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -293,7 +293,7 @@ impl AiProvider for OpenAiProvider {
         let choice = response_body
             .choices
             .first()
-            .ok_or_else(|| AiErrReason::ConfigError("No choices in response".to_string()))?;
+            .ok_or_else(|| AiErrReason::from_conf("No choices in response".to_string()))?;
 
         Ok(AiResponse {
             content: choice.message.content.clone(),

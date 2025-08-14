@@ -1,14 +1,10 @@
-use orion_error::{ErrorCode, StructError, UvsReason};
+use orion_common::serde::SerdeReason;
+use orion_error::{ErrorCode, StructError, UvsConfFrom, UvsReason};
 use serde_derive::Serialize;
 use thiserror::Error;
 
 #[derive(Debug, PartialEq, Serialize, Error)]
 pub enum AiErrReason {
-    #[error("Network error: {0}")]
-    NetworkError(String),
-    #[error("Configuration error: {0}")]
-    ConfigError(String),
-
     #[error("API authentication failed for provider: {0}")]
     AuthError(String),
 
@@ -24,9 +20,6 @@ pub enum AiErrReason {
     #[error("No suitable provider found for request")]
     NoProviderAvailable,
 
-    #[error("Provider timeout after {0}s")]
-    TimeoutError(u64),
-
     #[error("Invalid model specified: {0}")]
     InvalidModel(String),
 
@@ -41,6 +34,14 @@ impl From<UvsReason> for AiErrReason {
         AiErrReason::Uvs(value)
     }
 }
+impl From<SerdeReason> for AiErrReason {
+    fn from(value: SerdeReason) -> Self {
+        match value {
+            SerdeReason::Brief(msg) => Self::Uvs(UvsReason::from_conf(msg)),
+            SerdeReason::Uvs(uvs) => Self::Uvs(uvs),
+        }
+    }
+}
 impl ErrorCode for AiErrReason {
     fn error_code(&self) -> i32 {
         800
@@ -48,15 +49,6 @@ impl ErrorCode for AiErrReason {
 }
 
 impl AiErrReason {
-    pub fn is_retryable(&self) -> bool {
-        matches!(
-            self,
-            AiErrReason::NetworkError(_)
-                | AiErrReason::RateLimitError(_)
-                | AiErrReason::TimeoutError(_)
-        )
-    }
-
     pub fn provider_name(&self) -> Option<&str> {
         match self {
             AiErrReason::AuthError(provider)

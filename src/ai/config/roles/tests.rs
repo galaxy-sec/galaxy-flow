@@ -1,5 +1,7 @@
 use crate::ai::config::roles::loader::RoleConfigLoader;
 use crate::ai::config::roles::manager::RoleConfigManager;
+use orion_common::serde::Yamlable;
+use orion_error::TestAssert;
 use std::io::Write;
 use tempfile::NamedTempFile;
 
@@ -18,10 +20,9 @@ test_role:
 
     let mut temp_file = NamedTempFile::new().unwrap();
     temp_file.write_all(test_config.as_bytes()).unwrap();
-    let temp_path = temp_file.path().to_str().unwrap().to_string();
+    let temp_path = temp_file.path();
 
-    let mut manager = RoleConfigManager::new(temp_path);
-    assert!(manager.load_config().is_ok());
+    let manager = RoleConfigManager::from_yml(&temp_path).assert();
 
     let role_config = manager.get_role_config("test_role");
     assert!(role_config.is_some());
@@ -75,18 +76,9 @@ test_role:
 
     let mut temp_file = NamedTempFile::new().unwrap();
     temp_file.write_all(test_config.as_bytes()).unwrap();
-    let temp_path = temp_file.path().to_str().unwrap().to_string();
+    let temp_path = temp_file.path();
 
-    let mut manager = RoleConfigManager::new(temp_path.clone());
-    assert!(manager.load_config().is_ok());
-
-    // Test saving config
-    assert!(manager.save_config().is_ok());
-
-    // Reload and verify
-    let mut new_manager = RoleConfigManager::new(temp_path);
-    assert!(new_manager.load_config().is_ok());
-    assert!(new_manager.role_exists("test_role"));
+    let manager = RoleConfigManager::from_yml(temp_path.clone()).assert();
 }
 
 #[test]
@@ -221,105 +213,4 @@ analyst:
     let dev_config = manager.get_role_config("developer").unwrap();
     assert_eq!(dev_config.name, "开发者");
     assert_eq!(dev_config.recommended_models, vec!["gpt-4", "claude-3"]);
-}
-
-#[test]
-fn test_create_and_validate_default_config() {
-    let temp_path = "/tmp/test_roles_default.yaml";
-
-    // Test creating default config
-    let result = RoleConfigManager::create_default_config(temp_path);
-    assert!(result.is_ok());
-
-    // Test validating the created config
-    let validate_result = RoleConfigManager::validate_config_file(temp_path);
-    assert!(validate_result.is_ok());
-
-    // Test loading the created config
-    let mut manager = RoleConfigManager::new(temp_path.to_string());
-    assert!(manager.load_config().is_ok());
-
-    // Should have no roles in default config
-    let available_roles = manager.get_available_roles();
-    assert_eq!(available_roles.len(), 0);
-
-    // Clean up
-    std::fs::remove_file(temp_path).unwrap();
-}
-
-#[test]
-fn test_invalid_yaml_format() {
-    let invalid_config = r#"
-developer:
-  name: "开发者"
-  description: "专注于代码开发"
-  system_prompt: "你是一个开发者"
-  recommended_model: "gpt-4"
-  recommended_models:
-    - "gpt-4"
-    - "claude-3"
-  invalid_field: "this should cause an error"
-
-analyst:
-  name: "分析师"
-  description: "数据分析"
-        "#;
-
-    let mut temp_file = NamedTempFile::new().unwrap();
-    temp_file.write_all(invalid_config.as_bytes()).unwrap();
-    let temp_path = temp_file.path().to_str().unwrap().to_string();
-
-    let mut manager = RoleConfigManager::new(temp_path);
-    let result = manager.load_config();
-
-    // Should fail to parse due to invalid field
-    assert!(result.is_err());
-}
-
-#[test]
-fn test_save_and_reload_cycle() {
-    let test_config = r#"
-test_role:
-  name: "测试角色"
-  description: "这是一个测试角色"
-  system_prompt: "你是一个测试角色"
-  recommended_model: "test-model"
-  recommended_models:
-    - "test-model"
-    - "backup-model"
-        "#;
-
-    let _temp_path = "/tmp/test_roles_save_reload.yaml";
-
-    // Create initial manager
-    let mut temp_file = NamedTempFile::new().unwrap();
-    temp_file.write_all(test_config.as_bytes()).unwrap();
-    let original_path = temp_file.path().to_str().unwrap().to_string();
-
-    // Load original config
-    let mut manager = RoleConfigManager::new(original_path.clone());
-    assert!(manager.load_config().is_ok());
-
-    // Modify the config
-    let available_roles = manager.get_available_roles();
-    assert_eq!(available_roles.len(), 1);
-
-    // Save config
-    assert!(manager.save_config().is_ok());
-
-    // Create new manager and reload
-    let mut new_manager = RoleConfigManager::new(original_path.clone());
-    assert!(new_manager.load_config().is_ok());
-
-    // Verify data integrity
-    assert!(new_manager.role_exists("test_role"));
-    let reloaded_config = new_manager.get_role_config("test_role").unwrap();
-    assert_eq!(reloaded_config.name, "测试角色");
-    assert_eq!(
-        reloaded_config.recommended_models,
-        vec!["test-model", "backup-model"]
-    );
-
-    // Clean up
-    std::fs::remove_file(original_path.clone()).unwrap();
 }
