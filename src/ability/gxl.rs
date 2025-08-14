@@ -74,6 +74,7 @@ impl AsyncRunnableWithSenderTrait for GxRun {
             quiet: ctx.quiet(),
             cmd_arg: String::new(),
             dryrun,
+            ai: false,
             mod_update,
         };
         let run_path = exp.eval(&self.run_path)?;

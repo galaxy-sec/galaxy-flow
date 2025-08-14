@@ -51,8 +51,8 @@ impl GxlRunner {
 }
 use clap::Parser;
 
-#[derive(Parser, Debug)] // requires `derive` feature
-#[command(version, about, long_about = None)]
+#[derive(Parser, Debug, Clone)] // requires `derive` feature
+#[command(version, about, long_about = None,)]
 pub struct GxlCmd {
     /// env name ; eg: -e dev
     #[arg(short = 'e', long = "env", default_value = "default")]
@@ -80,6 +80,8 @@ pub struct GxlCmd {
     #[arg(long = "dryrun", action = ArgAction::SetTrue, default_value = "false")]
     pub dryrun: bool,
 
+    #[arg(long = "ai", action = ArgAction::SetTrue, default_value = "false")]
+    pub ai: bool,
     ///update remote gxl mod
     #[arg(long = "mod_up", action = ArgAction::SetTrue, default_value = "false")]
     pub mod_update: bool,

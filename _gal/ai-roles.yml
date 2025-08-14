@@ -1,4 +1,4 @@
-default_role: GalactiWard
+default_role: Developer
 roles:
   operations:
     name: operations

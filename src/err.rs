@@ -1,4 +1,4 @@
-use crate::{const_val::gxl_const, error::AssembleReason, ExecReason, ExecResult};
+use crate::{ai::AiErrReason, const_val::gxl_const, error::AssembleReason, ExecReason, ExecResult};
 use orion_error::{ErrorCode, StructError, UvsReason};
 
 use serde::Serialize;
@@ -18,6 +18,12 @@ pub enum RunReason {
 impl From<UvsReason> for RunReason {
     fn from(value: UvsReason) -> Self {
         Self::Uvs(value)
+    }
+}
+
+impl From<AiErrReason> for RunReason {
+    fn from(value: AiErrReason) -> Self {
+        UvsReason::from(value).into()
     }
 }
 

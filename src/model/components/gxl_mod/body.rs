@@ -234,7 +234,7 @@ impl ExecLoadTrait for GxlMod {
         _sequ: &mut ExecSequence,
         _name: &str,
     ) -> ExecResult<()> {
-        todo!();
+        unreachable!("load_flow")
     }
 
     fn menu(&self) -> ExecResult<GxMenu> {
