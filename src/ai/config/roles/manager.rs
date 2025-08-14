@@ -11,8 +11,8 @@ use std::path::{Path, PathBuf};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RoleConfigManager {
     /// 角色配置映射
+    pub default_role: AiRole,
     pub roles: HashMap<String, RoleConfig>,
-    pub default_role: String,
 }
 impl Default for RoleConfigManager {
     fn default() -> Self {
@@ -42,9 +42,21 @@ impl Default for RoleConfigManager {
             },
         );
 
+        roles.insert(
+            AiRole::GalactiWard.to_string(),
+            RoleConfig {
+                name: "galactiward".to_string(),
+                description: "专注于Galaxy生态专家".to_string(),
+                system_prompt: "通过Galaxy资料，解决Galaxy问题".to_string(),
+                recommended_model: "glm-4.5".to_string(),
+                recommended_models: vec!["glm-4.5".to_string(), "deepseek".to_string()],
+                rules_path: Some("galactiward".to_string()),
+            },
+        );
+
         Self {
             roles,
-            default_role: "developer".to_string(),
+            default_role: AiRole::GalactiWard,
         }
     }
 }
@@ -155,5 +167,23 @@ impl RoleConfigManager {
     /// 检查角色是否存在
     pub fn role_exists(&self, role_key: &str) -> bool {
         self.roles.contains_key(role_key)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::path::PathBuf;
+
+    use orion_common::serde::Yamlable;
+    use orion_error::TestAssert;
+
+    use super::RoleConfigManager;
+
+    #[test]
+    fn example_save_load() {
+        let path = PathBuf::from("./examples/ai-roles.yml");
+        RoleConfigManager::default().save_yml(&path).assert();
+        let roles_mng = RoleConfigManager::from_yml(&path).assert();
+        println!("roles: {roles_mng:#?}");
     }
 }

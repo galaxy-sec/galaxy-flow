@@ -62,26 +62,6 @@ developer:
 }
 
 #[test]
-fn test_save_config() {
-    let test_config = r#"
-test_role:
-  name: "测试角色"
-  description: "这是一个测试角色"
-  system_prompt: "你是一个测试角色"
-  recommended_model: "test-model"
-  recommended_models:
-    - "test-model"
-    - "backup-model"
-        "#;
-
-    let mut temp_file = NamedTempFile::new().unwrap();
-    temp_file.write_all(test_config.as_bytes()).unwrap();
-    let temp_path = temp_file.path();
-
-    let manager = RoleConfigManager::from_yml(temp_path.clone()).assert();
-}
-
-#[test]
 fn test_role_config_loader_with_yaml() {
     let test_config = r#"
     analyst:

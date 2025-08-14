@@ -3,7 +3,6 @@ use std::path::PathBuf;
 
 use crate::ability::prelude::*;
 use crate::ai::client::AiClientTrait;
-use crate::ai::provider::AiRequest;
 use crate::ai::{client::AiClient, config::AiConfig};
 use getset::{Getters, MutGetters, Setters, WithSetters};
 use orion_error::{ErrorConv, ToStructError, UvsResFrom};
@@ -52,16 +51,14 @@ impl GxAIChat {
         // call ai clien
         let ai_config = AiConfig::galaxy_load(&vars_dict.global().export().into())?;
         let ai_client = AiClient::new(ai_config).err_conv()?;
-
-        // 创建 AI 请求
-        let ai_request = AiRequest::builder()
-            .model("deepseek-chat") // 使用 DeepSeek 模型
-            .system_prompt("你是一个专业的AI助手，能够回答用户的问题并提供有用的建议。".to_string())
-            .user_prompt(message)
-            .build();
+        //ai_config
+        let ai_response = ai_client
+            .smart_role_request(ai_client.roles().default_role, message.as_str())
+            .await
+            .err_conv()?;
 
         // 发送 AI 请求
-        let ai_response = ai_client.send_request(ai_request).await.err_conv()?;
+        //let ai_response = ai_client.send_request(ai_request).await.err_conv()?;
         // 将 AI 响应添加到变量字典中，供后续使用
         let response_content = ai_response.content;
         let response_provider = ai_response.provider.to_string();

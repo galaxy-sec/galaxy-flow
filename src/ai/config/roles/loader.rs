@@ -1,5 +1,5 @@
 use orion_common::serde::Yamlable;
-use orion_error::{ToStructError, UvsConfFrom};
+use orion_error::{ErrorConv, ToStructError, UvsConfFrom};
 
 use crate::ai::config::roles::manager::RoleConfigManager;
 use crate::ai::error::{AiErrReason, AiError, AiResult};
@@ -32,14 +32,14 @@ impl RoleConfigLoader {
     /// 优先级：项目级配置 > 用户级配置
     pub fn layered_load() -> AiResult<RoleConfigManager> {
         // 检查项目级配置是否存在
-        let project_roles_path = PathBuf::from("_gal/ai-roles.yaml");
+        let project_roles_path = PathBuf::from("_gal/ai-roles.yml");
         let _project_rules_path = "_gal/ai-rules";
 
         // 检查用户级配置路径
         let user_home = dirs::home_dir().ok_or_else(|| {
             AiError::from(AiErrReason::from_conf("无法获取用户主目录".to_string()))
         })?;
-        let user_roles_path = user_home.join(".galaxy/ai-roles.yaml");
+        let user_roles_path = user_home.join(".galaxy/ai-roles.yml");
         let _user_rules_path = user_home.join(".galaxy/ai-rules");
 
         // 优先使用项目级配置
@@ -48,7 +48,7 @@ impl RoleConfigLoader {
                 "📄 Loading project-level roles configuration from {}...",
                 project_roles_path.display()
             );
-            let manager = RoleConfigManager::from_yml(&project_roles_path).unwrap();
+            let manager = RoleConfigManager::from_yml(&project_roles_path).err_conv()?;
             return Ok(manager);
         }
 
@@ -58,7 +58,7 @@ impl RoleConfigLoader {
                 "📄 Loading user-level roles configuration from {}...",
                 user_roles_path.display()
             );
-            let manager = RoleConfigManager::from_yml(&user_roles_path).unwrap();
+            let manager = RoleConfigManager::from_yml(&user_roles_path).err_conv()?;
             return Ok(manager);
         }
 

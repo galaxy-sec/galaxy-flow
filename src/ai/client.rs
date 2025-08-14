@@ -4,6 +4,7 @@ use crate::ai::error::{AiError, AiResult};
 use crate::ai::provider::{AiProvider, AiProviderType, AiRequest};
 use crate::execution::VarSpace;
 use async_trait::async_trait;
+use getset::Getters;
 use orion_variate::vars::EnvDict;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -39,11 +40,13 @@ impl AiClientTrait for AiSendClient {
 }
 
 /// 主AI客户端，统一的API接口
+#[derive(Getters)]
+#[getset(get = "pub")]
 pub struct AiClient {
     providers: HashMap<AiProviderType, Arc<dyn AiProvider>>,
-    config: Arc<AiConfig>,
+    config: AiConfig,
     router: AiRouter,
-    role_config_manager: Arc<RoleConfigManager>,
+    roles: RoleConfigManager,
 }
 
 #[async_trait]
@@ -114,28 +117,25 @@ impl AiClient {
         );
 
         // 初始化角色配置管理器 - 优先使用简化配置
-        let role_config_manager =
+        let roles_manager =
             RoleConfigLoader::layered_load().unwrap_or_else(|_| RoleConfigManager::default());
 
         Ok(Self {
             providers,
-            config: Arc::new(config),
+            config,
             router: AiRouter::new(),
-            role_config_manager: Arc::new(role_config_manager),
+            roles: roles_manager,
         })
     }
 
     /// 构建基于角色的系统提示
     fn build_role_system_prompt(&self, role: AiRole) -> String {
         // 从配置文件中获取角色系统提示词
-        if let Some(role_config) = self.role_config_manager.get_role_config(&role.to_string()) {
+        if let Some(role_config) = self.roles.get_role_config(&role.to_string()) {
             let mut system_prompt = role_config.system_prompt.clone();
 
             // 尝试加载角色特定的规则配置
-            if let Ok(Some(role_rules)) = self
-                .role_config_manager
-                .get_role_rules_config(&role.to_string())
-            {
+            if let Ok(Some(role_rules)) = self.roles.get_role_rules_config(&role.to_string()) {
                 system_prompt = self.enhance_system_prompt_with_rules(system_prompt, &role_rules);
             }
             system_prompt

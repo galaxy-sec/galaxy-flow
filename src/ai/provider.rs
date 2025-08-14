@@ -66,12 +66,6 @@ impl ModelInfo {
     pub fn is_compatible_with_role(&self, _role: AiRole) -> bool {
         true // 简化：所有模型与所有角色兼容
     }
-
-    /// 检查模型是否为角色的推荐模型
-    pub fn is_recommended_for_role(&self, role: AiRole) -> bool {
-        let recommended_models = role.recommended_models();
-        recommended_models.contains(&self.name.as_str())
-    }
 }
 
 /// 统一AI请求结构
