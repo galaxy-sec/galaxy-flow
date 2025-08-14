@@ -74,10 +74,10 @@ async fn main() -> RunResult<()> {
         }
 
         Ok(_) => {
-            stop_redirect(redirect);
+            let _ = stop_redirect(redirect);
             return Ok(());
         }
     }
-    stop_redirect(redirect);
+    let _ = stop_redirect(redirect);
     process::exit(-1);
 }
