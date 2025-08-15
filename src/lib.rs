@@ -44,7 +44,6 @@ pub mod menu;
 pub mod parser;
 #[macro_use]
 pub mod util;
-pub mod ai;
 pub mod galaxy;
 pub mod infra;
 pub mod runner;

@@ -1,4 +1,5 @@
-use crate::{ai::AiErrReason, const_val::gxl_const, error::AssembleReason, ExecReason, ExecResult};
+use crate::{const_val::gxl_const, error::AssembleReason, ExecReason, ExecResult};
+use orion_ai::AiErrReason;
 use orion_error::{ErrorCode, StructError, UvsReason};
 
 use serde::Serialize;

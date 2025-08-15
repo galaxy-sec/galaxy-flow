@@ -177,15 +177,11 @@ impl AppendAble<Vec<BlockAction>> for BlockNode {
 mod tests {
 
     use orion_common::friendly::New2;
+    use orion_sec::sec::{NoSecConv, SecFrom, SecValueObj, SecValueType, SecValueVec, ToUniCase};
 
     //test RgBlock append
     use super::*;
-    use crate::{
-        model::components::gxl_block::BlockNode,
-        sec::{NoSecConv, SecFrom, ToUniCase},
-        traits::Getter,
-        var::VarDict,
-    };
+    use crate::{model::components::gxl_block::BlockNode, traits::Getter, var::VarDict};
     #[test]
     fn test_append() {
         let mut block = BlockNode::new();
@@ -207,10 +203,7 @@ mod tests {
 
     #[test]
     fn test_props_export_with_complex_data() {
-        use crate::{
-            primitive::GxlObject,
-            sec::{SecValueObj, SecValueType, SecValueVec},
-        };
+        use crate::primitive::GxlObject;
         use orion_variate::vars::ValueType;
 
         // 创建测试数据

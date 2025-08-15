@@ -1,3 +1,4 @@
+use orion_sec::sec::SecValueType;
 use wildmatch::WildMatch;
 
 use crate::calculate::compare::CmpExpress;
@@ -58,9 +59,7 @@ impl WildEq for GxlObject {
         match (self, other) {
             (GxlObject::VarRef(f), GxlObject::VarRef(s)) => f.eq(s),
             (GxlObject::Value(f), GxlObject::Value(s)) => match (f, s) {
-                (crate::sec::SecValueType::String(s1), crate::sec::SecValueType::String(s2)) => {
-                    s1.value().we(s2.value())
-                }
+                (SecValueType::String(s1), SecValueType::String(s2)) => s1.value().we(s2.value()),
                 _ => {
                     unreachable!("unsupport we op! only for string ");
                 }
@@ -95,7 +94,9 @@ impl ExpressEnum {}
 
 #[cfg(test)]
 mod tests {
-    use crate::{calculate::compare::BinRelation, execution::VarSpace, sec::SecFrom};
+    use orion_sec::sec::SecFrom;
+
+    use crate::{calculate::compare::BinRelation, execution::VarSpace};
 
     use super::*;
 
@@ -119,7 +120,6 @@ mod tests {
     #[test]
     fn test_gxl_object_we() {
         use crate::primitive::GxlObject;
-        use crate::sec::SecValueType;
 
         // 测试字符串通配符匹配
         let obj1 = GxlObject::Value(SecValueType::nor_from("hello*".to_string()));

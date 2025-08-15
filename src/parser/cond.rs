@@ -132,6 +132,7 @@ pub fn gal_cond(input: &mut &str) -> Result<GxlCond> {
 mod tests {
 
     use orion_error::TestAssert;
+    use orion_sec::sec::{SecFrom, SecValueType};
 
     use crate::{
         calculate::Evaluation,
@@ -142,7 +143,6 @@ mod tests {
             inner::run_gxl,
             stc_blk::gal_block,
         },
-        sec::{SecFrom, SecValueType},
         traits::Setter,
     };
 

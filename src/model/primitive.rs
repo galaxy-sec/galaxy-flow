@@ -2,7 +2,7 @@ use derive_more::From;
 use getset::{CopyGetters, Getters, MutGetters, WithSetters};
 use indexmap::IndexMap;
 
-use super::sec::{SecFrom, SecValueType};
+use orion_sec::sec::{SecFrom, SecValueType};
 
 #[derive(Clone, Debug, MutGetters, Getters, WithSetters, PartialEq, CopyGetters)]
 pub struct GxlFParam {

@@ -1,9 +1,9 @@
 use crate::{
-    sec::{NoSecConv, SecFrom, SecValueType},
     traits::{Getter, Setter},
     var::VarDict,
     ExecReason, ExecResult,
 };
+use orion_sec::sec::{NoSecConv, SecFrom, SecValueType};
 use regex::{Captures, Regex};
 use std::env;
 #[allow(unused_imports)]
@@ -173,8 +173,6 @@ mod tests {
     }
     #[test]
     pub fn array_variables() {
-        use crate::sec::SecValueType;
-
         // 准备测试数据：包含数组的变量
         let mut data = VarDict::default();
         data.set(

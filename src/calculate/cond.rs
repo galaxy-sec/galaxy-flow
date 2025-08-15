@@ -77,6 +77,8 @@ where
 
 #[cfg(test)]
 mod tests {
+    use orion_sec::sec::{SecFrom, SecValueType};
+
     use super::{CondExec, IFExpress, StuBlock};
     use crate::ability::prelude::{TaskResult, TaskValue, VarSpace};
     use crate::calculate::express::ExpressEnum;
@@ -85,7 +87,6 @@ mod tests {
     use crate::context::ExecContext;
     use crate::execution::runnable::ExecOut;
     use crate::primitive::GxlObject;
-    use crate::sec::{SecFrom, SecValueType};
     use crate::traits::Setter;
 
     // 创建一个简单的测试块实现 CondExec trait

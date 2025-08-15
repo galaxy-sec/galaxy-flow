@@ -19,13 +19,9 @@ pub fn gal_activity(input: &mut &str) -> Result<Activity> {
 mod tests {
 
     use orion_error::TestAssert;
+    use orion_sec::sec::{SecFrom, SecValueType};
 
-    use crate::{
-        parser::inner::run_gxl,
-        primitive::GxlFParam,
-        sec::{SecFrom, SecValueType},
-        util::OptionFrom,
-    };
+    use crate::{parser::inner::run_gxl, primitive::GxlFParam, util::OptionFrom};
 
     use super::*;
     #[test]

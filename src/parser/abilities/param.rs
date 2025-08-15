@@ -75,10 +75,9 @@ pub fn gal_actual_param(input: &mut &str) -> Result<GxlAParam> {
 #[cfg(test)]
 mod tests {
 
-    use crate::{
-        parser::inner::run_gxl,
-        sec::{SecFrom, SecValueType},
-    };
+    use orion_sec::sec::{SecFrom, SecValueType};
+
+    use crate::parser::inner::run_gxl;
 
     use super::*;
 

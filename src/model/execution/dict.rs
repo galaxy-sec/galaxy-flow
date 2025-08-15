@@ -3,14 +3,13 @@ use std::path::PathBuf;
 use derive_more::From;
 use dirs::home_dir;
 use orion_error::ToStructError;
+use orion_sec::sec::{SecFrom, SecString, SecValueType, ValueGetter};
 use orion_variate::vars::EnvDict;
 
 use super::global::{load_secfile, setup_gxlrun_vars, setup_start_vars};
 use crate::evaluator::{EnvExpress, VarParser};
-use crate::sec::{SecFrom, SecString};
 use crate::{
     primitive::{GxlAParams, GxlFParams, GxlObject},
-    sec::{SecValueType, ValueGetter},
     traits::Setter,
     var::VarDict,
     ExecReason, ExecResult,
@@ -132,12 +131,12 @@ pub enum DictUse {
 mod tests {
     use crate::{
         execution::{dict::sec_value_default_path, global::load_secfile},
-        sec::{SecFrom, ToUniCase},
         traits::{Getter, Setter},
         var::UniCaseMap,
     };
 
     use orion_error::TestAssertWithMsg;
+    use orion_sec::sec::ToUniCase;
     use std::{env::temp_dir, fs::File, io::Write};
 
     #[test]
@@ -174,7 +173,6 @@ mod tests {
         std::env::set_var("GAL_SEC_FILE_PATH", original_path);
     }
     use super::*;
-    use crate::sec::{SecString, SecValueType};
 
     #[test]
     fn test_get_top_level_key() {

@@ -1,10 +1,10 @@
 use home::home_dir;
+use orion_ai::AiConfig;
 use orion_common::serde::Yamlable;
 use orion_error::{ErrorOwe, UvsResFrom};
 use orion_variate::addr::access_ctrl::{serv::NetAccessCtrl, Rule, Unit};
 
 use crate::{
-    ai::AiConfig,
     const_val::gxl_const::{AI_CONF_FILE, NET_ACCESS_CTRL_FILE},
     err::{RunReason, RunResult},
 };

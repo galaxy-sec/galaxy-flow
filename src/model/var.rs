@@ -7,8 +7,8 @@ use orion_variate::vars::{EnvDict, ValueDict, ValueType};
 use unicase::UniCase;
 
 use super::execution::DictUse;
-use super::sec::{NoSecConv, SecFrom, SecValueObj, SecValueType, ToUniCase, ValueGetter};
 use super::traits::{Getter, Setter};
+use orion_sec::sec::{NoSecConv, SecFrom, SecValueObj, SecValueType, ToUniCase, ValueGetter};
 
 #[derive(Clone, PartialEq, Eq)]
 pub enum VarMeta {

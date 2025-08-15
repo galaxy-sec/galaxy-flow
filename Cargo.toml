@@ -3,11 +3,7 @@
 authors = ["wukong<sec-wukong@outlook.com>"]
 edition = "2021"
 name = "galaxy_flow"
-<<<<<<< HEAD
 version = "0.11.0"
-=======
-version = "0.10.3"
->>>>>>> release/0.10
 
 
 [[bin]]
@@ -19,7 +15,7 @@ name = "gprj"
 path = "app/gprj/main.rs"
 
 [workspace]
-members = [".", "crates/orion_parse"]
+members = [".", "crates/orion_parse", "crates/orion_ai", "crates/orion_sec"]
 
 [workspace.package]
 version = "1.0.0"
@@ -33,6 +29,9 @@ orion-error = { git = "https://github.com/galaxy-sec/orion-error.git", tag = "v0
 orion_common = { git = "https://github.com/galaxy-sec/orion-common.git", tag = "v0.3.0" }
 orion_infra = { git = "https://github.com/galaxy-sec/orion-infra.git", tag = "v0.3.0" }
 orion_variate = { git = "https://github.com/galaxy-sec/orion-variate.git", tag = "v0.7.0" }
+orion_parse = { path = "crates/orion_parse" }
+orion_sec = { path = "crates/orion_sec" }
+orion_ai = { path = "crates/orion_ai" }
 #orion_variate = { path = "../orion_variate" }
 #orion_infra = { path = "../orion_infra" }
 #orion_common = { path = "../orion_common" }
@@ -45,9 +44,11 @@ async-trait = "0.1"
 [dependencies]
 orion_common = { workspace = true }
 orion_infra = { workspace = true }
-uuid = "1.0.0"
-orion_parse = { path = "crates/orion_parse" }
 orion_variate = { workspace = true }
+orion_parse = { workspace = true }
+orion_sec = { workspace = true }
+orion_ai = { workspace = true }
+uuid = "1.0.0"
 derive-getters = "0.5"
 derive_builder = "0.20"
 derive_setters = "0.1"

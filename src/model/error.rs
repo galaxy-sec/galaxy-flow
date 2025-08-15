@@ -4,7 +4,7 @@ use orion_error::{ErrorCode, StructError, UvsReason};
 use serde::Serialize;
 use thiserror::Error;
 
-use crate::ai::AiErrReason;
+use orion_ai::AiErrReason;
 
 #[derive(Debug, PartialEq, Serialize, From, Error)]
 pub enum AssembleReason {

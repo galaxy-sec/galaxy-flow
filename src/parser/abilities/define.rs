@@ -3,13 +3,10 @@ use orion_parse::{
     define::{gal_raw_str, take_bool, take_float, take_number, take_string, take_var_ref_name},
     symbol::{symbol_assign, symbol_colon, wn_desc},
 };
+use orion_sec::sec::{SecFrom, SecValueObj, SecValueType, SecValueVec};
 use winnow::{combinator::separated, token::literal};
 
-use crate::{
-    primitive::GxlObject,
-    sec::{SecFrom, SecValueObj, SecValueType, SecValueVec},
-    var::UniString,
-};
+use crate::{primitive::GxlObject, var::UniString};
 pub fn gal_gxl_object(data: &mut &str) -> Result<GxlObject> {
     alt((
         take_var_ref_name.map(GxlObject::VarRef),
@@ -105,8 +102,9 @@ pub fn take_value_map(data: &mut &str) -> Result<SecValueObj> {
 mod tests {
 
     use orion_error::TestAssert;
+    use orion_sec::sec::ToUniCase;
 
-    use crate::{parser::inner::run_gxl, sec::ToUniCase};
+    use crate::parser::inner::run_gxl;
 
     use super::*;
 
@@ -178,7 +176,6 @@ mod tests {
     #[test]
     fn test_take_value_vec() -> Result<()> {
         use super::*;
-        use crate::sec::SecValueType;
 
         // 测试空列表
         let mut input = "[]";

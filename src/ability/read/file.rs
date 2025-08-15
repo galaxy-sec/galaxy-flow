@@ -1,11 +1,11 @@
 use std::path::PathBuf;
 
-use crate::sec::SecFrom;
+use crate::ability::prelude::*;
 use crate::traits::Setter;
-use crate::{ability::prelude::*, sec::SecValueType};
 
 use orion_common::serde::{IniAble, JsonAble, Yamlable};
 use orion_error::{ToStructError, UvsLogicFrom};
+use orion_sec::sec::{SecFrom, SecValueType};
 use orion_variate::vars::ValueType;
 
 #[derive(Clone, Debug, PartialEq, Default, Builder)]
@@ -64,6 +64,8 @@ impl FileDTO {
 
 #[cfg(test)]
 mod tests {
+
+    use orion_sec::sec::SecFrom;
 
     use super::*;
     use crate::ability::{read::integra::ReadMode, *};

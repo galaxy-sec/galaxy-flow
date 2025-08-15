@@ -2,14 +2,10 @@ use std::{env::current_dir, path::PathBuf};
 
 use orion_common::serde::Configable;
 use orion_error::{ErrorOwe, ErrorWith};
+use orion_sec::sec::{SecFrom, SecValueType};
 use orion_variate::vars::{ValueDict, ValueType};
 
-use crate::{
-    sec::{SecFrom, SecValueType},
-    traits::Setter,
-    var::VarDict,
-    ExecResult,
-};
+use crate::{traits::Setter, var::VarDict, ExecResult};
 
 use super::dict::{galaxy_dot_path, sec_value_default_path};
 use crate::const_val::gxl_const;
@@ -59,10 +55,18 @@ pub fn load_secfile(vars_dict: &mut VarDict) -> ExecResult<()> {
         let dict = ValueDict::from_conf(&path).owe_logic()?;
         info!(target: "exec","  load {}", path.display());
         for (k, v) in dict.iter() {
-            vars_dict.set(
-                format!("SEC_{}", k.to_uppercase()),
-                SecValueType::sec_from(v.clone()),
-            );
+            vars_dict.set(format!("SEC_{}", k.to_uppercase()), {
+                let value = v.clone();
+                match value {
+                    ValueType::String(v) => SecValueType::sec_from(v),
+                    ValueType::Bool(v) => SecValueType::sec_from(v),
+                    ValueType::Number(v) => SecValueType::sec_from(v),
+                    ValueType::Float(v) => SecValueType::sec_from(v),
+                    ValueType::Ip(v) => SecValueType::sec_from(v),
+                    ValueType::Obj(v) => SecValueType::sec_from(v),
+                    ValueType::List(v) => SecValueType::sec_from(v),
+                }
+            });
         }
     } else {
         let mut default = ValueDict::new();

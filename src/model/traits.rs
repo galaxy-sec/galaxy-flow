@@ -1,11 +1,11 @@
 use std::sync::Arc;
 
 use orion_error::{ToStructError, UvsLogicFrom};
+use orion_sec::sec::{SecFrom, SecValueObj, SecValueType, ToUniCase};
 
 use crate::{
     evaluator::{EnvExpress, VarParser},
     menu::GxMenu,
-    sec::{SecFrom, SecValueObj, SecValueType, ToUniCase},
     util::str_utils::{StringCutter, UpperKeyMaker},
     ExecReason,
 };
@@ -61,7 +61,7 @@ pub trait PropsTrait {
                 }
                 crate::primitive::GxlObject::Value(x) => {
                     match x {
-                        crate::sec::SecValueType::String(v) => {
+                        SecValueType::String(v) => {
                             let val = exp.eval(v.value())?;
                             info!(target: ctx.path(),"{old_ver_key:10} = {}",val.cut_str(20));
                             dict.set(&old_ver_key, val.clone());

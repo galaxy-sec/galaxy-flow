@@ -1,12 +1,12 @@
 use std::sync::mpsc::Sender;
 
 use orion_error::ErrorConv;
+use orion_sec::sec::SecValueType;
 
 use crate::ability::prelude::*;
 
 use crate::const_val::gxl_const;
 use crate::execution::runnable::AsyncRunnableWithSenderTrait;
-use crate::sec::SecValueType;
 use crate::util::redirect::ReadSignal;
 use crate::{
     runner::{GxlCmd, GxlRunner},

@@ -127,12 +127,12 @@ impl DependTrait<&GxlSpace> for Activity {
 #[cfg(test)]
 mod tests {
     use orion_error::TestAssert;
+    use orion_sec::sec::{SecFrom, SecValueType};
 
     use crate::{
         ability::ability_env_init,
         context::ExecContext,
         primitive::{GxlAParam, GxlFParam},
-        sec::{SecFrom, SecValueType},
         util::OptionFrom,
     };
 

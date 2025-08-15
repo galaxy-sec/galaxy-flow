@@ -1,12 +1,12 @@
 use std::sync::mpsc::Sender;
 
 use orion_error::{ToStructError, UvsLogicFrom, UvsReason};
+use orion_sec::sec::SecValueType;
 
 use super::prelude::*;
 use crate::{
     ability::prelude::TaskValue,
     execution::{runnable::AsyncRunnableWithSenderTrait, task::Task},
-    sec::SecValueType,
     traits::Setter,
     util::redirect::ReadSignal,
 };
@@ -86,13 +86,11 @@ impl AsyncRunnableWithSenderTrait for GxlLoop {
 mod tests {
     use super::*;
     use crate::{
-        ability::GxEcho,
-        components::gxl_block::BlockAction,
-        model::components::gxl_block::BlockNode,
-        sec::{SecFrom, SecValueObj, ToUniCase},
-        traits::Getter,
+        ability::GxEcho, components::gxl_block::BlockAction,
+        model::components::gxl_block::BlockNode, traits::Getter,
     };
     use orion_error::TestAssertWithMsg;
+    use orion_sec::sec::{SecFrom, SecValueObj, ToUniCase};
     use rstest::*;
 
     #[fixture]

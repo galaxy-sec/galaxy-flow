@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use crate::sec::{SecFrom, SecValueType};
+use orion_sec::sec::{SecFrom, SecValueType};
 
 pub trait OptionFrom<T> {
     fn to_opt(self) -> Option<T>;

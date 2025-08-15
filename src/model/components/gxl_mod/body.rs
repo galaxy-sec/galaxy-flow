@@ -342,6 +342,7 @@ mod test {
     use super::*;
     use orion_common::friendly::{MultiNew2, New2};
     use orion_error::TestAssertWithMsg;
+    use orion_sec::sec::{SecFrom, SecValueType, ToUniCase};
 
     use crate::{
         components::{
@@ -352,7 +353,6 @@ mod test {
         execution::sequence::ExecSequence,
         infra::{init_env, once_init_log},
         primitive::GxlObject,
-        sec::{SecFrom, SecValueType, ToUniCase},
         traits::{DependTrait, ExecLoadTrait},
         types::AnyResult,
     };
