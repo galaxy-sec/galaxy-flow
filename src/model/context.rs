@@ -11,6 +11,7 @@ pub struct ExecContext {
     #[getter(copy)]
     quiet: Option<bool>,
     dryrun: bool,
+    //accessor: Rc<UniversalAccessor>,
 }
 impl ExecContext {
     pub fn new(out: Option<bool>, dryrun: bool) -> Self {
@@ -20,9 +21,9 @@ impl ExecContext {
         ExecContext {
             abs_path: String::from(""),
             cur_path: String::from(cur_path),
-            env_vars: HashMap::new(),
             quiet: out,
             dryrun,
+            ..Default::default()
         }
     }
 

@@ -3,7 +3,7 @@ use std::env::Vars;
 use std::fmt::{Debug, Display};
 
 use indexmap::IndexMap;
-use orion_variate::vars::{ValueDict, ValueType};
+use orion_variate::vars::{EnvDict, ValueDict, ValueType};
 use unicase::UniCase;
 
 use super::execution::DictUse;
@@ -59,6 +59,15 @@ impl Display for VarDict {
     }
 }
 
+impl From<VarDict> for EnvDict {
+    fn from(value: VarDict) -> Self {
+        let mut dict = EnvDict::new();
+        for (k, v) in value.maps() {
+            dict.insert(k.to_uppercase(), v.clone().no_sec());
+        }
+        dict
+    }
+}
 impl VarDict {
     pub fn global_new() -> Self {
         VarDict {

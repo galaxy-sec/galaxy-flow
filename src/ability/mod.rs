@@ -1,5 +1,4 @@
 pub mod archive;
-pub mod artifact;
 pub mod assert;
 pub mod cmd;
 pub mod delegate;
@@ -70,5 +69,4 @@ pub trait EnvRender {
 pub use gxl::GxRun;
 pub use gxl::GxRunBuilder;
 
-pub use artifact::*;
 pub use load::{GxDownLoad, GxDownLoadBuilder, GxUpLoad, GxUpLoadBuilder};

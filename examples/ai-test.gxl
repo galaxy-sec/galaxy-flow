@@ -1,0 +1,68 @@
+mod ai_test {
+  // GXL-AI原生验证工作流 - 最小化实现
+  // 验证目标：证明GXL可以直接与AI大模型交互，生成有效Git Commit
+
+  env config {
+    api_model = "gpt-4o"
+    max_tokens = 150
+    timeout = 10
+  }
+
+  // ✅ 第1天验证：AI基础连接
+  flow test_ai_connection : config {
+    setup_message = "GXL-AI原生验证测试 - 当前已连接大模型"
+
+    # 使用GXL的shell集成直接与AI通信
+    ai_response = gx.shell( )
++
++    if [ -n "${ai_response}" ]; then
++      mx.echo "🎯 AI连接成功：${ai_response}"
++    else
++      mx.echo "❌ AI连接异常，检查API密钥"
++    fi
++  }
++
++  # ✅ 第2天验证：Git+AI集成
++  flow test_git_ai_integration : config {
++    # GXL直接读取Git变更（无中间层）
++    changes = gx.pipe("git diff --cached 2>/dev/null || echo 'no-staged-changes'")
++
++    if [ "${changes}" = "no-staged-changes" ]; then
++      mx.echo "💡 执行: git add example_test_file.txt 来创建测试变更"
++      return
++    fi
++
++    # AI直接理解变更意图
++    git_commit_suggestion = gx.pipe('''
++      cat <<EOF | curl -s -X POST "https://api.openai.com/v1/chat/completions" \
++        -H "Authorization: Bearer $OPENAI_API_KEY" \
++        -H "Content-Type: application/json" \
++        -d @-
++        {
++          "model": "gpt-4o",
++          "messages": [
++            {"role": "system", "content": "用50字以内中文总结代码变更，按Conventional Commits格式"},
++            {"role": "user", "content": "'"${changes}"'"}
++          ],
++          "max_tokens": 50
++        }
++      EOF | jq -r '.choices[0].message.content'
++    ''')
++
++    mx.echo "🚀 AI分析结果: ${git_commit_suggestion}"
++
++    # GXL与AI协同决策
++    should_commit = gx.confirm(
++      prompt: "使用AI建议的提交信息: ${git_commit_suggestion}? (y/n)",
++      accept_key: "y",
++      reject_key: "n"
++    )
++
++    if [ "${should_commit}" = "y" ]; then
++      git.commit(message: "${git_commit_suggestion}")
++      mx.echo "✅ AI智能提交完成！"
++    else
++      mx.echo "⏸️ 取消自动提交，可手动编辑"
++    fi
++  }
++}

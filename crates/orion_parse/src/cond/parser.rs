@@ -255,6 +255,7 @@ impl LogicSymbolGet for SQLSymbol {
     }
 }
 
+#[allow(dead_code)]
 pub struct ObjGet {}
 impl CmpParser<u32, RustSymbol> for ObjGet {
     fn cmp_exp(data: &mut &str) -> Result<CompareExpress<u32, RustSymbol>> {
