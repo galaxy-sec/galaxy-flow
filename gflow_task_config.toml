@@ -1,8 +1,0 @@
-report_enable = true
-
-[report_svr]
-domain = "127.0.0.1"
-port = 8066
-task_callback_center = "/task/create_batch_subtask/"
-task_reporting_center = "/task/update_subtask_info/"
-main_task_create_center = "/task/create_main_task/"

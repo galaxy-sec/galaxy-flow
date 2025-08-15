@@ -1,3 +1,7 @@
+<<<<<<< HEAD
+=======
+extern mod ver { path= "../../_gal/mods"; }
+>>>>>>> release/0.10
 mod sys {
     fn echo( *value ) {
         gx.echo ( "${value}");
@@ -13,14 +17,20 @@ mod sys {
           gx.echo ( "${prefix}-${value}-${item}");
       }
     }
+    fn echo_ver( version ) {
+        gx.echo ("${VERSION}") ;
+    }
 }
 mod envs {
-    env default {}
+    env default {
+        root = "../../" ;
+    }
 }
 mod main   {
-  flow conf  {
+  flow ver.use | @conf  {
     sys.echo( "hello");
     sys.echo_obj( "hello");
     sys.echo_list( value:"hello", list_msg: ["a","b","c"]);
+    sys.echo_ver( version : "${VERSION}") ;
   }
 }
