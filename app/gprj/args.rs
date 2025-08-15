@@ -4,7 +4,7 @@ use clap::Parser;
 use derive_getters::Getters;
 use galaxy_flow::runner::GxlCmd;
 
-#[derive(Debug, Parser)] // requires `derive` feature
+#[derive(Debug, Parser, Clone)] // requires `derive` feature
 #[command(name = "gprj adm")]
 #[command(version, about)]
 pub enum GxAdmCmd {
@@ -18,7 +18,7 @@ pub enum GxAdmCmd {
     Check,
 }
 
-#[derive(Debug, Subcommand)]
+#[derive(Debug, Subcommand, Clone)]
 pub enum InitCmd {
     /// init galaxy env
     Env,
@@ -27,12 +27,12 @@ pub enum InitCmd {
     /// init project with remote mod ;
     Prj(InitArgs),
 }
-#[derive(Debug, Subcommand)]
+#[derive(Debug, Subcommand, Clone)]
 pub enum UpdateCmd {
     Mod(PrjArgs),
 }
 
-#[derive(Debug, Subcommand)]
+#[derive(Debug, Subcommand, Clone)]
 pub enum ConfCmd {
     Init(ConfInitArgs),
 }
@@ -56,7 +56,7 @@ pub struct SysInsArgs {
     pub(crate) path: String,
 }
 
-#[derive(Debug, Args, Getters)]
+#[derive(Debug, Args, Getters, Clone)]
 pub struct InitArgs {
     /// chose init tpl  from rg-tpl repo. eg: --tpl open_pages , --tpl rust_prj
     #[arg(short, long, default_value = "simple")]
@@ -79,13 +79,13 @@ pub struct InitArgs {
     pub cmd_print: bool,
 }
 
-#[derive(Debug, Args, Getters)]
+#[derive(Debug, Args, Getters, Clone)]
 pub struct ConfInitArgs {
     #[arg(short = 'r', long = "remote", default_value = "false")]
     pub remote: bool,
 }
 
-#[derive(Debug, Args)]
+#[derive(Debug, Args, Clone)]
 pub struct PrjArgs {
     /// debug level ; eg: -d 1
     #[arg(short = 'd', long = "debug", default_value = "0")]

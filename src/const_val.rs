@@ -21,4 +21,5 @@ pub mod gxl_const {
     pub const NET_ACCS_CTRL_PATH_FILE: &str = ".galaxy/net_accessor_ctrl.yml";
     pub const NET_ACCESS_CTRL_FILE: &str = "net_accessor_ctrl.yml";
     pub const AI_CONF_FILE: &str = "ai.yml";
+    pub const AI_ROLE_FILE: &str = "ai-roles.yml";
 }

@@ -23,6 +23,7 @@ use galaxy_flow::execution::VarSpace;
 use galaxy_flow::galaxy::Galaxy;
 use galaxy_flow::infra::configure_run_logging;
 use galaxy_flow::runner::{GxlCmd, GxlRunner};
+use galaxy_flow::util::diagnose::ai_diagnose;
 use galaxy_flow::GxLoader;
 use include_dir::{include_dir, Dir};
 use orion_error::ErrorConv;
@@ -32,8 +33,11 @@ const ASSETS_DIR: Dir = include_dir!("app/gprj/init");
 #[tokio::main]
 async fn main() {
     use std::process;
-    match GxAdm::run().await {
-        Err(e) => report_gxl_error(e),
+    let cmd = GxAdmCmd::parse();
+    match GxAdm::run(cmd.clone()).await {
+        Err(e) => {
+            report_gxl_error(e);
+        }
         Ok(_) => {
             return;
         }
@@ -43,8 +47,7 @@ async fn main() {
 
 pub struct GxAdm {}
 impl GxAdm {
-    pub async fn run() -> RunResult<()> {
-        let cmd = GxAdmCmd::parse();
+    pub async fn run(cmd: GxAdmCmd) -> RunResult<()> {
         println!("galaxy-flow : {}", env!("CARGO_PKG_VERSION"));
         debug!("galaxy flow running .....");
         let mut gx = GxLoader::new();
@@ -79,7 +82,12 @@ impl GxAdm {
             cmd.conf = Some("./_gal/adm.gxl".to_string());
         }
         let var_space = VarSpace::sys_init().err_conv()?;
-        GxlRunner::run(cmd, var_space, None).await?;
+        if let Err(e) = GxlRunner::run(cmd.clone(), var_space.clone(), None).await {
+            report_gxl_error(e);
+            if cmd.ai {
+                ai_diagnose(&var_space).await?;
+            }
+        }
         Ok(())
     }
 

@@ -1,11 +1,11 @@
 use home::home_dir;
-use orion_ai::AiConfig;
+use orion_ai::{AiConfig, RoleConfigManager};
 use orion_common::serde::Yamlable;
 use orion_error::{ErrorOwe, UvsResFrom};
 use orion_variate::addr::access_ctrl::{serv::NetAccessCtrl, Rule, Unit};
 
 use crate::{
-    const_val::gxl_const::{AI_CONF_FILE, NET_ACCESS_CTRL_FILE},
+    const_val::gxl_const::{AI_CONF_FILE, AI_ROLE_FILE, NET_ACCESS_CTRL_FILE},
     err::{RunReason, RunResult},
 };
 
@@ -45,10 +45,20 @@ impl Galaxy {
 
         let ai_conf_path = galaxy_dir.join(AI_CONF_FILE);
         if ai_conf_path.exists() {
-            println!(" {} exists! , ai init ignore", ai_conf_path.display());
-            return Ok(());
+            println!(
+                " {} exists! , ai provider init ignore",
+                ai_conf_path.display()
+            );
         } else {
             AiConfig::example().save_yml(&ai_conf_path).owe_res()?;
+        }
+        let ai_role_path = galaxy_dir.join(AI_ROLE_FILE);
+        if !ai_role_path.exists() {
+            RoleConfigManager::default()
+                .save_yml(&ai_role_path)
+                .owe_res()?;
+        } else {
+            println!(" {} exists! , ai role init ignore", ai_role_path.display());
         }
         Ok(())
     }
