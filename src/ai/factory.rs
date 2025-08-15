@@ -5,7 +5,7 @@ use crate::ai::error::{AiError, AiResult};
 use crate::ai::provider::AiRequest;
 use crate::ai::thread::recorder::ThreadClient;
 
-use super::client::{AiClient, AiClientTrait, AiSendClient};
+use super::client::{AiClient, AiClientTrait, AiCoreClient};
 use super::provider::AiResponse;
 use super::{AiConfig, AiErrReason};
 /// AI客户端枚举，支持静态分发
@@ -37,7 +37,7 @@ impl AiClientEnum {
         let thread_config = config.thread.clone();
 
         Ok(Self::ThreadRecording(Box::new(ThreadClient::new(
-            AiSendClient::Basic(basic_client),
+            AiCoreClient::Basic(basic_client),
             thread_config,
         ))))
     }

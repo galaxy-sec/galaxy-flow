@@ -12,7 +12,7 @@ use crate::const_val::gxl_const::AI_CONF_FILE;
 use crate::{ExecReason, ExecResult};
 
 /// AI配置主结构
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize,)]
 pub struct AiConfig {
     pub providers: HashMap<AiProviderType, ProviderConfig>,
     pub routing: RoutingRules,

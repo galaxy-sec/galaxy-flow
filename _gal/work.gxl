@@ -30,7 +30,7 @@ mod main  {
       HOME_BIN = "${HOME}/bin" ;
 
     #[auto_load(entry)]
-    flow __into | _conf {
+    flow __into | conf {
         DIST_REPO = "unkonw";
         if defined(${GXL_OS_SYS}) {
              gx.echo (  "${GXL_OS_SYS} is defined " )
@@ -46,11 +46,11 @@ mod main  {
 
     }
     #[task(name="config")]
-    flow _conf  {
+    flow conf  {
     }
 
   #[task(name="${ENV_PRJ_KEY}@build")]
-  flow ver.use | _conf | rust_flow.build | @build | _pub_local {
+  flow ver.use | conf | rust_flow.build | @build | _pub_local {
       gx.echo(  "${MAIN_HOME_BIN}" );
       //os.path (  "${MAIN_HOME_BIN}" );
   }

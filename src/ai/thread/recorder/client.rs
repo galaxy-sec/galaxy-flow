@@ -3,21 +3,21 @@ use std::sync::Arc;
 
 use super::ThreadFileManager;
 use crate::ai::capabilities::AiRole;
-use crate::ai::client::{AiClientTrait, AiSendClient};
+use crate::ai::client::{AiClientTrait, AiCoreClient};
 use crate::ai::config::ThreadConfig;
 use crate::ai::error::AiResult;
 use crate::ai::provider::{AiRequest, AiResponse};
 
 /// Thread记录客户端 - 嵌套式静态分发
 pub struct ThreadClient {
-    inner: AiSendClient,       // 内部是AiClientEnum
+    inner: AiCoreClient,       // 内部是AiClientEnum
     config: Arc<ThreadConfig>, // Thread配置
     file_manager: Arc<ThreadFileManager>,
 }
 
 impl ThreadClient {
     /// 创建新的Thread记录客户端
-    pub fn new(inner: AiSendClient, config: ThreadConfig) -> Self {
+    pub fn new(inner: AiCoreClient, config: ThreadConfig) -> Self {
         let config_arc = Arc::new(config);
         Self {
             inner,

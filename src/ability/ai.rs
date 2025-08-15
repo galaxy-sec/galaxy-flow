@@ -6,11 +6,12 @@ use crate::ai::client::AiClientTrait;
 use crate::ai::{client::AiClient, config::AiConfig};
 use getset::{Getters, MutGetters, Setters, WithSetters};
 use orion_error::{ErrorConv, ToStructError, UvsResFrom};
-#[derive(Clone, Debug, Default, PartialEq, Getters, Setters, WithSetters, MutGetters)]
+#[derive(Clone, Debug, Default,  Getters, Setters, WithSetters, MutGetters)]
 #[getset(get = "pub", set = "pub", get_mut = "pub", set_with = "pub")]
 pub struct GxAIChat {
     prompt_file: Option<String>,
     prompt_msg: Option<String>,
+    ai_config: Option<AiConfig>,
 }
 #[async_trait]
 impl AsyncRunnableTrait for GxAIChat {
@@ -49,7 +50,7 @@ impl GxAIChat {
         }
 
         // call ai clien
-        let ai_config = AiConfig::galaxy_load(&vars_dict.global().export().into())?;
+        let ai_config = self.ai_config().clone().unwrap_or(AiConfig::galaxy_load(&vars_dict.global().export().into())?);
         let ai_client = AiClient::new(ai_config).err_conv()?;
         let role = ai_client.roles().default_role;
         //ai_config
@@ -79,18 +80,22 @@ impl GxAIChat {
 mod tests {
 
     use orion_error::TestAssert;
+    use orion_variate::vars::EnvEvalable;
 
     use crate::{
-        ability::{ability_env_init, ai::GxAIChat, prelude::AsyncRunnableTrait},
-        traits::Setter,
-        util::OptionFrom,
+        ability::{ability_env_init, ai::GxAIChat, prelude::AsyncRunnableTrait}, ai::{client::load_key_dict, AiConfig}, traits::Setter, util::OptionFrom
     };
     #[tokio::test]
     async fn ai_chat() {
+     let config = if let Some(dict) = load_key_dict("sec_deepseek_api_key") {
+        AiConfig::example().env_eval(&dict)
+    } else {
+        return;
+    };
         let (context, mut def) = ability_env_init();
         def.global_mut()
             .set("CONF_ROOT", "${GXL_PRJ_ROOT}/tests/material");
-        let res = GxAIChat::default().with_prompt_msg(" 1 + 1 = ?".to_opt());
+        let res = GxAIChat::default().with_ai_config(Some(config)).with_prompt_msg(" 1 + 1 = ?".to_opt());
         let _ = res.async_exec(context, def).await.assert();
     }
 }

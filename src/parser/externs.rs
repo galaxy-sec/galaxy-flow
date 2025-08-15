@@ -202,14 +202,14 @@ mod tests {
         let up_opt = DownloadOptions::for_test();
         let parser = ExternParser::new();
         let vars = VarSpace::sys_init().assert();
-        let mut data = r#"extern mod ssh { path = "./_gal/mods";}"#;
+        let mut data = r#"extern mod ssh { path = "./examples/moduse/mods";}"#;
         let (codes, _have_ext) = parser
             .extern_parse(&up_opt, &mut data, &vars, None)
             .await
             .assert();
 
-        let mut expect = read_to_string("./_gal/mods/ssh.gxl").unwrap();
-        expect = expect.replace("@PATH", "./_gal/mods");
+        let mut expect = read_to_string("./examples/moduse/mods/ssh.gxl").unwrap();
+        expect = expect.replace("@PATH", "./examples/moduse/mods");
         assert_eq!(codes, expect);
     }
     #[tokio::test]
@@ -217,13 +217,13 @@ mod tests {
         let vars = VarSpace::sys_init().assert();
         let dw_opt = DownloadOptions::for_test();
         let parser = ExternParser::new();
-        let mut data = r#"extern mod os,ssh { path = "./_gal/mods";}"#;
+        let mut data = r#"extern mod os,ssh { path = "./examples/moduse/mods";}"#;
         let (codes, _have_ext) = parser
             .extern_parse(&dw_opt, &mut data, &vars, None)
             .await
             .assert();
-        let mut expect = read_to_string("./_gal/tests/_all.gxl").assert();
-        expect = expect.replace("@PATH", "./_gal/mods");
+        let mut expect = read_to_string("./examples/moduse/expect/_all.gxl").unwrap();
+        expect = expect.replace("@PATH", "./examples/moduse/mods");
         println!("{codes}",);
         assert_eq!(codes, expect);
     }

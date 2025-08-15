@@ -16,7 +16,7 @@ pub use factory::AiClientEnum;
 pub use router::*;
 
 // 客户端相关导出
-pub use client::{AiClient, AiClientTrait, AiSendClient};
+pub use client::{AiClient, AiClientTrait, AiCoreClient};
 pub use thread::recorder::{ThreadClient, ThreadFileManager};
 
 // Thread相关导出
