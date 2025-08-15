@@ -1,4 +1,3 @@
-extern mod os { path= "../../_gal/mods"; }
 mod base_env {
     env _common {
       gx.vars {

@@ -1,4 +1,3 @@
-extern mod os { path= "../../_gal/mods"; }
 mod sys {
     fn echo( *value ) {
         gx.echo ( "${value}");
