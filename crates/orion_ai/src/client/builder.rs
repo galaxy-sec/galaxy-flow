@@ -6,7 +6,7 @@ use log::debug;
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use super::client::AiClient;
+use super::AiClient;
 use crate::providers::{mock, openai};
 
 /// AiClient 构建器
