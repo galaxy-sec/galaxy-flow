@@ -4,6 +4,9 @@ use derive_more::From;
 use dirs::home_dir;
 use orion_error::ToStructError;
 
+use super::global::{load_secfile, setup_gxlrun_vars, setup_start_vars};
+use crate::evaluator::{EnvExpress, VarParser};
+use crate::sec::{SecFrom, SecString};
 use crate::{
     primitive::{GxlAParams, GxlFParams, GxlObject},
     sec::{SecValueType, ValueGetter},
@@ -11,8 +14,6 @@ use crate::{
     var::VarDict,
     ExecReason, ExecResult,
 };
-
-use super::global::{load_secfile, setup_gxlrun_vars, setup_start_vars};
 
 #[derive(Debug, Clone, Default, PartialEq, From, Getters)]
 pub struct VarSpace {
@@ -72,6 +73,7 @@ impl VarSpace {
         a_params: &GxlAParams,
     ) -> ExecResult<VarSpace> {
         let mut cur_vars = self.clone();
+        let exp = EnvExpress::new(self.global().clone());
         for param in f_params {
             let found = if param.is_default() {
                 //use default actura name
@@ -88,9 +90,18 @@ impl VarSpace {
                         cur_vars.global_mut().set(param.name().clone(), value);
                     }
                     GxlObject::Value(value) => {
-                        cur_vars
-                            .global_mut()
-                            .set(param.name().clone(), value.clone());
+                        // 先求值处理
+                        let conv_value = if let SecValueType::String(str_val) = value {
+                            let cur_value = exp.safe_eval(str_val.value().as_str());
+                            if str_val.is_secret() {
+                                SecValueType::String(SecString::sec_from(cur_value))
+                            } else {
+                                SecValueType::String(SecString::nor_from(cur_value))
+                            }
+                        } else {
+                            value.clone()
+                        };
+                        cur_vars.global_mut().set(param.name().clone(), conv_value);
                     }
                 }
             } else {
