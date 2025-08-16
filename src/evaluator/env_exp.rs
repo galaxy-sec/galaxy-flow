@@ -111,7 +111,12 @@ impl VarParser<&str> for EnvExpress {
             if self.regex.find(target.as_str()).is_none() {
                 break;
             }
-            target = self.regex.replace_all(target.as_str(), &fun).to_string();
+            let new_string = self.regex.replace_all(target.as_str(), &fun).to_string();
+            // target not change , need break;
+            if new_string == target {
+                break;
+            }
+            target = new_string;
         }
         target
     }
