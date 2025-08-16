@@ -73,7 +73,7 @@ impl VarSpace {
         a_params: &GxlAParams,
     ) -> ExecResult<VarSpace> {
         let mut cur_vars = self.clone();
-        let exp = EnvExpress::new(self.global().clone());
+        let exp = EnvExpress::from_env_mix(self.global().clone());
         for param in f_params {
             let found = if param.is_default() {
                 //use default actura name
