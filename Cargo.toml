@@ -1,11 +1,17 @@
 
 [package]
+
+<<<<<<< HEAD
+version = "0.11.0"
+=======
+
+>>>>>>> remotes/origin/release/0.10
+
+
 authors = ["wukong<sec-wukong@outlook.com>"]
 edition = "2021"
 name = "galaxy_flow"
-version = "0.11.0"
-
-
+version = "0.10.4"
 [[bin]]
 name = "gflow"
 path = "app/gflow/main.rs"
