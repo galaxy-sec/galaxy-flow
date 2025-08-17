@@ -27,7 +27,7 @@ winnow = "0.7.11"
 orion-error = { git = "https://github.com/galaxy-sec/orion-error.git", tag = "v0.4.0" }
 orion_common = { git = "https://github.com/galaxy-sec/orion-common.git", tag = "v0.3.0" }
 orion_infra = { git = "https://github.com/galaxy-sec/orion-infra.git", tag = "v0.3.0" }
-orion_variate = { git = "https://github.com/galaxy-sec/orion-variate.git", tag = "v0.7.4" }
+orion_variate = { git = "https://github.com/galaxy-sec/orion-variate.git", tag = "v0.7.5" }
 orion_parse = { path = "crates/orion_parse" }
 orion_sec = { path = "crates/orion_sec" }
 orion_ai = { path = "crates/orion_ai" }
