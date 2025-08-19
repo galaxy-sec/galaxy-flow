@@ -1,9 +1,9 @@
 use home::home_dir;
 use orion_common::serde::Yamlable;
-use orion_error::{ErrorOwe, UvsResFrom};
+use orion_error::{ErrorOwe, ToStructError, UvsResFrom};
 use orion_variate::addr::access_ctrl::{serv::NetAccessCtrl, Rule, Unit};
 
-use crate::err::{RunError, RunResult};
+use crate::err::{RunReason, RunResult};
 
 pub struct Galaxy {}
 const NET_ACCESS_CTRL_FILE: &str = "net_accessor_ctrl.yml";
@@ -16,7 +16,7 @@ impl Galaxy {
     pub fn env_init() -> RunResult<()> {
         // 获取家目录并构建环境目录
         let galaxy_dir = home_dir()
-            .ok_or_else(|| RunError::from_res("Cannot find home directory".into()))?
+            .ok_or_else(|| RunReason::from_res("Cannot find home directory".into()).to_err())?
             .join(".galaxy");
 
         // 创建目录

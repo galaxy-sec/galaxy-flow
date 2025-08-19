@@ -16,6 +16,7 @@ use crate::meta::*;
 use contracts::requires;
 use derive_getters::Getters;
 use indexmap::IndexMap;
+use orion_error::ToStructError;
 use orion_error::UvsLogicFrom;
 use orion_infra::auto_exit_log;
 
@@ -171,7 +172,7 @@ impl GxlMod {
         for mix in mix_name {
             let mix_mod = src
                 .get(mix.as_str())
-                .ok_or(AssembleError::from_logic(format!("no mix: {mix} ")))?;
+                .ok_or(AssembleReason::from_logic(format!("no mix: {mix} ")).to_err())?;
             self.merge(mix_mod);
         }
         Ok(self)

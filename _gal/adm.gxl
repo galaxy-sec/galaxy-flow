@@ -1,9 +1,9 @@
-extern mod cfm { git = "https://github.com/galaxy-operators/cfm-gxl.git", branch = "${GXL_CHANNEL:develop}" }
+extern mod cfm { git = "https://github.com/galaxy-operators/cfm-gxl.git", branch = "${GXL_CHANNEL:beta}" }
 mod  envs {
   env default {
   }
 }
-mod main  : ver_adm {
+mod main  : sys_ver_adm {
   flow setup_depends {
     gx.cmd (  "cargo install cargo-semver --vers 1.0.0-alpha.3" );
   }
