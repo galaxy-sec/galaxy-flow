@@ -5,7 +5,7 @@ use std::path::PathBuf;
 
 use crate::{ability::prelude::*, expect::LogicScope, traits::Setter, var::VarDict};
 use getset::{Getters, MutGetters, Setters, WithSetters};
-use orion_error::UvsLogicFrom;
+use orion_error::{ToStructError, UvsLogicFrom};
 use orion_variate::vars::ValueDict;
 #[derive(Clone, Debug, Default, PartialEq, Getters, Setters, WithSetters, MutGetters)]
 pub struct GxShell {
@@ -61,11 +61,11 @@ impl GxShell {
             } else if arg_file.extension() == PathBuf::from("data.ini").extension() {
                 ValueDict::from_ini(arg_file).owe_data()?
             } else {
-                return ExecError::from_logic(format!(
+                return ExecReason::from_logic(format!(
                     "unsupport this format {}",
                     arg_file.display()
                 ))
-                .err();
+                .err_result();
             };
             vars_dict.global_mut().merge_dict(VarDict::from(dict));
         }

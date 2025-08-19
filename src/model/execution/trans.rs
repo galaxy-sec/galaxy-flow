@@ -68,10 +68,10 @@ mod tests {
         context::ExecContext,
         meta::GxlMeta,
         util::redirect::ReadSignal,
-        ExecError,
+        ExecReason,
     };
     use async_trait::async_trait;
-    use orion_error::UvsLogicFrom;
+    use orion_error::{ToStructError, UvsLogicFrom};
     use std::sync::{mpsc::Sender, Arc, Mutex};
 
     // Mock runnable task for testing
@@ -99,7 +99,7 @@ mod tests {
             *count += 1;
 
             if self.should_fail {
-                Err(ExecError::from_logic("should_fail".into()))
+                Err(ExecReason::from_logic("should_fail".into()).to_err())
             } else {
                 Ok(TaskValue::new(_vars, ExecOut::Ignore))
             }
@@ -118,7 +118,7 @@ mod tests {
             *count += 1;
 
             if self.should_fail {
-                Err(ExecError::from_logic("should_fail".into()))
+                Err(ExecReason::from_logic("should_fail".into()).to_err())
             } else {
                 Ok(TaskValue::new(_vars, ExecOut::Ignore))
             }

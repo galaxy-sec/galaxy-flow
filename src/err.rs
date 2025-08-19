@@ -71,26 +71,38 @@ pub fn report_gxl_error(e: RunError) {
             UvsReason::LogicError(e) => {
                 println!("LOGIC ERROR: {e}\n",);
             }
-            UvsReason::BizError(e) => {
+            UvsReason::BusinessError(e) => {
                 println!("BIZ ERROR: {e}\n",);
             }
             UvsReason::DataError(e, _) => {
                 println!("DATA ERROR: {e}\n",);
             }
-            UvsReason::SysError(e) => {
+            UvsReason::SystemError(e) => {
                 println!("SYS ERROR: {e}\n",);
             }
-            UvsReason::ResError(e) => {
+            UvsReason::ResourceError(e) => {
                 println!("RES ERROR: {e}\n",);
             }
-            UvsReason::ConfError(e) => {
+            UvsReason::ConfigError(e) => {
                 println!("CONF ERROR: {e}\n",);
             }
-            UvsReason::RuleError(e) => {
-                println!("RULE ERROR: {e}\n",);
+            UvsReason::ValidationError(e) => {
+                println!("ERROR: {e}\n");
             }
-            UvsReason::PrivacyError(e) => {
-                println!("PRIVACY ERROR: {e}\n",);
+            UvsReason::NotFoundError(e) => {
+                println!("ERROR: {e}\n");
+            }
+            UvsReason::PermissionError(e) => {
+                println!("ERROR: {e}\n");
+            }
+            UvsReason::NetworkError(e) => {
+                println!("ERROR: {e}\n");
+            }
+            UvsReason::TimeoutError(e) => {
+                println!("ERROR: {e}\n");
+            }
+            UvsReason::ExternalError(e) => {
+                println!("ERROR: {e}\n");
             }
         },
         RunReason::Gxl(e) => {
