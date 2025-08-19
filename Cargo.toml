@@ -3,7 +3,7 @@
 authors = ["wukong<sec-wukong@outlook.com>"]
 edition = "2021"
 name = "galaxy_flow"
-version = "0.10.7"
+version = "0.10.8"
 
 
 [[bin]]
@@ -43,7 +43,6 @@ orion_parse = { path = "crates/orion_parse" }
 orion_variate = { workspace = true }
 derive-getters = "0.5"
 derive_builder = "0.20"
-derive_setters = "0.1"
 getset = "0.1.6"
 duct = "1.1.0"
 duct_sh = "1.0.0"
