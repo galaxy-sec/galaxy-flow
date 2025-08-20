@@ -15,6 +15,8 @@ pub fn gal_ai_chat(input: &mut &str) -> Result<GxAIChat> {
             chat.set_prompt_msg(one.1.to_opt());
         } else if key == "prompt_file" {
             chat.set_prompt_file(one.1.to_opt());
+        } else if key == "role" {
+            chat.set_ai_role(one.1.to_opt());
         }
     }
     Ok(chat)
@@ -46,9 +48,10 @@ mod tests {
     #[test]
     fn ai_chat_file() {
         let mut data = r#"
-             gx.ai_chat( prompt_file: "./ai_chat.txt" ) ;"#;
+             gx.ai_chat( prompt_file: "./ai_chat.txt" , role: "developer") ;"#;
         let obj = gal_ai_chat(&mut data).assert();
         assert_eq!(data, "");
         assert_eq!(obj.prompt_file(), &Some("./ai_chat.txt".to_string()));
+        assert_eq!(obj.ai_role(), &Some("developer".to_string()));
     }
 }

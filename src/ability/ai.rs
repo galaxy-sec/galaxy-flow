@@ -1,5 +1,5 @@
 use chrono::Local;
-use orion_ai::{AiClient, AiClientTrait, AiConfig};
+use orion_ai::{AiClient, AiClientTrait, AiConfig, AiRoleID};
 use std::path::PathBuf;
 
 use crate::ability::prelude::*;
@@ -11,6 +11,7 @@ pub struct GxAIChat {
     prompt_file: Option<String>,
     prompt_msg: Option<String>,
     ai_config: Option<AiConfig>,
+    ai_role: Option<String>,
 }
 #[async_trait]
 impl AsyncRunnableTrait for GxAIChat {
@@ -54,7 +55,11 @@ impl GxAIChat {
             .clone()
             .unwrap_or(AiConfig::galaxy_load(&vars_dict.global().export().into()).err_conv()?);
         let ai_client = AiClient::new(ai_config, None).err_conv()?;
-        let role = ai_client.roles().default_role().clone();
+        let role = self
+            .ai_role()
+            .as_ref()
+            .map(AiRoleID::new)
+            .unwrap_or(ai_client.roles().default_role().clone());
         //ai_config
         let ai_response = ai_client
             .smart_role_request(&role, message.as_str())
