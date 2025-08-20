@@ -31,9 +31,8 @@ impl RoleConfigLoader {
 
     /// 分层加载角色配置管理器
     /// 优先级：项目级配置 > 用户级配置
-    pub fn layered_load() -> AiResult<RoleConfigManager> {
-        // 检查项目级配置是否存在
-        let project_roles_path = PathBuf::from("_gal/ai-roles.yml");
+    pub fn layered_load(role_file: Option<PathBuf>) -> AiResult<RoleConfigManager> {
+        let project_roles_path = role_file.unwrap_or(PathBuf::from("_gal/ai-roles.yml"));
 
         // 检查用户级配置路径
         let user_home = dirs::home_dir().ok_or_else(|| {
@@ -48,7 +47,7 @@ impl RoleConfigLoader {
                 project_roles_path.display()
             );
             let manager = RoleConfigManager::from_yml(&project_roles_path).err_conv()?;
-            for k in manager.roles.keys() {
+            for k in manager.roles().keys() {
                 info!("load role :{k}");
             }
             return Ok(manager);
@@ -91,5 +90,89 @@ impl RoleConfigLoader {
 
         // 如果都没有找到，返回原始路径
         Ok(PathBuf::from(base_rules_path))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs;
+    use tempfile::tempdir;
+
+    #[test]
+    fn test_load_with_valid_config() {
+        // 创建临时配置文件
+        let temp_dir = tempdir().unwrap();
+        let config_path = temp_dir.path().join("test-roles.yml");
+
+        let config_content = r#"
+default_role:
+  id: developer
+default_model: deepseek-chat
+roles:
+  developer:
+    name: developer
+    description: 测试开发者角色
+    system_prompt: 你是一个测试开发者
+    used_model: deepseek-chat
+    default_model: null
+    rules_path: ai-rules/developer
+  operations:
+    name: operations
+    description: 测试运维角色
+    system_prompt: 你是一个测试运维专家
+    used_model: deepseek-chat
+    default_model: null
+    rules_path: ai-rules/operations
+"#;
+
+        fs::write(&config_path, config_content).unwrap();
+
+        // 测试加载配置
+        let result = RoleConfigLoader::load(Some(config_path.to_string_lossy().to_string()));
+
+        // 验证结果
+        assert!(result.is_ok());
+        let manager = result.unwrap();
+        assert_eq!(manager.default_role().to_string(), "developer");
+        assert!(manager.role_exists("developer"));
+        assert!(manager.role_exists("operations"));
+
+        // 验证角色配置内容
+        let dev_config = manager.get_role_config("developer").unwrap();
+        assert_eq!(dev_config.name(), "developer");
+        assert_eq!(dev_config.description(), "测试开发者角色");
+        assert_eq!(dev_config.system_prompt(), "你是一个测试开发者");
+    }
+
+    #[test]
+    fn test_load_with_none_config() {
+        let result = RoleConfigLoader::load(None);
+
+        // 验证返回错误
+        assert!(result.is_err());
+        let error = result.unwrap_err();
+        assert!(error.to_string().contains("role config is none"));
+    }
+
+    #[test]
+    fn test_get_layered_rules_path() {
+        // 测试项目级规则路径
+        let result = RoleConfigLoader::get_layered_rules_path("ai-rules/developer");
+        assert!(result.is_ok());
+        let path = result.unwrap();
+
+        // 检查路径是否正确构建
+        // 由于用户目录可能存在，我们应该检查返回的路径是否是有效的组合路径
+        // 而不是硬编码比较特定路径
+        assert!(path.ends_with("ai-rules/developer"));
+
+        // 检查路径是否是项目级或用户级的组合
+        let path_str = path.to_string_lossy();
+        let is_project_path = path_str.contains("_gal");
+        let is_user_path = path_str.contains(".galaxy");
+
+        // 应该是项目级或用户级路径之一
+        assert!(is_project_path || is_user_path);
     }
 }

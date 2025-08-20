@@ -1,8 +1,11 @@
-use crate::capabilities::AiRole;
+use std::path::PathBuf;
+
 use crate::client::{load_key_dict, AiClient, AiClientTrait};
 use crate::infra::once_init_log;
 use crate::provider::{AiProviderType, AiRequest};
+use crate::roleid::AiRoleID;
 use crate::AiConfig;
+use orion_error::TestAssertWithMsg;
 use orion_variate::vars::EnvEvalable;
 
 fn create_mock_config() -> AiConfig {
@@ -35,8 +38,9 @@ async fn test_client_with_deepseek() {
     } else {
         return;
     };
+    let role_file = PathBuf::from("./examples/ai-roles.yml");
     // 创建配置，启用 DeepSeek
-    let client = AiClient::new(config).expect("Failed to create AiClient");
+    let client = AiClient::new(config, Some(role_file)).assert("ai-cleint new");
 
     // 验证 DeepSeek 可用
     assert!(client.is_provider_available(AiProviderType::DeepSeek));
@@ -75,10 +79,12 @@ async fn test_client_smart_request_with_deepseek() {
     } else {
         return;
     };
-    let client = AiClient::new(config).expect("Failed to create AiClient");
+    let role_file = PathBuf::from("../../_gal/ai-roles.yml");
+    let client = AiClient::new(config, Some(role_file)).expect("Failed to create AiClient");
     // 使用 smart_role_request 方法
+    let role = AiRoleID::new("developer");
     let response = client.smart_role_request(
-        AiRole::Developer,
+        &role,
         "分析这个函数的性能：\nfn fibonacci(n: u64) -> u64 { if n <= 1 { n } else { fibonacci(n-1) + fibonacci(n-2) } }"
     ).await;
 
@@ -98,7 +104,8 @@ async fn test_client_provider_fallback() {
     // 测试当 DeepSeek 不可用时的回退机制
     let config = create_mock_config();
 
-    let client = AiClient::new(config).expect("Failed to create AiClient");
+    let role_file = PathBuf::from("../../_gal/ai-roles.yml");
+    let client = AiClient::new(config, Some(role_file)).expect("Failed to create AiClient");
 
     // 验证 Mock provider 可用
     assert!(client.is_provider_available(AiProviderType::Mock));
@@ -109,11 +116,13 @@ async fn test_client_provider_fallback() {
 fn test_build_ai_request_with_valid_role() {
     once_init_log();
     let config = create_mock_config();
-    let client = AiClient::new(config).expect("Failed to create AiClient");
+    let role_file = PathBuf::from("../../_gal/ai-roles.yml");
+    let client = AiClient::new(config, Some(role_file)).expect("Failed to create AiClient");
 
     // 测试开发者角色
+    let role = AiRoleID::new("developer");
     let request = client
-        .build_ai_request(AiRole::Developer, "请解释什么是Rust的所有权系统")
+        .build_ai_request(&role, "请解释什么是Rust的所有权系统")
         .expect("Failed to build AI request");
 
     // 验证请求结构
@@ -121,18 +130,20 @@ fn test_build_ai_request_with_valid_role() {
     assert!(!request.system_prompt.is_empty());
     assert_eq!(request.user_prompt, "请解释什么是Rust的所有权系统");
     assert!(request.role.is_some());
-    assert_eq!(request.role.unwrap(), AiRole::Developer);
+    assert_eq!(request.role.unwrap(), AiRoleID::new("developer"));
 }
 
 #[test]
 fn test_build_ai_request_with_operations_role() {
     once_init_log();
     let config = create_mock_config();
-    let client = AiClient::new(config).expect("Failed to create AiClient");
+    let role_file = PathBuf::from("../../_gal/ai-roles.yml");
+    let client = AiClient::new(config, Some(role_file)).expect("Failed to create AiClient");
 
     // 测试运维角色
+    let role = AiRoleID::new("operations");
     let request = client
-        .build_ai_request(AiRole::Operations, "如何检查Linux系统性能")
+        .build_ai_request(&role, "如何检查Linux系统性能")
         .expect("Failed to build AI request");
 
     // 验证请求结构
@@ -140,18 +151,20 @@ fn test_build_ai_request_with_operations_role() {
     assert!(!request.system_prompt.is_empty());
     assert_eq!(request.user_prompt, "如何检查Linux系统性能");
     assert!(request.role.is_some());
-    assert_eq!(request.role.unwrap(), AiRole::Operations);
+    assert_eq!(request.role.unwrap(), AiRoleID::new("operations"));
 }
 
 #[test]
 fn test_build_ai_request_with_knowledler_role() {
     once_init_log();
     let config = create_mock_config();
-    let client = AiClient::new(config).expect("Failed to create AiClient");
+    let role_file = PathBuf::from("../../_gal/ai-roles.yml");
+    let client = AiClient::new(config, Some(role_file)).expect("Failed to create AiClient");
 
     // 使用开发者角色替代可能不存在的Knowledger角色
+    let role = AiRoleID::new("developer");
     let request = client
-        .build_ai_request(AiRole::Developer, "什么是微服务架构？")
+        .build_ai_request(&role, "什么是微服务架构？")
         .expect("Failed to build AI request");
 
     // 验证请求结构
@@ -159,18 +172,20 @@ fn test_build_ai_request_with_knowledler_role() {
     assert!(!request.system_prompt.is_empty());
     assert_eq!(request.user_prompt, "什么是微服务架构？");
     assert!(request.role.is_some());
-    assert_eq!(request.role.unwrap(), AiRole::Developer);
+    assert_eq!(request.role.unwrap(), AiRoleID::new("developer"));
 }
 
 #[test]
 fn test_build_ai_request_with_empty_input() {
     once_init_log();
     let config = create_mock_config();
-    let client = AiClient::new(config).expect("Failed to create AiClient");
+    let role_file = PathBuf::from("../../_gal/ai-roles.yml");
+    let client = AiClient::new(config, Some(role_file)).expect("Failed to create AiClient");
 
     // 测试空用户输入
+    let role = AiRoleID::new("developer");
     let request = client
-        .build_ai_request(AiRole::Developer, "")
+        .build_ai_request(&role, "")
         .expect("Failed to build AI request with empty input");
 
     // 验证请求结构
@@ -184,13 +199,15 @@ fn test_build_ai_request_with_empty_input() {
 fn test_build_ai_request_with_special_characters() {
     once_init_log();
     let config = create_mock_config();
-    let client = AiClient::new(config).expect("Failed to create AiClient");
+    let role_file = PathBuf::from("../../_gal/ai-roles.yml");
+    let client = AiClient::new(config, Some(role_file)).expect("Failed to create AiClient");
 
     // 测试包含特殊字符的用户输入
     let special_input =
         "请解释什么是 'Rust' 的所有权系统？\n代码示例：\n```rust\nlet x = 42;\nlet y = x;\n```";
+    let role = AiRoleID::new("developer");
     let request = client
-        .build_ai_request(AiRole::Developer, special_input)
+        .build_ai_request(&role, special_input)
         .expect("Failed to build AI request with special characters");
 
     // 验证请求结构
@@ -204,13 +221,15 @@ fn test_build_ai_request_with_special_characters() {
 fn test_build_ai_request_with_long_input() {
     once_init_log();
     let config = create_mock_config();
-    let client = AiClient::new(config).expect("Failed to create AiClient");
+    let role_file = PathBuf::from("../../_gal/ai-roles.yml");
+    let client = AiClient::new(config, Some(role_file)).expect("Failed to create AiClient");
 
     // 测试长文本输入
     let long_input =
         "这是一个很长的用户输入，用于测试 build_ai_request 函数处理长文本的能力。".repeat(100);
+    let role = AiRoleID::new("developer");
     let request = client
-        .build_ai_request(AiRole::Developer, &long_input)
+        .build_ai_request(&role, &long_input)
         .expect("Failed to build AI request with long input");
 
     // 验证请求结构
@@ -225,15 +244,18 @@ fn test_build_ai_request_with_long_input() {
 fn test_build_ai_request_model_selection() {
     once_init_log();
     let config = create_mock_config();
-    let client = AiClient::new(config).expect("Failed to create AiClient");
+    let role_file = PathBuf::from("../../_gal/ai-roles.yml");
+    let client = AiClient::new(config, Some(role_file)).expect("Failed to create AiClient");
 
     // 测试不同角色是否选择了不同的模型
+    let dev_role = AiRoleID::new("developer");
     let dev_request = client
-        .build_ai_request(AiRole::Developer, "test")
+        .build_ai_request(&dev_role, "test")
         .expect("Failed to build developer request");
 
+    let ops_role = AiRoleID::new("operations");
     let ops_request = client
-        .build_ai_request(AiRole::Operations, "test")
+        .build_ai_request(&ops_role, "test")
         .expect("Failed to build operations request");
 
     // 验证系统提示词不同（表明角色配置不同）
@@ -248,10 +270,12 @@ fn test_build_ai_request_model_selection() {
 fn test_build_ai_request_response_structure() {
     once_init_log();
     let config = create_mock_config();
-    let client = AiClient::new(config).expect("Failed to create AiClient");
+    let role_file = PathBuf::from("../../_gal/ai-roles.yml");
+    let client = AiClient::new(config, Some(role_file)).expect("Failed to create AiClient");
 
+    let role = AiRoleID::new("developer");
     let request = client
-        .build_ai_request(AiRole::Developer, "什么是Galaxy Operator Ecosystem？")
+        .build_ai_request(&role, "什么是Galaxy Operator Ecosystem？")
         .expect("Failed to build AI request");
 
     // 验证 AiRequest 结构的所有字段

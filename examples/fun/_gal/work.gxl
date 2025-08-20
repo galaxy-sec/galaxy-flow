@@ -1,7 +1,4 @@
-<<<<<<< HEAD
-=======
 extern mod ver { path= "../../_gal/mods"; }
->>>>>>> release/0.10
 mod sys {
     fn echo( *value ) {
         gx.echo ( "${value}");

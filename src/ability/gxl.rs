@@ -81,7 +81,7 @@ impl AsyncRunnableWithSenderTrait for GxRun {
         let _g = WorkDir::change(run_path)
             .owe_res()
             .with(self.run_path().clone())?;
-        debug!(target:ctx.path(), "{:#?}", cmd);
+        debug!(target:ctx.path(), "{cmd:#?}");
         let sub_var_space = VarSpace::inherit_init(vars_dict.clone(), self.env_isolate)?;
         GxlRunner::run(cmd, sub_var_space, sender)
             .await

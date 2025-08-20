@@ -1,8 +1,8 @@
 use orion_error::UvsConfFrom;
 
-use crate::capabilities::AiRole;
 use crate::error::{AiError, AiResult};
 use crate::provider::AiRequest;
+use crate::roleid::AiRoleID;
 use crate::thread::recorder::ThreadClient;
 
 use super::client::{AiClient, AiClientTrait, AiCoreClient};
@@ -28,7 +28,7 @@ impl AiClientEnum {
             )))
         })?;
 
-        AiClient::new(config)
+        AiClient::new(config, None)
     }
 
     /// 创建Thread记录客户端
@@ -69,7 +69,11 @@ impl AiClientEnum {
     }
 
     /// 基于角色的智能请求
-    pub async fn smart_role_request(&self, role: AiRole, user_input: &str) -> AiResult<AiResponse> {
+    pub async fn smart_role_request(
+        &self,
+        role: &AiRoleID,
+        user_input: &str,
+    ) -> AiResult<AiResponse> {
         match self {
             Self::Basic(client) => client.smart_role_request(role, user_input).await,
             Self::ThreadRecording(client) => {

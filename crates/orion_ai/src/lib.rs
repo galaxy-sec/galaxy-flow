@@ -1,4 +1,4 @@
-mod capabilities;
+mod roleid;
 pub mod client;
 pub mod config;
 mod const_val;
@@ -11,7 +11,7 @@ pub mod router;
 pub mod thread;
 
 // 重新导出主要类型和trait
-pub use capabilities::*;
+pub use roleid::*;
 pub use config::*;
 pub use factory::AiClientEnum;
 pub use router::*;

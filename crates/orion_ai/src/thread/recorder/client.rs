@@ -2,7 +2,7 @@ use chrono::Utc;
 use std::sync::Arc;
 
 use super::ThreadFileManager;
-use crate::capabilities::AiRole;
+use crate::roleid::AiRoleID;
 use crate::client::{AiClientTrait, AiCoreClient};
 use crate::config::ThreadConfig;
 use crate::error::AiResult;
@@ -74,7 +74,7 @@ impl ThreadClient {
     /// 基于角色的智能请求处理
     pub async fn smart_role_request(
         &self,
-        _role: AiRole,
+        _role: &AiRoleID,
         _user_input: &str,
     ) -> AiResult<AiResponse> {
         todo!();

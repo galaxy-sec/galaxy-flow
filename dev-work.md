@@ -72,7 +72,11 @@
 - **`tasks/ai-git-commit-integration.md`** - 更新为平台化设计思维，Git Commit标识为"mvp_testcase"
 - **`tasks/ai-platform-extension-design.md`** - 专注横向扩展，定义任务模板体系与生态架构
 
-### 横向扩展路线图发布
-完整的AI能力平台演化路径：验证-复用-生态三步曲
+
+### [ ]扩展 AiRole.
+    当前只有定义三个固定角色，不具有多个应用的扩展性。
+    关于应用角色的需求：
+    1. 每个应用都有自己的角色，但个数不会超过5个
+    2  角色能为应用进行定义
 
 

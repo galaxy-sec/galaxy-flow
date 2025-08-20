@@ -1,6 +1,7 @@
 use crate::config::roles::types::{RoleConfig, RulesConfig};
 use crate::error::{AiErrReason, AiError, AiResult};
-use crate::AiRole;
+use crate::AiRoleID;
+use getset::Getters;
 use log::info;
 use orion_error::{ToStructError, UvsConfFrom};
 use serde_derive::{Deserialize, Serialize};
@@ -9,53 +10,22 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 /// 角色配置管理器
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Getters)]
+#[getset(get = "pub")]
 pub struct RoleConfigManager {
     /// 角色配置映射
-    pub default_role: AiRole,
-    pub roles: HashMap<String, RoleConfig>,
+    default_role: AiRoleID,
+    default_model: String,
+    roles: HashMap<String, RoleConfig>,
 }
 impl Default for RoleConfigManager {
     fn default() -> Self {
         let model = "deepseek-chat".to_string();
-        let mut roles = HashMap::new();
-        roles.insert(
-            AiRole::Developer.to_string(),
-            RoleConfig {
-                name: "developer".to_string(),
-                description: "专注于代码开发的技术专家".to_string(),
-                system_prompt:
-                    "你是一个专业的开发者，擅长高质量的代码实现、系统设计和技术问题解决。"
-                        .to_string(),
-                used_model: model.clone(),
-                rules_path: Some("ai-rules/developer".to_string()),
-            },
-        );
-        roles.insert(
-            AiRole::Operations.to_string(),
-            RoleConfig {
-                name: "operations".to_string(),
-                description: "专注于系统运维的专家".to_string(),
-                system_prompt: "你是一个专业的运维专家，擅长诊断系统问题、和解决问题。".to_string(),
-                used_model: model.clone(),
-                rules_path: Some("ai-rules/operations".to_string()),
-            },
-        );
-
-        roles.insert(
-            AiRole::GalactiWard.to_string(),
-            RoleConfig {
-                name: "galactiward".to_string(),
-                description: "专注于Galaxy生态专家".to_string(),
-                system_prompt: "通过Galaxy资料，解决Galaxy问题".to_string(),
-                used_model: model.clone(),
-                rules_path: Some("ai-rules/galactiward".to_string()),
-            },
-        );
-
+        let roles = RoleConfig::example_roles();
         Self {
+            default_role: AiRoleID::new("galactiward"),
+            default_model: model,
             roles,
-            default_role: AiRole::GalactiWard,
         }
     }
 }
@@ -140,7 +110,7 @@ impl RoleConfigManager {
     /// 获取角色规则配置
     pub fn get_role_rules_config(&self, role_key: &str) -> AiResult<Option<RulesConfig>> {
         if let Some(role_config) = self.roles.get(role_key) {
-            if let Some(rules_path) = &role_config.rules_path {
+            if let Some(rules_path) = role_config.rules_path() {
                 // 使用分层规则配置路径
                 let layered_rules_path =
                     crate::config::roles::loader::RoleConfigLoader::get_layered_rules_path(

@@ -277,7 +277,7 @@ impl AiProvider for OpenAiProvider {
             temperature: request.temperature,
             stream: false,
         };
-        debug!("send client request: {:#?}", openai_request);
+        debug!("send client request: {openai_request:#?}");
 
         let url = format!("{}/chat/completions", self.base_url);
         debug!("send client url: {url}");
@@ -291,12 +291,12 @@ impl AiProvider for OpenAiProvider {
             .owe_res()
             .with(url)?;
 
-        debug!("Client response: {:#?}", response);
+        debug!("Client response: {response:#?}");
         println!("{} think....", request.model);
 
         // Get raw response text first
         let response_text = response.text().await.owe_data()?;
-        debug!("Raw response body: {}", response_text);
+        debug!("Raw response body: {response_text}");
 
         // Then parse JSON manually
         let response_body: OpenAiResponse = serde_json::from_str(&response_text)

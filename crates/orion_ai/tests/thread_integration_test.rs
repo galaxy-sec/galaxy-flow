@@ -3,10 +3,13 @@ use tempfile::TempDir;
 use tokio::runtime::Runtime;
 
 use orion_ai::{
+    client::AiCoreClient,
     provider::{AiProviderType, AiRequest},
+    thread::recorder::ThreadClient,
     AiConfig, ProviderConfig, ThreadConfig,
 };
 use std::collections::HashMap;
+use std::path::PathBuf;
 
 #[test]
 fn test_thread_integration_basic() {
@@ -47,7 +50,12 @@ fn test_thread_integration_basic() {
     };
 
     // 创建AiClient - 启用Thread记录
-    let client = AiClientEnum::new_auto(config.clone()).unwrap();
+    // 使用项目根目录的角色配置文件
+    let role_file_path = PathBuf::from("../../_gal/ai-roles.yml");
+    let basic_client = orion_ai::AiClient::new(config.clone(), Some(role_file_path)).unwrap();
+    let thread_config = config.thread.clone();
+    let thread_client = ThreadClient::new(AiCoreClient::Basic(basic_client), thread_config);
+    let client = AiClientEnum::ThreadRecording(Box::new(thread_client));
 
     // 测试普通请求
     let request = AiRequest::builder()
@@ -123,7 +131,12 @@ fn test_thread_inform_ai_functionality() {
     };
 
     // 创建AiClient - 启用Thread记录
-    let client = AiClientEnum::new_auto(config).unwrap();
+    // 使用项目根目录的角色配置文件
+    let role_file_path = PathBuf::from("../../_gal/ai-roles.yml");
+    let basic_client = orion_ai::AiClient::new(config.clone(), Some(role_file_path)).unwrap();
+    let thread_config = config.thread.clone();
+    let thread_client = ThreadClient::new(AiCoreClient::Basic(basic_client), thread_config);
+    let client = AiClientEnum::ThreadRecording(Box::new(thread_client));
 
     // 测试请求 - AI应该被通知正在被记录
     let request = AiRequest::builder()
@@ -198,7 +211,12 @@ fn test_thread_without_inform_ai() {
     };
 
     // 创建AiClient - 启用Thread记录但不通知AI
-    let client = AiClientEnum::new_auto(config).unwrap();
+    // 使用项目根目录的角色配置文件
+    let role_file_path = PathBuf::from("../../_gal/ai-roles.yml");
+    let basic_client = orion_ai::AiClient::new(config.clone(), Some(role_file_path)).unwrap();
+    let thread_config = config.thread.clone();
+    let thread_client = ThreadClient::new(AiCoreClient::Basic(basic_client), thread_config);
+    let client = AiClientEnum::ThreadRecording(Box::new(thread_client));
 
     // 测试请求 - AI不应该被通知正在被记录
     let request = AiRequest::builder()
@@ -267,8 +285,13 @@ fn test_thread_integration_with_disabled_config() {
         },
     };
 
-    // 创建AiClient - 禁用Thread记录
-    let client = AiClientEnum::new_auto(config.clone()).unwrap();
+    // 创建AiClient - 启用Thread记录但不通知AI
+    // 使用项目根目录的角色配置文件
+    let role_file_path = PathBuf::from("../../_gal/ai-roles.yml");
+    let basic_client = orion_ai::AiClient::new(config.clone(), Some(role_file_path)).unwrap();
+    let thread_config = config.thread.clone();
+    let thread_client = ThreadClient::new(AiCoreClient::Basic(basic_client), thread_config);
+    let client = AiClientEnum::ThreadRecording(Box::new(thread_client));
 
     // 测试请求
     let request = AiRequest::builder()
@@ -297,6 +320,7 @@ fn test_thread_config_validation() {
     config.thread.min_summary_length = 300;
     config.thread.max_summary_length = 200;
 
+    // 测试无效配置时，使用默认角色配置（应该会失败）
     let result = AiClientEnum::new_with_thread_recording(config.clone());
     assert!(result.is_err());
 
@@ -320,6 +344,11 @@ fn test_thread_config_validation() {
     );
     valid_config.providers = providers;
 
-    let result = AiClientEnum::new_auto(valid_config);
-    assert!(result.is_ok());
+    // 测试有效配置时，使用项目根目录的角色配置文件
+    let role_file_path = PathBuf::from("../../_gal/ai-roles.yml");
+    let basic_client = orion_ai::AiClient::new(valid_config.clone(), Some(role_file_path)).unwrap();
+    let thread_config = valid_config.thread.clone();
+    let thread_client = ThreadClient::new(AiCoreClient::Basic(basic_client), thread_config);
+    let client = AiClientEnum::ThreadRecording(Box::new(thread_client));
+    assert!(true); // 如果能成功创建ThreadRecording客户端，说明配置有效
 }

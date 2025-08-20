@@ -1,7 +1,7 @@
-use crate::capabilities::AiRole;
 use crate::config::RoleConfigManager;
 use crate::error::{AiError, AiResult};
 use crate::provider::{AiProvider, AiProviderType, AiRequest, AiResponse};
+use crate::roleid::AiRoleID;
 use crate::{AiConfig, AiErrReason, AiRouter};
 use async_trait::async_trait;
 use getset::Getters;
@@ -41,7 +41,7 @@ impl AiClientTrait for AiClient {
     }
 
     /// 基于角色的智能请求处理 - 用户只需选择角色，系统自动选择推荐模型
-    async fn smart_role_request(&self, role: AiRole, user_input: &str) -> AiResult<AiResponse> {
+    async fn smart_role_request(&self, role: &AiRoleID, user_input: &str) -> AiResult<AiResponse> {
         let request = self.build_ai_request(role, user_input)?;
         // 3. 发送请求
         let mut response = self.send_request(request).await?;
@@ -55,10 +55,10 @@ impl AiClientTrait for AiClient {
 
 impl AiClient {
     /// 构建基于角色的系统提示
-    fn build_role_system_prompt(&self, role: AiRole) -> String {
+    fn build_role_system_prompt(&self, role: &AiRoleID) -> String {
         // 从配置文件中获取角色系统提示词
         if let Some(role_config) = self.roles.get_role_config(&role.to_string()) {
-            let mut system_prompt = role_config.system_prompt.clone();
+            let mut system_prompt = role_config.system_prompt().clone();
 
             // 尝试加载角色特定的规则配置
             if let Ok(Some(role_rules)) = self.roles.get_role_rules_config(&role.to_string()) {
@@ -98,21 +98,24 @@ impl AiClient {
         self.providers.contains_key(&provider)
     }
 
-    pub fn build_ai_request(&self, role: AiRole, user_input: &str) -> AiResult<AiRequest> {
+    pub fn build_ai_request(&self, role: &AiRoleID, user_input: &str) -> AiResult<AiRequest> {
         // 1. 使用角色推荐模型
         let conf = self
             .roles
             .get_role_config(role.as_str())
             .ok_or_else(|| AiErrReason::from_conf(format!("miss role:{role} conf")).to_err())?;
 
-        let model = conf.used_model();
+        let model = conf
+            .used_model()
+            .as_ref()
+            .unwrap_or(self.roles.default_model());
         // 2. 构建系统提示词
         let system_prompt = self.build_role_system_prompt(role);
         Ok(AiRequest::builder()
             .model(model)
             .system_prompt(system_prompt)
             .user_prompt(user_input.to_string())
-            .role(role)
+            .role(role.clone())
             .build())
     }
 
@@ -124,7 +127,7 @@ impl AiClient {
         if let Some(provider_arc) = self.providers.get(provider) {
             provider_arc.list_models().await
         } else {
-            Err(AiErrReason::from_conf(format!("Provider {} not available", provider)).to_err())
+            Err(AiErrReason::from_conf(format!("Provider {provider} not available")).to_err())
         }
     }
 }

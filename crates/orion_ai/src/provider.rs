@@ -4,7 +4,7 @@ use std::collections::HashMap;
 
 use crate::AiResult;
 
-use super::capabilities::AiRole;
+use super::roleid::AiRoleID;
 
 /// AI提供商类型
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Hash)]
@@ -63,7 +63,7 @@ pub struct ModelInfo {
 
 impl ModelInfo {
     /// 检查模型是否与指定角色兼容
-    pub fn is_compatible_with_role(&self, _role: AiRole) -> bool {
+    pub fn is_compatible_with_role(&self, _role: AiRoleID) -> bool {
         true // 简化：所有模型与所有角色兼容
     }
 }
@@ -76,7 +76,7 @@ pub struct AiRequest {
     pub user_prompt: String,
     pub max_tokens: Option<usize>,
     pub temperature: Option<f32>,
-    pub role: Option<AiRole>,
+    pub role: Option<AiRoleID>,
 }
 
 impl AiRequest {
@@ -92,7 +92,7 @@ pub struct AiRequestBuilder {
     user_prompt: String,
     max_tokens: Option<usize>,
     temperature: Option<f32>,
-    role: Option<AiRole>,
+    role: Option<AiRoleID>,
 }
 
 impl Default for AiRequestBuilder {
@@ -138,7 +138,7 @@ impl AiRequestBuilder {
         self
     }
 
-    pub fn role(mut self, role: AiRole) -> Self {
+    pub fn role(mut self, role: AiRoleID) -> Self {
         self.role = Some(role);
         self
     }

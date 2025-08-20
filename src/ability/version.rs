@@ -117,7 +117,7 @@ impl AsyncRunnableTrait for GxlVersion {
         ctx.append("version");
         let exp = EnvExpress::from_env_mix(dict.global().clone());
         let file_path = exp.eval(&self.file)?;
-        debug!(target: ctx.path(),"version file:{}", file_path);
+        debug!(target: ctx.path(),"version file:{file_path}");
         let data = fs::read_to_string(file_path.as_str())
             .owe_biz()
             .with(format!("version file ({file_path}) "))?;

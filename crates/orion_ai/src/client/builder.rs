@@ -4,6 +4,7 @@ use crate::provider::{AiProvider, AiProviderType};
 use crate::{AiConfig, AiRouter};
 use log::debug;
 use std::collections::HashMap;
+use std::path::PathBuf;
 use std::sync::Arc;
 
 use super::AiClient;
@@ -19,14 +20,14 @@ pub struct AiClientBuilder {
 
 impl AiClientBuilder {
     /// 创建新的构建器
-    pub fn new(config: AiConfig) -> AiResult<Self> {
+    pub fn new(config: AiConfig, role_file: Option<PathBuf>) -> AiResult<Self> {
         let mut providers: HashMap<AiProviderType, Arc<dyn AiProvider>> = HashMap::new();
 
         // 从配置注册provider
         Self::register_providers_from_config(&mut providers, &config.providers)?;
 
         // 初始化角色配置管理器 - 优先使用简化配置
-        let roles_manager = RoleConfigLoader::layered_load()?;
+        let roles_manager = RoleConfigLoader::layered_load(role_file)?;
 
         Ok(Self {
             providers,
@@ -53,7 +54,7 @@ impl AiClientBuilder {
     ) -> AiResult<()> {
         for (provider_type, config) in provider_configs {
             if !config.enabled {
-                debug!("Provider {} is disabled, skipping", provider_type);
+                debug!("Provider {provider_type} is disabled, skipping");
                 continue;
             }
 
@@ -96,8 +97,7 @@ impl AiClientBuilder {
                 AiProviderType::Mock => Arc::new(mock::MockProvider::new()) as Arc<dyn AiProvider>,
                 AiProviderType::Anthropic | AiProviderType::Ollama => {
                     debug!(
-                        "Provider {} is not yet implemented, skipping",
-                        provider_type
+                        "Provider {provider_type} is not yet implemented, skipping"
                     );
                     continue;
                 }
@@ -117,7 +117,7 @@ impl AiClientBuilder {
 /// 为 AiClient 提供构建相关的便利方法
 impl AiClient {
     /// 创建AiClient（简化版本，无Thread支持）
-    pub fn new(config: AiConfig) -> AiResult<Self> {
-        AiClientBuilder::new(config).map(|builder| builder.build())
+    pub fn new(config: AiConfig, role_file: Option<PathBuf>) -> AiResult<Self> {
+        AiClientBuilder::new(config, role_file).map(|builder| builder.build())
     }
 }
