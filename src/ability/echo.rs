@@ -21,7 +21,7 @@ impl AsyncRunnableTrait for GxEcho {
         let ex = EnvExpress::from_env_mix(vars_dict.global().clone());
         let out = ex.eval(&self.value)?;
         info!(target: ctx.path(), "{} :{}", &self.value, out);
-        println!("{}", out);
+        println!("{out}");
         Ok(TaskValue::from((vars_dict, ExecOut::Ignore)))
     }
 }

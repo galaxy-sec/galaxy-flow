@@ -2,7 +2,6 @@ use orion_error::UvsConfFrom;
 
 use crate::error::{AiError, AiResult};
 use crate::provider::AiRequest;
-use crate::roleid::AiRoleID;
 use crate::thread::recorder::ThreadClient;
 
 use super::client::{AiClient, AiClientTrait, AiCoreClient};
@@ -65,20 +64,6 @@ impl AiClientEnum {
         match self {
             Self::Basic(client) => client.send_request(request).await,
             Self::ThreadRecording(client) => client.as_ref().send_request(request).await,
-        }
-    }
-
-    /// 基于角色的智能请求
-    pub async fn smart_role_request(
-        &self,
-        role: &AiRoleID,
-        user_input: &str,
-    ) -> AiResult<AiResponse> {
-        match self {
-            Self::Basic(client) => client.smart_role_request(role, user_input).await,
-            Self::ThreadRecording(client) => {
-                client.as_ref().smart_role_request(role, user_input).await
-            }
         }
     }
 }

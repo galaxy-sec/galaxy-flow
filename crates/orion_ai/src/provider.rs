@@ -61,13 +61,6 @@ pub struct ModelInfo {
     pub cost_per_1k_output: f64, // 美元
 }
 
-impl ModelInfo {
-    /// 检查模型是否与指定角色兼容
-    pub fn is_compatible_with_role(&self, _role: AiRoleID) -> bool {
-        true // 简化：所有模型与所有角色兼容
-    }
-}
-
 /// 统一AI请求结构
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AiRequest {

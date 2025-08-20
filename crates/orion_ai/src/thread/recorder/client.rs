@@ -2,11 +2,11 @@ use chrono::Utc;
 use std::sync::Arc;
 
 use super::ThreadFileManager;
-use crate::roleid::AiRoleID;
 use crate::client::{AiClientTrait, AiCoreClient};
 use crate::config::ThreadConfig;
 use crate::error::AiResult;
 use crate::provider::{AiRequest, AiResponse};
+use crate::roleid::AiRoleID;
 
 /// Thread记录客户端 - 嵌套式静态分发
 pub struct ThreadClient {

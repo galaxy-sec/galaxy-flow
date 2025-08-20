@@ -159,7 +159,7 @@ impl AsyncRunnableTrait for GxlEnv {
         let env_name = self.meta.name();
         ctx.append(env_name);
 
-        debug!(target: ctx.path(),"env {} setting", env_name );
+        debug!(target: ctx.path(),"env {env_name} setting" );
         self.export_props(ctx.clone(), def.global_mut(), "ENV")?;
         for item in &self.items {
             let TaskValue { vars, .. } = item.async_exec(ctx.clone(), def).await?;

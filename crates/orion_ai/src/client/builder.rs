@@ -96,9 +96,7 @@ impl AiClientBuilder {
                 }
                 AiProviderType::Mock => Arc::new(mock::MockProvider::new()) as Arc<dyn AiProvider>,
                 AiProviderType::Anthropic | AiProviderType::Ollama => {
-                    debug!(
-                        "Provider {provider_type} is not yet implemented, skipping"
-                    );
+                    debug!("Provider {provider_type} is not yet implemented, skipping");
                     continue;
                 }
             };

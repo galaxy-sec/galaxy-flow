@@ -54,7 +54,7 @@ impl AsyncRunnableTrait for GxAssert {
         } else {
             println!("assert true : {value}");
         }
-        info!(target: ctx.path(), "value {} match exprect", value);
+        info!(target: ctx.path(), "value {value} match exprect");
         Ok(TaskValue::from((vars_dict, ExecOut::Ignore)))
     }
 }
