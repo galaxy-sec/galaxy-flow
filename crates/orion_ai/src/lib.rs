@@ -3,6 +3,7 @@ pub mod config;
 mod const_val;
 mod error;
 pub mod factory;
+pub mod func;
 pub mod function_calling;
 mod infra;
 pub mod provider;
@@ -10,7 +11,6 @@ pub mod providers;
 mod roleid;
 pub mod router;
 pub mod thread;
-
 // 重新导出主要类型和trait
 pub use config::*;
 pub use factory::AiClientEnum;

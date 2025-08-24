@@ -35,7 +35,7 @@ impl AiRouter {
             AiProviderType::Groq
         } else if model_name.starts_with("codellama") || model_name.starts_with("llama") {
             AiProviderType::Ollama
-        } else if model_name == "mock" {
+        } else if model_name.starts_with("mock") {
             AiProviderType::Mock
         } else {
             // 默认使用OpenAI

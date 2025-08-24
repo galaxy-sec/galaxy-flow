@@ -82,27 +82,53 @@ impl OpenAiProvider {
     ) -> Vec<OpenAiTool> {
         functions
             .iter()
-            .map(|f| OpenAiTool {
-                r#type: "function".to_string(),
-                function: OpenAiFunction {
-                    name: f.name.clone(),
-                    description: f.description.clone(),
-                    parameters: serde_json::json!({
-                        "type": "object",
-                        "properties": f.parameters.iter().map(|p| {
-                            (p.name.clone(), serde_json::json!({
-                                "type": p.r#type,
+            .map(|f| {
+                let properties: serde_json::Map<String, serde_json::Value> = f
+                    .parameters
+                    .iter()
+                    .map(|p| {
+                        (
+                            p.name.clone(),
+                            serde_json::json!({
+                                "type": Self::map_parameter_type(&p.r#type),
                                 "description": p.description
-                            }))
-                        }).collect::<serde_json::Map<String, serde_json::Value>>(),
-                        "required": f.parameters.iter()
-                            .filter(|p| p.required)
-                            .map(|p| p.name.clone())
-                            .collect::<Vec<String>>()
-                    }),
-                },
+                            }),
+                        )
+                    })
+                    .collect();
+
+                let required: Vec<String> = f
+                    .parameters
+                    .iter()
+                    .filter(|p| p.required)
+                    .map(|p| p.name.clone())
+                    .collect();
+
+                OpenAiTool {
+                    r#type: "function".to_string(),
+                    function: OpenAiFunction {
+                        name: f.name.clone(),
+                        description: f.description.clone(),
+                        parameters: serde_json::json!({
+                            "type": "object",
+                            "properties": properties,
+                            "required": required
+                        }),
+                    },
+                }
             })
             .collect()
+    }
+
+    fn map_parameter_type(param_type: &str) -> String {
+        match param_type {
+            "string" => "string".to_string(),
+            "array" => "array".to_string(),
+            "number" | "integer" => "number".to_string(),
+            "boolean" => "boolean".to_string(),
+            "object" => "object".to_string(),
+            _ => "string".to_string(), // 默认为 string
+        }
     }
 }
 
