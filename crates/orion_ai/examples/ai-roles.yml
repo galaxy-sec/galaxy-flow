@@ -2,16 +2,16 @@ default_role:
   id: galactiward
 default_model: deepseek-chat
 roles:
-  developer:
-    name: developer
-    description: 专注于代码开发的技术专家
-    system_prompt: 你是一个专业的开发者，擅长高质量的代码实现、系统设计和技术问题解决。
-    rules_path: ai-rules/developer
   galactiward:
     name: galactiward
     description: 专注于Galaxy生态专家
     system_prompt: 通过Galaxy资料，解决Galaxy问题
     rules_path: ai-rules/galactiward
+  developer:
+    name: developer
+    description: 专注于代码开发的技术专家
+    system_prompt: 你是一个专业的开发者，擅长高质量的代码实现、系统设计和技术问题解决。
+    rules_path: ai-rules/developer
   operations:
     name: operations
     description: 专注于系统运维的专家

@@ -9,7 +9,7 @@ use std::time::Duration;
 
 use crate::error::AiResult;
 use crate::provider::*;
-use crate::response_converter::convert_response_from_text;
+use crate::providers::resp::convert_response_from_text;
 
 #[derive(Debug, Serialize, Deserialize)]
 struct OpenAiRequest {

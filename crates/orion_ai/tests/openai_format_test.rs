@@ -1,11 +1,8 @@
-use orion_ai::func::git::{create_git_functions, GitFunctionExecutor};
-use orion_ai::provider::{AiProviderType, AiRequest};
-use orion_ai::{AiClient, AiConfig, FunctionExecutor, FunctionRegistry};
-use std::collections::HashMap;
+use orion_ai::func::git::create_git_functions;
 
 #[tokio::test]
 async fn test_openai_tool_format_generation() {
-    use orion_ai::providers::openai::{OpenAiProvider, OpenAiTool};
+    use orion_ai::providers::openai::OpenAiProvider;
 
     // 创建 Git 函数定义
     let git_functions = create_git_functions();
@@ -199,7 +196,7 @@ async fn test_openai_tool_format_generation() {
 
 #[tokio::test]
 async fn test_openai_tool_parameter_type_mapping() {
-    use orion_ai::providers::openai::{OpenAiProvider, OpenAiTool};
+    use orion_ai::providers::openai::OpenAiProvider;
 
     // 测试各种参数类型的映射
     let test_functions = vec![
@@ -284,7 +281,7 @@ async fn test_openai_tool_parameter_type_mapping() {
 
 #[tokio::test]
 async fn test_openai_tool_required_parameters() {
-    use orion_ai::providers::openai::{OpenAiProvider, OpenAiTool};
+    use orion_ai::providers::openai::OpenAiProvider;
 
     // 测试必需参数和可选参数
     let test_function = orion_ai::provider::FunctionDefinition {

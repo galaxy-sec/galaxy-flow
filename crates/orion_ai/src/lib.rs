@@ -8,7 +8,6 @@ pub mod function_calling;
 mod infra;
 pub mod provider;
 pub mod providers;
-pub mod response_converter;
 mod roleid;
 pub mod router;
 pub mod thread;

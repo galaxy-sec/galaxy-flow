@@ -2,7 +2,7 @@ use orion_ai::provider::{AiProviderType, AiResponse, FunctionCall, FunctionCallI
 use orion_ai::providers::openai::{
     Choice, Message, OpenAiFunctionCall, OpenAiResponse, OpenAiToolCall, Usage,
 };
-use orion_ai::response_converter::convert_response_from_text;
+use orion_ai::providers::resp::convert_response_from_text;
 
 #[test]
 fn test_send_request_response_conversion() {
@@ -380,7 +380,7 @@ fn test_response_conversion_edge_cases() {
 
 // 辅助函数：创建模拟 OpenAI 响应
 fn create_mock_openai_response(
-    content: &str,
+    _content: &str,
     model: &str,
     prompt_tokens: usize,
     completion_tokens: usize,
@@ -475,7 +475,7 @@ fn test_convert_response_from_text_deepseek_tool_calls() {
         json_response,
         AiProviderType::DeepSeek,
         "deepseek-chat",
-        |model, input_tokens, output_tokens| {
+        |_model, input_tokens, output_tokens| {
             Some(input_tokens as f64 * 0.001 + output_tokens as f64 * 0.002)
         },
     )
