@@ -1,12 +1,13 @@
 use crate::config::RoleConfigManager;
 use crate::error::{AiError, AiResult};
-use crate::provider::{AiProvider, AiProviderType, AiRequest, AiResponse};
+use crate::function_calling::FunctionRegistry;
+use crate::provider::{AiProvider, AiProviderType, AiRequest, AiResponse, FunctionDefinition};
 use crate::roleid::AiRoleID;
 use crate::{AiConfig, AiErrReason, AiRouter};
 use async_trait::async_trait;
 use getset::Getters;
 use log::error;
-use orion_error::{ErrorWith, ToStructError, UvsConfFrom};
+use orion_error::{ErrorWith, ToStructError, UvsBizFrom, UvsConfFrom};
 use std::collections::HashMap;
 use std::sync::Arc;
 
@@ -128,6 +129,55 @@ impl AiClient {
             provider_arc.list_models().await
         } else {
             Err(AiErrReason::from_conf(format!("Provider {provider} not available")).to_err())
+        }
+    }
+
+    /// 发送带函数调用的请求 - 简化接口
+    pub async fn send_request_with_functions(
+        &self,
+        request: AiRequest,
+        registry: &FunctionRegistry,
+    ) -> AiResult<AiResponse> {
+        let provider_type = self.router.select_provider(&request.model, &self.config);
+
+        if let Some(provider) = self.providers.get(&provider_type) {
+            if provider.supports_function_calling() {
+                let functions = registry.get_functions();
+                let function_refs: Vec<FunctionDefinition> =
+                    functions.into_iter().cloned().collect();
+                provider
+                    .send_request_with_functions(&request, &function_refs)
+                    .await
+            } else {
+                Err(AiError::from(AiErrReason::from_biz(
+                    "TODO: provider does not support function calling".to_string(),
+                )))
+            }
+        } else {
+            Err(AiError::from(AiErrReason::NoProviderAvailable))
+        }
+    }
+
+    /// 处理函数调用结果 - 简化版本
+    pub async fn handle_function_calls(
+        &self,
+        response: &AiResponse,
+        registry: &FunctionRegistry,
+    ) -> AiResult<String> {
+        if let Some(function_calls) = &response.function_calls {
+            let mut results = Vec::new();
+
+            for function_call in function_calls {
+                let result = registry.execute_function(function_call).await?;
+                results.push(format!(
+                    "Function {} result: {}",
+                    function_call.name, result.result
+                ));
+            }
+
+            Ok(results.join("\n"))
+        } else {
+            Ok(response.content.clone())
         }
     }
 }

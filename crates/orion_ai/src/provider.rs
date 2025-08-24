@@ -1,6 +1,8 @@
+use crate::error::AiErrReason;
 use async_trait::async_trait;
+use orion_error::ToStructError;
+use orion_error::UvsBizFrom;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 
 use crate::AiResult;
 
@@ -70,6 +72,9 @@ pub struct AiRequest {
     pub max_tokens: Option<usize>,
     pub temperature: Option<f32>,
     pub role: Option<AiRoleID>,
+    // 新增：简单的函数调用支持
+    pub functions: Option<Vec<FunctionDefinition>>,
+    pub enable_function_calling: bool,
 }
 
 impl AiRequest {
@@ -86,6 +91,8 @@ pub struct AiRequestBuilder {
     max_tokens: Option<usize>,
     temperature: Option<f32>,
     role: Option<AiRoleID>,
+    functions: Option<Vec<FunctionDefinition>>,
+    enable_function_calling: bool,
 }
 
 impl Default for AiRequestBuilder {
@@ -103,6 +110,8 @@ impl AiRequestBuilder {
             max_tokens: None,
             temperature: Some(0.7),
             role: None,
+            functions: None,
+            enable_function_calling: false,
         }
     }
 
@@ -136,6 +145,16 @@ impl AiRequestBuilder {
         self
     }
 
+    pub fn functions(mut self, functions: Vec<FunctionDefinition>) -> Self {
+        self.functions = Some(functions);
+        self
+    }
+
+    pub fn enable_function_calling(mut self, enabled: bool) -> Self {
+        self.enable_function_calling = enabled;
+        self
+    }
+
     pub fn build(self) -> AiRequest {
         AiRequest {
             model: self.model,
@@ -144,6 +163,8 @@ impl AiRequestBuilder {
             max_tokens: self.max_tokens,
             temperature: self.temperature,
             role: self.role,
+            functions: self.functions,
+            enable_function_calling: self.enable_function_calling,
         }
     }
 }
@@ -156,7 +177,9 @@ pub struct AiResponse {
     pub usage: UsageInfo,
     pub finish_reason: Option<String>,
     pub provider: AiProviderType,
-    pub metadata: HashMap<String, serde_json::Value>,
+    pub metadata: std::collections::HashMap<String, serde_json::Value>,
+    // 新增：函数调用结果
+    pub function_calls: Option<Vec<FunctionCall>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -197,4 +220,50 @@ pub trait AiProvider: Send + Sync {
 
     /// 检查token限制
     fn check_token_limit(&self, model: &str, max_tokens: usize) -> bool;
+
+    /// 检查是否支持 function calling
+    fn supports_function_calling(&self) -> bool {
+        false
+    }
+
+    /// 发送带函数调用的请求 - 简化版本
+    async fn send_request_with_functions(
+        &self,
+        request: &AiRequest,
+        functions: &[FunctionDefinition],
+    ) -> AiResult<AiResponse> {
+        Err(AiErrReason::from_biz("TODO: function calling not supported".to_string()).to_err())
+    }
+}
+
+/// 函数参数 - 简化版本
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct FunctionParameter {
+    pub name: String,
+    pub description: String,
+    pub r#type: String, // 直接使用字符串类型描述
+    pub required: bool,
+}
+
+/// 函数定义 - 简化版本
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct FunctionDefinition {
+    pub name: String,
+    pub description: String,
+    pub parameters: Vec<FunctionParameter>,
+}
+
+/// 函数调用请求 - 简化版本
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FunctionCall {
+    pub name: String,
+    pub arguments: std::collections::HashMap<String, serde_json::Value>,
+}
+
+/// 函数调用结果 - 简化版本
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FunctionResult {
+    pub name: String,
+    pub result: serde_json::Value,
+    pub error: Option<String>,
 }

@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 use log::debug;
-use orion_error::{ErrorOwe, ErrorWith, UvsConfFrom};
+use orion_error::{ErrorOwe, ErrorWith, ToStructError, UvsBizFrom, UvsConfFrom};
 use reqwest::{header, Client};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -36,6 +36,74 @@ struct OpenAiResponse {
 struct Choice {
     message: Message,
     finish_reason: Option<String>,
+    tool_calls: Option<Vec<OpenAiToolCall>>,
+}
+
+#[derive(Debug, Deserialize)]
+struct OpenAiToolCall {
+    id: String,
+    r#type: String,
+    function: OpenAiFunctionCall,
+}
+
+#[derive(Debug, Deserialize)]
+struct OpenAiFunctionCall {
+    name: String,
+    arguments: String, // JSON 字符串
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct OpenAiRequestWithTools {
+    model: String,
+    messages: Vec<Message>,
+    max_tokens: Option<usize>,
+    temperature: Option<f32>,
+    stream: bool,
+    tools: Option<Vec<OpenAiTool>>,
+    tool_choice: Option<serde_json::Value>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct OpenAiTool {
+    r#type: String,
+    function: OpenAiFunction,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct OpenAiFunction {
+    name: String,
+    description: String,
+    parameters: serde_json::Value,
+}
+
+impl OpenAiProvider {
+    fn convert_to_openai_tools(
+        functions: &[crate::provider::FunctionDefinition],
+    ) -> Vec<OpenAiTool> {
+        functions
+            .iter()
+            .map(|f| OpenAiTool {
+                r#type: "function".to_string(),
+                function: OpenAiFunction {
+                    name: f.name.clone(),
+                    description: f.description.clone(),
+                    parameters: serde_json::json!({
+                        "type": "object",
+                        "properties": f.parameters.iter().map(|p| {
+                            (p.name.clone(), serde_json::json!({
+                                "type": p.r#type,
+                                "description": p.description
+                            }))
+                        }).collect::<serde_json::Map<String, serde_json::Value>>(),
+                        "required": f.parameters.iter()
+                            .filter(|p| p.required)
+                            .map(|p| p.name.clone())
+                            .collect::<Vec<String>>()
+                    }),
+                },
+            })
+            .collect()
+    }
 }
 
 #[derive(Debug, Deserialize)]
@@ -311,7 +379,7 @@ impl AiProvider for OpenAiProvider {
         Ok(AiResponse {
             content: choice.message.content.clone(),
             model: response_body.model.clone(),
-            usage: UsageInfo {
+            usage: crate::provider::UsageInfo {
                 prompt_tokens: response_body
                     .usage
                     .as_ref()
@@ -343,7 +411,8 @@ impl AiProvider for OpenAiProvider {
             },
             finish_reason: choice.finish_reason.clone(),
             provider: self.provider_type,
-            metadata: HashMap::new(),
+            metadata: std::collections::HashMap::new(),
+            function_calls: None,
         })
     }
 
@@ -366,5 +435,95 @@ impl AiProvider for OpenAiProvider {
             AiProviderType::Groq => vec!["GROQ_API_KEY", "GROQ_BASE_URL"],
             _ => vec!["API_KEY", "BASE_URL"],
         }
+    }
+
+    fn supports_function_calling(&self) -> bool {
+        true // OpenAI 支持函数调用
+    }
+
+    async fn send_request_with_functions(
+        &self,
+        request: &crate::provider::AiRequest,
+        functions: &[crate::provider::FunctionDefinition],
+    ) -> AiResult<crate::provider::AiResponse> {
+        let openai_tools = Self::convert_to_openai_tools(functions);
+
+        let openai_request = OpenAiRequestWithTools {
+            model: request.model.clone(),
+            messages: vec![
+                Message {
+                    role: "system".to_string(),
+                    content: request.system_prompt.clone(),
+                },
+                Message {
+                    role: "user".to_string(),
+                    content: request.user_prompt.clone(),
+                },
+            ],
+            max_tokens: request.max_tokens,
+            temperature: request.temperature,
+            stream: false,
+            tools: Some(openai_tools),
+            tool_choice: Some(serde_json::json!("auto")),
+        };
+
+        let url = format!("{}/chat/completions", self.base_url);
+        let response = self
+            .client
+            .post(&url)
+            .headers(self.create_headers())
+            .json(&openai_request)
+            .send()
+            .await
+            .owe_res()
+            .with(url.clone())?;
+
+        let response_text = response.text().await.owe_data()?;
+        let openai_response: OpenAiResponse = serde_json::from_str(&response_text)
+            .owe_data()
+            .with(response_text)?;
+
+        let choice = openai_response.choices.first().ok_or_else(|| {
+            AiErrReason::from_biz("TODO: no choices in response".to_string()).to_err()
+        })?;
+
+        // 解析函数调用
+        let function_calls = choice.tool_calls.as_ref().map(|tool_calls| {
+            tool_calls
+                .iter()
+                .map(|tool_call| crate::provider::FunctionCall {
+                    name: tool_call.function.name.clone(),
+                    arguments: serde_json::from_str(&tool_call.function.arguments)
+                        .unwrap_or_default(),
+                })
+                .collect()
+        });
+
+        Ok(crate::provider::AiResponse {
+            content: choice.message.content.clone(),
+            model: openai_response.model.clone(),
+            usage: crate::provider::UsageInfo {
+                prompt_tokens: openai_response
+                    .usage
+                    .as_ref()
+                    .map(|u| u.prompt_tokens)
+                    .unwrap_or(0),
+                completion_tokens: openai_response
+                    .usage
+                    .as_ref()
+                    .map(|u| u.completion_tokens)
+                    .unwrap_or(0),
+                total_tokens: openai_response
+                    .usage
+                    .as_ref()
+                    .map(|u| u.total_tokens)
+                    .unwrap_or(0),
+                estimated_cost: None, // TODO: 实现成本计算
+            },
+            finish_reason: choice.finish_reason.clone(),
+            provider: self.provider_type,
+            metadata: std::collections::HashMap::new(),
+            function_calls,
+        })
     }
 }

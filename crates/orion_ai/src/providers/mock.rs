@@ -69,6 +69,7 @@ impl AiProvider for MockProvider {
             finish_reason: Some("stop".to_string()),
             provider: AiProviderType::Mock,
             metadata: HashMap::new(),
+            function_calls: None,
         })
     }
 

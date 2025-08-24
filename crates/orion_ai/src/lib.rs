@@ -3,6 +3,7 @@ pub mod config;
 mod const_val;
 mod error;
 pub mod factory;
+pub mod function_calling;
 mod infra;
 pub mod provider;
 pub mod providers;
@@ -15,6 +16,10 @@ pub use config::*;
 pub use factory::AiClientEnum;
 pub use roleid::*;
 pub use router::*;
+
+// Function calling 相关导出
+pub use function_calling::{FunctionExecutor, FunctionRegistry};
+pub use provider::{FunctionCall, FunctionDefinition, FunctionParameter, FunctionResult};
 
 // 客户端相关导出
 pub use client::{AiClient, AiClientTrait, AiCoreClient};
