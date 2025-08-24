@@ -65,21 +65,22 @@ async fn test_mock_provider_function_calling() -> orion_ai::AiResult<()> {
         .await?;
 
     // 验证第一个测试的函数调用
-    assert!(
-        response1.function_calls.is_some(),
-        "第一个测试应该返回函数调用"
-    );
+    assert!(response1.tool_calls.is_some(), "第一个测试应该返回函数调用");
 
-    if let Some(function_calls) = &response1.function_calls {
+    if let Some(function_calls) = &response1.tool_calls {
         assert_eq!(function_calls.len(), 1, "应该只调用一个函数");
         assert_eq!(
-            function_calls[0].name, "git_status",
+            function_calls[0].function.name, "git_status",
             "应该调用 git_status 函数"
         );
-        assert!(
-            function_calls[0].arguments.contains_key("path"),
-            "应该包含 path 参数"
-        );
+
+        // 检查参数是否包含在 JSON 字符串中
+        let args = serde_json::from_str::<std::collections::HashMap<String, serde_json::Value>>(
+            &function_calls[0].function.arguments,
+        )
+        .unwrap_or_default();
+        assert!(args.contains_key("path"), "应该包含 path 参数");
+        println!("函数调用: {:?}", function_calls[0]);
     }
 
     // 测试2: 完整Git工作流
@@ -98,13 +99,10 @@ async fn test_mock_provider_function_calling() -> orion_ai::AiResult<()> {
         .await?;
 
     // 验证第二个测试的函数调用
-    assert!(
-        response2.function_calls.is_some(),
-        "第二个测试应该返回函数调用"
-    );
+    assert!(response2.tool_calls.is_some(), "第二个测试应该返回函数调用");
 
     // 处理函数调用
-    if let Some(function_calls) = &response2.function_calls {
+    if let Some(function_calls) = &response2.tool_calls {
         assert!(!function_calls.is_empty(), "应该有函数调用");
 
         let final_result = client.handle_function_calls(&response2, &registry).await?;
@@ -199,11 +197,11 @@ async fn test_mock_provider_single_function_call() -> orion_ai::AiResult<()> {
         .send_request_with_functions(request, &registry)
         .await?;
 
-    assert!(response.function_calls.is_some(), "应该返回函数调用");
+    assert!(response.tool_calls.is_some(), "应该返回函数调用");
 
-    if let Some(function_calls) = &response.function_calls {
+    if let Some(function_calls) = &response.tool_calls {
         assert_eq!(function_calls.len(), 1);
-        assert_eq!(function_calls[0].name, "git_status");
+        assert_eq!(function_calls[0].function.name, "git_status");
     }
 
     Ok(())

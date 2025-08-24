@@ -8,7 +8,8 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use crate::error::{AiErrReason, AiResult};
-use crate::provider::*;
+use crate::provider::{self, *};
+use crate::response_converter::{convert_response_helper, convert_response_with_functions_helper};
 
 #[derive(Debug, Serialize, Deserialize)]
 struct OpenAiRequest {
@@ -20,36 +21,57 @@ struct OpenAiRequest {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-struct Message {
-    role: String,
-    content: String,
+pub struct Message {
+    pub role: String,
+    pub content: String,
 }
 
 #[derive(Debug, Deserialize)]
-struct OpenAiResponse {
-    choices: Vec<Choice>,
-    usage: Option<Usage>,
-    model: String,
+pub struct OpenAiResponse {
+    pub choices: Vec<Choice>,
+    pub usage: Option<Usage>,
+    pub model: String,
 }
 
 #[derive(Debug, Deserialize)]
-struct Choice {
-    message: Message,
-    finish_reason: Option<String>,
-    tool_calls: Option<Vec<OpenAiToolCall>>,
+pub struct Usage {
+    pub prompt_tokens: usize,
+    pub completion_tokens: usize,
+    pub total_tokens: usize,
 }
 
 #[derive(Debug, Deserialize)]
-struct OpenAiToolCall {
-    id: String,
-    r#type: String,
-    function: OpenAiFunctionCall,
+pub struct Choice {
+    pub message: Message,
+    pub finish_reason: Option<String>,
+    pub tool_calls: Option<Vec<OpenAiToolCall>>,
 }
 
 #[derive(Debug, Deserialize)]
-struct OpenAiFunctionCall {
-    name: String,
-    arguments: String, // JSON 字符串
+pub struct OpenAiToolCall {
+    pub index: Option<u32>,
+    pub id: String,
+    pub r#type: String,
+    pub function: OpenAiFunctionCall,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct OpenAiFunctionCall {
+    pub name: String,
+    pub arguments: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct OpenAiTool {
+    pub r#type: String,
+    pub function: OpenAiFunction,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct OpenAiFunction {
+    pub name: String,
+    pub description: String,
+    pub parameters: serde_json::Value,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -63,21 +85,8 @@ struct OpenAiRequestWithTools {
     tool_choice: Option<serde_json::Value>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-struct OpenAiTool {
-    r#type: String,
-    function: OpenAiFunction,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-struct OpenAiFunction {
-    name: String,
-    description: String,
-    parameters: serde_json::Value,
-}
-
 impl OpenAiProvider {
-    fn convert_to_openai_tools(
+    pub fn convert_to_openai_tools(
         functions: &[crate::provider::FunctionDefinition],
     ) -> Vec<OpenAiTool> {
         functions
@@ -130,13 +139,6 @@ impl OpenAiProvider {
             _ => "string".to_string(), // 默认为 string
         }
     }
-}
-
-#[derive(Debug, Deserialize)]
-struct Usage {
-    prompt_tokens: usize,
-    completion_tokens: usize,
-    total_tokens: usize,
 }
 
 pub struct OpenAiProvider {
@@ -397,49 +399,15 @@ impl AiProvider for OpenAiProvider {
             .owe_data()
             .with(response_text)?;
 
-        let choice = response_body
-            .choices
-            .first()
-            .ok_or_else(|| AiErrReason::from_conf("No choices in response".to_string()))?;
-
-        Ok(AiResponse {
-            content: choice.message.content.clone(),
-            model: response_body.model.clone(),
-            usage: crate::provider::UsageInfo {
-                prompt_tokens: response_body
-                    .usage
-                    .as_ref()
-                    .map(|u| u.prompt_tokens)
-                    .unwrap_or(0),
-                completion_tokens: response_body
-                    .usage
-                    .as_ref()
-                    .map(|u| u.completion_tokens)
-                    .unwrap_or(0),
-                total_tokens: response_body
-                    .usage
-                    .as_ref()
-                    .map(|u| u.total_tokens)
-                    .unwrap_or(0),
-                estimated_cost: self.estimate_cost(
-                    &request.model,
-                    response_body
-                        .usage
-                        .as_ref()
-                        .map(|u| u.prompt_tokens)
-                        .unwrap_or(0),
-                    response_body
-                        .usage
-                        .as_ref()
-                        .map(|u| u.completion_tokens)
-                        .unwrap_or(0),
-                ),
+        // 使用独立转换函数
+        convert_response_helper(
+            response_body,
+            self.provider_type,
+            &request.model,
+            |model, input_tokens, output_tokens| {
+                self.estimate_cost(model, input_tokens, output_tokens)
             },
-            finish_reason: choice.finish_reason.clone(),
-            provider: self.provider_type,
-            metadata: std::collections::HashMap::new(),
-            function_calls: None,
-        })
+        )
     }
 
     fn estimate_cost(&self, model: &str, input_tokens: usize, output_tokens: usize) -> Option<f64> {
@@ -492,6 +460,10 @@ impl AiProvider for OpenAiProvider {
             tools: Some(openai_tools),
             tool_choice: Some(serde_json::json!("auto")),
         };
+        debug!(
+            "send client request: {:#}",
+            serde_json::to_string(&openai_request).unwrap()
+        );
 
         let url = format!("{}/chat/completions", self.base_url);
         let response = self
@@ -505,51 +477,19 @@ impl AiProvider for OpenAiProvider {
             .with(url.clone())?;
 
         let response_text = response.text().await.owe_data()?;
+        debug!("Raw response body: {response_text}");
         let openai_response: OpenAiResponse = serde_json::from_str(&response_text)
             .owe_data()
             .with(response_text)?;
 
-        let choice = openai_response.choices.first().ok_or_else(|| {
-            AiErrReason::from_biz("TODO: no choices in response".to_string()).to_err()
-        })?;
-
-        // 解析函数调用
-        let function_calls = choice.tool_calls.as_ref().map(|tool_calls| {
-            tool_calls
-                .iter()
-                .map(|tool_call| crate::provider::FunctionCall {
-                    name: tool_call.function.name.clone(),
-                    arguments: serde_json::from_str(&tool_call.function.arguments)
-                        .unwrap_or_default(),
-                })
-                .collect()
-        });
-
-        Ok(crate::provider::AiResponse {
-            content: choice.message.content.clone(),
-            model: openai_response.model.clone(),
-            usage: crate::provider::UsageInfo {
-                prompt_tokens: openai_response
-                    .usage
-                    .as_ref()
-                    .map(|u| u.prompt_tokens)
-                    .unwrap_or(0),
-                completion_tokens: openai_response
-                    .usage
-                    .as_ref()
-                    .map(|u| u.completion_tokens)
-                    .unwrap_or(0),
-                total_tokens: openai_response
-                    .usage
-                    .as_ref()
-                    .map(|u| u.total_tokens)
-                    .unwrap_or(0),
-                estimated_cost: None, // TODO: 实现成本计算
+        // 使用独立转换函数
+        convert_response_with_functions_helper(
+            openai_response,
+            self.provider_type,
+            &request.model,
+            |model, input_tokens, output_tokens| {
+                self.estimate_cost(model, input_tokens, output_tokens)
             },
-            finish_reason: choice.finish_reason.clone(),
-            provider: self.provider_type,
-            metadata: std::collections::HashMap::new(),
-            function_calls,
-        })
+        )
     }
 }

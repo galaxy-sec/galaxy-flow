@@ -50,3 +50,4 @@ once_cell = "1.21"
 [dev-dependencies]
 rstest = "0.26"
 tempfile = "3.10"
+env_logger = "*"

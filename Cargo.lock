@@ -2224,6 +2224,7 @@ dependencies = [
  "contracts",
  "derive_more",
  "dirs",
+ "env_logger 0.10.2",
  "fs_extra",
  "getset",
  "home",

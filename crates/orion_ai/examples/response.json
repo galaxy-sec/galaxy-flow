@@ -1,0 +1,34 @@
+{
+  "id": "bc0e9568-9853-4f56-9c9c-d073616f3feb",
+  "object": "chat.completion",
+  "created": 1756041918,
+  "model": "deepseek-chat",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "我来帮您执行完整的Git工作流。让我按顺序执行这些步骤：",
+        "tool_calls": [
+          {
+            "index": 0,
+            "id": "call_0_3ebc9e84-a137-4188-995c-9381586f7097",
+            "type": "function",
+            "function": { "name": "git_status", "arguments": "{}" }
+          }
+        ]
+      },
+      "logprobs": null,
+      "finish_reason": "tool_calls"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 398,
+    "completion_tokens": 24,
+    "total_tokens": 422,
+    "prompt_tokens_details": { "cached_tokens": 384 },
+    "prompt_cache_hit_tokens": 384,
+    "prompt_cache_miss_tokens": 14
+  },
+  "system_fingerprint": "fp_feb633d1f5_prod0820_fp8_kvcache"
+}

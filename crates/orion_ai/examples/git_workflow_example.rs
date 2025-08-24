@@ -6,13 +6,14 @@ use orion_variate::vars::EnvEvalable;
 
 #[tokio::main]
 async fn main() -> orion_ai::AiResult<()> {
+    env_logger::init();
     // 1. 配置 DeepSeek API
     let config = if let Some(dict) = load_key_dict("sec_deepseek_api_key") {
         println!("✅ 使用 DeepSeek API 进行 Git 操作");
         AiConfig::example().env_eval(&dict)
     } else {
         println!("❌ 错误: 需要配置 DeepSeek API 密钥");
-        println!("请设置 sec_deepseek_api_key 配置");
+        println!("请设置 sec_deepseek_api_key 配置!");
         return Ok(());
     };
 
@@ -56,11 +57,11 @@ async fn main() -> orion_ai::AiResult<()> {
         .send_request_with_functions(status_request, &registry)
         .await?;
 
-    match &status_response.function_calls {
+    match &status_response.tool_calls {
         Some(function_calls) => {
             println!("✅ AI 请求执行Git状态检查");
             for function_call in function_calls {
-                println!("   - 调用函数: {}", function_call.name);
+                println!("   - 调用函数: {}", function_call.function.name);
             }
 
             println!("\n⚙️ 执行Git状态检查...");
@@ -90,11 +91,11 @@ async fn main() -> orion_ai::AiResult<()> {
         .send_request_with_functions(add_request, &registry)
         .await?;
 
-    match &add_response.function_calls {
+    match &add_response.tool_calls {
         Some(function_calls) => {
             println!("✅ AI 请求添加文件");
             for function_call in function_calls {
-                println!("   - 调用函数: {}", function_call.name);
+                println!("   - 调用函数: {}", function_call.function.name);
             }
 
             println!("\n⚙️ 执行添加文件操作...");
@@ -126,11 +127,11 @@ async fn main() -> orion_ai::AiResult<()> {
         .send_request_with_functions(commit_request, &registry)
         .await?;
 
-    match &commit_response.function_calls {
+    match &commit_response.tool_calls {
         Some(function_calls) => {
             println!("✅ AI 请求创建提交");
             for function_call in function_calls {
-                println!("   - 调用函数: {}", function_call.name);
+                println!("   - 调用函数: {}", function_call.function.name);
             }
 
             println!("\n⚙️ 执行提交操作...");
@@ -162,11 +163,11 @@ async fn main() -> orion_ai::AiResult<()> {
         .send_request_with_functions(push_request, &registry)
         .await?;
 
-    match &push_response.function_calls {
+    match &push_response.tool_calls {
         Some(function_calls) => {
             println!("✅ AI 请求推送代码");
             for function_call in function_calls {
-                println!("   - 调用函数: {}", function_call.name);
+                println!("   - 调用函数: {}", function_call.function.name);
             }
 
             println!("\n⚙️ 执行推送操作...");
@@ -200,12 +201,12 @@ async fn main() -> orion_ai::AiResult<()> {
         .send_request_with_functions(workflow_request, &registry)
         .await?;
 
-    match &workflow_response.function_calls {
+    match &workflow_response.tool_calls {
         Some(function_calls) => {
             println!("✅ AI 请求执行完整工作流");
             println!("   计划执行 {} 个函数:", function_calls.len());
             for (i, function_call) in function_calls.iter().enumerate() {
-                println!("   {}. {}", i + 1, function_call.name);
+                println!("   {}. {}", i + 1, function_call.function.name);
             }
 
             println!("\n⚙️ 执行完整工作流...");

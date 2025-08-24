@@ -6,19 +6,34 @@ use crate::{
     FunctionResult,
 };
 
+// 解析函数参数的辅助函数
+fn parse_function_arguments(
+    arguments: &str,
+) -> AiResult<serde_json::Map<String, serde_json::Value>> {
+    if arguments.trim().is_empty() || arguments == "{}" {
+        return Ok(serde_json::Map::new());
+    }
+
+    let parsed: serde_json::Value = serde_json::from_str(arguments).map_err(|e| {
+        AiErrReason::from_logic(format!("Failed to parse arguments: {}", e)).to_err()
+    })?;
+
+    match parsed {
+        serde_json::Value::Object(map) => Ok(map),
+        _ => Err(AiErrReason::from_logic("Arguments must be an object".to_string()).to_err()),
+    }
+}
+
 // Git 函数执行器
 pub struct GitFunctionExecutor;
 
 #[async_trait::async_trait]
 impl FunctionExecutor for GitFunctionExecutor {
     async fn execute(&self, function_call: &FunctionCall) -> AiResult<FunctionResult> {
-        match function_call.name.as_str() {
+        match function_call.function.name.as_str() {
             "git_status" => {
-                let path = function_call
-                    .arguments
-                    .get("path")
-                    .and_then(|v| v.as_str())
-                    .unwrap_or(".");
+                let args = parse_function_arguments(&function_call.function.arguments)?;
+                let path = args.get("path").and_then(|v| v.as_str()).unwrap_or(".");
 
                 match tokio::process::Command::new("git")
                     .args(["status", "--porcelain"])
@@ -46,8 +61,8 @@ impl FunctionExecutor for GitFunctionExecutor {
             }
 
             "git_add" => {
-                let files = function_call
-                    .arguments
+                let args = parse_function_arguments(&function_call.function.arguments)?;
+                let files = args
                     .get("files")
                     .and_then(|v| v.as_array())
                     .ok_or_else(|| {
@@ -95,8 +110,8 @@ impl FunctionExecutor for GitFunctionExecutor {
             }
 
             "git_commit" => {
-                let message = function_call
-                    .arguments
+                let args = parse_function_arguments(&function_call.function.arguments)?;
+                let message = args
                     .get("message")
                     .and_then(|v| v.as_str())
                     .ok_or_else(|| {
@@ -137,13 +152,12 @@ impl FunctionExecutor for GitFunctionExecutor {
             }
 
             "git_push" => {
-                let remote = function_call
-                    .arguments
+                let args = parse_function_arguments(&function_call.function.arguments)?;
+                let remote = args
                     .get("remote")
                     .and_then(|v| v.as_str())
                     .unwrap_or("origin");
-                let branch = function_call
-                    .arguments
+                let branch = args
                     .get("branch")
                     .and_then(|v| v.as_str())
                     .unwrap_or("HEAD");

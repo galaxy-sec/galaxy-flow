@@ -1,0 +1,85 @@
+{
+  "model": "deepseek-chat",
+  "messages": [
+    {
+      "role": "system",
+      "content": "你是一个Git助手。当用户要求推送代码时，你必须调用git_push函数。"
+    },
+    { "role": "user", "content": "请将提交推送到远程仓库" }
+  ],
+  "max_tokens": null,
+  "temperature": 0.7,
+  "stream": false,
+  "tools": [
+    {
+      "type": "function",
+      "function": {
+        "name": "git_push",
+        "description": "推送提交到远程仓库",
+        "parameters": {
+          "properties": {
+            "branch": {
+              "description": "分支名称，默认为当前分支",
+              "type": "string"
+            },
+            "remote": {
+              "description": "远程仓库名称，默认为origin",
+              "type": "string"
+            }
+          },
+          "required": [],
+          "type": "object"
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "git_commit",
+        "description": "创建Git提交",
+        "parameters": {
+          "properties": {
+            "message": { "description": "提交消息", "type": "string" }
+          },
+          "required": ["message"],
+          "type": "object"
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "git_status",
+        "description": "获取Git仓库状态",
+        "parameters": {
+          "properties": {
+            "path": {
+              "description": "仓库路径，默认为当前目录",
+              "type": "string"
+            }
+          },
+          "required": [],
+          "type": "object"
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "git_add",
+        "description": "添加文件到Git暂存区",
+        "parameters": {
+          "properties": {
+            "files": {
+              "description": "要添加的文件列表，支持通配符",
+              "type": "array"
+            }
+          },
+          "required": ["files"],
+          "type": "object"
+        }
+      }
+    }
+  ],
+  "tool_choice": "auto"
+}

@@ -61,7 +61,7 @@ impl FunctionRegistry {
     pub async fn execute_function(&self, function_call: &FunctionCall) -> AiResult<FunctionResult> {
         let executor = self
             .executors
-            .get(&function_call.name)
+            .get(&function_call.function.name)
             .ok_or_else(|| AiErrReason::from_logic("TODO: executor not found".into()).to_err())?;
 
         executor.execute(function_call).await
@@ -107,11 +107,15 @@ mod tests {
     #[async_trait]
     impl FunctionExecutor for MockExecutor {
         async fn execute(&self, function_call: &FunctionCall) -> AiResult<FunctionResult> {
+            // 解析 JSON 字符串参数
+            let args: serde_json::Value = serde_json::from_str(&function_call.function.arguments)
+                .unwrap_or_else(|_| serde_json::json!({}));
+
             Ok(FunctionResult {
-                name: function_call.name.clone(),
+                name: function_call.function.name.clone(),
                 result: json!({
-                    "message": format!("Mock execution of {}", function_call.name),
-                    "args": function_call.arguments
+                    "message": format!("Mock execution of {}", function_call.function.name),
+                    "args": args
                 }),
                 error: None,
             })
@@ -172,8 +176,13 @@ mod tests {
             .unwrap();
 
         let function_call = FunctionCall {
-            name: "test_exec".to_string(),
-            arguments: HashMap::from([("param1".to_string(), json!("value1"))]),
+            index: Some(0),
+            id: "call_test_001".to_string(),
+            r#type: "function".to_string(),
+            function: crate::provider::FunctionCallInfo {
+                name: "test_exec".to_string(),
+                arguments: "{\"param1\":\"value1\"}".to_string(),
+            },
         };
 
         let result = registry.execute_function(&function_call).await;
@@ -190,8 +199,13 @@ mod tests {
         let registry = FunctionRegistry::new();
 
         let function_call = FunctionCall {
-            name: "unknown_function".to_string(),
-            arguments: HashMap::new(),
+            index: Some(0),
+            id: "call_test_002".to_string(),
+            r#type: "function".to_string(),
+            function: crate::provider::FunctionCallInfo {
+                name: "unknown_function".to_string(),
+                arguments: "{}".to_string(),
+            },
         };
 
         let result = registry.execute_function(&function_call).await;

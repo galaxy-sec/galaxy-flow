@@ -229,7 +229,7 @@ mod tests {
             finish_reason: None,
             provider: crate::provider::AiProviderType::Mock,
             metadata: std::collections::HashMap::new(),
-            function_calls: todo!(),
+            tool_calls: None,
         };
 
         // 记录交互

@@ -2,6 +2,7 @@ use crate::error::AiErrReason;
 use async_trait::async_trait;
 use orion_error::ToStructError;
 use orion_error::UvsBizFrom;
+use orion_error::UvsLogicFrom;
 use serde::{Deserialize, Serialize};
 
 use crate::AiResult;
@@ -179,7 +180,7 @@ pub struct AiResponse {
     pub provider: AiProviderType,
     pub metadata: std::collections::HashMap<String, serde_json::Value>,
     // 新增：函数调用结果
-    pub function_calls: Option<Vec<FunctionCall>>,
+    pub tool_calls: Option<Vec<FunctionCall>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -229,10 +230,10 @@ pub trait AiProvider: Send + Sync {
     /// 发送带函数调用的请求 - 简化版本
     async fn send_request_with_functions(
         &self,
-        request: &AiRequest,
-        functions: &[FunctionDefinition],
+        _request: &AiRequest,
+        _functions: &[FunctionDefinition],
     ) -> AiResult<AiResponse> {
-        Err(AiErrReason::from_biz("TODO: function calling not supported".to_string()).to_err())
+        Err(AiErrReason::from_logic("TODO: function calling not supported".to_string()).to_err())
     }
 }
 
@@ -253,11 +254,19 @@ pub struct FunctionDefinition {
     pub parameters: Vec<FunctionParameter>,
 }
 
-/// 函数调用请求 - 简化版本
+/// 函数调用请求 - 匹配 OpenAI 和 DeepSeek API 格式
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FunctionCall {
+    pub index: Option<u32>,
+    pub id: String,
+    pub r#type: String,
+    pub function: FunctionCallInfo,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FunctionCallInfo {
     pub name: String,
-    pub arguments: std::collections::HashMap<String, serde_json::Value>,
+    pub arguments: String,
 }
 
 /// 函数调用结果 - 简化版本

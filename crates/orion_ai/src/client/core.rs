@@ -164,14 +164,14 @@ impl AiClient {
         response: &AiResponse,
         registry: &FunctionRegistry,
     ) -> AiResult<String> {
-        if let Some(function_calls) = &response.function_calls {
+        if let Some(tool_calls) = &response.tool_calls {
             let mut results = Vec::new();
 
-            for function_call in function_calls {
-                let result = registry.execute_function(function_call).await?;
+            for tool_call in tool_calls {
+                let result = registry.execute_function(tool_call).await?;
                 results.push(format!(
                     "Function {} result: {}",
-                    function_call.name, result.result
+                    tool_call.function.name, result.result
                 ));
             }
 

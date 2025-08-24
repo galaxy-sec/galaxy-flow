@@ -2,6 +2,11 @@ default_role:
   id: galactiward
 default_model: deepseek-chat
 roles:
+  operations:
+    name: operations
+    description: 专注于系统运维的专家
+    system_prompt: 你是一个专业的运维专家，擅长诊断系统问题、和解决问题。
+    rules_path: ai-rules/operations
   galactiward:
     name: galactiward
     description: 专注于Galaxy生态专家
@@ -12,8 +17,3 @@ roles:
     description: 专注于代码开发的技术专家
     system_prompt: 你是一个专业的开发者，擅长高质量的代码实现、系统设计和技术问题解决。
     rules_path: ai-rules/developer
-  operations:
-    name: operations
-    description: 专注于系统运维的专家
-    system_prompt: 你是一个专业的运维专家，擅长诊断系统问题、和解决问题。
-    rules_path: ai-rules/operations
