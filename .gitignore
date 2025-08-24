@@ -9,4 +9,5 @@ _gal/.report
 temp
 .DS_Store
 *.bak
-task/*
+tasks/*
+gxl-docs
