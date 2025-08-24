@@ -24,6 +24,8 @@ struct OpenAiRequest {
 pub struct Message {
     pub role: String,
     pub content: String,
+    #[serde(default)]
+    pub tool_calls: Option<Vec<OpenAiToolCall>>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -47,7 +49,7 @@ pub struct Choice {
     pub tool_calls: Option<Vec<OpenAiToolCall>>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct OpenAiToolCall {
     pub index: Option<u32>,
     pub id: String,
@@ -55,7 +57,7 @@ pub struct OpenAiToolCall {
     pub function: OpenAiFunctionCall,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct OpenAiFunctionCall {
     pub name: String,
     pub arguments: String,
@@ -359,11 +361,13 @@ impl AiProvider for OpenAiProvider {
         let system_msg = Message {
             role: "system".to_string(),
             content: request.system_prompt.clone(),
+            tool_calls: None,
         };
 
         let user_msg = Message {
             role: "user".to_string(),
             content: request.user_prompt.clone(),
+            tool_calls: None,
         };
 
         let openai_request = OpenAiRequest {
@@ -443,10 +447,12 @@ impl AiProvider for OpenAiProvider {
                 Message {
                     role: "system".to_string(),
                     content: request.system_prompt.clone(),
+                    tool_calls: None,
                 },
                 Message {
                     role: "user".to_string(),
                     content: request.user_prompt.clone(),
+                    tool_calls: None,
                 },
             ],
             max_tokens: request.max_tokens,
@@ -455,12 +461,37 @@ impl AiProvider for OpenAiProvider {
             tools: Some(openai_tools),
             tool_choice: Some(serde_json::json!("auto")),
         };
+
+        // 调试输出：显示发送的请求数据
+        println!("🔍 调试 - 发送到 {} 的请求数据:", self.provider_type);
+        println!("   - Model: {}", openai_request.model);
+        println!("   - Tool Choice: {:?}", openai_request.tool_choice);
+        println!(
+            "   - Tools Count: {:?}",
+            openai_request.tools.as_ref().map(|t| t.len())
+        );
+        if let Some(tools) = &openai_request.tools {
+            for (i, tool) in tools.iter().enumerate() {
+                println!(
+                    "   - Tool {}: {} ({})",
+                    i, tool.function.name, tool.function.description
+                );
+            }
+        }
+        println!("   - Messages Count: {}", openai_request.messages.len());
+        for (i, msg) in openai_request.messages.iter().enumerate() {
+            let content_preview = msg.content.chars().take(100).collect::<String>();
+            println!("   - Message {}: [{}] {}", i, msg.role, content_preview);
+        }
+
         debug!(
             "send client request: {:#}",
             serde_json::to_string(&openai_request).unwrap()
         );
 
         let url = format!("{}/chat/completions", self.base_url);
+        println!("🔍 调试 - 请求URL: {}", url);
+
         let response = self
             .client
             .post(&url)
@@ -472,6 +503,7 @@ impl AiProvider for OpenAiProvider {
             .with(url.clone())?;
 
         let response_text = response.text().await.owe_data()?;
+        println!("🔍 调试 - 原始响应文本: {}", response_text);
         debug!("Raw response body: {response_text}");
 
         // 使用高级转换函数（自动解析JSON和转换响应）

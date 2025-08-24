@@ -158,8 +158,34 @@ fn convert_response_auto(
         .to_err()
     })?;
 
+    // 调试输出：检查choice中的tool_calls
+    println!(
+        "🔍 响应转换调试 - choice.tool_calls: {:?}",
+        choice.tool_calls
+    );
+    println!(
+        "🔍 响应转换调试 - choice.message.tool_calls: {:?}",
+        choice.message.tool_calls
+    );
+
     // 自动判断是否需要解析函数调用
-    let tool_calls = choice.tool_calls.as_ref().map(|tool_calls| {
+    // 优先从message.tool_calls读取，如果没有则从choice.tool_calls读取
+    let tool_calls = if choice.message.tool_calls.is_some() {
+        choice.message.tool_calls.as_ref()
+    } else {
+        choice.tool_calls.as_ref()
+    }
+    .map(|tool_calls| {
+        println!(
+            "🔍 响应转换调试 - 解析tool_calls，数量: {}",
+            tool_calls.len()
+        );
+        for (i, tool_call) in tool_calls.iter().enumerate() {
+            println!(
+                "   - Tool Call {}: {} with args: {}",
+                i, tool_call.function.name, tool_call.function.arguments
+            );
+        }
         tool_calls
             .iter()
             .map(|tool_call| FunctionCall {
