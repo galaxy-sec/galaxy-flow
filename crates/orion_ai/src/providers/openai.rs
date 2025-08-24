@@ -1,15 +1,15 @@
 use async_trait::async_trait;
 use log::debug;
-use orion_error::{ErrorOwe, ErrorWith, ToStructError, UvsBizFrom, UvsConfFrom};
+use orion_error::{ErrorOwe, ErrorWith};
 use reqwest::{header, Client};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Duration;
 
-use crate::error::{AiErrReason, AiResult};
-use crate::provider::{self, *};
-use crate::response_converter::{convert_response_helper, convert_response_with_functions_helper};
+use crate::error::AiResult;
+use crate::provider::*;
+use crate::response_converter::convert_response_from_text;
 
 #[derive(Debug, Serialize, Deserialize)]
 struct OpenAiRequest {
@@ -394,14 +394,9 @@ impl AiProvider for OpenAiProvider {
         let response_text = response.text().await.owe_data()?;
         debug!("Raw response body: {response_text}");
 
-        // Then parse JSON manually
-        let response_body: OpenAiResponse = serde_json::from_str(&response_text)
-            .owe_data()
-            .with(response_text)?;
-
-        // 使用独立转换函数
-        convert_response_helper(
-            response_body,
+        // 使用高级转换函数（自动解析JSON和转换响应）
+        convert_response_from_text(
+            &response_text,
             self.provider_type,
             &request.model,
             |model, input_tokens, output_tokens| {
@@ -478,13 +473,10 @@ impl AiProvider for OpenAiProvider {
 
         let response_text = response.text().await.owe_data()?;
         debug!("Raw response body: {response_text}");
-        let openai_response: OpenAiResponse = serde_json::from_str(&response_text)
-            .owe_data()
-            .with(response_text)?;
 
-        // 使用独立转换函数
-        convert_response_with_functions_helper(
-            openai_response,
+        // 使用高级转换函数（自动解析JSON和转换响应）
+        convert_response_from_text(
+            &response_text,
             self.provider_type,
             &request.model,
             |model, input_tokens, output_tokens| {

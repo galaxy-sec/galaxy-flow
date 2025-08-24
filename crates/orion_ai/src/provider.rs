@@ -1,7 +1,7 @@
 use crate::error::AiErrReason;
 use async_trait::async_trait;
 use orion_error::ToStructError;
-use orion_error::UvsBizFrom;
+
 use orion_error::UvsLogicFrom;
 use serde::{Deserialize, Serialize};
 

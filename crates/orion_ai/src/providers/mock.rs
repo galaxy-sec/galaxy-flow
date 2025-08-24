@@ -24,7 +24,7 @@ impl AiProvider for MockProvider {
         AiProviderType::Mock
     }
 
-    async fn is_model_available(&self, model: &str) -> bool {
+    async fn is_model_available(&self, _model: &str) -> bool {
         // MockProvider 支持所有模型名称，这样就能测试 function calling
         true
     }

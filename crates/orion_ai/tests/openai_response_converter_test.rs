@@ -2,6 +2,7 @@ use orion_ai::provider::{AiProviderType, AiResponse, FunctionCall, FunctionCallI
 use orion_ai::providers::openai::{
     Choice, Message, OpenAiFunctionCall, OpenAiResponse, OpenAiToolCall, Usage,
 };
+use orion_ai::response_converter::convert_response_from_text;
 
 #[test]
 fn test_send_request_response_conversion() {
@@ -428,4 +429,87 @@ fn create_mock_tool_call(
             arguments: arguments.to_string(),
         },
     }
+}
+
+#[test]
+fn test_convert_response_from_text_deepseek_tool_calls() {
+    // 真实的 DeepSeek API 响应数据
+    let json_response = r#"
+{
+  "id": "bc0e9568-9853-4f56-9c9c-d073616f3feb",
+  "object": "chat.completion",
+  "created": 1756041918,
+  "model": "deepseek-chat",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "我来帮您执行完整的Git工作流。让我按顺序执行这些步骤："
+      },
+      "logprobs": null,
+      "finish_reason": "tool_calls",
+      "tool_calls": [
+        {
+          "index": 0,
+          "id": "call_0_3ebc9e84-a137-4188-995c-9381586f7097",
+          "type": "function",
+          "function": { "name": "git_status", "arguments": "{}" }
+        }
+      ]
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 398,
+    "completion_tokens": 24,
+    "total_tokens": 422,
+    "prompt_tokens_details": { "cached_tokens": 384 },
+    "prompt_cache_hit_tokens": 384,
+    "prompt_cache_miss_tokens": 14
+  },
+  "system_fingerprint": "fp_feb633d1f5_prod0820_fp8_kvcache"
+}
+"#;
+
+    let result = convert_response_from_text(
+        json_response,
+        AiProviderType::DeepSeek,
+        "deepseek-chat",
+        |model, input_tokens, output_tokens| {
+            Some(input_tokens as f64 * 0.001 + output_tokens as f64 * 0.002)
+        },
+    )
+    .unwrap();
+
+    // 验证基本响应信息
+    assert_eq!(result.model, "deepseek-chat");
+
+    // 验证消息内容
+    assert_eq!(
+        result.content,
+        "我来帮您执行完整的Git工作流。让我按顺序执行这些步骤："
+    );
+
+    // 验证函数调用
+    assert!(result.tool_calls.is_some());
+    let tool_calls = result.tool_calls.unwrap();
+    assert_eq!(tool_calls.len(), 1);
+
+    // 验证单个函数调用
+    let tool_call = &tool_calls[0];
+    assert_eq!(tool_call.index, Some(0));
+    assert_eq!(tool_call.id, "call_0_3ebc9e84-a137-4188-995c-9381586f7097");
+    assert_eq!(tool_call.r#type, "function");
+    assert_eq!(tool_call.function.name, "git_status");
+    assert_eq!(tool_call.function.arguments, "{}");
+
+    // 验证使用信息
+    let usage = &result.usage;
+    assert_eq!(usage.prompt_tokens, 398);
+    assert_eq!(usage.completion_tokens, 24);
+    assert_eq!(usage.total_tokens, 422);
+
+    // 验证成本计算
+    assert!(result.usage.estimated_cost.is_some());
+    assert_eq!(result.usage.estimated_cost.unwrap(), 0.446);
 }
