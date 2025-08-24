@@ -33,10 +33,8 @@ impl ScopeEval2 {
                         mode = IterMode::Work;
                         work_level += 1;
                         take_len += 1;
-                        continue;
-                    } else {
-                        break;
                     }
+                    break;
                 }
                 IterMode::Work => {
                     if c == self.end {

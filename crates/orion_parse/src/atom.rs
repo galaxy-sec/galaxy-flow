@@ -5,12 +5,20 @@ use winnow::error::{ContextError, ErrMode, StrContext, StrContextValue};
 use winnow::token::{literal, take_till, take_while};
 use winnow::{Parser, Result};
 
+/// 提取变量名
+///
+/// # Errors
+/// 如果输入不包含有效的变量名，则返回解析错误
 pub fn take_var_name(input: &mut &str) -> Result<String> {
     let _ = multispace0.parse_next(input)?;
     let key = take_while(1.., ('0'..='9', 'A'..='Z', 'a'..='z', ['_'])).parse_next(input)?;
     Ok(key.to_string())
 }
 
+/// 提取完整的变量名（包含点、连字符、冒号）
+///
+/// # Errors
+/// 如果输入不包含有效的完整变量名，则返回解析错误
 pub fn take_var_full_name(input: &mut &str) -> Result<String> {
     let _ = multispace0.parse_next(input)?;
     let key = take_while(1.., ('0'..='9', 'A'..='Z', 'a'..='z', ['_', '.', '[', ']']))
@@ -18,11 +26,19 @@ pub fn take_var_full_name(input: &mut &str) -> Result<String> {
     Ok(key.to_string())
 }
 
+/// 提取变量路径
+///
+/// # Errors
+/// 如果输入不包含有效的变量路径，则返回解析错误
 pub fn take_var_path(input: &mut &str) -> Result<String> {
     let _ = multispace0.parse_next(input)?;
     let key = take_while(1.., ('0'..='9', 'A'..='Z', 'a'..='z', ['_', '.'])).parse_next(input)?;
     Ok(key.to_string())
 }
+/// 提取JSON路径
+///
+/// # Errors
+/// 如果输入不包含有效的JSON路径，则返回解析错误
 pub fn take_json_path(input: &mut &str) -> Result<String> {
     let _ = multispace0.parse_next(input)?;
     let key = take_while(
@@ -33,6 +49,10 @@ pub fn take_json_path(input: &mut &str) -> Result<String> {
     Ok(key.to_string())
 }
 
+/// 提取通配符键
+///
+/// # Errors
+/// 如果输入不包含有效的通配符键，则返回解析错误
 pub fn take_wild_key(input: &mut &str) -> Result<String> {
     let _ = multispace0.parse_next(input)?;
     let key = take_while(
@@ -47,6 +67,10 @@ pub fn take_wild_key(input: &mut &str) -> Result<String> {
     .parse_next(input)?;
     Ok(key.to_string())
 }
+/// 提取文件路径
+///
+/// # Errors
+/// 如果输入不包含有效的文件路径，则返回解析错误
 pub fn take_path(input: &mut &str) -> Result<String> {
     let _ = multispace0.parse_next(input)?;
     let key = take_while(1.., ('0'..='9', 'A'..='Z', 'a'..='z', ['_', '.', '/'], '-'))
@@ -54,17 +78,24 @@ pub fn take_path(input: &mut &str) -> Result<String> {
     Ok(key.to_string())
 }
 
+/// 提取对象路径
+///
+/// # Errors
+/// 如果输入不包含有效的对象路径，则返回解析错误
 pub fn take_obj_path(input: &mut &str) -> Result<String> {
     let _ = multispace0.parse_next(input)?;
     let key = take_while(1.., ('0'..='9', 'A'..='Z', 'a'..='z', ['_', '/'])).parse_next(input)?;
     let _ = multispace1.parse_next(input)?;
     Ok(key.to_string())
 }
+/// 提取对象通配符路径
+///
+/// # Errors
+/// 如果输入不包含有效的对象通配符路径，则返回解析错误
 pub fn take_obj_wild_path(input: &mut &str) -> Result<String> {
     let _ = multispace0.parse_next(input)?;
     let key =
         take_while(1.., ('0'..='9', 'A'..='Z', 'a'..='z', ['_', '/', '*'])).parse_next(input)?;
-    let _ = multispace1.parse_next(input)?;
     Ok(key.to_string())
 }
 

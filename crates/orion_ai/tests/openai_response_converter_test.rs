@@ -79,7 +79,7 @@ fn test_send_request_with_tools_response_conversion() {
     let estimated_cost = Some(0.001);
 
     // 手动构造 AiResponse（模拟 send_request_with_functions 的逻辑）
-    let tool_calls = choice.tool_calls.as_ref().map(|tool_calls| {
+    let tool_calls = choice.message.tool_calls.as_ref().map(|tool_calls| {
         tool_calls
             .iter()
             .map(|tool_call| FunctionCall {
@@ -174,7 +174,7 @@ fn test_multiple_tool_calls_response_conversion() {
     let estimated_cost = Some(0.006);
 
     // 构造 AiResponse
-    let tool_calls = choice.tool_calls.as_ref().map(|tool_calls| {
+    let tool_calls = choice.message.tool_calls.as_ref().map(|tool_calls| {
         tool_calls
             .iter()
             .map(|tool_call| FunctionCall {
@@ -330,7 +330,7 @@ fn test_response_conversion_edge_cases() {
         Some(vec![]), // 空的工具调用数组
     );
 
-    let tool_calls = choice2.tool_calls.as_ref().map(|tool_calls| {
+    let tool_calls = choice2.message.tool_calls.as_ref().map(|tool_calls| {
         tool_calls
             .iter()
             .map(|tool_call| FunctionCall {
@@ -406,9 +406,9 @@ fn create_mock_choice(
         message: Message {
             role: "assistant".to_string(),
             content: content.to_string(),
+            tool_calls,
         },
         finish_reason: finish_reason.map(|s| s.to_string()),
-        tool_calls,
     }
 }
 

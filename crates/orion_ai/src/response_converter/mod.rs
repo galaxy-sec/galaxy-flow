@@ -58,7 +58,7 @@ impl OpenAiResponseConverter {
             .first()
             .expect("No choices in response");
 
-        let tool_calls = choice.tool_calls.as_ref().map(|tool_calls| {
+        let tool_calls = choice.message.tool_calls.as_ref().map(|tool_calls| {
             tool_calls
                 .iter()
                 .map(|tool_call| FunctionCall {
@@ -158,34 +158,9 @@ fn convert_response_auto(
         .to_err()
     })?;
 
-    // 调试输出：检查choice中的tool_calls
-    println!(
-        "🔍 响应转换调试 - choice.tool_calls: {:?}",
-        choice.tool_calls
-    );
-    println!(
-        "🔍 响应转换调试 - choice.message.tool_calls: {:?}",
-        choice.message.tool_calls
-    );
-
     // 自动判断是否需要解析函数调用
-    // 优先从message.tool_calls读取，如果没有则从choice.tool_calls读取
-    let tool_calls = if choice.message.tool_calls.is_some() {
-        choice.message.tool_calls.as_ref()
-    } else {
-        choice.tool_calls.as_ref()
-    }
-    .map(|tool_calls| {
-        println!(
-            "🔍 响应转换调试 - 解析tool_calls，数量: {}",
-            tool_calls.len()
-        );
-        for (i, tool_call) in tool_calls.iter().enumerate() {
-            println!(
-                "   - Tool Call {}: {} with args: {}",
-                i, tool_call.function.name, tool_call.function.arguments
-            );
-        }
+    // tool_calls应该在message级别，这是正确的API格式
+    let tool_calls = choice.message.tool_calls.as_ref().map(|tool_calls| {
         tool_calls
             .iter()
             .map(|tool_call| FunctionCall {
@@ -250,20 +225,20 @@ mod helper_tests {
         {
             "message": {
                 "role": "assistant",
-                "content": "我来帮您执行Git操作"
-            },
-            "finish_reason": "tool_calls",
-            "tool_calls": [
-                {
-                    "index": 0,
-                    "id": "call_0_889decaf-c79e-4e8c-8655-fe0d7805298c",
-                    "type": "function",
-                    "function": {
-                        "name": "git_status",
-                        "arguments": "{}"
+                "content": "我来帮您执行Git操作",
+                "tool_calls": [
+                    {
+                        "index": 0,
+                        "id": "call_0_889decaf-c79e-4e8c-8655-fe0d7805298c",
+                        "type": "function",
+                        "function": {
+                            "name": "git_status",
+                            "arguments": "{}"
+                        }
                     }
-                }
-            ]
+                ]
+            },
+            "finish_reason": "tool_calls"
         }
     ],
     "usage": {
@@ -462,38 +437,38 @@ mod helper_tests {
         {
             "message": {
                 "role": "assistant",
-                "content": "执行完整的Git工作流"
+                "content": "执行完整的Git工作流",
+                "tool_calls": [
+                    {
+                        "index": 0,
+                        "id": "call_001",
+                        "type": "function",
+                        "function": {
+                            "name": "git_status",
+                            "arguments": "{}"
+                        }
+                    },
+                    {
+                        "index": 1,
+                        "id": "call_002",
+                        "type": "function",
+                        "function": {
+                            "name": "git_add",
+                            "arguments": "{\"files\": [\".\"]}"
+                        }
+                    },
+                    {
+                        "index": 2,
+                        "id": "call_003",
+                        "type": "function",
+                        "function": {
+                            "name": "git_commit",
+                            "arguments": "{\"message\": \"Test commit\"}"
+                        }
+                    }
+                ]
             },
-            "finish_reason": "tool_calls",
-            "tool_calls": [
-                {
-                    "index": 0,
-                    "id": "call_001",
-                    "type": "function",
-                    "function": {
-                        "name": "git_status",
-                        "arguments": "{}"
-                    }
-                },
-                {
-                    "index": 1,
-                    "id": "call_002",
-                    "type": "function",
-                    "function": {
-                        "name": "git_add",
-                        "arguments": "{\"files\": [\".\"]}"
-                    }
-                },
-                {
-                    "index": 2,
-                    "id": "call_003",
-                    "type": "function",
-                    "function": {
-                        "name": "git_commit",
-                        "arguments": "{\"message\": \"Test commit\"}"
-                    }
-                }
-            ]
+            "finish_reason": "tool_calls"
         }
     ],
     "usage": {
@@ -545,20 +520,20 @@ mod helper_tests {
         {
             "message": {
                 "role": "assistant",
-                "content": "我来帮您执行Git操作"
-            },
-            "finish_reason": "tool_calls",
-            "tool_calls": [
-                {
-                    "index": 0,
-                    "id": "call_0_889decaf-c79e-4e8c-8655-fe0d7805298c",
-                    "type": "function",
-                    "function": {
-                        "name": "git_status",
-                        "arguments": "{}"
+                "content": "我来帮您执行Git操作",
+                "tool_calls": [
+                    {
+                        "index": 0,
+                        "id": "call_0_889decaf-c79e-4e8c-8655-fe0d7805298c",
+                        "type": "function",
+                        "function": {
+                            "name": "git_status",
+                            "arguments": "{}"
+                        }
                     }
-                }
-            ]
+                ]
+            },
+            "finish_reason": "tool_calls"
         }
     ],
     "usage": {
@@ -577,10 +552,10 @@ mod helper_tests {
         {
             "message": {
                 "role": "assistant",
-                "content": "这是一个测试响应"
+                "content": "这是一个测试响应",
+                "tool_calls": null
             },
-            "finish_reason": "stop",
-            "tool_calls": null
+            "finish_reason": "stop"
         }
     ],
     "usage": {
@@ -663,20 +638,20 @@ mod helper_tests {
         {
             "message": {
                 "role": "assistant",
-                "content": "我来帮您执行Git操作"
-            },
-            "finish_reason": "tool_calls",
-            "tool_calls": [
-                {
-                    "index": 0,
-                    "id": "call_0_889decaf-c79e-4e8c-8655-fe0d7805298c",
-                    "type": "function",
-                    "function": {
-                        "name": "git_status",
-                        "arguments": "{}"
+                "content": "我来帮您执行Git操作",
+                "tool_calls": [
+                    {
+                        "index": 0,
+                        "id": "call_0_889decaf-c79e-4e8c-8655-fe0d7805298c",
+                        "type": "function",
+                        "function": {
+                            "name": "git_status",
+                            "arguments": "{}"
+                        }
                     }
-                }
-            ]
+                ]
+            },
+            "finish_reason": "tool_calls"
         }
     ],
     "usage": {
@@ -698,10 +673,10 @@ mod helper_tests {
         {
             "message": {
                 "role": "assistant",
-                "content": "这是一个测试响应"
+                "content": "这是一个测试响应",
+                "tool_calls": null
             },
-            "finish_reason": "stop",
-            "tool_calls": null
+            "finish_reason": "stop"
         }
     ],
     "usage": {
@@ -709,7 +684,7 @@ mod helper_tests {
         "completion_tokens": 50,
         "total_tokens": 150
     },
-    "model": "gpt-4"
+    "model": "deepseek-chat"
 }
 "#
         .to_string()
@@ -747,10 +722,10 @@ mod helper_tests {
         {
             "message": {
                 "role": "assistant",
-                "content": "响应内容"
+                "content": "响应内容",
+                "tool_calls": []
             },
-            "finish_reason": "tool_calls",
-            "tool_calls": []
+            "finish_reason": "tool_calls"
         }
     ],
     "usage": {
@@ -776,7 +751,7 @@ mod helper_tests {
         assert_eq!(response.tool_calls.as_ref().unwrap().len(), 0);
     }
 
-    // 辅助函数：创建带有空函数调用数组的响应JSON
+    // 辅助函数：创建带有空函数调用的响应JSON
     fn create_openai_response_with_empty_tool_calls_json() -> String {
         r#"
 {
@@ -784,10 +759,10 @@ mod helper_tests {
         {
             "message": {
                 "role": "assistant",
-                "content": "响应内容"
+                "content": "这是一个测试响应",
+                "tool_calls": []
             },
-            "finish_reason": "tool_calls",
-            "tool_calls": []
+            "finish_reason": "tool_calls"
         }
     ],
     "usage": {
@@ -795,7 +770,7 @@ mod helper_tests {
         "completion_tokens": 50,
         "total_tokens": 150
     },
-    "model": "gpt-4"
+    "model": "deepseek-chat"
 }
 "#
         .to_string()
@@ -817,9 +792,9 @@ mod tests {
                 message: Message {
                     role: "assistant".to_string(),
                     content: "这是一个测试响应".to_string(),
+                    tool_calls: None,
                 },
                 finish_reason: Some("stop".to_string()),
-                tool_calls: None,
             }],
             usage: Some(Usage {
                 prompt_tokens: 100,
@@ -854,17 +829,17 @@ mod tests {
                 message: Message {
                     role: "assistant".to_string(),
                     content: "我来帮您执行Git操作".to_string(),
+                    tool_calls: Some(vec![OpenAiToolCall {
+                        index: Some(0),
+                        id: "call_0_889decaf-c79e-4e8c-8655-fe0d7805298c".to_string(),
+                        r#type: "function".to_string(),
+                        function: OpenAiFunctionCall {
+                            name: "git_status".to_string(),
+                            arguments: "{}".to_string(),
+                        },
+                    }]),
                 },
                 finish_reason: Some("tool_calls".to_string()),
-                tool_calls: Some(vec![OpenAiToolCall {
-                    index: Some(0),
-                    id: "call_0_889decaf-c79e-4e8c-8655-fe0d7805298c".to_string(),
-                    r#type: "function".to_string(),
-                    function: OpenAiFunctionCall {
-                        name: "git_status".to_string(),
-                        arguments: "{}".to_string(),
-                    },
-                }]),
             }],
             usage: Some(Usage {
                 prompt_tokens: 398,
@@ -913,10 +888,10 @@ mod tests {
             choices: vec![Choice {
                 message: Message {
                     role: "assistant".to_string(),
-                    content: "响应内容".to_string(),
+                    content: "这是一个测试响应".to_string(),
+                    tool_calls: Some(vec![]),
                 },
-                finish_reason: Some("stop".to_string()),
-                tool_calls: None,
+                finish_reason: Some("tool_calls".to_string()),
             }],
             usage: None,
             model: "gpt-3.5-turbo".to_string(),
@@ -926,12 +901,12 @@ mod tests {
         let response = converter.convert_response(openai_response, "gpt-3.5-turbo", |_, _, _| None);
 
         // 验证默认值
-        assert_eq!(response.content, "响应内容");
+        assert_eq!(response.content, "这是一个测试响应");
         assert_eq!(response.usage.prompt_tokens, 0);
         assert_eq!(response.usage.completion_tokens, 0);
         assert_eq!(response.usage.total_tokens, 0);
         assert_eq!(response.usage.estimated_cost, None);
-        assert_eq!(response.finish_reason, Some("stop".to_string()));
+        assert_eq!(response.finish_reason, Some("tool_calls".to_string()));
         assert!(response.tool_calls.is_none());
     }
 
@@ -945,44 +920,53 @@ mod tests {
                 message: Message {
                     role: "assistant".to_string(),
                     content: "执行完整的Git工作流".to_string(),
+                    tool_calls: Some(vec![
+                        OpenAiToolCall {
+                            index: Some(0),
+                            id: "call_001".to_string(),
+                            r#type: "function".to_string(),
+                            function: OpenAiFunctionCall {
+                                name: "git_status".to_string(),
+                                arguments: "{}".to_string(),
+                            },
+                        },
+                        OpenAiToolCall {
+                            index: Some(1),
+                            id: "call_002".to_string(),
+                            r#type: "function".to_string(),
+                            function: OpenAiFunctionCall {
+                                name: "git_add".to_string(),
+                                arguments: "{\"files\": [\"*\"]}".to_string(),
+                            },
+                        },
+                        OpenAiToolCall {
+                            index: Some(2),
+                            id: "call_003".to_string(),
+                            r#type: "function".to_string(),
+                            function: OpenAiFunctionCall {
+                                name: "git_commit".to_string(),
+                                arguments: "{\"message\": \"Complete workflow\"}".to_string(),
+                            },
+                        },
+                        OpenAiToolCall {
+                            index: Some(3),
+                            id: "call_004".to_string(),
+                            r#type: "function".to_string(),
+                            function: OpenAiFunctionCall {
+                                name: "git_push".to_string(),
+                                arguments: "{}".to_string(),
+                            },
+                        },
+                    ]),
                 },
                 finish_reason: Some("tool_calls".to_string()),
-                tool_calls: Some(vec![
-                    OpenAiToolCall {
-                        index: Some(0),
-                        id: "call_001".to_string(),
-                        r#type: "function".to_string(),
-                        function: OpenAiFunctionCall {
-                            name: "git_status".to_string(),
-                            arguments: "{}".to_string(),
-                        },
-                    },
-                    OpenAiToolCall {
-                        index: Some(1),
-                        id: "call_002".to_string(),
-                        r#type: "function".to_string(),
-                        function: OpenAiFunctionCall {
-                            name: "git_add".to_string(),
-                            arguments: "{\"files\": [\".\"]}".to_string(),
-                        },
-                    },
-                    OpenAiToolCall {
-                        index: Some(2),
-                        id: "call_003".to_string(),
-                        r#type: "function".to_string(),
-                        function: OpenAiFunctionCall {
-                            name: "git_commit".to_string(),
-                            arguments: "{\"message\": \"Test commit\"}".to_string(),
-                        },
-                    },
-                ]),
             }],
             usage: Some(Usage {
-                prompt_tokens: 500,
-                completion_tokens: 100,
-                total_tokens: 600,
+                prompt_tokens: 450,
+                completion_tokens: 80,
+                total_tokens: 530,
             }),
-            model: "gpt-4-turbo".to_string(),
+            model: "gpt-4".to_string(),
         };
 
         let response =
@@ -993,7 +977,7 @@ mod tests {
         // 验证多个函数调用
         assert!(response.tool_calls.is_some());
         let tool_calls = response.tool_calls.as_ref().unwrap();
-        assert_eq!(tool_calls.len(), 3);
+        assert_eq!(tool_calls.len(), 4);
 
         // 验证第一个调用
         assert_eq!(tool_calls[0].function.name, "git_status");
@@ -1001,13 +985,13 @@ mod tests {
 
         // 验证第二个调用
         assert_eq!(tool_calls[1].function.name, "git_add");
-        assert_eq!(tool_calls[1].function.arguments, "{\"files\": [\".\"]}");
+        assert_eq!(tool_calls[1].function.arguments, "{\"files\": [\"*\"]}");
 
         // 验证第三个调用
         assert_eq!(tool_calls[2].function.name, "git_commit");
         assert_eq!(
             tool_calls[2].function.arguments,
-            "{\"message\": \"Test commit\"}"
+            "{\"message\": \"Complete workflow\"}"
         );
     }
 
@@ -1020,15 +1004,15 @@ mod tests {
             choices: vec![Choice {
                 message: Message {
                     role: "assistant".to_string(),
-                    content: "响应内容".to_string(),
+                    content: "这是一个测试响应".to_string(),
+                    tool_calls: Some(vec![]),
                 },
                 finish_reason: Some("tool_calls".to_string()),
-                tool_calls: Some(vec![]), // 空数组
             }],
             usage: Some(Usage {
-                prompt_tokens: 100,
-                completion_tokens: 50,
-                total_tokens: 150,
+                prompt_tokens: 150,
+                completion_tokens: 60,
+                total_tokens: 210,
             }),
             model: "gpt-4".to_string(),
         };

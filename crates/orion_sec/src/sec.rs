@@ -57,7 +57,9 @@ pub trait NoSecConv<T> {
     fn no_sec(self) -> T;
 }
 pub trait SecConv {
+    #[must_use]
     fn to_nor(self) -> Self;
+    #[must_use]
     fn to_sec(self) -> Self;
 }
 
@@ -74,12 +76,16 @@ impl<T> SecConv for SecValue<T> {
 
 impl<T> SecConv for Vec<SecValue<T>> {
     fn to_nor(mut self) -> Self {
-        self.iter_mut().for_each(|x| x.is_secret = false);
+        for x in self.iter_mut() {
+            x.is_secret = false;
+        }
         self
     }
 
     fn to_sec(mut self) -> Self {
-        self.iter_mut().for_each(|x| x.is_secret = true);
+        for x in self.iter_mut() {
+            x.is_secret = true;
+        }
         self
     }
 }
@@ -240,6 +246,7 @@ where
 }
 
 impl SecValueType {
+    #[must_use]
     pub fn to_nor(self) -> Self {
         match self {
             SecValueType::String(v) => Self::String(v.to_nor()),
@@ -251,6 +258,7 @@ impl SecValueType {
             SecValueType::List(v) => Self::List(v.to_nor()),
         }
     }
+    #[must_use]
     pub fn to_sec(self) -> Self {
         match self {
             SecValueType::String(v) => Self::String(v.to_sec()),
@@ -266,11 +274,11 @@ impl SecValueType {
 
 impl SecConv for Vec<SecValueType> {
     fn to_nor(self) -> Self {
-        self.into_iter().map(|x| x.to_nor()).collect()
+        self.into_iter().map(SecValueType::to_nor).collect()
     }
 
     fn to_sec(self) -> Self {
-        self.into_iter().map(|x| x.to_sec()).collect()
+        self.into_iter().map(SecValueType::to_sec).collect()
     }
 }
 
@@ -300,7 +308,7 @@ impl NoSecConv<ValueType> for SecValueType {
 
 impl NoSecConv<Vec<ValueType>> for Vec<SecValueType> {
     fn no_sec(self) -> Vec<ValueType> {
-        self.into_iter().map(|x| x.no_sec()).collect()
+        self.into_iter().map(NoSecConv::no_sec).collect()
     }
 }
 
