@@ -1,0 +1,26 @@
+mod ai_work {
+
+    flow smart_git_commit {
+        gx.ai_fun(
+            role: "developer",
+            task:  "check diff file from curren dir",
+            tools: ["git diff"]
+        );
+        gx.ai_fun (
+            role: "developer",
+            task:  "commit file",
+            tools: ["git commit"]
+        );
+
+        gx.ai_fun (
+            role: "developer",
+            task:  "push commit",
+            tools: ["git push"]
+        );
+
+        gx.ai_workflow(
+        role: "developer",
+        task:  "commit & push file from curren dir",
+        );
+    }
+}
