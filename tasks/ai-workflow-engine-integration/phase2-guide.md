@@ -65,7 +65,7 @@ pub struct GxAIFun {
     task: Option<String>,
     prompt: Option<String>,
     ai_config: Option<AiConfig>,
-    
+
     // 新增字段
     tools: Option<Vec<String>>,         // 可用工具列表
     enable_function_calling: bool,      // 启用函数调用
@@ -82,19 +82,19 @@ impl GxAIFun {
             task: None,
             prompt: None,
             ai_config: None,
-            
+
             // 新增默认值
             tools: None,
             enable_function_calling: false,
         }
     }
-    
+
     // 添加工具设置方法
     pub fn with_tools(mut self, tools: Option<Vec<String>>) -> Self {
         self.tools = tools;
         self
     }
-    
+
     pub fn with_enable_function_calling(mut self, enabled: bool) -> Self {
         self.enable_function_calling = enabled;
         self
@@ -224,22 +224,22 @@ pub struct GitFunctionExecutor;
 impl FunctionExecutor for GitFunctionExecutor {
     async fn execute(&self, function_call: &FunctionCall) -> AiResult<FunctionResult> {
         match function_call.function.name.as_str() {
-            "git_status" => self.execute_git_status(function_call).await,
-            "git_add" => self.execute_git_add(function_call).await,
-            "git_commit" => self.execute_git_commit(function_call).await,
-            "git_push" => self.execute_git_push(function_call).await,
-            "git_diff" => self.execute_git_diff(function_call).await,
+            "git-status" => self.execute_git_status(function_call).await,
+            "git-add" => self.execute_git_add(function_call).await,
+            "git-commit" => self.execute_git_commit(function_call).await,
+            "git-push" => self.execute_git_push(function_call).await,
+            "git-diff" => self.execute_git_diff(function_call).await,
             _ => Err(AiErrReason::from_logic("unknown function").to_err()),
         }
     }
 
     fn supported_functions(&self) -> Vec<String> {
         vec![
-            "git_status".to_string(),
-            "git_add".to_string(),
-            "git_commit".to_string(),
-            "git_push".to_string(),
-            "git_diff".to_string(),
+            "git-status".to_string(),
+            "git-add".to_string(),
+            "git-commit".to_string(),
+            "git-push".to_string(),
+            "git-diff".to_string(),
         ]
     }
 }
@@ -261,7 +261,7 @@ impl GitFunctionExecutor {
             Ok(output) => {
                 let status = String::from_utf8_lossy(&output.stdout).to_string();
                 Ok(FunctionResult {
-                    name: "git_status".to_string(),
+                    name: "git-status".to_string(),
                     result: json!({
                         "status": status,
                         "has_changes": !status.trim().is_empty()
@@ -270,7 +270,7 @@ impl GitFunctionExecutor {
                 })
             }
             Err(e) => Ok(FunctionResult {
-                name: "git_status".to_string(),
+                name: "git-status".to_string(),
                 result: serde_json::Value::Null,
                 error: Some(format!("Failed to get git status: {}", e)),
             }),
@@ -297,7 +297,7 @@ impl GitFunctionExecutor {
             .await
         {
             Ok(output) if output.status.success() => Ok(FunctionResult {
-                name: "git_add".to_string(),
+                name: "git-add".to_string(),
                 result: json!({
                     "success": true,
                     "message": "Files added successfully"
@@ -307,13 +307,13 @@ impl GitFunctionExecutor {
             Ok(output) => {
                 let error_msg = String::from_utf8_lossy(&output.stderr);
                 Ok(FunctionResult {
-                    name: "git_add".to_string(),
+                    name: "git-add".to_string(),
                     result: serde_json::Value::Null,
                     error: Some(error_msg.to_string()),
                 })
             }
             Err(e) => Ok(FunctionResult {
-                name: "git_add".to_string(),
+                name: "git-add".to_string(),
                 result: serde_json::Value::Null,
                 error: Some(format!("Failed to add files: {}", e)),
             }),
@@ -333,7 +333,7 @@ pub fn gal_ai_fun(input: &mut &str) -> Result<GxAIFun> {
     let mut ai_fun = GxAIFun::default();
     gal_keyword("gx.ai_fun", input)?;
     let props = action_call_args.parse_next(input)?;
-    
+
     for one in props {
         let key = one.0.to_lowercase();
         match key {
@@ -341,7 +341,7 @@ pub fn gal_ai_fun(input: &mut &str) -> Result<GxAIFun> {
             "task" => ai_fun.set_task(one.1.to_opt()),
             "prompt" => ai_fun.set_prompt(one.1.to_opt()),
             "ai_config" => ai_fun.set_ai_config(None),
-            
+
             // 新增参数处理
             "tools" => ai_fun.set_tools(parse_tools_list(one.1)),
             "enable_function_calling" | "function_calling" => {
@@ -411,7 +411,7 @@ async fn test_function_definition_creation() {
     let ai_fun = GxAIFun::default();
 
     let git_status_func = ai_fun.create_git_status_function();
-    assert_eq!(git_status_func.name, "git_status");
+    assert_eq!(git_status_func.name, "git-status");
     assert_eq!(git_status_func.parameters.len(), 1);
     assert_eq!(git_status_func.parameters[0].name, "path");
 }
@@ -423,8 +423,8 @@ async fn test_available_functions() {
 
     let functions = ai_fun.get_available_functions();
     assert_eq!(functions.len(), 2);
-    assert_eq!(functions[0].name, "git_status");
-    assert_eq!(functions[1].name, "git_commit");
+    assert_eq!(functions[0].name, "git-status");
+    assert_eq!(functions[1].name, "git-commit");
 }
 ```
 
@@ -448,7 +448,7 @@ async fn test_ai_with_git_tools() {
         .with_enable_function_calling(true);
 
     let result = ai_fun.async_exec(context, def).await;
-    
+
     // 如果有 API 密钥，应该成功
     if load_key_dict("sec_deepseek_api_key").is_some() {
         result.assert();
@@ -635,6 +635,6 @@ A: 使用 `gflow -d 1` 启用调试日志，查看详细的执行过程。
 
 第二期实施将显著增强 AI 任务能力，为用户提供智能化的工具调用功能。通过完善的 Git 操作集成，用户可以实现自动化的代码管理工作流。
 
-**预计完成时间**：1-2 天  
-**当前进度**：60%  
+**预计完成时间**：1-2 天
+**当前进度**：60%
 **下一步**：完成剩余的实现和测试

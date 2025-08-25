@@ -232,7 +232,7 @@ mod helper_tests {
                         "id": "call_0_889decaf-c79e-4e8c-8655-fe0d7805298c",
                         "type": "function",
                         "function": {
-                            "name": "git_status",
+                            "name": "git-status",
                             "arguments": "{}"
                         }
                     }
@@ -281,7 +281,7 @@ mod helper_tests {
         assert_eq!(tool_call.index, Some(0));
         assert_eq!(tool_call.id, "call_0_889decaf-c79e-4e8c-8655-fe0d7805298c");
         assert_eq!(tool_call.r#type, "function");
-        assert_eq!(tool_call.function.name, "git_status");
+        assert_eq!(tool_call.function.name, "git-status");
         assert_eq!(tool_call.function.arguments, "{}");
     }
 
@@ -444,7 +444,7 @@ mod helper_tests {
                         "id": "call_001",
                         "type": "function",
                         "function": {
-                            "name": "git_status",
+                            "name": "git-status",
                             "arguments": "{}"
                         }
                     },
@@ -453,7 +453,7 @@ mod helper_tests {
                         "id": "call_002",
                         "type": "function",
                         "function": {
-                            "name": "git_add",
+                            "name": "git-add",
                             "arguments": "{\"files\": [\".\"]}"
                         }
                     },
@@ -462,7 +462,7 @@ mod helper_tests {
                         "id": "call_003",
                         "type": "function",
                         "function": {
-                            "name": "git_commit",
+                            "name": "git-commit",
                             "arguments": "{\"message\": \"Test commit\"}"
                         }
                     }
@@ -497,15 +497,15 @@ mod helper_tests {
         assert_eq!(tool_calls.len(), 3);
 
         // 验证第一个调用
-        assert_eq!(tool_calls[0].function.name, "git_status");
+        assert_eq!(tool_calls[0].function.name, "git-status");
         assert_eq!(tool_calls[0].function.arguments, "{}");
 
         // 验证第二个调用
-        assert_eq!(tool_calls[1].function.name, "git_add");
+        assert_eq!(tool_calls[1].function.name, "git-add");
         assert_eq!(tool_calls[1].function.arguments, "{\"files\": [\".\"]}");
 
         // 验证第三个调用
-        assert_eq!(tool_calls[2].function.name, "git_commit");
+        assert_eq!(tool_calls[2].function.name, "git-commit");
         assert_eq!(
             tool_calls[2].function.arguments,
             "{\"message\": \"Test commit\"}"
@@ -527,7 +527,7 @@ mod helper_tests {
                         "id": "call_0_889decaf-c79e-4e8c-8655-fe0d7805298c",
                         "type": "function",
                         "function": {
-                            "name": "git_status",
+                            "name": "git-status",
                             "arguments": "{}"
                         }
                     }
@@ -589,7 +589,7 @@ mod helper_tests {
         assert!(response_with_tool_calls.tool_calls.is_some());
         let tool_calls = response_with_tool_calls.tool_calls.as_ref().unwrap();
         assert_eq!(tool_calls.len(), 1);
-        assert_eq!(tool_calls[0].function.name, "git_status");
+        assert_eq!(tool_calls[0].function.name, "git-status");
         assert_eq!(tool_calls[0].function.arguments, "{}");
 
         // 验证不带函数调用的响应
@@ -622,7 +622,7 @@ mod helper_tests {
         assert!(response_with_tool_calls.tool_calls.is_some());
         let tool_calls = response_with_tool_calls.tool_calls.as_ref().unwrap();
         assert_eq!(tool_calls.len(), 1);
-        assert_eq!(tool_calls[0].function.name, "git_status");
+        assert_eq!(tool_calls[0].function.name, "git-status");
 
         // 验证无函数调用的响应
         assert!(result_without_tool_calls.is_ok());
@@ -645,7 +645,7 @@ mod helper_tests {
                         "id": "call_0_889decaf-c79e-4e8c-8655-fe0d7805298c",
                         "type": "function",
                         "function": {
-                            "name": "git_status",
+                            "name": "git-status",
                             "arguments": "{}"
                         }
                     }
@@ -834,7 +834,7 @@ mod tests {
                         id: "call_0_889decaf-c79e-4e8c-8655-fe0d7805298c".to_string(),
                         r#type: "function".to_string(),
                         function: OpenAiFunctionCall {
-                            name: "git_status".to_string(),
+                            name: "git-status".to_string(),
                             arguments: "{}".to_string(),
                         },
                     }]),
@@ -875,7 +875,7 @@ mod tests {
         assert_eq!(tool_call.index, Some(0));
         assert_eq!(tool_call.id, "call_0_889decaf-c79e-4e8c-8655-fe0d7805298c");
         assert_eq!(tool_call.r#type, "function");
-        assert_eq!(tool_call.function.name, "git_status");
+        assert_eq!(tool_call.function.name, "git-status");
         assert_eq!(tool_call.function.arguments, "{}");
     }
 
@@ -926,7 +926,7 @@ mod tests {
                             id: "call_001".to_string(),
                             r#type: "function".to_string(),
                             function: OpenAiFunctionCall {
-                                name: "git_status".to_string(),
+                                name: "git-status".to_string(),
                                 arguments: "{}".to_string(),
                             },
                         },
@@ -935,7 +935,7 @@ mod tests {
                             id: "call_002".to_string(),
                             r#type: "function".to_string(),
                             function: OpenAiFunctionCall {
-                                name: "git_add".to_string(),
+                                name: "git-add".to_string(),
                                 arguments: "{\"files\": [\"*\"]}".to_string(),
                             },
                         },
@@ -944,7 +944,7 @@ mod tests {
                             id: "call_003".to_string(),
                             r#type: "function".to_string(),
                             function: OpenAiFunctionCall {
-                                name: "git_commit".to_string(),
+                                name: "git-commit".to_string(),
                                 arguments: "{\"message\": \"Complete workflow\"}".to_string(),
                             },
                         },
@@ -953,7 +953,7 @@ mod tests {
                             id: "call_004".to_string(),
                             r#type: "function".to_string(),
                             function: OpenAiFunctionCall {
-                                name: "git_push".to_string(),
+                                name: "git-push".to_string(),
                                 arguments: "{}".to_string(),
                             },
                         },
@@ -980,15 +980,15 @@ mod tests {
         assert_eq!(tool_calls.len(), 4);
 
         // 验证第一个调用
-        assert_eq!(tool_calls[0].function.name, "git_status");
+        assert_eq!(tool_calls[0].function.name, "git-status");
         assert_eq!(tool_calls[0].function.arguments, "{}");
 
         // 验证第二个调用
-        assert_eq!(tool_calls[1].function.name, "git_add");
+        assert_eq!(tool_calls[1].function.name, "git-add");
         assert_eq!(tool_calls[1].function.arguments, "{\"files\": [\"*\"]}");
 
         // 验证第三个调用
-        assert_eq!(tool_calls[2].function.name, "git_commit");
+        assert_eq!(tool_calls[2].function.name, "git-commit");
         assert_eq!(
             tool_calls[2].function.arguments,
             "{\"message\": \"Complete workflow\"}"

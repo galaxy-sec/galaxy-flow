@@ -55,7 +55,7 @@ async fn test_mock_provider_function_calling() -> orion_ai::AiResult<()> {
         .system_prompt(
             "你是一个Git助手。当用户要求检查Git状态时，你必须调用git_status函数。".to_string(),
         )
-        .user_prompt("git_status 请检查当前Git状态".to_string())
+        .user_prompt("git-status 请检查当前Git状态".to_string())
         .functions(create_git_functions())
         .enable_function_calling(true)
         .build();
@@ -70,7 +70,7 @@ async fn test_mock_provider_function_calling() -> orion_ai::AiResult<()> {
     if let Some(function_calls) = &response1.tool_calls {
         assert_eq!(function_calls.len(), 1, "应该只调用一个函数");
         assert_eq!(
-            function_calls[0].function.name, "git_status",
+            function_calls[0].function.name, "git-status",
             "应该调用 git_status 函数"
         );
 
@@ -89,7 +89,7 @@ async fn test_mock_provider_function_calling() -> orion_ai::AiResult<()> {
         .system_prompt(
             "你是一个Git助手。当用户要求执行Git操作时，你必须按顺序调用相应的函数：git_status -> git_add -> git_commit -> git_push".to_string(),
         )
-        .user_prompt("git_status git_add git_commit git_push 请执行完整的Git工作流".to_string())
+        .user_prompt("git-status git_add git_commit git_push 请执行完整的Git工作流".to_string())
         .functions(create_git_functions())
         .enable_function_calling(true)
         .build();
@@ -109,7 +109,7 @@ async fn test_mock_provider_function_calling() -> orion_ai::AiResult<()> {
 
         // 验证最终结果包含函数执行信息
         assert!(
-            final_result.contains("git_status result:"),
+            final_result.contains("git-status result:"),
             "最终结果应该包含 git_status 执行结果"
         );
     }
@@ -117,24 +117,24 @@ async fn test_mock_provider_function_calling() -> orion_ai::AiResult<()> {
     // 测试函数注册表功能
     assert_eq!(registry.get_functions().len(), 4, "应该注册了4个Git函数");
 
-    let git_status_func = registry.get_function("git_status");
+    let git_status_func = registry.get_function("git-status");
     assert!(git_status_func.is_some(), "应该能找到 git_status 函数");
 
     if let Some(func) = git_status_func {
-        assert_eq!(func.name, "git_status");
+        assert_eq!(func.name, "git-status");
         assert!(!func.description.is_empty());
         assert!(!func.parameters.is_empty());
     }
 
     // 测试执行器注册
     assert!(
-        registry.supports_function("git_status"),
+        registry.supports_function("git-status"),
         "应该支持 git_status 函数"
     );
 
     let supported_functions = registry.get_supported_function_names();
     assert!(
-        supported_functions.contains(&"git_status".to_string()),
+        supported_functions.contains(&"git-status".to_string()),
         "支持的函数列表应该包含 git_status"
     );
 
@@ -175,20 +175,20 @@ async fn test_mock_provider_single_function_call() -> orion_ai::AiResult<()> {
     let git_functions = create_git_functions();
     let git_status_func = git_functions
         .into_iter()
-        .find(|f| f.name == "git_status")
+        .find(|f| f.name == "git-status")
         .unwrap();
 
     registry.register_function(git_status_func.clone())?;
 
     // 为 git_status 注册执行器
     let git_executor = std::sync::Arc::new(GitFunctionExecutor);
-    registry.register_executor("git_status".to_string(), git_executor.clone())?;
+    registry.register_executor("git-status".to_string(), git_executor.clone())?;
 
     // 测试单个函数调用
     let request = AiRequest::builder()
         .model("mock-gpt")
         .system_prompt("你是一个Git助手。调用git_status函数检查状态。".to_string())
-        .user_prompt("git_status 检查状态".to_string())
+        .user_prompt("git-status 检查状态".to_string())
         .functions(vec![git_status_func])
         .enable_function_calling(true)
         .build();
@@ -201,7 +201,7 @@ async fn test_mock_provider_single_function_call() -> orion_ai::AiResult<()> {
 
     if let Some(function_calls) = &response.tool_calls {
         assert_eq!(function_calls.len(), 1);
-        assert_eq!(function_calls[0].function.name, "git_status");
+        assert_eq!(function_calls[0].function.name, "git-status");
     }
 
     Ok(())

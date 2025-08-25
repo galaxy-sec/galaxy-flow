@@ -29,7 +29,7 @@ async fn test_openai_tool_format_generation() {
         "工具类型应该是function"
     );
     assert_eq!(
-        git_status_tool["function"]["name"], "git_status",
+        git_status_tool["function"]["name"], "git-status",
         "函数名应该是git_status"
     );
     assert_eq!(
@@ -61,7 +61,7 @@ async fn test_openai_tool_format_generation() {
     // 验证第二个工具 (git_add) 的结构
     let git_add_tool = &parsed[1];
     assert_eq!(
-        git_add_tool["function"]["name"], "git_add",
+        git_add_tool["function"]["name"], "git-add",
         "第二个函数应该是git_add"
     );
 
@@ -80,7 +80,7 @@ async fn test_openai_tool_format_generation() {
     // 验证第三个工具 (git_commit) 的结构
     let git_commit_tool = &parsed[2];
     assert_eq!(
-        git_commit_tool["function"]["name"], "git_commit",
+        git_commit_tool["function"]["name"], "git-commit",
         "第三个函数应该是git_commit"
     );
 
@@ -88,7 +88,7 @@ async fn test_openai_tool_format_generation() {
     let git_commit_required = &git_commit_tool["function"]["parameters"]["required"];
     assert!(
         git_commit_required.is_array(),
-        "git_commit的required应该是数组"
+        "git-commit的required应该是数组"
     );
 
     let required_array = git_commit_required.as_array().unwrap();
@@ -100,14 +100,14 @@ async fn test_openai_tool_format_generation() {
     // 验证第四个工具 (git_push) 的结构
     let git_push_tool = &parsed[3];
     assert_eq!(
-        git_push_tool["function"]["name"], "git_push",
+        git_push_tool["function"]["name"], "git-push",
         "第四个函数应该是git_push"
     );
 
     // 验证 git_push 的可选参数
     let git_push_required = &git_push_tool["function"]["parameters"]["required"];
     let git_push_required_array = git_push_required.as_array().unwrap();
-    assert_eq!(git_push_required_array.len(), 0, "git_push应该没有必需参数");
+    assert_eq!(git_push_required_array.len(), 0, "git-push应该没有必需参数");
 
     // 输出预期的正确格式对比
     println!("\n=== 预期的正确格式示例 ===");

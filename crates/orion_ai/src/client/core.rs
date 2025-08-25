@@ -204,7 +204,7 @@ impl AiClient {
     }
 
     /// 🎯 获取根据工具列表过滤的函数注册表
-    pub fn get_filtered_registry(&self, tools: &[String]) -> Result<FunctionRegistry, AiError> {
+    pub fn get_registry_with_tools(&self, tools: &[String]) -> Result<FunctionRegistry, AiError> {
         GlobalFunctionRegistry::get_registry_with_tools(tools)
             .map_err(|e| AiError::from(AiErrReason::from_biz(e.to_string())))
     }
@@ -224,7 +224,7 @@ impl AiClient {
         request: AiRequest,
         tools: &[String],
     ) -> AiResult<AiResponse> {
-        let registry = self.get_filtered_registry(tools)?;
+        let registry = self.get_registry_with_tools(tools)?;
         self.send_request_with_functions(request, &registry).await
     }
 
@@ -240,7 +240,7 @@ impl AiClient {
         response: &AiResponse,
         tools: &[String],
     ) -> AiResult<String> {
-        let registry = self.get_filtered_registry(tools)?;
+        let registry = self.get_registry_with_tools(tools)?;
         self.handle_function_calls(response, &registry).await
     }
 }

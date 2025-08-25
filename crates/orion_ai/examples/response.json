@@ -14,7 +14,7 @@
             "index": 0,
             "id": "call_0_3ebc9e84-a137-4188-995c-9381586f7097",
             "type": "function",
-            "function": { "name": "git_status", "arguments": "{}" }
+            "function": { "name": "git-status", "arguments": "{}" }
           }
         ]
       },

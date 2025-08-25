@@ -165,23 +165,23 @@ mod global_registry_tests {
         assert!(GlobalFunctionRegistry::initialize().is_ok());
 
         // 测试指定工具列表
-        let tools = vec!["git_status".to_string(), "git_add".to_string()];
+        let tools = vec!["git-status".to_string(), "git-add".to_string()];
         let filtered_registry = GlobalFunctionRegistry::get_registry_with_tools(&tools).unwrap();
 
         let filtered_functions = filtered_registry.get_supported_function_names();
         assert_eq!(filtered_functions.len(), 2);
-        assert!(filtered_functions.contains(&"git_status".to_string()));
-        assert!(filtered_functions.contains(&"git_add".to_string()));
-        assert!(!filtered_functions.contains(&"git_commit".to_string()));
+        assert!(filtered_functions.contains(&"git-status".to_string()));
+        assert!(filtered_functions.contains(&"git-add".to_string()));
+        assert!(!filtered_functions.contains(&"git-commit".to_string()));
 
         // 测试单个工具
-        let single_tool = vec!["git_status".to_string()];
+        let single_tool = vec!["git-status".to_string()];
         let single_registry =
             GlobalFunctionRegistry::get_registry_with_tools(&single_tool).unwrap();
 
         let single_functions = single_registry.get_supported_function_names();
         assert_eq!(single_functions.len(), 1);
-        assert!(single_functions.contains(&"git_status".to_string()));
+        assert!(single_functions.contains(&"git-status".to_string()));
 
         // 测试空工具列表（应该返回所有工具）
         let empty_tools: Vec<String> = vec![];
@@ -205,12 +205,12 @@ mod global_registry_tests {
         assert_eq!(empty_functions.len(), 0);
 
         // 测试混合存在的和不存在的工具
-        let mixed_tools = vec!["git_status".to_string(), "nonexistent_tool".to_string()];
+        let mixed_tools = vec!["git-status".to_string(), "nonexistent_tool".to_string()];
         let mixed_registry = GlobalFunctionRegistry::get_registry_with_tools(&mixed_tools).unwrap();
 
         let mixed_functions = mixed_registry.get_supported_function_names();
         assert_eq!(mixed_functions.len(), 1);
-        assert!(mixed_functions.contains(&"git_status".to_string()));
+        assert!(mixed_functions.contains(&"git-status".to_string()));
     }
     use super::*;
 
@@ -230,11 +230,11 @@ mod global_registry_tests {
         let function_names = registry.get_supported_function_names();
 
         // 验证Git工具已注册
-        assert!(function_names.contains(&"git_status".to_string()));
-        assert!(function_names.contains(&"git_commit".to_string()));
-        assert!(function_names.contains(&"git_add".to_string()));
-        assert!(function_names.contains(&"git_push".to_string()));
-        assert!(function_names.contains(&"git_diff".to_string()));
+        assert!(function_names.contains(&"git-status".to_string()));
+        assert!(function_names.contains(&"git-commit".to_string()));
+        assert!(function_names.contains(&"git-add".to_string()));
+        assert!(function_names.contains(&"git-push".to_string()));
+        assert!(function_names.contains(&"git-diff".to_string()));
     }
 
     #[tokio::test]

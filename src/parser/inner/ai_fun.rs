@@ -39,21 +39,19 @@ mod tests {
     }
 
     #[test]
-    fn test_parse_ai_fun_with_tools() {
+    fn test_parse_ai_fun_with_tools_list() {
         let mut input = r#"gx.ai_fun(
             role: "developer",
-            task: "检查 Git 状态",
-            tools: "git-diff,git-push",
+            task: "使用指定的 Git 工具",
+            tools: "git-status,git-add"
         );"#;
 
-        match gal_ai_fun(&mut input) {
-            Ok(ai_fun) => {
-                assert_eq!(ai_fun.role(), &Some("developer".to_string()));
-                assert_eq!(ai_fun.task(), &Some("检查 Git 状态".to_string()));
-            }
-            Err(e) => {
-                panic!("解析失败: {:?}", e);
-            }
-        }
+        let ai_fun = gal_ai_fun(&mut input).unwrap();
+        assert_eq!(ai_fun.role(), &Some("developer".to_string()));
+        assert_eq!(ai_fun.task(), &Some("使用指定的 Git 工具".to_string()));
+        assert_eq!(
+            ai_fun.tools(),
+            &vec!["git-status".to_string(), "git-add".to_string()]
+        );
     }
 }

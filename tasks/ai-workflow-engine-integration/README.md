@@ -117,7 +117,7 @@ mod ai_tools {
             tools: ["git status"]
         );
     }
-    
+
     flow smart_commit {
         gx.ai_fun(
             role: "developer",
@@ -149,14 +149,14 @@ mod ai_workflows {
             task: "检查代码变更",
             tools: ["git diff", "git status"]
         );
-        
+
         gx.ai_fun(
             register_as: "file_committer",
             role: "developer",
             task: "提交代码变更",
             tools: ["git add", "git commit"]
         );
-        
+
         // 执行完整的 AI 工作流
         gx.ai_workflow(
             role: "devops_engineer",
@@ -205,13 +205,13 @@ AI 任务分析
   "tool_calls": [
     {
       "function": {
-        "name": "git_status",
+        "name": "git-status",
         "arguments": "{\"path\":\".\"}"
       }
     },
     {
       "function": {
-        "name": "git_diff", 
+        "name": "git-diff",
         "arguments": "{\"staged\":false}"
       }
     }
@@ -316,7 +316,7 @@ pub fn gal_ai_fun(input: &mut &str) -> Result<GxAIFun> {
     let mut ai_fun = GxAIFun::default();
     gal_keyword("gx.ai_fun", input)?;
     let props = action_call_args.parse_next(input)?;
-    
+
     for one in props {
         let key = one.0.to_lowercase();
         match key {
@@ -355,11 +355,11 @@ pub struct GitFunctionExecutor;
 impl FunctionExecutor for GitFunctionExecutor {
     async fn execute(&self, function_call: &FunctionCall) -> AiResult<FunctionResult> {
         match function_call.function.name.as_str() {
-            "git_status" => self.execute_git_status(function_call).await,
-            "git_add" => self.execute_git_add(function_call).await,
-            "git_commit" => self.execute_git_commit(function_call).await,
-            "git_push" => self.execute_git_push(function_call).await,
-            "git_diff" => self.execute_git_diff(function_call).await,
+            "git-status" => self.execute_git_status(function_call).await,
+            "git-add" => self.execute_git_add(function_call).await,
+            "git-commit" => self.execute_git_commit(function_call).await,
+            "git-push" => self.execute_git_push(function_call).await,
+            "git-diff" => self.execute_git_diff(function_call).await,
             _ => Err(AiErrReason::from_logic("unknown function")),
         }
     }
@@ -373,10 +373,10 @@ impl FunctionRegistry {
         self.functions.insert(function.name.clone(), function);
         Ok(())
     }
-    
+
     pub fn register_executor(
-        &mut self, 
-        function_name: &str, 
+        &mut self,
+        function_name: &str,
         executor: Arc<dyn FunctionExecutor>
     ) -> AiResult<()> {
         self.executors.insert(function_name.to_string(), executor);
@@ -438,14 +438,14 @@ NetworkError (网络错误)
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[tokio::test]
     async fn test_basic_ai_conversation() {
         // 测试基础 AI 对话功能
         let ai_fun = GxAIFun::default()
             .with_role(Some("developer".to_string()))
             .with_prompt(Some("请回答：1+1=?".to_string()));
-        
+
         let result = ai_fun.async_exec(create_test_context(), create_test_vars()).await;
         assert!(result.is_ok());
     }
@@ -487,7 +487,7 @@ impl AITaskCache {
     pub fn get_cached_response(&self, prompt: &str) -> Option<&AiResponse> {
         self.response_cache.get(prompt)
     }
-    
+
     pub fn cache_response(&mut self, prompt: String, response: AiResponse) {
         self.response_cache.insert(prompt, response);
     }
@@ -566,7 +566,7 @@ impl GxAIFun {
     pub fn with_tools(self, tools: Option<Vec<String>>) -> Self {
         Self { tools, ..self }
     }
-    
+
     // 新增方法不影响现有调用
     pub fn enable_function_calling(mut self, enabled: bool) -> Self {
         self.enable_function_calling = enabled;
@@ -696,11 +696,11 @@ impl AITaskLogger {
     pub fn log_task_start(&self, task: &AITaskDefinition) {
         info!("Starting AI task: {} - {}", task.name(), task.description());
     }
-    
+
     pub fn log_function_call(&self, call: &FunctionCall, result: &FunctionResult) {
         info!("Function call: {} - Result: {:?}", call.function.name, result);
     }
-    
+
     pub fn log_task_completion(&self, task: &AITaskDefinition, duration: Duration) {
         info!("Completed AI task: {} in {:?}", task.name(), duration);
     }
@@ -718,7 +718,7 @@ impl AITaskDebugger {
     pub fn check_breakpoint(&self, step_name: &str) -> bool {
         self.breakpoints.contains(&step_name.to_string())
     }
-    
+
     pub fn enable_step_mode(&mut self, enabled: bool) {
         self.step_mode = enabled;
     }
@@ -767,7 +767,7 @@ mod ai_tools {
 mod ai_workflows {
     flow smart_commit {
         gx.ai_workflow(
-            role: "developer", 
+            role: "developer",
             task: "执行智能 Git 提交流程"
         );
     }

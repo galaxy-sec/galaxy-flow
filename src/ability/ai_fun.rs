@@ -13,8 +13,7 @@ pub struct GxAIFun {
     role: Option<String>,
     task: Option<String>,
     config: Option<AiConfig>,
-    enable_function_calling: bool,
-    tools: String, // 字符串格式：如 "git-diff,git-push"
+    tools: Vec<String>,
 }
 
 impl GxAIFun {
@@ -40,7 +39,7 @@ impl GxAIFun {
         };
 
         // 🎯 获取根据工具列表过滤的注册表
-        let registry = ai_client.get_filtered_registry(&self.tools).err_conv()?;
+        let registry = ai_client.get_registry_with_tools(&self.tools).err_conv()?;
         let available_functions = registry.clone_functions();
 
         // 发送 AI 请求
@@ -180,11 +179,11 @@ mod tests {
         let function_names = registry.get_supported_function_names();
 
         // 验证Git工具已注册
-        assert!(function_names.contains(&"git_status".to_string()));
-        assert!(function_names.contains(&"git_commit".to_string()));
-        assert!(function_names.contains(&"git_add".to_string()));
-        assert!(function_names.contains(&"git_push".to_string()));
-        assert!(function_names.contains(&"git_diff".to_string()));
+        assert!(function_names.contains(&"git-status".to_string()));
+        assert!(function_names.contains(&"git-commit".to_string()));
+        assert!(function_names.contains(&"git-add".to_string()));
+        assert!(function_names.contains(&"git-push".to_string()));
+        assert!(function_names.contains(&"git-diff".to_string()));
     }
 }
 

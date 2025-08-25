@@ -69,7 +69,7 @@ fn test_send_request_with_tools_response_conversion() {
         Some(0),
         "call_0_889decaf-c79e-4e8c-8655-fe0d7805298c",
         "function",
-        "git_status",
+        "git-status",
         "{}",
     )];
 
@@ -140,7 +140,7 @@ fn test_send_request_with_tools_response_conversion() {
     assert_eq!(tool_call.index, Some(0));
     assert_eq!(tool_call.id, "call_0_889decaf-c79e-4e8c-8655-fe0d7805298c");
     assert_eq!(tool_call.r#type, "function");
-    assert_eq!(tool_call.function.name, "git_status");
+    assert_eq!(tool_call.function.name, "git-status");
     assert_eq!(tool_call.function.arguments, "{}");
 }
 
@@ -151,19 +151,19 @@ fn test_multiple_tool_calls_response_conversion() {
         create_mock_openai_response("执行完整的Git工作流", "gpt-4-turbo", 500, 100);
 
     let tool_calls = vec![
-        create_mock_tool_call(Some(0), "call_001", "function", "git_status", "{}"),
+        create_mock_tool_call(Some(0), "call_001", "function", "git-status", "{}"),
         create_mock_tool_call(
             Some(1),
             "call_002",
             "function",
-            "git_add",
+            "git-add",
             "{\"files\": [\".\"]}",
         ),
         create_mock_tool_call(
             Some(2),
             "call_003",
             "function",
-            "git_commit",
+            "git-commit",
             "{\"message\": \"Test commit\"}",
         ),
     ];
@@ -222,15 +222,15 @@ fn test_multiple_tool_calls_response_conversion() {
     assert_eq!(tool_calls.len(), 3);
 
     // 验证第一个调用
-    assert_eq!(tool_calls[0].function.name, "git_status");
+    assert_eq!(tool_calls[0].function.name, "git-status");
     assert_eq!(tool_calls[0].function.arguments, "{}");
 
     // 验证第二个调用
-    assert_eq!(tool_calls[1].function.name, "git_add");
+    assert_eq!(tool_calls[1].function.name, "git-add");
     assert_eq!(tool_calls[1].function.arguments, "{\"files\": [\".\"]}");
 
     // 验证第三个调用
-    assert_eq!(tool_calls[2].function.name, "git_commit");
+    assert_eq!(tool_calls[2].function.name, "git-commit");
     assert_eq!(
         tool_calls[2].function.arguments,
         "{\"message\": \"Test commit\"}"
@@ -454,7 +454,7 @@ fn test_convert_response_from_text_deepseek_tool_calls() {
           "index": 0,
           "id": "call_0_3ebc9e84-a137-4188-995c-9381586f7097",
           "type": "function",
-          "function": { "name": "git_status", "arguments": "{}" }
+          "function": { "name": "git-status", "arguments": "{}" }
         }
       ]
     }
@@ -500,7 +500,7 @@ fn test_convert_response_from_text_deepseek_tool_calls() {
     assert_eq!(tool_call.index, Some(0));
     assert_eq!(tool_call.id, "call_0_3ebc9e84-a137-4188-995c-9381586f7097");
     assert_eq!(tool_call.r#type, "function");
-    assert_eq!(tool_call.function.name, "git_status");
+    assert_eq!(tool_call.function.name, "git-status");
     assert_eq!(tool_call.function.arguments, "{}");
 
     // 验证使用信息

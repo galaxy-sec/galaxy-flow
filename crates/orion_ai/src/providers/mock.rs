@@ -106,43 +106,43 @@ impl AiProvider for MockProvider {
         _functions: &[FunctionDefinition],
     ) -> AiResult<AiResponse> {
         // 模拟函数调用 - 根据用户提示决定是否调用函数
-        let tool_calls = if request.user_prompt.contains("git_status") {
+        let tool_calls = if request.user_prompt.contains("git-status") {
             Some(vec![FunctionCall {
                 index: Some(0),
                 id: "call_mock_001".to_string(),
                 r#type: "function".to_string(),
                 function: crate::provider::FunctionCallInfo {
-                    name: "git_status".to_string(),
+                    name: "git-status".to_string(),
                     arguments: "{\"path\":\".\"}".to_string(),
                 },
             }])
-        } else if request.user_prompt.contains("git_add") {
+        } else if request.user_prompt.contains("git-add") {
             Some(vec![FunctionCall {
                 index: Some(0),
                 id: "call_mock_002".to_string(),
                 r#type: "function".to_string(),
                 function: crate::provider::FunctionCallInfo {
-                    name: "git_add".to_string(),
+                    name: "git-add".to_string(),
                     arguments: "{\"files\":[\".\"]}".to_string(),
                 },
             }])
-        } else if request.user_prompt.contains("git_commit") {
+        } else if request.user_prompt.contains("git-commit") {
             Some(vec![FunctionCall {
                 index: Some(0),
                 id: "call_mock_003".to_string(),
                 r#type: "function".to_string(),
                 function: crate::provider::FunctionCallInfo {
-                    name: "git_commit".to_string(),
+                    name: "git-commit".to_string(),
                     arguments: "{\"message\":\"Mock commit message\"}".to_string(),
                 },
             }])
-        } else if request.user_prompt.contains("git_push") {
+        } else if request.user_prompt.contains("git-push") {
             Some(vec![FunctionCall {
                 index: Some(0),
                 id: "call_mock_004".to_string(),
                 r#type: "function".to_string(),
                 function: crate::provider::FunctionCallInfo {
-                    name: "git_push".to_string(),
+                    name: "git-push".to_string(),
                     arguments: "{\"remote\":\"origin\",\"branch\":\"main\"}".to_string(),
                 },
             }])

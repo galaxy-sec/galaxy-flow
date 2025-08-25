@@ -31,7 +31,7 @@ pub struct GitFunctionExecutor;
 impl FunctionExecutor for GitFunctionExecutor {
     async fn execute(&self, function_call: &FunctionCall) -> AiResult<FunctionResult> {
         match function_call.function.name.as_str() {
-            "git_status" => {
+            "git-status" => {
                 let args = parse_function_arguments(&function_call.function.arguments)?;
                 let path = args.get("path").and_then(|v| v.as_str()).unwrap_or(".");
 
@@ -44,7 +44,7 @@ impl FunctionExecutor for GitFunctionExecutor {
                     Ok(output) => {
                         let status = String::from_utf8_lossy(&output.stdout).to_string();
                         Ok(FunctionResult {
-                            name: "git_status".to_string(),
+                            name: "git-status".to_string(),
                             result: json!({
                                 "status": status,
                                 "has_changes": !status.trim().is_empty()
@@ -53,14 +53,14 @@ impl FunctionExecutor for GitFunctionExecutor {
                         })
                     }
                     Err(e) => Ok(FunctionResult {
-                        name: "git_status".to_string(),
+                        name: "git-status".to_string(),
                         result: serde_json::Value::Null,
                         error: Some(format!("Failed to get git status: {}", e)),
                     }),
                 }
             }
 
-            "git_diff" => {
+            "git-diff" => {
                 let args = parse_function_arguments(&function_call.function.arguments)?;
                 let path = args.get("path").and_then(|v| v.as_str()).unwrap_or(".");
                 let staged = args
@@ -83,7 +83,7 @@ impl FunctionExecutor for GitFunctionExecutor {
                     Ok(output) => {
                         let diff = String::from_utf8_lossy(&output.stdout).to_string();
                         Ok(FunctionResult {
-                            name: "git_diff".to_string(),
+                            name: "git-diff".to_string(),
                             result: json!({
                                 "diff": diff,
                                 "has_changes": !diff.trim().is_empty()
@@ -92,14 +92,14 @@ impl FunctionExecutor for GitFunctionExecutor {
                         })
                     }
                     Err(e) => Ok(FunctionResult {
-                        name: "git_diff".to_string(),
+                        name: "git-diff".to_string(),
                         result: serde_json::Value::Null,
                         error: Some(format!("Failed to get git diff: {}", e)),
                     }),
                 }
             }
 
-            "git_add" => {
+            "git-add" => {
                 let args = parse_function_arguments(&function_call.function.arguments)?;
                 let files = args
                     .get("files")
@@ -124,7 +124,7 @@ impl FunctionExecutor for GitFunctionExecutor {
                     Ok(output) => {
                         if output.status.success() {
                             Ok(FunctionResult {
-                                name: "git_add".to_string(),
+                                name: "git-add".to_string(),
                                 result: json!({
                                     "success": true,
                                     "message": "Files added successfully"
@@ -134,21 +134,21 @@ impl FunctionExecutor for GitFunctionExecutor {
                         } else {
                             let error_msg = String::from_utf8_lossy(&output.stderr);
                             Ok(FunctionResult {
-                                name: "git_add".to_string(),
+                                name: "git-add".to_string(),
                                 result: serde_json::Value::Null,
                                 error: Some(error_msg.to_string()),
                             })
                         }
                     }
                     Err(e) => Ok(FunctionResult {
-                        name: "git_add".to_string(),
+                        name: "git-add".to_string(),
                         result: serde_json::Value::Null,
                         error: Some(format!("Failed to add files: {}", e)),
                     }),
                 }
             }
 
-            "git_commit" => {
+            "git-commit" => {
                 let args = parse_function_arguments(&function_call.function.arguments)?;
                 let message = args
                     .get("message")
@@ -166,7 +166,7 @@ impl FunctionExecutor for GitFunctionExecutor {
                     Ok(output) => {
                         if output.status.success() {
                             Ok(FunctionResult {
-                                name: "git_commit".to_string(),
+                                name: "git-commit".to_string(),
                                 result: json!({
                                     "success": true,
                                     "message": "Commit created successfully"
@@ -176,21 +176,21 @@ impl FunctionExecutor for GitFunctionExecutor {
                         } else {
                             let error_msg = String::from_utf8_lossy(&output.stderr);
                             Ok(FunctionResult {
-                                name: "git_commit".to_string(),
+                                name: "git-commit".to_string(),
                                 result: serde_json::Value::Null,
                                 error: Some(error_msg.to_string()),
                             })
                         }
                     }
                     Err(e) => Ok(FunctionResult {
-                        name: "git_commit".to_string(),
+                        name: "git-commit".to_string(),
                         result: serde_json::Value::Null,
                         error: Some(format!("Failed to create commit: {}", e)),
                     }),
                 }
             }
 
-            "git_push" => {
+            "git-push" => {
                 let args = parse_function_arguments(&function_call.function.arguments)?;
                 let remote = args
                     .get("remote")
@@ -209,7 +209,7 @@ impl FunctionExecutor for GitFunctionExecutor {
                     Ok(output) => {
                         if output.status.success() {
                             Ok(FunctionResult {
-                                name: "git_push".to_string(),
+                                name: "git-push".to_string(),
                                 result: json!({
                                     "success": true,
                                     "message": format!("Pushed to {}/{}", remote, branch)
@@ -219,14 +219,14 @@ impl FunctionExecutor for GitFunctionExecutor {
                         } else {
                             let error_msg = String::from_utf8_lossy(&output.stderr);
                             Ok(FunctionResult {
-                                name: "git_push".to_string(),
+                                name: "git-push".to_string(),
                                 result: serde_json::Value::Null,
                                 error: Some(error_msg.to_string()),
                             })
                         }
                     }
                     Err(e) => Ok(FunctionResult {
-                        name: "git_push".to_string(),
+                        name: "git-push".to_string(),
                         result: serde_json::Value::Null,
                         error: Some(format!("Failed to push: {}", e)),
                     }),
@@ -239,11 +239,11 @@ impl FunctionExecutor for GitFunctionExecutor {
 
     fn supported_functions(&self) -> Vec<String> {
         vec![
-            "git_status".to_string(),
-            "git_diff".to_string(),
-            "git_add".to_string(),
-            "git_commit".to_string(),
-            "git_push".to_string(),
+            "git-status".to_string(),
+            "git-diff".to_string(),
+            "git-add".to_string(),
+            "git-commit".to_string(),
+            "git-push".to_string(),
         ]
     }
 
@@ -257,7 +257,7 @@ impl FunctionExecutor for GitFunctionExecutor {
 pub fn create_git_functions() -> Vec<FunctionDefinition> {
     vec![
         FunctionDefinition {
-            name: "git_status".to_string(),
+            name: "git-status".to_string(),
             description: "获取Git仓库状态".to_string(),
             parameters: vec![FunctionParameter {
                 name: "path".to_string(),
@@ -267,7 +267,7 @@ pub fn create_git_functions() -> Vec<FunctionDefinition> {
             }],
         },
         FunctionDefinition {
-            name: "git_diff".to_string(),
+            name: "git-diff".to_string(),
             description: "显示Git仓库的变更差异".to_string(),
             parameters: vec![
                 FunctionParameter {
@@ -285,7 +285,7 @@ pub fn create_git_functions() -> Vec<FunctionDefinition> {
             ],
         },
         FunctionDefinition {
-            name: "git_add".to_string(),
+            name: "git-add".to_string(),
             description: "添加文件到Git暂存区".to_string(),
             parameters: vec![FunctionParameter {
                 name: "files".to_string(),
@@ -295,7 +295,7 @@ pub fn create_git_functions() -> Vec<FunctionDefinition> {
             }],
         },
         FunctionDefinition {
-            name: "git_commit".to_string(),
+            name: "git-commit".to_string(),
             description: "创建Git提交".to_string(),
             parameters: vec![FunctionParameter {
                 name: "message".to_string(),
@@ -305,7 +305,7 @@ pub fn create_git_functions() -> Vec<FunctionDefinition> {
             }],
         },
         FunctionDefinition {
-            name: "git_push".to_string(),
+            name: "git-push".to_string(),
             description: "推送提交到远程仓库".to_string(),
             parameters: vec![
                 FunctionParameter {
