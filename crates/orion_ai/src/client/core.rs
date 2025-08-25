@@ -1,6 +1,6 @@
 use crate::config::RoleConfigManager;
 use crate::error::{AiError, AiResult};
-use crate::function_calling::FunctionRegistry;
+use crate::function_calling::{FunctionRegistry, GlobalFunctionRegistry};
 use crate::provider::{AiProvider, AiProviderType, AiRequest, AiResponse, FunctionDefinition};
 use crate::roleid::AiRoleID;
 use crate::{AiConfig, AiErrReason, AiRouter};
@@ -50,6 +50,23 @@ impl AiClientTrait for AiClient {
         // 4. 在响应中添加角色信息
         response.content = format!("[角色: {}]\n\n{}", role.description(), response.content);
 
+        Ok(response)
+    }
+
+    async fn role_funs_request(
+        &self,
+        role: &AiRoleID,
+        user_input: &str,
+        func: Vec<FunctionDefinition>,
+    ) -> AiResult<AiResponse> {
+        let request = self
+            .build_ai_request(role, user_input)?
+            .with_functions(Some(func));
+        // 3. 发送请求
+        let mut response = self.send_request(request).await?;
+
+        // 4. 在响应中添加角色信息
+        response.content = format!("[角色: {}]\n\n{}", role.description(), response.content);
         Ok(response)
     }
 }
@@ -179,5 +196,26 @@ impl AiClient {
         } else {
             Ok(response.content.clone())
         }
+    }
+
+    /// 获取预注册的函数注册表副本
+    pub fn get_function_registry(&self) -> Result<FunctionRegistry, AiError> {
+        GlobalFunctionRegistry::get_registry()
+            .map_err(|e| AiError::from(AiErrReason::from_biz(e.to_string())))
+    }
+
+    /// 发送带预注册函数的请求
+    pub async fn send_request_with_preset_functions(
+        &self,
+        request: AiRequest,
+    ) -> AiResult<AiResponse> {
+        let registry = self.get_function_registry()?;
+        self.send_request_with_functions(request, &registry).await
+    }
+
+    /// 处理预注册的函数调用
+    pub async fn handle_preset_function_calls(&self, response: &AiResponse) -> AiResult<String> {
+        let registry = self.get_function_registry()?;
+        self.handle_function_calls(response, &registry).await
     }
 }

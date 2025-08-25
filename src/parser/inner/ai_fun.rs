@@ -13,11 +13,6 @@ pub fn gal_ai_fun(input: &mut &str) -> Result<GxAIFun> {
             ai_fun.set_role(one.1.to_opt());
         } else if key == "task" {
             ai_fun.set_task(one.1.to_opt());
-        } else if key == "tools" {
-            if let Some(tools_str) = one.1.to_opt() {
-                let tools = parse_tools_list(&tools_str);
-                ai_fun.set_tools(Some(tools));
-            }
         } else if key == "enable_function_calling" {
             if let Some(enable_str) = one.1.to_opt() {
                 let enable = parse_bool(&enable_str);
@@ -28,21 +23,8 @@ pub fn gal_ai_fun(input: &mut &str) -> Result<GxAIFun> {
     Ok(ai_fun)
 }
 
-fn parse_tools_list(tools_str: &str) -> Vec<String> {
-    // 解析类似 ["git status", "git diff"] 的列表
-    let tools_str = tools_str.trim();
-    if tools_str.starts_with('[') && tools_str.ends_with(']') {
-        let content = &tools_str[1..tools_str.len() - 1];
-        content
-            .split(',')
-            .map(|s| s.trim().trim_matches('"').trim_matches('\'').to_string())
-            .filter(|s| !s.is_empty())
-            .collect()
-    } else {
-        // 如果不是列表格式，当作单个工具处理
-        vec![tools_str.to_string()]
-    }
-}
+// parse_tools_list 函数已移除，因为现在使用全局预注册
+// 所有工具函数在启动时通过 GlobalFunctionRegistry 统一注册
 
 fn parse_bool(bool_str: &str) -> bool {
     bool_str.trim().to_lowercase() == "true"
@@ -86,14 +68,7 @@ mod tests {
         }
     }
 
-    #[test]
-    fn test_parse_tools_list() {
-        let tools = parse_tools_list(r#"["git status", "git diff"]"#);
-        assert_eq!(tools, vec!["git status", "git diff"]);
-
-        let single_tool = parse_tools_list("git status");
-        assert_eq!(single_tool, vec!["git status"]);
-    }
+    // parse_tools_list tests removed - function is no longer needed since using global registry
 
     #[test]
     fn test_parse_bool() {

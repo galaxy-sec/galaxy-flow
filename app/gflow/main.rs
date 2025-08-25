@@ -13,7 +13,8 @@ use galaxy_flow::runner::{GxlCmd, GxlRunner};
 use galaxy_flow::traits::Setter;
 use galaxy_flow::util::diagnose::ai_diagnose;
 use galaxy_flow::util::redirect::stop_redirect;
-use orion_error::ErrorConv;
+use orion_ai::function_calling::GlobalFunctionRegistry;
+use orion_error::{ErrorConv, UvsBizFrom};
 use std::env;
 
 #[tokio::main]
@@ -29,6 +30,18 @@ async fn main() -> RunResult<()> {
 
     configure_run_logging(cmd.log.clone(), cmd.debug);
     load_gxl_config();
+
+    // 初始化全局函数注册表
+    if let Err(e) = GlobalFunctionRegistry::initialize() {
+        eprintln!("Failed to initialize global function registry: {}", e);
+        return Err(galaxy_flow::err::RunReason::from_biz(format!(
+            "Global function registry initialization failed: {}",
+            e
+        ))
+        .into());
+    }
+    println!("✅ 全局函数注册表初始化完成");
+
     let redirect = init_redirect_and_parent_task(cmd.flow.concat(), cmd.ai)
         .await
         .err_conv()?;

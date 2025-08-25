@@ -60,6 +60,45 @@ impl FunctionExecutor for GitFunctionExecutor {
                 }
             }
 
+            "git_diff" => {
+                let args = parse_function_arguments(&function_call.function.arguments)?;
+                let path = args.get("path").and_then(|v| v.as_str()).unwrap_or(".");
+                let staged = args
+                    .get("staged")
+                    .and_then(|v| v.as_bool())
+                    .unwrap_or(false);
+
+                let mut args = vec!["diff"];
+                if staged {
+                    args.push("--staged");
+                }
+                args.push(path);
+
+                match tokio::process::Command::new("git")
+                    .args(args)
+                    .current_dir(".")
+                    .output()
+                    .await
+                {
+                    Ok(output) => {
+                        let diff = String::from_utf8_lossy(&output.stdout).to_string();
+                        Ok(FunctionResult {
+                            name: "git_diff".to_string(),
+                            result: json!({
+                                "diff": diff,
+                                "has_changes": !diff.trim().is_empty()
+                            }),
+                            error: None,
+                        })
+                    }
+                    Err(e) => Ok(FunctionResult {
+                        name: "git_diff".to_string(),
+                        result: serde_json::Value::Null,
+                        error: Some(format!("Failed to get git diff: {}", e)),
+                    }),
+                }
+            }
+
             "git_add" => {
                 let args = parse_function_arguments(&function_call.function.arguments)?;
                 let files = args
@@ -201,6 +240,7 @@ impl FunctionExecutor for GitFunctionExecutor {
     fn supported_functions(&self) -> Vec<String> {
         vec![
             "git_status".to_string(),
+            "git_diff".to_string(),
             "git_add".to_string(),
             "git_commit".to_string(),
             "git_push".to_string(),
@@ -225,6 +265,24 @@ pub fn create_git_functions() -> Vec<FunctionDefinition> {
                 r#type: "string".to_string(),
                 required: false,
             }],
+        },
+        FunctionDefinition {
+            name: "git_diff".to_string(),
+            description: "显示Git仓库的变更差异".to_string(),
+            parameters: vec![
+                FunctionParameter {
+                    name: "path".to_string(),
+                    description: "Git仓库路径，默认为当前目录".to_string(),
+                    r#type: "string".to_string(),
+                    required: false,
+                },
+                FunctionParameter {
+                    name: "staged".to_string(),
+                    description: "是否只显示暂存的变更，默认为false".to_string(),
+                    r#type: "boolean".to_string(),
+                    required: false,
+                },
+            ],
         },
         FunctionDefinition {
             name: "git_add".to_string(),

@@ -1,5 +1,6 @@
 use crate::error::AiErrReason;
 use async_trait::async_trait;
+use getset::WithSetters;
 use orion_error::ToStructError;
 
 use orion_error::UvsLogicFrom;
@@ -65,7 +66,8 @@ pub struct ModelInfo {
 }
 
 /// 统一AI请求结构
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, WithSetters)]
+#[getset(set_with = "pub")]
 pub struct AiRequest {
     pub model: String,
     pub system_prompt: String,
