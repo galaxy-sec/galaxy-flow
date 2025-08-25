@@ -4,7 +4,6 @@ mod const_val;
 mod error;
 pub mod factory;
 pub mod func;
-pub mod function_calling;
 mod infra;
 pub mod provider;
 pub mod providers;
@@ -18,15 +17,12 @@ pub use roleid::*;
 pub use router::*;
 
 // Function calling 相关导出
-pub use function_calling::{FunctionExecutor, FunctionRegistry};
+pub use func::global::GlobalFunctionRegistry;
+pub use func::{executor::FunctionExecutor, registry::FunctionRegistry};
 pub use provider::{FunctionCall, FunctionDefinition, FunctionParameter, FunctionResult};
 
 // 客户端相关导出
 pub use client::{AiClient, AiClientTrait, AiCoreClient};
 pub use error::{AiErrReason, AiError, AiResult};
 pub use thread::recorder::{ThreadClient, ThreadFileManager};
-// Thread相关导出
 pub use thread::ThreadConfig;
-// mod tests; // 已移除到 config 模块中
-
-// DeepSeek 测试模块

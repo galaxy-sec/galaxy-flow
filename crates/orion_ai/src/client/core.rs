@@ -1,9 +1,8 @@
 use crate::config::RoleConfigManager;
 use crate::error::{AiError, AiResult};
-use crate::function_calling::{FunctionRegistry, GlobalFunctionRegistry};
 use crate::provider::{AiProvider, AiProviderType, AiRequest, AiResponse, FunctionDefinition};
 use crate::roleid::AiRoleID;
-use crate::{AiConfig, AiErrReason, AiRouter};
+use crate::{AiConfig, AiErrReason, AiRouter, FunctionRegistry, GlobalFunctionRegistry};
 use async_trait::async_trait;
 use getset::Getters;
 use log::error;
