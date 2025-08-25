@@ -175,7 +175,7 @@ impl AsyncRunnableTrait for GxAIFun {
 #[cfg(test)]
 mod tests {
     use orion_ai::client::load_key_dict;
-    use orion_ai::function_calling::GlobalFunctionRegistry;
+    use orion_ai::GlobalFunctionRegistry;
     use orion_variate::vars::EnvEvalable;
 
     use super::*;

@@ -13,7 +13,7 @@ use galaxy_flow::runner::{GxlCmd, GxlRunner};
 use galaxy_flow::traits::Setter;
 use galaxy_flow::util::diagnose::ai_diagnose;
 use galaxy_flow::util::redirect::stop_redirect;
-use orion_ai::function_calling::GlobalFunctionRegistry;
+use orion_ai::GlobalFunctionRegistry;
 use orion_error::{ErrorConv, UvsBizFrom};
 use std::env;
 
