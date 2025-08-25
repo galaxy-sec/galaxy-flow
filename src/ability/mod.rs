@@ -1,4 +1,4 @@
-pub mod ai;
+pub mod ai_chat;
 pub mod ai_fun;
 pub mod archive;
 pub mod assert;

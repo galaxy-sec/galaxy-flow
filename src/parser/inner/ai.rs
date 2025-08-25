@@ -1,7 +1,7 @@
 use super::super::prelude::*;
 use super::call::action_call_args;
 
-use crate::ability::ai::GxAIChat;
+use crate::ability::ai_chat::GxAIChat;
 use crate::parser::domain::gal_keyword;
 use crate::util::OptionFrom;
 
@@ -16,7 +16,7 @@ pub fn gal_ai_chat(input: &mut &str) -> Result<GxAIChat> {
         } else if key == "prompt_file" {
             chat.set_prompt_file(one.1.to_opt());
         } else if key == "role" {
-            chat.set_ai_role(one.1.to_opt());
+            chat.set_role(one.1.to_opt());
         }
     }
     Ok(chat)
@@ -52,6 +52,6 @@ mod tests {
         let obj = gal_ai_chat(&mut data).assert();
         assert_eq!(data, "");
         assert_eq!(obj.prompt_file(), &Some("./ai_chat.txt".to_string()));
-        assert_eq!(obj.ai_role(), &Some("developer".to_string()));
+        assert_eq!(obj.role(), &Some("developer".to_string()));
     }
 }
