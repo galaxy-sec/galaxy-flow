@@ -1,4 +1,5 @@
 use super::inner::ai::gal_ai_chat;
+use super::inner::ai_fun::gal_ai_fun;
 use super::inner::call::gal_call;
 use super::inner::cmd::gal_cmd_block;
 use super::inner::gxl::gal_run;
@@ -71,6 +72,9 @@ pub fn gal_sentens_item(input: &mut &str) -> Result<BlockAction> {
     }
     if starts_with("gx.ai_chat", input) {
         return gal_ai_chat.map(BlockAction::AiChat).parse_next(input);
+    }
+    if starts_with("gx.ai_fun", input) {
+        return gal_ai_fun.map(BlockAction::AiFun).parse_next(input);
     }
 
     if starts_with("gx.run", input) {

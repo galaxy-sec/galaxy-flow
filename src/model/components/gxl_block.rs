@@ -8,6 +8,7 @@ use derive_more::From;
 use std::sync::mpsc::Sender;
 
 use crate::ability::ai::GxAIChat;
+use crate::ability::ai_fun::GxAIFun;
 use crate::ability::archive::GxTar;
 use crate::ability::archive::GxUnTar;
 use crate::ability::delegate::ActCall;
@@ -25,6 +26,7 @@ use crate::util::redirect::ReadSignal;
 #[derive(Clone, From)]
 pub enum BlockAction {
     AiChat(GxAIChat),
+    AiFun(GxAIFun),
     Shell(GxShell),
     Command(GxCmd),
     GxlRun(GxRun),
@@ -73,6 +75,7 @@ impl AsyncRunnableWithSenderTrait for BlockAction {
     ) -> TaskResult {
         match self {
             BlockAction::AiChat(o) => o.async_exec(ctx, dct).await,
+            BlockAction::AiFun(o) => o.async_exec(ctx, dct).await,
             BlockAction::GxlRun(o) => o.async_exec(ctx, dct, sender).await,
             BlockAction::Loop(o) => o.async_exec(ctx, dct, sender).await,
             BlockAction::Shell(o) => o.async_exec(ctx, dct).await,
@@ -127,6 +130,7 @@ impl DependTrait<&GxlSpace> for BlockNode {
         };
         for x in self.items {
             let item = match x {
+                BlockAction::AiFun(v) => BlockAction::AiFun(v.clone()),
                 BlockAction::AiChat(v) => BlockAction::AiChat(v.clone()),
                 BlockAction::Tpl(v) => BlockAction::Tpl(v.clone()),
                 BlockAction::Tar(v) => BlockAction::Tar(v.clone()),
