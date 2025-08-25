@@ -41,6 +41,11 @@ impl FunctionRegistry {
         self.functions.values().collect()
     }
 
+    /// 获取指定函数的执行器
+    pub fn get_executor(&self, function_name: &str) -> Option<Arc<dyn FunctionExecutor>> {
+        self.executors.get(function_name).cloned()
+    }
+
     /// 根据名称获取函数定义
     pub fn get_function(&self, name: &str) -> Option<&FunctionDefinition> {
         self.functions.get(name)

@@ -203,6 +203,12 @@ impl AiClient {
             .map_err(|e| AiError::from(AiErrReason::from_biz(e.to_string())))
     }
 
+    /// 🎯 获取根据工具列表过滤的函数注册表
+    pub fn get_filtered_registry(&self, tools: &[String]) -> Result<FunctionRegistry, AiError> {
+        GlobalFunctionRegistry::get_registry_with_tools(tools)
+            .map_err(|e| AiError::from(AiErrReason::from_biz(e.to_string())))
+    }
+
     /// 发送带预注册函数的请求
     pub async fn send_request_with_preset_functions(
         &self,
@@ -212,9 +218,29 @@ impl AiClient {
         self.send_request_with_functions(request, &registry).await
     }
 
+    /// 🎯 发送带指定工具列表的请求
+    pub async fn send_request_with_filtered_functions(
+        &self,
+        request: AiRequest,
+        tools: &[String],
+    ) -> AiResult<AiResponse> {
+        let registry = self.get_filtered_registry(tools)?;
+        self.send_request_with_functions(request, &registry).await
+    }
+
     /// 处理预注册的函数调用
     pub async fn handle_preset_function_calls(&self, response: &AiResponse) -> AiResult<String> {
         let registry = self.get_function_registry()?;
+        self.handle_function_calls(response, &registry).await
+    }
+
+    /// 🎯 处理指定工具列表的函数调用
+    pub async fn handle_filtered_function_calls(
+        &self,
+        response: &AiResponse,
+        tools: &[String],
+    ) -> AiResult<String> {
+        let registry = self.get_filtered_registry(tools)?;
         self.handle_function_calls(response, &registry).await
     }
 }

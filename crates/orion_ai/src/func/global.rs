@@ -95,6 +95,56 @@ impl GlobalFunctionRegistry {
         Ok(global_registry.as_ref().clone_registry())
     }
 
+    /// 🎯 获取注册表的克隆副本，并根据指定工具列表进行过滤
+    pub fn get_registry_with_tools(
+        tools: &[String],
+    ) -> Result<FunctionRegistry, orion_error::UvsReason> {
+        // 首先获取完整的注册表副本
+        let full_registry = Self::get_registry()?;
+
+        // 如果工具列表为空，返回所有函数
+        if tools.is_empty() {
+            return Ok(full_registry);
+        }
+
+        // 否则，过滤出指定工具的函数
+        let filtered_functions = full_registry
+            .get_functions()
+            .into_iter()
+            .filter(|func_def| tools.contains(&func_def.name))
+            .cloned()
+            .collect::<Vec<_>>();
+
+        // 创建新的注册表并只包含过滤后的函数
+        let mut filtered_registry = FunctionRegistry::new();
+        for function_def in filtered_functions {
+            filtered_registry
+                .register_function(function_def)
+                .map_err(|e| {
+                    orion_error::UvsReason::validation_error(format!(
+                        "Failed to register filtered function: {}",
+                        e
+                    ))
+                })?;
+        }
+
+        // 复制执行器引用
+        for tool_name in tools {
+            if let Some(executor) = full_registry.get_executor(tool_name) {
+                filtered_registry
+                    .register_executor(tool_name.clone(), executor)
+                    .map_err(|e| {
+                        orion_error::UvsReason::validation_error(format!(
+                            "Failed to register executor for {}: {}",
+                            tool_name, e
+                        ))
+                    })?;
+            }
+        }
+
+        Ok(filtered_registry)
+    }
+
     /// 重置注册表（主要用于测试）
     pub fn reset() {
         unsafe {
@@ -107,6 +157,61 @@ impl GlobalFunctionRegistry {
 
 #[cfg(test)]
 mod global_registry_tests {
+    // 添加测试用例来验证 get_registry_with_tools 功能
+    #[tokio::test]
+    async fn test_get_registry_with_tools() {
+        // 重置并初始化注册表
+        GlobalFunctionRegistry::reset();
+        assert!(GlobalFunctionRegistry::initialize().is_ok());
+
+        // 测试指定工具列表
+        let tools = vec!["git_status".to_string(), "git_add".to_string()];
+        let filtered_registry = GlobalFunctionRegistry::get_registry_with_tools(&tools).unwrap();
+
+        let filtered_functions = filtered_registry.get_supported_function_names();
+        assert_eq!(filtered_functions.len(), 2);
+        assert!(filtered_functions.contains(&"git_status".to_string()));
+        assert!(filtered_functions.contains(&"git_add".to_string()));
+        assert!(!filtered_functions.contains(&"git_commit".to_string()));
+
+        // 测试单个工具
+        let single_tool = vec!["git_status".to_string()];
+        let single_registry =
+            GlobalFunctionRegistry::get_registry_with_tools(&single_tool).unwrap();
+
+        let single_functions = single_registry.get_supported_function_names();
+        assert_eq!(single_functions.len(), 1);
+        assert!(single_functions.contains(&"git_status".to_string()));
+
+        // 测试空工具列表（应该返回所有工具）
+        let empty_tools: Vec<String> = vec![];
+        let full_registry = GlobalFunctionRegistry::get_registry_with_tools(&empty_tools).unwrap();
+
+        let full_functions = full_registry.get_supported_function_names();
+        let all_registry = GlobalFunctionRegistry::get_registry().unwrap();
+        let all_functions = all_registry.get_supported_function_names();
+
+        assert_eq!(full_functions.len(), all_functions.len());
+        for func_name in &full_functions {
+            assert!(all_functions.contains(func_name));
+        }
+
+        // 测试不存在的工具
+        let nonexistent_tools = vec!["nonexistent_tool".to_string()];
+        let empty_registry =
+            GlobalFunctionRegistry::get_registry_with_tools(&nonexistent_tools).unwrap();
+
+        let empty_functions = empty_registry.get_supported_function_names();
+        assert_eq!(empty_functions.len(), 0);
+
+        // 测试混合存在的和不存在的工具
+        let mixed_tools = vec!["git_status".to_string(), "nonexistent_tool".to_string()];
+        let mixed_registry = GlobalFunctionRegistry::get_registry_with_tools(&mixed_tools).unwrap();
+
+        let mixed_functions = mixed_registry.get_supported_function_names();
+        assert_eq!(mixed_functions.len(), 1);
+        assert!(mixed_functions.contains(&"git_status".to_string()));
+    }
     use super::*;
 
     #[tokio::test]

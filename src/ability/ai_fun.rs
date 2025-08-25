@@ -14,61 +14,16 @@ pub struct GxAIFun {
     task: Option<String>,
     config: Option<AiConfig>,
     enable_function_calling: bool,
+    tools: String, // 字符串格式：如 "git-diff,git-push"
 }
 
 impl GxAIFun {
-    async fn execute_simple_chat(&self, mut ctx: ExecContext, vars_dict: VarSpace) -> TaskResult {
-        ctx.append("gx.ai_fun");
-        let prompt = self.task.as_deref().unwrap_or("请回答问题");
-        let role = self.role.as_deref().unwrap_or("assistant");
-        let _system_prompt = format!("你是一个专业的软件开发助手，角色：{}。", role);
-
-        // 如果启用了函数调用，使用函数调用执行路径
-        if self.enable_function_calling {
-            return self.execute_with_function_calling(ctx, vars_dict).await;
-        }
-
-        // 加载 AI 配置
-        let ai_config = AiConfig::galaxy_load(&vars_dict.global().export().into()).err_conv()?;
-        let ai_client = AiClient::new(ai_config, None).err_conv()?;
-
-        // 设置角色
-        let ai_role = if let Some(role_str) = &self.role {
-            AiRoleID::new(role_str.clone())
-        } else {
-            ai_client.roles().default_role().clone()
-        };
-
-        // 创建并发送 AI 请求
-        let ai_response = ai_client
-            .smart_role_request(&ai_role, prompt)
-            .await
-            .err_conv()
-            .with(format!("role:{}", ai_role))?;
-
-        // 获取回复内容
-        let response_content = ai_response.content;
-        let response_provider = ai_response.provider.to_string();
-        let timestamp = chrono::Local::now().to_rfc3339();
-
-        println!(
-            "AI Response:\nContent: {response_content}\nModel: {response_provider}\nTimestamp: {timestamp}\n"
-        );
-
-        // 创建输出动作
-        let mut action = Action::from("ai_chat_reply");
-        action.stdout = response_content;
-        action.finish();
-
-        Ok(TaskValue::from((vars_dict, ExecOut::Action(action))))
-    }
-
     async fn execute_with_function_calling(
         &self,
         mut ctx: ExecContext,
         vars_dict: VarSpace,
     ) -> TaskResult {
-        ctx.append("gx.ai_fun(function_calling)");
+        ctx.append("gx.ai_fun");
         let prompt = self.task.as_deref().unwrap_or("请完成任务");
 
         let user_prompt = format!("请完成以下任务：{}", prompt);
@@ -84,12 +39,12 @@ impl GxAIFun {
             ai_client.roles().default_role().clone()
         };
 
-        // 🎉 获取全局注册表的克隆副本（避免锁竞争）
-        let registry = ai_client.get_function_registry().err_conv()?;
+        // 🎯 获取根据工具列表过滤的注册表
+        let registry = ai_client.get_filtered_registry(&self.tools).err_conv()?;
         let available_functions = registry.clone_functions();
 
         // 发送 AI 请求
-        println!("🚀 发送 AI 请求 (启用预注册函数调用)...");
+        println!("🚀 发送 AI 请求 (启用工具过滤)...");
         let response = ai_client
             .role_funs_request(&role, user_prompt.as_str(), available_functions)
             .await
@@ -104,13 +59,27 @@ impl GxAIFun {
             "AI Response:\nContent: {response_content}\nModel: {response_provider}\nTimestamp: {timestamp}\n"
         );
 
-        // 🎉 使用克隆的注册表执行函数调用
+        // 🎯 使用过滤后的注册表执行函数调用
         let mut results = Vec::new();
 
         if let Some(tool_calls) = response.tool_calls {
-            println!("🔧 AI 请求执行工具调用:");
+            if self.tools.is_empty() {
+                println!("🔧 AI 请求执行工具调用 (所有可用工具):");
+            } else {
+                println!("🔧 AI 请求执行工具调用 (指定工具: {:?}):", self.tools);
+            }
 
             for tool_call in tool_calls {
+                // 🎯 检查函数是否在允许的 tools 列表中
+                if !self.tools.is_empty() && !self.tools.contains(&tool_call.function.name) {
+                    let error_msg = format!(
+                        "工具 '{}' 不在允许的工具列表中: {:?}",
+                        tool_call.function.name, self.tools
+                    );
+                    println!("❌ {}", error_msg);
+                    return Err(ExecReason::Uvs(UvsReason::validation_error(error_msg)).into());
+                }
+
                 println!("  📞 调用函数: {}", tool_call.function.name);
 
                 match registry.execute_function(&tool_call).await {
@@ -164,11 +133,7 @@ impl ComponentMeta for GxAIFun {
 #[async_trait]
 impl AsyncRunnableTrait for GxAIFun {
     async fn async_exec(&self, ctx: ExecContext, vars_dict: VarSpace) -> TaskResult {
-        if self.enable_function_calling {
-            self.execute_with_function_calling(ctx, vars_dict).await
-        } else {
-            self.execute_simple_chat(ctx, vars_dict).await
-        }
+        self.execute_with_function_calling(ctx, vars_dict).await
     }
 }
 
