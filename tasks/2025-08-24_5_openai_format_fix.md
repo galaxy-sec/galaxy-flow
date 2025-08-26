@@ -1,7 +1,7 @@
 # OpenAI Function Calling 工具格式修复报告
 
-**问题发现**: 2025-08-24  
-**修复完成**: 2025-08-24  
+**问题发现**: 2025-08-24
+**修复完成**: 2025-08-24
 **状态**: ✅ 已完成
 
 ## 📋 问题分析
@@ -14,7 +14,7 @@
 {
   "type": "function",
   "function": {
-    "name": "git_status",
+    "name": "git-status",
     "description": "获取Git仓库状态",
     "parameters": {
       "type": "object",
@@ -32,7 +32,7 @@
 // ✅ 正确的新格式（无包装层）
 {
   "type": "function",
-  "name": "git_status",
+  "name": "git-status",
   "description": "获取Git仓库状态",
   "parameters": {
     "type": "object",
@@ -114,7 +114,7 @@ impl OpenAiProvider {
         functions.iter().map(|f| {
             let properties = /* ... */;
             let required = /* ... */;
-            
+
             OpenAiFunction {
                 r#type: "function".to_string(),
                 name: f.name.clone(),
@@ -146,7 +146,7 @@ impl OpenAiProvider {
 {
   "type": "function",
   "function": {
-    "name": "git_status",
+    "name": "git-status",
     "description": "获取Git仓库状态",
     "parameters": {...}
   }
@@ -157,7 +157,7 @@ impl OpenAiProvider {
 ```json
 {
   "type": "function",
-  "name": "git_status",
+  "name": "git-status",
   "description": "获取Git仓库状态",
   "parameters": {
     "type": "object",
@@ -185,7 +185,7 @@ impl OpenAiProvider {
 
 #### 支持的参数类型：
 - `string` → `"string"` ✅
-- `array` → `"array"` ✅  
+- `array` → `"array"` ✅
 - `number` | `integer` → `"number"` ✅
 - `boolean` → `"boolean"` ✅
 - `object` → `"object"` ✅
@@ -206,7 +206,7 @@ let json_output = serde_json::to_string_pretty(&openai_tools).unwrap();
 
 // 验证结构
 assert_eq!(git_status_tool["type"], "function");
-assert_eq!(git_status_tool["name"], "git_status");
+assert_eq!(git_status_tool["name"], "git-status");
 assert_eq!(git_status_tool["description"], "获取Git仓库状态");
 ```
 
@@ -216,7 +216,7 @@ assert_eq!(git_status_tool["description"], "获取Git仓库状态");
 // 生成的格式（修复后）
 {
   "type": "function",
-  "name": "git_status",
+  "name": "git-status",
   "description": "获取Git仓库状态",
   "parameters": {...}
 }

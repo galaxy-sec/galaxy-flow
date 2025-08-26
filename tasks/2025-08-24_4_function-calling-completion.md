@@ -1,8 +1,8 @@
 # Function Calling 功能完成总结报告
 
-**任务**: 在 crate orion_ai 中提供对 function calling 的能力  
-**完成时间**: 2025-08-24 11:00:00  
-**开发周期**: 20分钟（设计）+ 30分钟（实施）+ 30分钟（格式修复）= 80分钟  
+**任务**: 在 crate orion_ai 中提供对 function calling 的能力
+**完成时间**: 2025-08-24 11:00:00
+**开发周期**: 20分钟（设计）+ 30分钟（实施）+ 30分钟（格式修复）= 80分钟
 **状态**: ✅ 已完成
 
 ## 📋 任务执行回顾
@@ -38,7 +38,7 @@
 
 **高价值（保留）**:
 - ✅ `FunctionDefinition` - 函数定义核心
-- ✅ `FunctionCall` - 函数调用载体  
+- ✅ `FunctionCall` - 函数调用载体
 - ✅ `FunctionExecutor` trait - 扩展点
 - ✅ `FunctionRegistry` - 函数管理
 - ✅ `AiRequest/AiResponse` 扩展 - 现有结构扩展
@@ -117,10 +117,10 @@ pub struct GitFunctionExecutor;
 impl FunctionExecutor for GitFunctionExecutor {
     async fn execute(&self, function_call: &FunctionCall) -> AiResult<FunctionResult> {
         match function_call.name.as_str() {
-            "git_status" => { /* 执行 git status */ }
-            "git_add" => { /* 执行 git add */ }
-            "git_commit" => { /* 执行 git commit */ }
-            "git_push" => { /* 执行 git push */ }
+            "git-status" => { /* 执行 git status */ }
+            "git-add" => { /* 执行 git add */ }
+            "git-commit" => { /* 执行 git commit */ }
+            "git-push" => { /* 执行 git push */ }
             _ => create_error("unknown function"),
         }
     }
@@ -135,7 +135,7 @@ impl FunctionExecutor for GitFunctionExecutor {
 
 **测试覆盖**:
 - ✅ `test_mock_provider_function_calling` - 完整 Mock 测试
-- ✅ `test_mock_provider_single_function_call` - 单函数调用测试  
+- ✅ `test_mock_provider_single_function_call` - 单函数调用测试
 - ✅ `test_function_registry_basic` - 注册表基础功能测试
 
 **测试功能**:
@@ -326,11 +326,11 @@ test result: ok. 1 passed; 0 failed
 
 **关键修复**: 发现并解决了 OpenAI function calling 工具定义中的多余包装层问题，生成的格式从：
 ```json
-{ "type": "function", "function": { "name": "git_status", ... } }
+{ "type": "function", "function": { "name": "git-status", ... } }
 ```
 修复为正确的：
 ```json
-{ "type": "function", "name": "git_status", "description": "获取Git仓库状态", ... }
+{ "type": "function", "name": "git-status", "description": "获取Git仓库状态", ... }
 ```
 
 这个项目展示了如何通过系统性的方法，在功能完整性和实现复杂度之间找到最佳平衡点，通过持续的改进和修复，确保系统完全符合工业标准，为后续类似项目提供了宝贵的经验和参考。

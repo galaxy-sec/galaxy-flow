@@ -1,7 +1,7 @@
 # OpenAI Function Calling 请求格式示例
 
-**文件**: `galaxy-flow/tasks/2025-08-24_6_openai_request_format_example.md`  
-**创建时间**: 2025-08-24  
+**文件**: `galaxy-flow/tasks/2025-08-24_6_openai_request_format_example.md`
+**创建时间**: 2025-08-24
 **状态**: ✅ 已完成
 
 ## 📋 完整的 OpenAI Function Calling 请求格式
@@ -29,7 +29,7 @@
     {
       "type": "function",
       "function": {
-        "name": "git_status",
+        "name": "git-status",
         "description": "获取Git仓库状态",
         "parameters": {
           "type": "object",
@@ -46,7 +46,7 @@
     {
       "type": "function",
       "function": {
-        "name": "git_add",
+        "name": "git-add",
         "description": "添加文件到Git暂存区",
         "parameters": {
           "type": "object",
@@ -65,7 +65,7 @@
     {
       "type": "function",
       "function": {
-        "name": "git_commit",
+        "name": "git-commit",
         "description": "创建Git提交",
         "parameters": {
           "type": "object",
@@ -84,7 +84,7 @@
     {
       "type": "function",
       "function": {
-        "name": "git_push",
+        "name": "git-push",
         "description": "推送提交到远程仓库",
         "parameters": {
           "type": "object",
@@ -270,7 +270,7 @@
             "id": "call_abc123",
             "type": "function",
             "function": {
-              "name": "git_status",
+              "name": "git-status",
               "arguments": "{\"path\": \".\"}"
             }
           }
@@ -336,7 +336,7 @@
     {
       "type": "function",
       "function": {
-        "name": "git_status",
+        "name": "git-status",
         "description": "获取Git仓库状态，显示修改的文件",
         "parameters": {
           "type": "object",
@@ -353,7 +353,7 @@
     {
       "type": "function",
       "function": {
-        "name": "git_add",
+        "name": "git-add",
         "description": "将文件添加到Git暂存区",
         "parameters": {
           "type": "object",
@@ -373,7 +373,7 @@
     {
       "type": "function",
       "function": {
-        "name": "git_commit",
+        "name": "git-commit",
         "description": "创建Git提交",
         "parameters": {
           "type": "object",
@@ -390,7 +390,7 @@
     {
       "type": "function",
       "function": {
-        "name": "git_push",
+        "name": "git-push",
         "description": "推送提交到远程仓库",
         "parameters": {
           "type": "object",

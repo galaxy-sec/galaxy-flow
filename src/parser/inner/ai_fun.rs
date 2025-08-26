@@ -16,6 +16,10 @@ pub fn gal_ai_fun(input: &mut &str) -> Result<GxAIFun> {
         } else if key == "tools" {
             let tools: Vec<String> = one.1.split(",").map(String::from).collect();
             ai_fun.set_tools(tools);
+        } else if key == "max_rounds" {
+            if let Ok(max_rounds) = one.1.parse::<usize>() {
+                ai_fun.set_max_rounds(max_rounds);
+            }
         }
     }
     Ok(ai_fun)
@@ -53,5 +57,69 @@ mod tests {
             ai_fun.tools(),
             &vec!["git-status".to_string(), "git-add".to_string()]
         );
+    }
+
+    #[test]
+    fn test_parse_ai_fun_with_max_rounds() {
+        let mut input = r#"gx.ai_fun(
+            role: "developer",
+            task: "执行任务",
+            max_rounds: 5
+        );"#;
+
+        let ai_fun = gal_ai_fun(&mut input).unwrap();
+        assert_eq!(ai_fun.role(), &Some("developer".to_string()));
+        assert_eq!(ai_fun.task(), &Some("执行任务".to_string()));
+        assert_eq!(*ai_fun.max_rounds(), 5);
+    }
+
+    #[test]
+    fn test_parse_ai_fun_with_max_rounds_default() {
+        let mut input = r#"gx.ai_fun(
+            role: "developer",
+            task: "执行任务"
+        );"#;
+
+        let ai_fun = gal_ai_fun(&mut input).unwrap();
+        assert_eq!(ai_fun.role(), &Some("developer".to_string()));
+        assert_eq!(ai_fun.task(), &Some("执行任务".to_string()));
+        assert_eq!(*ai_fun.max_rounds(), 3); // 默认值
+    }
+
+    #[test]
+    fn test_parse_ai_fun_with_all_params() {
+        let mut input = r#"gx.ai_fun(
+            role: "developer",
+            task: "执行完整Git工作流",
+            tools: "git-status,git-add,git-commit",
+            max_rounds: 2
+        );"#;
+
+        let ai_fun = gal_ai_fun(&mut input).unwrap();
+        assert_eq!(ai_fun.role(), &Some("developer".to_string()));
+        assert_eq!(ai_fun.task(), &Some("执行完整Git工作流".to_string()));
+        assert_eq!(
+            ai_fun.tools(),
+            &vec![
+                "git-status".to_string(),
+                "git-add".to_string(),
+                "git-commit".to_string()
+            ]
+        );
+        assert_eq!(*ai_fun.max_rounds(), 2);
+    }
+
+    #[test]
+    fn test_parse_ai_fun_invalid_max_rounds() {
+        let mut input = r#"gx.ai_fun(
+            role: "developer",
+            task: "执行任务",
+            max_rounds: "invalid"
+        );"#;
+
+        let ai_fun = gal_ai_fun(&mut input).unwrap();
+        assert_eq!(ai_fun.role(), &Some("developer".to_string()));
+        assert_eq!(ai_fun.task(), &Some("执行任务".to_string()));
+        assert_eq!(*ai_fun.max_rounds(), 3); // 无效值应该保持默认值
     }
 }
