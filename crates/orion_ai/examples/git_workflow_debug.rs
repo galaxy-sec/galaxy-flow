@@ -1,4 +1,4 @@
-use orion_ai::client::load_key_dict;
+use orion_ai::client::{load_key_dict, AiClientBuilder};
 use orion_ai::func::git::{create_git_functions, GitFunctionExecutor};
 use orion_ai::provider::AiRequest;
 use orion_ai::{AiClient, AiConfig, FunctionExecutor, FunctionRegistry};
@@ -18,7 +18,7 @@ async fn main() -> orion_ai::AiResult<()> {
     };
 
     // 2. 创建客户端
-    let client = AiClient::new(config.clone(), None)?;
+    let client = AiClientBuilder::new(config).build()?;
 
     // 3. 创建函数注册表
     let mut registry = FunctionRegistry::new();

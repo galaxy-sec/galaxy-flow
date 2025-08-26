@@ -10,6 +10,7 @@ use std::time::Duration;
 use crate::error::AiResult;
 use crate::provider::*;
 use crate::providers::resp::convert_response_from_text;
+use getset::{Getters, MutGetters, Setters, WithSetters};
 
 #[derive(Debug, Serialize, Deserialize)]
 struct OpenAiRequest {
@@ -142,6 +143,8 @@ impl OpenAiProvider {
     }
 }
 
+#[derive(Clone, Debug, Getters, Setters, MutGetters)]
+#[getset(get = "pub", set = "pub", get_mut = "pub", set_with = "pub")]
 pub struct OpenAiProvider {
     client: Arc<Client>,
     api_key: String,
@@ -152,9 +155,9 @@ pub struct OpenAiProvider {
 
 impl OpenAiProvider {
     /// 创建标准的OpenAI Provider
-    pub fn new(api_key: String) -> Self {
+    pub fn new(api_key: String, timeout_sec: u64) -> Self {
         let client = Client::builder()
-            .timeout(Duration::from_secs(30))
+            .timeout(Duration::from_secs(timeout_sec))
             .build()
             .unwrap_or_else(|_| Client::new());
 
@@ -168,9 +171,9 @@ impl OpenAiProvider {
     }
 
     /// 创建DeepSeek兼容Provider (100% OpenAI格式兼容)
-    pub fn deep_seek(api_key: String) -> Self {
+    pub fn deep_seek(api_key: String, timeout_sec: u64) -> Self {
         let client = Client::builder()
-            .timeout(Duration::from_secs(30))
+            .timeout(Duration::from_secs(timeout_sec))
             .build()
             .unwrap_or_else(|_| Client::new());
 
@@ -182,9 +185,9 @@ impl OpenAiProvider {
             provider_type: AiProviderType::DeepSeek,
         }
     }
-    pub fn kimi_k2(api_key: String) -> Self {
+    pub fn kimi_k2(api_key: String, timeout_sec: u64) -> Self {
         let client = Client::builder()
-            .timeout(Duration::from_secs(30))
+            .timeout(Duration::from_secs(timeout_sec))
             .build()
             .unwrap_or_else(|_| Client::new());
 
@@ -198,9 +201,9 @@ impl OpenAiProvider {
     }
 
     /// 创建Groq兼容Provider (OpenAI格式)
-    pub fn groq(api_key: String) -> Self {
+    pub fn groq(api_key: String, timeout_sec: u64) -> Self {
         let client = Client::builder()
-            .timeout(Duration::from_secs(30))
+            .timeout(Duration::from_secs(timeout_sec))
             .build()
             .unwrap_or_else(|_| Client::new());
 

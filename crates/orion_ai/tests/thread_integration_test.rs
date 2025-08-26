@@ -1,4 +1,5 @@
-use orion_ai::{AiClientEnum, RoutingRules, UsageLimits};
+use orion_ai::{client::AiClientBuilder, AiClientEnum, RoutingRules, UsageLimits};
+use orion_error::TestAssert;
 use tempfile::TempDir;
 use tokio::runtime::Runtime;
 
@@ -52,7 +53,11 @@ fn test_thread_integration_basic() {
     // 创建AiClient - 启用Thread记录
     // 使用项目根目录的角色配置文件
     let role_file_path = PathBuf::from("../../_gal/ai-roles.yml");
-    let basic_client = orion_ai::AiClient::new(config.clone(), Some(role_file_path)).unwrap();
+    //let basic_client = orion_ai::AiClient::new(config.clone(), Some(role_file_path)).unwrap();
+    let basic_client = AiClientBuilder::new(config.clone())
+        .with_role(role_file_path)
+        .build()
+        .assert();
     let thread_config = config.thread.clone();
     let thread_client = ThreadClient::new(AiCoreClient::Basic(basic_client), thread_config);
     let client = AiClientEnum::ThreadRecording(Box::new(thread_client));
@@ -133,7 +138,10 @@ fn test_thread_inform_ai_functionality() {
     // 创建AiClient - 启用Thread记录
     // 使用项目根目录的角色配置文件
     let role_file_path = PathBuf::from("../../_gal/ai-roles.yml");
-    let basic_client = orion_ai::AiClient::new(config.clone(), Some(role_file_path)).unwrap();
+    let basic_client = AiClientBuilder::new(config.clone())
+        .with_role(role_file_path)
+        .build()
+        .assert();
     let thread_config = config.thread.clone();
     let thread_client = ThreadClient::new(AiCoreClient::Basic(basic_client), thread_config);
     let client = AiClientEnum::ThreadRecording(Box::new(thread_client));
@@ -213,7 +221,10 @@ fn test_thread_without_inform_ai() {
     // 创建AiClient - 启用Thread记录但不通知AI
     // 使用项目根目录的角色配置文件
     let role_file_path = PathBuf::from("../../_gal/ai-roles.yml");
-    let basic_client = orion_ai::AiClient::new(config.clone(), Some(role_file_path)).unwrap();
+    let basic_client = AiClientBuilder::new(config.clone())
+        .with_role(role_file_path)
+        .build()
+        .assert();
     let thread_config = config.thread.clone();
     let thread_client = ThreadClient::new(AiCoreClient::Basic(basic_client), thread_config);
     let client = AiClientEnum::ThreadRecording(Box::new(thread_client));
@@ -288,7 +299,10 @@ fn test_thread_integration_with_disabled_config() {
     // 创建AiClient - 启用Thread记录但不通知AI
     // 使用项目根目录的角色配置文件
     let role_file_path = PathBuf::from("../../_gal/ai-roles.yml");
-    let basic_client = orion_ai::AiClient::new(config.clone(), Some(role_file_path)).unwrap();
+    let basic_client = AiClientBuilder::new(config.clone())
+        .with_role(role_file_path)
+        .build()
+        .assert();
     let thread_config = config.thread.clone();
     let thread_client = ThreadClient::new(AiCoreClient::Basic(basic_client), thread_config);
     let client = AiClientEnum::ThreadRecording(Box::new(thread_client));
@@ -346,7 +360,10 @@ fn test_thread_config_validation() {
 
     // 测试有效配置时，使用项目根目录的角色配置文件
     let role_file_path = PathBuf::from("../../_gal/ai-roles.yml");
-    let basic_client = orion_ai::AiClient::new(valid_config.clone(), Some(role_file_path)).unwrap();
+    let basic_client = AiClientBuilder::new(config.clone())
+        .with_role(role_file_path)
+        .build()
+        .assert();
     let thread_config = valid_config.thread.clone();
     let thread_client = ThreadClient::new(AiCoreClient::Basic(basic_client), thread_config);
     let client = AiClientEnum::ThreadRecording(Box::new(thread_client));

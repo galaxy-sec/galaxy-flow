@@ -1,3 +1,4 @@
+use orion_ai::client::AiClientBuilder;
 use orion_ai::config::{ProviderConfig, RoutingRules, ThreadConfig, UsageLimits};
 use orion_ai::func::git::{create_git_functions, GitFunctionExecutor};
 use orion_ai::provider::{AiProviderType, AiRequest};
@@ -32,7 +33,7 @@ async fn test_mock_provider_function_calling() -> orion_ai::AiResult<()> {
     };
 
     // 创建客户端
-    let client = AiClient::new(config, None)?;
+    let client = AiClientBuilder::new(config).build()?;
 
     // 创建函数注册表
     let mut registry = FunctionRegistry::new();
@@ -168,7 +169,7 @@ async fn test_mock_provider_single_function_call() -> orion_ai::AiResult<()> {
         thread: ThreadConfig::default(),
     };
 
-    let client = AiClient::new(config, None)?;
+    let client = AiClientBuilder::new(config).build()?;
     let mut registry = FunctionRegistry::new();
 
     // 只注册 git_status 函数

@@ -1,5 +1,4 @@
-pub mod ai_chat;
-pub mod ai_fun;
+pub mod ai;
 pub mod archive;
 pub mod assert;
 pub mod cmd;
@@ -53,7 +52,7 @@ pub fn parse_suc_code(suc: &str) -> Vec<i32> {
 }
 
 pub use crate::ability::{
-    ai_fun::GxAIFun,
+    ai::ai_fun::GxAIFun,
     assert::GxAssert,
     cmd::GxCmd,
     echo::GxEcho,

@@ -7,8 +7,8 @@ use async_trait::async_trait;
 use derive_more::From;
 use std::sync::mpsc::Sender;
 
-use crate::ability::ai_chat::GxAIChat;
-use crate::ability::ai_fun::GxAIFun;
+use crate::ability::ai::ai_chat::GxAIChat;
+use crate::ability::ai::ai_fun::GxAIFun;
 use crate::ability::archive::GxTar;
 use crate::ability::archive::GxUnTar;
 use crate::ability::delegate::ActCall;

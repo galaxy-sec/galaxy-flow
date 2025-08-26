@@ -1,7 +1,7 @@
 use super::super::prelude::*;
 use super::call::action_call_args;
 
-use crate::ability::ai_chat::GxAIChat;
+use crate::ability::ai::ai_chat::GxAIChat;
 use crate::parser::domain::gal_keyword;
 use crate::util::OptionFrom;
 

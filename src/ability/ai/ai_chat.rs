@@ -91,7 +91,7 @@ mod tests {
     use orion_variate::vars::EnvEvalable;
 
     use crate::{
-        ability::{ability_env_init, ai_chat::GxAIChat, prelude::AsyncRunnableTrait},
+        ability::{ability_env_init, ai::ai_chat::GxAIChat, prelude::AsyncRunnableTrait},
         traits::Setter,
         util::OptionFrom,
     };

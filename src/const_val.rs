@@ -23,3 +23,24 @@ pub mod gxl_const {
     pub const AI_CONF_FILE: &str = "ai.yml";
     pub const AI_ROLE_FILE: &str = "ai-roles.yml";
 }
+
+/// AI工具相关常量定义
+pub mod ai_const {
+    /// AI工具变量前缀
+    pub const AI_TOOLS_VAR_PREFIX: &str = "ai";
+
+    /// 状态后缀
+    pub const STATUS_SUFFIX: &str = "status";
+
+    /// 结果后缀
+    pub const RESULT_SUFFIX: &str = "result";
+
+    /// 错误后缀
+    pub const ERROR_SUFFIX: &str = "error";
+
+    /// 时间戳后缀
+    pub const TIMESTAMP_SUFFIX: &str = "timestamp";
+
+    /// 分隔符
+    pub const VAR_SEPARATOR: &str = "_";
+}

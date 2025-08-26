@@ -13,11 +13,13 @@ impl GlobalFunctionRegistry {
     pub fn instance() -> &'static Self {
         static mut INSTANCE: Option<GlobalFunctionRegistry> = None;
         unsafe {
+            #[allow(static_mut_refs)]
             if INSTANCE.is_none() {
                 INSTANCE = Some(GlobalFunctionRegistry {
                     initialized_registry: OnceLock::new(),
                 });
             }
+            #[allow(static_mut_refs)]
             INSTANCE.as_ref().unwrap()
         }
     }

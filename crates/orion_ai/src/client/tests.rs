@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use crate::client::{load_key_dict, AiClient, AiClientTrait};
+use crate::client::{load_key_dict, AiClient, AiClientBuilder, AiClientTrait};
 use crate::infra::once_init_log;
 use crate::provider::{AiProviderType, AiRequest};
 use crate::roleid::AiRoleID;
@@ -40,7 +40,10 @@ async fn test_client_with_deepseek() {
     };
     let role_file = PathBuf::from("./examples/ai-roles.yml");
     // 创建配置，启用 DeepSeek
-    let client = AiClient::new(config, Some(role_file)).assert("ai-cleint new");
+    let client = AiClientBuilder::new(config)
+        .with_role(role_file)
+        .build()
+        .assert("ai-cleint new");
 
     // 验证 DeepSeek 可用
     assert!(client.is_provider_available(AiProviderType::DeepSeek));
@@ -80,7 +83,10 @@ async fn test_client_smart_request_with_deepseek() {
         return;
     };
     let role_file = PathBuf::from("../../_gal/ai-roles.yml");
-    let client = AiClient::new(config, Some(role_file)).expect("Failed to create AiClient");
+    let client = AiClientBuilder::new(config)
+        .with_role(role_file)
+        .build()
+        .assert("ai-cleint new");
     // 使用 smart_role_request 方法
     let role = AiRoleID::new("developer");
     let response = client.smart_role_request(
@@ -105,7 +111,10 @@ async fn test_client_provider_fallback() {
     let config = create_mock_config();
 
     let role_file = PathBuf::from("../../_gal/ai-roles.yml");
-    let client = AiClient::new(config, Some(role_file)).expect("Failed to create AiClient");
+    let client = AiClientBuilder::new(config)
+        .with_role(role_file)
+        .build()
+        .assert("ai-cleint new");
 
     // 验证 Mock provider 可用
     assert!(client.is_provider_available(AiProviderType::Mock));
@@ -117,7 +126,10 @@ fn test_build_ai_request_with_valid_role() {
     once_init_log();
     let config = create_mock_config();
     let role_file = PathBuf::from("../../_gal/ai-roles.yml");
-    let client = AiClient::new(config, Some(role_file)).expect("Failed to create AiClient");
+    let client = AiClientBuilder::new(config)
+        .with_role(role_file)
+        .build()
+        .assert("ai-cleint new");
 
     // 测试开发者角色
     let role = AiRoleID::new("developer");
@@ -138,7 +150,10 @@ fn test_build_ai_request_with_operations_role() {
     once_init_log();
     let config = create_mock_config();
     let role_file = PathBuf::from("../../_gal/ai-roles.yml");
-    let client = AiClient::new(config, Some(role_file)).expect("Failed to create AiClient");
+    let client = AiClientBuilder::new(config)
+        .with_role(role_file)
+        .build()
+        .assert("ai-cleint new");
 
     // 测试运维角色
     let role = AiRoleID::new("operations");
@@ -159,7 +174,10 @@ fn test_build_ai_request_with_knowledler_role() {
     once_init_log();
     let config = create_mock_config();
     let role_file = PathBuf::from("../../_gal/ai-roles.yml");
-    let client = AiClient::new(config, Some(role_file)).expect("Failed to create AiClient");
+    let client = AiClientBuilder::new(config)
+        .with_role(role_file)
+        .build()
+        .assert("ai-cleint new");
 
     // 使用开发者角色替代可能不存在的Knowledger角色
     let role = AiRoleID::new("developer");
@@ -180,7 +198,10 @@ fn test_build_ai_request_with_empty_input() {
     once_init_log();
     let config = create_mock_config();
     let role_file = PathBuf::from("../../_gal/ai-roles.yml");
-    let client = AiClient::new(config, Some(role_file)).expect("Failed to create AiClient");
+    let client = AiClientBuilder::new(config)
+        .with_role(role_file)
+        .build()
+        .assert("ai-cleint new");
 
     // 测试空用户输入
     let role = AiRoleID::new("developer");
@@ -200,7 +221,10 @@ fn test_build_ai_request_with_special_characters() {
     once_init_log();
     let config = create_mock_config();
     let role_file = PathBuf::from("../../_gal/ai-roles.yml");
-    let client = AiClient::new(config, Some(role_file)).expect("Failed to create AiClient");
+    let client = AiClientBuilder::new(config)
+        .with_role(role_file)
+        .build()
+        .assert("ai-cleint new");
 
     // 测试包含特殊字符的用户输入
     let special_input =
@@ -222,7 +246,10 @@ fn test_build_ai_request_with_long_input() {
     once_init_log();
     let config = create_mock_config();
     let role_file = PathBuf::from("../../_gal/ai-roles.yml");
-    let client = AiClient::new(config, Some(role_file)).expect("Failed to create AiClient");
+    let client = AiClientBuilder::new(config)
+        .with_role(role_file)
+        .build()
+        .assert("ai-cleint new");
 
     // 测试长文本输入
     let long_input =
@@ -245,7 +272,10 @@ fn test_build_ai_request_model_selection() {
     once_init_log();
     let config = create_mock_config();
     let role_file = PathBuf::from("../../_gal/ai-roles.yml");
-    let client = AiClient::new(config, Some(role_file)).expect("Failed to create AiClient");
+    let client = AiClientBuilder::new(config)
+        .with_role(role_file)
+        .build()
+        .assert("ai-cleint new");
 
     // 测试不同角色是否选择了不同的模型
     let dev_role = AiRoleID::new("developer");
@@ -271,7 +301,10 @@ fn test_build_ai_request_response_structure() {
     once_init_log();
     let config = create_mock_config();
     let role_file = PathBuf::from("../../_gal/ai-roles.yml");
-    let client = AiClient::new(config, Some(role_file)).expect("Failed to create AiClient");
+    let client = AiClientBuilder::new(config)
+        .with_role(role_file)
+        .build()
+        .assert("ai-cleint new");
 
     let role = AiRoleID::new("developer");
     let request = client

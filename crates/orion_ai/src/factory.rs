@@ -1,5 +1,6 @@
 use orion_error::UvsConfFrom;
 
+use crate::client::AiClientBuilder;
 use crate::error::{AiError, AiResult};
 use crate::provider::AiRequest;
 use crate::thread::recorder::ThreadClient;
@@ -27,7 +28,7 @@ impl AiClientEnum {
             )))
         })?;
 
-        AiClient::new(config, None)
+        AiClientBuilder::new(config).build()
     }
 
     /// 创建Thread记录客户端
