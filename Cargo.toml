@@ -14,7 +14,7 @@ name = "gprj"
 path = "app/gprj/main.rs"
 
 [workspace]
-members = [".", "crates/orion_parse", "crates/orion_ai", "crates/orion_sec"]
+members = [".", "crates/orion_parse", "crates/orion_ai", "crates/orion_sec", "crates/orion_cond"]
 
 [workspace.package]
 version = "1.0.0"
@@ -23,14 +23,17 @@ license = "Apache-2.0"
 
 [workspace.dependencies]
 winnow = "0.7.11"
+orion-error = "~0.5"
+orion_conf = "~0.1"
 #orion-error = { path = "../orion-error" }
-orion-error = { git = "https://github.com/galaxy-sec/orion-error.git", tag = "v0.4.0" }
-orion_common = { git = "https://github.com/galaxy-sec/orion-common.git", tag = "v0.3.0" }
-orion_infra = { git = "https://github.com/galaxy-sec/orion-infra.git", tag = "v0.3.0" }
-orion_variate = { git = "https://github.com/galaxy-sec/orion-variate.git", tag = "v0.7.5" }
+#orion-error = { git = "https://github.com/galaxy-sec/orion-error.git", tag = "v0.4.0" }
+#orion_conf = { git = "https://github.com/galaxy-sec/orion-common.git", tag = "v0.3.0" }
+orion_infra = { git = "https://github.com/galaxy-sec/orion-infra.git", tag = "v0.3.1" }
+orion_variate = { git = "https://github.com/galaxy-sec/orion-variate.git", tag = "v0.8.0" }
 orion_parse = { path = "crates/orion_parse" }
 orion_sec = { path = "crates/orion_sec" }
 orion_ai = { path = "crates/orion_ai" }
+orion_cond = { path = "crates/orion_cond" }
 #orion_variate = { path = "../orion_variate" }
 #orion_infra = { path = "../orion_infra" }
 #orion_common = { path = "../orion_common" }
@@ -41,7 +44,7 @@ derive_more = { version = "2.0", features = ["full"] }
 async-trait = "0.1"
 
 [dependencies]
-orion_common = { workspace = true }
+orion_conf= { workspace = true }
 orion_infra = { workspace = true }
 orion_variate = { workspace = true }
 orion_parse = { workspace = true }

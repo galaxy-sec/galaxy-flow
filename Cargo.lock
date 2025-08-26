@@ -259,28 +259,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "async-stream"
-version = "0.3.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0b5a71a6f37880a80d1d7f19efd781e4b5de42c88f0722cc13bcb6cc2cfe8476"
-dependencies = [
- "async-stream-impl",
- "futures-core",
- "pin-project-lite",
-]
-
-[[package]]
-name = "async-stream-impl"
-version = "0.3.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c7c24de15d275a1ecfd47a380fb4d5ec9bfe0933f309ed5e705b775596a3574d"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 2.0.106",
-]
-
-[[package]]
 name = "async-task"
 version = "4.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1053,28 +1031,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "42703706b716c37f96a77aea830392ad231f44c9e9a67872fa5548707e11b11c"
 
 [[package]]
-name = "futures"
-version = "0.3.31"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "65bc07b1a8bc7c85c5f2e110c476c7389b4554ba72af57d8445ea63a576b0876"
-dependencies = [
- "futures-channel",
- "futures-core",
- "futures-executor",
- "futures-io",
- "futures-sink",
- "futures-task",
- "futures-util",
-]
-
-[[package]]
 name = "futures-channel"
 version = "0.3.31"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2dff15bf788c671c1934e366d07e30c1814a8ef514e1af724a602e8a2fbe1b10"
 dependencies = [
  "futures-core",
- "futures-sink",
 ]
 
 [[package]]
@@ -1082,17 +1044,6 @@ name = "futures-core"
 version = "0.3.31"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "05f29059c0c2090612e8d742178b0580d2dc940c837851ad723096f87af6663e"
-
-[[package]]
-name = "futures-executor"
-version = "0.3.31"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1e28d1d997f585e54aebc3f97d39e72338912123a67330d723fdbb564d646c9f"
-dependencies = [
- "futures-core",
- "futures-task",
- "futures-util",
-]
 
 [[package]]
 name = "futures-io"
@@ -1163,13 +1114,9 @@ version = "0.3.31"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9fa08315bb612088cc391249efdc3bc77536f16c91f6cf495e6fbe85b20a4a81"
 dependencies = [
- "futures-channel",
  "futures-core",
- "futures-io",
  "futures-macro",
- "futures-sink",
  "futures-task",
- "memchr",
  "pin-project-lite",
  "pin-utils",
  "slab",
@@ -1206,10 +1153,10 @@ dependencies = [
  "log",
  "mockall",
  "once_cell",
- "orion-error 0.4.0",
+ "orion-error 0.5.3",
  "orion_ai",
- "orion_common",
- "orion_infra",
+ "orion_conf 0.1.4",
+ "orion_infra 0.3.1",
  "orion_parse",
  "orion_sec",
  "orion_variate",
@@ -2164,6 +2111,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d05e27ee213611ffe7d6348b942e8f942b37114c00cc03cec254295a4a17852e"
 
 [[package]]
+name = "openssl-src"
+version = "300.5.2+3.5.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d270b79e2926f5150189d475bc7e9d2c69f9c4697b185fa917d5a32b792d21b4"
+dependencies = [
+ "cc",
+]
+
+[[package]]
 name = "openssl-sys"
 version = "0.9.109"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2171,6 +2127,7 @@ checksum = "90096e2e47630d78b7d1c20952dc621f957103f8bc2c8359ec81290d75238571"
 dependencies = [
  "cc",
  "libc",
+ "openssl-src",
  "pkg-config",
  "vcpkg",
 ]
@@ -2193,23 +2150,25 @@ dependencies = [
 
 [[package]]
 name = "orion-error"
-version = "0.3.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1c9bfb02d84fac6709506af6d5c984031be8592e28297b29cfec0b6a32de67a8"
+version = "0.5.1"
+source = "git+https://github.com/galaxy-sec/orion-error.git?tag=v0.5.1#bd7b6323daa2e718a37c07e3e494e92f4bd4eb35"
 dependencies = [
  "derive-getters",
  "derive_more",
+ "log",
  "serde",
  "thiserror 2.0.14",
 ]
 
 [[package]]
 name = "orion-error"
-version = "0.4.0"
-source = "git+https://github.com/galaxy-sec/orion-error.git?tag=v0.4.0#f0c8c95ef47aa44f3d80ffe991988cfd6b6a97e3"
+version = "0.5.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cd756cd69dcbd7fe76af86e9d3e775cc767876d6203ea4c8a2afa06d0ca34ba3"
 dependencies = [
  "derive-getters",
  "derive_more",
+ "log",
  "serde",
  "thiserror 2.0.14",
 ]
@@ -2224,7 +2183,7 @@ dependencies = [
  "contracts",
  "derive_more",
  "dirs",
- "env_logger 0.10.2",
+ "env_logger 0.11.8",
  "fs_extra",
  "getset",
  "home",
@@ -2234,9 +2193,9 @@ dependencies = [
  "log",
  "mockall",
  "once_cell",
- "orion-error 0.4.0",
- "orion_common",
- "orion_infra",
+ "orion-error 0.5.3",
+ "orion_conf 0.1.4",
+ "orion_infra 0.3.1",
  "orion_sec",
  "orion_variate",
  "reqwest",
@@ -2260,16 +2219,29 @@ dependencies = [
 ]
 
 [[package]]
-name = "orion_common"
-version = "0.3.0"
-source = "git+https://github.com/galaxy-sec/orion-common.git?tag=v0.3.0#918ef5bd7676bc50d76004d452b55858b43f13fe"
+name = "orion_cond"
+version = "1.0.0"
 dependencies = [
- "anyhow",
+ "chrono",
+ "contracts",
+ "derive_more",
+ "getset",
+ "ipnet",
+ "libc",
+ "rstest",
+ "tempfile",
+ "wildmatch",
+]
+
+[[package]]
+name = "orion_conf"
+version = "0.1.3"
+source = "git+https://github.com/galaxy-sec/orion-conf.git?tag=v0.1.3#66038358737d857e328807553346b4ad3a735060"
+dependencies = [
  "chrono",
  "derive-getters",
  "derive_more",
- "ipnet",
- "orion-error 0.4.0",
+ "orion-error 0.5.3",
  "serde",
  "serde_derive",
  "serde_ini",
@@ -2277,22 +2249,59 @@ dependencies = [
  "serde_yaml",
  "thiserror 2.0.14",
  "toml",
- "wildmatch",
+]
+
+[[package]]
+name = "orion_conf"
+version = "0.1.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "88c78cffae0c1f8f30cdfff5753c1b53777c882a51c9c4bb1b0d6296da40b4bd"
+dependencies = [
+ "chrono",
+ "derive-getters",
+ "derive_more",
+ "orion-error 0.5.3",
+ "serde",
+ "serde_derive",
+ "serde_ini",
+ "serde_json",
+ "serde_yaml",
+ "thiserror 2.0.14",
+ "toml",
 ]
 
 [[package]]
 name = "orion_infra"
-version = "0.2.0"
-source = "git+https://github.com/galaxy-sec/orion-infra.git?tag=v0.3.0#56db20a9a3f6f5e9c68bc9e4a6dc4cdb9ecb28b6"
+version = "0.3.1"
+source = "git+https://github.com/galaxy-sec/orion-infra.git?tag=v0.3.1#19c5be36ece43120b65d153f43b3b84e5ac0dfad"
 dependencies = [
  "anyhow",
  "derive_more",
  "flexi_logger",
  "log",
- "orion-error 0.3.1",
+ "orion-error 0.5.1",
  "scopeguard",
  "serde",
  "serde_derive",
+ "serde_yaml",
+ "thiserror 2.0.14",
+ "toml",
+]
+
+[[package]]
+name = "orion_infra"
+version = "0.3.2"
+source = "git+https://github.com/galaxy-sec/orion-infra?tag=v0.3.2#ea91a50b252f5b696d6bac5e341175be54521da8"
+dependencies = [
+ "anyhow",
+ "derive_more",
+ "flexi_logger",
+ "log",
+ "orion-error 0.5.3",
+ "scopeguard",
+ "serde",
+ "serde_derive",
+ "serde_yaml",
  "thiserror 2.0.14",
  "toml",
 ]
@@ -2301,7 +2310,8 @@ dependencies = [
 name = "orion_parse"
 version = "1.0.0"
 dependencies = [
- "orion_common",
+ "orion_cond",
+ "orion_conf 0.1.4",
  "winnow",
 ]
 
@@ -2324,7 +2334,7 @@ dependencies = [
  "log",
  "mockall",
  "once_cell",
- "orion_common",
+ "orion_conf 0.1.4",
  "orion_variate",
  "reqwest",
  "rstest",
@@ -2348,11 +2358,10 @@ dependencies = [
 
 [[package]]
 name = "orion_variate"
-version = "0.7.5"
-source = "git+https://github.com/galaxy-sec/orion-variate.git?tag=v0.7.5#2f2e510cab9ece5ae3ee92c446ecef8e990a51fc"
+version = "0.8.0"
+source = "git+https://github.com/galaxy-sec/orion-variate.git?tag=v0.8.0#127a4111a62efb856e93162a3cd80707d87f78ec"
 dependencies = [
  "anyhow",
- "async-stream",
  "async-trait",
  "bytes",
  "contracts",
@@ -2362,21 +2371,18 @@ dependencies = [
  "flate2",
  "flexi_logger",
  "fs_extra",
- "futures",
  "futures-core",
  "getset",
  "git2",
- "handlebars",
  "home",
  "http",
  "http-body",
  "indexmap",
  "indicatif",
- "lazy_static",
  "log",
- "orion-error 0.4.0",
- "orion_common",
- "orion_infra",
+ "orion-error 0.5.3",
+ "orion_conf 0.1.3",
+ "orion_infra 0.3.2",
  "os_info",
  "reqwest",
  "scopeguard",
@@ -2388,7 +2394,6 @@ dependencies = [
  "tar",
  "thiserror 2.0.14",
  "tokio",
- "tokio-stream",
  "tokio-util",
  "toml",
  "tracing",
@@ -3681,17 +3686,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8e727b36a1a0e8b74c376ac2211e40c2c8af09fb4013c60d910495810f008e9b"
 dependencies = [
  "rustls",
- "tokio",
-]
-
-[[package]]
-name = "tokio-stream"
-version = "0.1.17"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "eca58d7bba4a75707817a2c44174253f9236b2d5fbd055602e9d5c07c139a047"
-dependencies = [
- "futures-core",
- "pin-project-lite",
  "tokio",
 ]
 

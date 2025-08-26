@@ -8,7 +8,7 @@ version.workspace = true
 
 [dependencies]
 orion-error = { workspace = true }
-orion_common = { workspace = true }
+orion_conf = { workspace = true }
 orion_infra = { workspace = true }
 orion_variate = { workspace = true }
 orion_sec = { workspace = true }

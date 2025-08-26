@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use crate::client::{load_key_dict, AiClient, AiClientBuilder, AiClientTrait};
+use crate::client::{load_key_dict, AiClientBuilder, AiClientTrait};
 use crate::infra::once_init_log;
 use crate::provider::{AiProviderType, AiRequest};
 use crate::roleid::AiRoleID;

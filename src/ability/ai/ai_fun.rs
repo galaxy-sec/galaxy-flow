@@ -2,9 +2,10 @@ use crate::{ability::prelude::*, traits::Setter};
 use async_trait::async_trait;
 
 use orion_ai::{
-    provider::AiResponse, AiClient, AiClientTrait, AiConfig, AiRoleID, FunctionRegistry,
+    client::AiClientBuilder, provider::AiResponse, AiClient, AiClientTrait, AiConfig, AiRoleID,
+    FunctionRegistry,
 };
-use orion_error::{ErrorConv, UvsConfFrom};
+use orion_error::ErrorConv;
 use orion_sec::sec::SecValueType;
 
 use super::tool::{build_retry_prompt, ExecutionSession, ToolCallResult};
@@ -71,10 +72,15 @@ impl GxAIFun {
         &self,
         vars_dict: &VarSpace,
     ) -> ExecResult<(AiClient, AiRoleID, FunctionRegistry)> {
-        let ai_config = AiConfig::galaxy_load(&vars_dict.global().export().into())
-            .map_err(|e| ExecReason::from_conf(format!("加载AI配置失败: {}", e)))?;
+        let ai_config = self
+            .config()
+            .clone()
+            .unwrap_or(AiConfig::galaxy_load(&vars_dict.global().export().into()).err_conv()?);
 
-        let ai_client = AiClient::new(ai_config, None).err_conv()?;
+        let ai_client = AiClientBuilder::new(ai_config)
+            .with_timout(60)
+            .build()
+            .err_conv()?;
 
         let role = if let Some(role_str) = &self.role {
             AiRoleID::new(role_str.clone())
@@ -208,8 +214,6 @@ mod tests {
     use orion_ai::GlobalFunctionRegistry;
     use orion_error::TestAssert;
     use orion_variate::vars::EnvEvalable;
-
-    use crate::traits::Getter;
 
     use super::*;
 

@@ -7,7 +7,7 @@ version.workspace = true
 
 
 [dependencies]
-orion_common = { workspace = true }
+orion_conf= { workspace = true }
 orion_variate = { workspace = true }
 unicase = "~2.8"
 getset = "0.1.6"

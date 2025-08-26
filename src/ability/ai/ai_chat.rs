@@ -1,5 +1,5 @@
 use chrono::Local;
-use orion_ai::{AiClient, AiClientTrait, AiConfig, AiRoleID};
+use orion_ai::{client::AiClientBuilder, AiClientTrait, AiConfig, AiRoleID};
 use std::path::PathBuf;
 
 use crate::ability::prelude::*;
@@ -54,7 +54,10 @@ impl GxAIChat {
             .config()
             .clone()
             .unwrap_or(AiConfig::galaxy_load(&vars_dict.global().export().into()).err_conv()?);
-        let ai_client = AiClient::new(ai_config, None).err_conv()?;
+        let ai_client = AiClientBuilder::new(ai_config)
+            .with_timout(60)
+            .build()
+            .err_conv()?;
         let role = self
             .role()
             .as_ref()

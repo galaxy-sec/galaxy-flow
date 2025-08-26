@@ -1,5 +1,5 @@
-use orion_common::cond::CmpOP;
-use orion_common::cond::LogicOP;
+use orion_cond::CmpOP;
+use orion_cond::LogicOP;
 use winnow::ascii::{multispace0, Caseless};
 use winnow::combinator::alt;
 use winnow::error::{StrContext, StrContextValue};

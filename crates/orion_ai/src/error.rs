@@ -1,4 +1,4 @@
-use orion_common::serde::SerdeReason;
+use orion_conf::error::SerdeReason;
 use orion_error::{ErrorCode, StructError, UvsConfFrom, UvsReason};
 use serde_derive::Serialize;
 use thiserror::Error;

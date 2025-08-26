@@ -1,7 +1,9 @@
+use std::path::PathBuf;
+
 use orion_ai::client::{load_key_dict, AiClientBuilder};
 use orion_ai::func::git::{create_git_functions, GitFunctionExecutor};
 use orion_ai::provider::AiRequest;
-use orion_ai::{AiClient, AiConfig, FunctionExecutor, FunctionRegistry};
+use orion_ai::{AiConfig, FunctionExecutor, FunctionRegistry};
 use orion_variate::vars::EnvEvalable;
 
 #[tokio::main]
@@ -9,16 +11,18 @@ async fn main() -> orion_ai::AiResult<()> {
     env_logger::init();
     // 1. 配置 DeepSeek API
     let config = if let Some(dict) = load_key_dict("sec_deepseek_api_key") {
-        println!("✅ 使用 DeepSeek API 进行 Git 操作");
+        println!("✅ 使用  API 进行 Git 操作");
         AiConfig::example().env_eval(&dict)
     } else {
-        println!("❌ 错误: 需要配置 DeepSeek API 密钥");
+        println!("❌ 错误: 需要配置 k API 密钥");
         println!("请设置 sec_deepseek_api_key 配置!");
         return Ok(());
     };
 
     // 2. 创建客户端
-    let client = AiClientBuilder::new(config).build()?;
+    let client = AiClientBuilder::new(config)
+        .with_role(PathBuf::from("./examples/ai-roles.yml"))
+        .build()?;
 
     // 3. 创建函数注册表
     let mut registry = FunctionRegistry::new();
@@ -223,9 +227,5 @@ async fn main() -> orion_ai::AiResult<()> {
 
     // 11. 总结
     println!("\n🎉 Git 工作流示例完成！");
-    println!("💡 注意: 由于 DeepSeek 可能不完全支持 function calling，");
-    println!("   如果看到文本响应而不是函数调用，这是正常的。");
-    println!("   要获得完整的 function calling 体验，请使用 OpenAI 模型。");
-
     Ok(())
 }

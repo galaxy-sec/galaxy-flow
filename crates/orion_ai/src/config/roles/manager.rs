@@ -143,7 +143,7 @@ impl RoleConfigManager {
 mod tests {
     use std::path::PathBuf;
 
-    use orion_common::serde::Yamlable;
+    use orion_conf::Yamlable;
     use orion_error::TestAssert;
 
     use super::RoleConfigManager;

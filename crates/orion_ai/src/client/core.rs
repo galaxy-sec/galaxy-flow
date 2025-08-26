@@ -6,7 +6,9 @@ use crate::{AiConfig, AiErrReason, AiRouter, FunctionRegistry, GlobalFunctionReg
 use async_trait::async_trait;
 use getset::Getters;
 use log::error;
-use orion_error::{ErrorWith, ToStructError, UvsBizFrom, UvsConfFrom};
+use orion_error::{
+    ContextRecord, ErrorWith, OperationContext, ToStructError, UvsBizFrom, UvsConfFrom,
+};
 use std::collections::HashMap;
 use std::sync::Arc;
 
@@ -25,19 +27,24 @@ pub struct AiClient {
 #[async_trait]
 impl AiClientTrait for AiClient {
     async fn send_request(&self, request: AiRequest) -> AiResult<AiResponse> {
-        let provider_type = self.router.select_provider(&request.model, &self.config);
+        let mut ctx = OperationContext::want("send_request")
+            .with_auto_log()
+            .with_mod_path("ai/client");
 
-        if let Some(provider) = self.providers.get(&provider_type) {
-            provider
-                .send_request(&request)
-                .await
-                .with(format!("provide: {provider_type}"))
+        let provider_type = self.router.select_provider(&request.model, &self.config);
+        ctx.record("model", request.model.as_str());
+        ctx.record("provider", provider_type.to_string());
+
+        let response = if let Some(provider) = self.providers.get(&provider_type) {
+            provider.send_request(&request).await.with(&ctx)
         } else {
             for key in self.providers().keys() {
                 error!("registed provider: {key}");
             }
             Err(AiError::from(AiErrReason::NoProviderAvailable)).with(provider_type.to_string())
-        }
+        };
+        ctx.mark_suc();
+        response
     }
 
     /// 基于角色的智能请求处理 - 用户只需选择角色，系统自动选择推荐模型
@@ -154,9 +161,14 @@ impl AiClient {
         request: AiRequest,
         registry: &FunctionRegistry,
     ) -> AiResult<AiResponse> {
+        let mut ctx = OperationContext::want("send_request_fun")
+            .with_auto_log()
+            .with_mod_path("ai/client");
         let provider_type = self.router.select_provider(&request.model, &self.config);
+        ctx.record("model", request.model.as_str());
+        ctx.record("provider", provider_type.to_string());
 
-        if let Some(provider) = self.providers.get(&provider_type) {
+        let response = if let Some(provider) = self.providers.get(&provider_type) {
             if provider.supports_function_calling() {
                 let functions = registry.get_functions();
                 let function_refs: Vec<FunctionDefinition> =
@@ -171,7 +183,9 @@ impl AiClient {
             }
         } else {
             Err(AiError::from(AiErrReason::NoProviderAvailable))
-        }
+        };
+        ctx.mark_suc();
+        response
     }
 
     /// 处理函数调用结果 - 简化版本

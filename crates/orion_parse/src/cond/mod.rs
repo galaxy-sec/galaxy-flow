@@ -1,4 +1,4 @@
-use orion_common::cond::{CmpSymbolDef, CompareExpress, ExpressEnum, LogicSymbolDef};
+use orion_cond::{CmpSymbolDef, CompareExpress, ExpressEnum, LogicSymbolDef};
 use std::marker::PhantomData;
 use winnow::Result;
 

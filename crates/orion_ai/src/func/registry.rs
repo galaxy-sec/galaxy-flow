@@ -56,7 +56,7 @@ impl FunctionRegistry {
         let executor = self
             .executors
             .get(&function_call.function.name)
-            .ok_or_else(|| AiErrReason::from_logic("TODO: executor not found".into()).to_err())?;
+            .ok_or_else(|| AiErrReason::from_logic("TODO: executor not found").to_err())?;
 
         executor.execute(function_call).await
     }

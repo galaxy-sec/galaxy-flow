@@ -1,6 +1,6 @@
 default_role:
   id: galactiward
-default_model: deepseek-chat
+default_model: glm-4.5
 roles:
   galactiward:
     name: galactiward

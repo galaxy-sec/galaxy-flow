@@ -1,6 +1,8 @@
 use log::info;
-use orion_common::serde::Yamlable;
-use orion_error::{ErrorConv, ErrorWith, ToStructError, UvsConfFrom};
+use orion_conf::Yamlable;
+use orion_error::{
+    ContextRecord, ErrorConv, ErrorWith, OperationContext, ToStructError, UvsConfFrom,
+};
 
 use crate::config::roles::manager::RoleConfigManager;
 use crate::error::{AiErrReason, AiError, AiResult};
@@ -33,6 +35,9 @@ impl RoleConfigLoader {
     /// 优先级：项目级配置 > 用户级配置
     pub fn layered_load(role_file: Option<PathBuf>) -> AiResult<RoleConfigManager> {
         let project_roles_path = role_file.unwrap_or(PathBuf::from("_gal/ai-roles.yml"));
+        let mut ctx = OperationContext::want("ai roles")
+            .with_auto_log()
+            .with_mod_path("ai/conf");
 
         // 检查用户级配置路径
         let user_home = dirs::home_dir().ok_or_else(|| {
@@ -50,6 +55,9 @@ impl RoleConfigLoader {
             for k in manager.roles().keys() {
                 info!("load role :{k}");
             }
+            ctx.record("role-file", &project_roles_path);
+            ctx.record("default mod ", manager.default_model().as_str());
+            ctx.mark_suc();
             return Ok(manager);
         }
 
@@ -60,6 +68,9 @@ impl RoleConfigLoader {
                 user_roles_path.display()
             );
             let manager = RoleConfigManager::from_yml(&user_roles_path).err_conv()?;
+            ctx.record("role-file", &user_roles_path);
+            ctx.record("default mod ", manager.default_model().as_str());
+            ctx.mark_suc();
             return Ok(manager);
         }
 

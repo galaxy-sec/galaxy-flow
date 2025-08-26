@@ -1,5 +1,5 @@
 use log::info;
-use orion_common::serde::Yamlable;
+use orion_conf::Yamlable;
 use orion_error::{ToStructError, UvsConfFrom, UvsResFrom};
 use orion_variate::vars::{EnvDict, EnvEvalable};
 use serde::{Deserialize, Serialize};
@@ -92,7 +92,7 @@ impl AiConfig {
     }
     pub fn galaxy_load(dict: &EnvDict) -> AiResult<Self> {
         let galaxy_dir = home_dir()
-            .ok_or_else(|| AiErrReason::from_res("Cannot find home directory".into()))?
+            .ok_or_else(|| AiErrReason::from_res("Cannot find home directory"))?
             .join(".galaxy");
         let gal_ai_conf = galaxy_dir.join(AI_CONF_FILE);
         let prj_ai_conf = PathBuf::from("./_gal").join(AI_CONF_FILE);

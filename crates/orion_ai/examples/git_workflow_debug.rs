@@ -1,7 +1,7 @@
 use orion_ai::client::{load_key_dict, AiClientBuilder};
 use orion_ai::func::git::{create_git_functions, GitFunctionExecutor};
 use orion_ai::provider::AiRequest;
-use orion_ai::{AiClient, AiConfig, FunctionExecutor, FunctionRegistry};
+use orion_ai::{AiConfig, FunctionExecutor, FunctionRegistry};
 use orion_variate::vars::EnvEvalable;
 
 #[tokio::main]
