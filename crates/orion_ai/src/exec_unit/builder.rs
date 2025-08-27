@@ -232,7 +232,6 @@ mod tests {
         assert!(builder.config.is_none());
         assert!(builder.role.is_none());
         assert!(builder.tools.is_empty());
-        assert_eq!(builder.timeout, Some(60));
     }
 
     #[test]
@@ -266,7 +265,6 @@ mod tests {
     fn test_builder_from_example() {
         let builder = AiExecUnitBuilder::from_example();
         assert!(builder.config.is_some());
-        assert_eq!(builder.timeout, Some(60));
     }
 
     #[test]

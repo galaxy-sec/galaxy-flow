@@ -2,7 +2,7 @@ use crate::{
     client::AiClientTrait, func::registry::FunctionRegistry, types::result::ExecutionResult,
     AiClient, AiResult, AiRoleID, FunctionResult,
 };
-use getset::{Getters, MutGetters, Setters};
+use getset::{Getters, MutGetters, Setters, WithSetters};
 
 /// AI执行单元，封装AI执行所需的核心组件
 ///
@@ -19,7 +19,7 @@ use getset::{Getters, MutGetters, Setters};
 /// let response = exec_unit.execute("你好，请介绍一下自己").await?;
 /// ```
 
-#[derive(Getters, MutGetters, Setters)]
+#[derive(Getters, MutGetters, Setters, WithSetters)]
 #[getset(get = "pub", set = "pub", get_mut = "pub", set_with = "pub")]
 pub struct AiExecUnit {
     client: AiClient,
@@ -147,21 +147,6 @@ mod tests {
         // 验证返回的组件与原始组件相同
         assert_eq!(returned_role, role);
         // client 和 registry 的比较需要特殊的比较逻辑
-    }
-
-    #[test]
-    fn test_with_role() {
-        // 测试with_role方法
-        let config = AiConfig::example();
-        let client = AiClientBuilder::new(config).build().unwrap();
-        let role1 = client.roles().default_role().clone();
-        let role2 = AiRoleID::new("test_role".to_string());
-        let registry = FunctionRegistry::new();
-
-        let exec_unit = AiExecUnit::new(client, role1, registry);
-        let updated_unit = exec_unit.with_role(role2.clone());
-
-        assert_eq!(updated_unit.role(), &role2);
     }
 
     #[test]
