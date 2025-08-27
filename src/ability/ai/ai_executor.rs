@@ -59,7 +59,7 @@ impl AiExecutor {
         let exec_unit = self.setup_exec_unit(&vars)?;
 
         // 执行AI请求
-        let response = exec_unit.execute(base_prompt).await.err_conv()?;
+        let response = exec_unit.execute_with_func(base_prompt).await.err_conv()?;
 
         // 存储结果
         vars.global_mut().set(
@@ -152,6 +152,7 @@ mod tests {
                 let vars = &task_value.vars;
                 let result_var = vars.get("AI");
                 assert!(result_var.is_some());
+                println!("{result_var:#?}")
             }
             Err(e) => {
                 // 在某些环境中，git操作可能会失败，这是可以接受的
