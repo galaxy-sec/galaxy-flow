@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use crate::atom::take_var_name;
 use crate::cond::{CmpParser, SymbolFrom, WnCondParser};
 use crate::symbol::{symbol_bracket_beg, symbol_cmp, symbol_dollar, CmpSymbol, LogicSymbol};
-use orion_common::cond::{
+use orion_cond::{
     cmp_is_true, CmpOP, CmpSymbolDef, CompareExpress, Condition, ExpressEnum, LogicCrator,
     LogicExpress, LogicOP, LogicSymbolDef, RustSymbol, SQLSymbol, ValueGet,
 };
