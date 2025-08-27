@@ -2,7 +2,7 @@ use crate::ability::prelude::*;
 use crate::components::GxlProps;
 use crate::expect::{LogicScope, ShellOption};
 
-use orion_common::friendly::New2;
+use crate::friendly::New2;
 use orion_error::{UvsDataFrom, UvsReason};
 
 #[derive(Clone, Debug, PartialEq, Default, Builder)]

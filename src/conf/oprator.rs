@@ -1,4 +1,4 @@
-use orion_common::serde::Tomlable;
+use orion_conf::Tomlable;
 use orion_error::{ErrorOwe, UvsSysFrom};
 use orion_infra::path::ensure_path;
 use std::path::PathBuf;

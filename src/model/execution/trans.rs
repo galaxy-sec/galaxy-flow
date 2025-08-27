@@ -99,7 +99,7 @@ mod tests {
             *count += 1;
 
             if self.should_fail {
-                Err(ExecReason::from_logic("should_fail".into()).into())
+                Err(ExecReason::from_logic("should_fail").into())
             } else {
                 Ok(TaskValue::new(_vars, ExecOut::Ignore))
             }
@@ -118,7 +118,7 @@ mod tests {
             *count += 1;
 
             if self.should_fail {
-                Err(ExecReason::from_logic("should_fail".into()).into())
+                Err(ExecReason::from_logic("should_fail").into())
             } else {
                 Ok(TaskValue::new(_vars, ExecOut::Ignore))
             }

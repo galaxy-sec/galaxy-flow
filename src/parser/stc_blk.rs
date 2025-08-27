@@ -71,10 +71,10 @@ pub fn gal_sentens_item(input: &mut &str) -> Result<BlockAction> {
         return gal_shell.map(BlockAction::Shell).parse_next(input);
     }
     if starts_with("gx.ai_chat", input) {
-        return gal_ai_chat.map(BlockAction::AiChat).parse_next(input);
+        return gal_ai_chat.parse_next(input).map(BlockAction::AiChat);
     }
     if starts_with("gx.ai_fun", input) {
-        return gal_ai_fun.map(BlockAction::AiFun).parse_next(input);
+        return gal_ai_fun.parse_next(input).map(BlockAction::AiFun);
     }
 
     if starts_with("gx.run", input) {

@@ -1,6 +1,6 @@
 use std::{env::current_dir, path::PathBuf};
 
-use orion_common::serde::Configable;
+use orion_conf::Configable;
 use orion_error::{ErrorOwe, ErrorWith};
 use orion_sec::sec::{SecFrom, SecValueType};
 use orion_variate::vars::{ValueDict, ValueType};

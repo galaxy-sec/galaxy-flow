@@ -6,6 +6,7 @@ use crate::parser::abilities::addr::gal_extern_mod;
 use crate::parser::abilities::addr::gal_git_path;
 use crate::ExecReason;
 use crate::ExecResult;
+use orion_error::ContextRecord;
 use orion_error::ErrorOwe;
 use orion_error::ErrorWith;
 use orion_error::WithContext;
@@ -51,7 +52,7 @@ impl ExternLocal {
         let ee = EnvExpress::from_env();
         let gxl_full_path = format!("{}/{}.gxl", self.path.display(), name);
         let gxl_full_path = crate::evaluator::VarParser::eval(&ee, &gxl_full_path)?;
-        ctx.with("gxl", gxl_full_path.as_str());
+        ctx.record("gxl", gxl_full_path.as_str());
         let code = read_to_string(gxl_full_path.as_str())
             .owe(ExecReason::Gxl("read mod file fail!".to_string()))
             .with(&ctx)?;

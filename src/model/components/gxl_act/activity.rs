@@ -1,3 +1,4 @@
+use crate::friendly::AppendAble;
 use crate::{
     ability::prelude::{Action, TaskValue},
     evaluator::VarParser,
@@ -7,7 +8,7 @@ use crate::{
     primitive::GxlAParams,
 };
 use async_trait::async_trait;
-use orion_common::friendly::AppendAble;
+use orion_error::ContextRecord;
 
 use crate::{
     components::{gxl_mod::meta::ModMeta, gxl_spc::GxlSpace},
@@ -86,7 +87,7 @@ impl Activity {
         let cmd = exp
             .eval(dict.must_get("executer")?.to_string().as_str())
             .with(&r_with)?;
-        r_with.with("exec", cmd.clone());
+        r_with.record("exec", cmd.clone());
 
         //let mut opt = dict.get("expect").clone();
         let mut opt = ShellOption::new();

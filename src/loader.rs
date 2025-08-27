@@ -16,6 +16,7 @@ use crate::err::*;
 
 use crate::ability::version::Version;
 use once_cell::sync::OnceCell;
+use orion_error::ContextRecord;
 use orion_error::ErrorConv;
 use orion_error::ErrorOwe;
 use orion_error::ErrorWith;
@@ -61,7 +62,7 @@ impl GxLoader {
     ) -> RunResult<GxlSpace> {
         info!(target:"parse", "parse file: {conf}" );
         let mut wc = WithContext::want("parse gxl file");
-        wc.with("conf", conf);
+        wc.record("conf", conf);
         let code = read_to_string(conf).owe_conf().with(&wc)?;
         let file_path = Path::new(conf);
         let file_exist_path = file_path.parent();

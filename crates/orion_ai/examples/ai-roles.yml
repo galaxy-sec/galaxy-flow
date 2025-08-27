@@ -2,11 +2,6 @@ default_role:
   id: galactiward
 default_model: glm-4.5
 roles:
-  galactiward:
-    name: galactiward
-    description: 专注于Galaxy生态专家
-    system_prompt: 通过Galaxy资料，解决Galaxy问题
-    rules_path: ai-rules/galactiward
   developer:
     name: developer
     description: 专注于代码开发的技术专家
@@ -17,3 +12,8 @@ roles:
     description: 专注于系统运维的专家
     system_prompt: 你是一个专业的运维专家，擅长诊断系统问题、和解决问题。
     rules_path: ai-rules/operations
+  galactiward:
+    name: galactiward
+    description: 专注于Galaxy生态专家
+    system_prompt: 通过Galaxy资料，解决Galaxy问题
+    rules_path: ai-rules/galactiward

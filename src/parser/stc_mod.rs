@@ -1,4 +1,4 @@
-use orion_common::friendly::MultiNew2;
+use crate::friendly::MultiNew2;
 use orion_parse::atom::peek_line;
 
 use super::prelude::*;

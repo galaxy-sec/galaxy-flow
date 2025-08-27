@@ -1,5 +1,5 @@
 use crate::const_val::gxl_const::NET_ACCS_CTRL_PATH_FILE;
-use orion_common::serde::Yamlable;
+use orion_conf::Yamlable;
 use orion_variate::{
     addr::{
         access_ctrl::serv::NetAccessCtrl,

@@ -7,8 +7,8 @@ use async_trait::async_trait;
 use derive_more::From;
 use std::sync::mpsc::Sender;
 
-use crate::ability::ai::ai_chat::GxAIChat;
-use crate::ability::ai::ai_fun::GxAIFun;
+use crate::ability::ai::ai_executor::AiExecutor;
+use crate::ability::ai::chat_executor::ChatExecutor;
 use crate::ability::archive::GxTar;
 use crate::ability::archive::GxUnTar;
 use crate::ability::delegate::ActCall;
@@ -25,8 +25,8 @@ use crate::util::redirect::ReadSignal;
 
 #[derive(Clone, From)]
 pub enum BlockAction {
-    AiChat(GxAIChat),
-    AiFun(GxAIFun),
+    AiChat(ChatExecutor),
+    AiFun(AiExecutor),
     Shell(GxShell),
     Command(GxCmd),
     GxlRun(GxRun),
@@ -180,7 +180,7 @@ impl AppendAble<Vec<BlockAction>> for BlockNode {
 #[cfg(test)]
 mod tests {
 
-    use orion_common::friendly::New2;
+    use crate::friendly::New2;
     use orion_sec::sec::{NoSecConv, SecFrom, SecValueObj, SecValueType, SecValueVec, ToUniCase};
 
     //test RgBlock append

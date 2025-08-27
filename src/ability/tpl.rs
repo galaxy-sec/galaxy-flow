@@ -1,7 +1,7 @@
 use crate::ability::prelude::*;
 use crate::execution::action::Action;
 use handlebars::{to_json, Handlebars};
-use orion_error::WithContext;
+use orion_error::{ContextRecord, OperationContext};
 use serde::Serialize;
 use std::fmt::Display;
 use std::fs::File;
@@ -80,7 +80,7 @@ impl GxTpl {
         let tpl = PathBuf::from(exp.eval(dto.tpl.as_str())?);
         let dst = PathBuf::from(exp.eval(dto.dst.as_str())?);
 
-        let mut err_ctx = WithContext::want("render tpl path");
+        let mut err_ctx = OperationContext::want("render tpl path");
         // 处理目录模板
         if dto.engine != TPlEngineType::Handlebars {
             return Err(ExecReason::Args(format!(
@@ -95,11 +95,11 @@ impl GxTpl {
 
         let data = if let Some(json_file) = &dto.file {
             let json_file = exp.eval(json_file.as_str())?;
-            err_ctx.with("file", json_file.as_str());
+            err_ctx.record("file", json_file.as_str());
             let content = std::fs::read_to_string(json_file.as_str())
                 .owe_data()
                 .with(&err_ctx)?;
-            err_ctx.with("need-fmt", "json");
+            err_ctx.record("need-fmt", "json");
             serde_json::from_str(content.as_str())
                 .owe_data()
                 .with(&err_ctx)?
@@ -161,8 +161,8 @@ impl GxTpl {
         debug!(target: ctx.path(), "tpl:{}", tpl.display());
         debug!(target: ctx.path(),  "dst:{}", dst.display());
 
-        let mut err_ctx = WithContext::want("render tpl");
-        err_ctx.with("tpl", tpl.to_string_lossy());
+        let mut err_ctx = OperationContext::want("render tpl");
+        err_ctx.record("tpl", tpl);
         // 2. 验证模板文件
         let tpl_path = Path::new(&tpl);
         if !tpl_path.exists() {
@@ -177,7 +177,7 @@ impl GxTpl {
             ))
             .into());
         }
-        err_ctx.with("dst", dst.to_string_lossy());
+        err_ctx.record("dst", dst);
         // 3. 准备目标文件
         let dst_path = Path::new(&dst);
         if let Some(parent) = dst_path.parent() {

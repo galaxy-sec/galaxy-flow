@@ -1,6 +1,6 @@
 use home::home_dir;
 use orion_ai::{AiConfig, RoleConfigManager};
-use orion_common::serde::Yamlable;
+use orion_conf::Yamlable;
 use orion_error::{ErrorOwe, UvsResFrom};
 use orion_variate::addr::access_ctrl::{serv::NetAccessCtrl, Rule, Unit};
 
@@ -20,7 +20,7 @@ impl Galaxy {
     pub fn env_init() -> RunResult<()> {
         // 获取家目录并构建环境目录
         let galaxy_dir = home_dir()
-            .ok_or_else(|| RunReason::from_res("Cannot find home directory".into()))?
+            .ok_or_else(|| RunReason::from_res("Cannot find home directory"))?
             .join(".galaxy");
 
         // 创建目录

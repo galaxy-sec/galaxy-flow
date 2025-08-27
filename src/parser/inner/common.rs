@@ -100,7 +100,7 @@ where
 #[cfg(test)]
 mod tests {
 
-    use orion_common::friendly::New2;
+    use crate::friendly::New2;
 
     use super::*;
 

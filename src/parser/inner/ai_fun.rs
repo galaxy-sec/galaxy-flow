@@ -1,6 +1,6 @@
 use orion_variate::opt::OptionFrom;
 
-use crate::ability::ai::ai_fun::GxAIFun;
+use crate::ability::ai::ai_executor::AiExecutor as GxAIFun;
 use crate::parser::inner::prelude::*;
 
 pub fn gal_ai_fun(input: &mut &str) -> Result<GxAIFun> {
@@ -17,8 +17,8 @@ pub fn gal_ai_fun(input: &mut &str) -> Result<GxAIFun> {
             let tools: Vec<String> = one.1.split(",").map(String::from).collect();
             ai_fun.set_tools(tools);
         } else if key == "max_rounds" {
-            if let Ok(max_rounds) = one.1.parse::<usize>() {
-                ai_fun.set_max_rounds(max_rounds);
+            if let Ok(_max_rounds) = one.1.parse::<usize>() {
+                // max_rounds 已被移除，不再支持
             }
         }
     }

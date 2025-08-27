@@ -1,4 +1,4 @@
-pub use orion_common::friendly::AppendAble;
+pub use crate::friendly::AppendAble;
 
 pub use crate::error::AResult;
 pub use crate::execution::job::Job;

@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use crate::ability::prelude::*;
 use crate::traits::Setter;
 
-use orion_common::serde::{IniAble, JsonAble, Yamlable};
+use orion_conf::{IniAble, JsonAble, Yamlable};
 use orion_error::{ToStructError, UvsLogicFrom};
 use orion_sec::sec::{SecFrom, SecValueType};
 use orion_variate::vars::ValueType;
@@ -47,15 +47,12 @@ impl FileDTO {
                 if let Some(name) = self.name.clone() {
                     vars_dict.global_mut().set(name, SecValueType::from(list));
                 } else {
-                    return ExecReason::from_logic(
-                        "list cannot set to VarSpace by no name ".into(),
-                    )
-                    .err_result();
+                    return ExecReason::from_logic("list cannot set to VarSpace by no name ")
+                        .err_result();
                 }
             }
             _ => {
-                return ExecReason::from_logic("read file only support list and map ".into())
-                    .err_result();
+                return ExecReason::from_logic("read file only support list and map ").err_result();
             }
         }
         Ok(TaskValue::from((vars_dict, ExecOut::Ignore)))

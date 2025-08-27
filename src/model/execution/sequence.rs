@@ -1,8 +1,8 @@
 use std::collections::{HashSet, VecDeque};
 use std::sync::mpsc::Sender;
 
+use crate::friendly::AppendAble;
 use async_trait::async_trait;
-use orion_common::friendly::AppendAble;
 use orion_error::ErrorConv;
 
 use crate::ability::prelude::TaskValue;

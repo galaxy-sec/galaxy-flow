@@ -39,6 +39,7 @@ pub mod conf;
 pub mod const_val;
 pub mod debug;
 mod evaluator;
+pub mod friendly;
 mod loader;
 pub mod menu;
 pub mod parser;

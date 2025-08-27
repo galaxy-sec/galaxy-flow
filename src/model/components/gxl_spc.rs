@@ -389,13 +389,13 @@ pub fn color_show<S: AsRef<str> + Display>(text: S, color: Option<&str>) {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::friendly::New2;
     use crate::{
         ability::prelude::GxlVar,
         components::{gxl_mod::meta::ModMeta, GxlEnv, GxlFlow, GxlMod, GxlProps},
         execution::exec_init_env,
         types::AnyResult,
     };
-    use orion_common::friendly::New2;
     use orion_error::TestAssert;
 
     #[tokio::test]

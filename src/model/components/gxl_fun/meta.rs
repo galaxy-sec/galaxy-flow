@@ -8,7 +8,7 @@ use crate::{
 };
 use std::{fmt::Debug, sync::Arc};
 
-#[derive(Clone, Getters, Default, WithSetters)]
+#[derive(Clone, Getters, Default, WithSetters, PartialEq, Debug)]
 #[getset(get = "pub")]
 pub struct FunMeta {
     class: GxlType,
@@ -18,16 +18,6 @@ pub struct FunMeta {
     host: Option<ModMeta>,
 }
 pub type FlowMetaHold = Arc<FunMeta>;
-
-impl Debug for FunMeta {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("FunMeta")
-            .field("class", &self.class)
-            .field("name", &self.name)
-            .field("params", &self.params)
-            .finish()
-    }
-}
 
 const UNKNOW: String = String::new();
 impl MetaInfo for FunMeta {

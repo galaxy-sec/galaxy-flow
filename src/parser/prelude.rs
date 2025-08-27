@@ -1,4 +1,4 @@
-pub use orion_common::friendly::AppendAble;
+pub use crate::friendly::AppendAble;
 pub use orion_parse::{
     atom::{skip_spaces_block, starts_with},
     symbol::{symbol_semicolon, wn_desc},

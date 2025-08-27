@@ -141,8 +141,8 @@ pub fn symbol_sql_logic(data: &mut &str) -> Result<SQLogicSymbol> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use orion_common::cond::CmpOP;
-    use orion_common::cond::LogicOP;
+    use crate::fricond::CmpOP;
+    use crate::fricond::LogicOP;
 
     #[test]
     fn test_symbol_sql_cmp_eq() {

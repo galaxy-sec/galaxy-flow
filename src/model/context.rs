@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::env;
 
-use orion_common::friendly::AppendAble;
+use crate::friendly::AppendAble;
 
 #[derive(Debug, Clone, Default, Getters)]
 pub struct ExecContext {

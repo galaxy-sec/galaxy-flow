@@ -1,5 +1,5 @@
 use chrono::Local;
-use orion_common::serde::*;
+use orion_conf::*;
 use rand::Rng;
 use std::path::PathBuf;
 
