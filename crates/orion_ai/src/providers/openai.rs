@@ -10,7 +10,7 @@ use std::time::Duration;
 use crate::error::AiResult;
 use crate::provider::*;
 use crate::providers::resp::convert_response_from_text;
-use getset::{Getters, MutGetters, Setters, WithSetters};
+use getset::{Getters, MutGetters, Setters};
 
 #[derive(Debug, Serialize, Deserialize)]
 struct OpenAiRequest {

@@ -56,24 +56,6 @@ impl AiExecUnit {
         }
     }
 
-    /// 执行AI请求
-    ///
-    /// 使用配置的角色和函数注册表执行指定的提示词。
-    ///
-    /// # 参数
-    ///
-    /// * `prompt` - 要执行的提示词
-    ///
-    /// # 返回
-    ///
-    /// 返回AI执行结果
-    ///
-    /// # 示例
-    ///
-    /// ```rust
-    /// let response = exec_unit.execute("请计算 1+1 的结果").await?;
-    /// println!("AI回复: {}", response.content);
-    /// ```
     pub async fn execute(&self, prompt: &str) -> AiResult<ExecutionResult> {
         let response = self.client.smart_role_request(&self.role, prompt).await?;
 
@@ -96,7 +78,28 @@ impl AiExecUnit {
         Ok(ExecutionResult::new(response.content).with_tool_calls(tool_results))
     }
     pub async fn execute_with_func(&self, prompt: &str) -> AiResult<ExecutionResult> {
-        todo!();
+        let response = self
+            .client
+            .role_funs_request(&self.role, prompt, self.registry().clone_functions())
+            .await?;
+
+        // 将 AiResponse 转换为 ExecutionResult
+        let tool_results = if let Some(tool_calls) = &response.tool_calls {
+            tool_calls
+                .iter()
+                .map(|tool_call| {
+                    FunctionResult {
+                        name: tool_call.function.name.clone(),
+                        result: serde_json::Value::Null, // 工具调用结果需要后续处理
+                        error: None,
+                    }
+                })
+                .collect()
+        } else {
+            Vec::new()
+        };
+
+        Ok(ExecutionResult::new(response.content).with_tool_calls(tool_results))
     }
 
     /// 消费执行单元，返回其组件
@@ -106,34 +109,6 @@ impl AiExecUnit {
     /// 返回包含客户端、角色和函数注册表的元组
     pub fn into_components(self) -> (AiClient, AiRoleID, FunctionRegistry) {
         (self.client, self.role, self.registry)
-    }
-
-    /// 更新角色
-    ///
-    /// # 参数
-    ///
-    /// * `new_role` - 新的角色标识
-    ///
-    /// # 返回
-    ///
-    /// 返回更新后的执行单元（用于链式调用）
-    pub fn with_role(mut self, new_role: AiRoleID) -> Self {
-        self.role = new_role;
-        self
-    }
-
-    /// 更新函数注册表
-    ///
-    /// # 参数
-    ///
-    /// * `new_registry` - 新的函数注册表
-    ///
-    /// # 返回
-    ///
-    /// 返回更新后的执行单元（用于链式调用）
-    pub fn with_registry(mut self, new_registry: FunctionRegistry) -> Self {
-        self.registry = new_registry;
-        self
     }
 }
 

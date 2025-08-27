@@ -1,4 +1,5 @@
 use crate::ability::prelude::{GxlVar, TaskValue};
+use crate::components::gxl_env::meta::EnvMeta;
 use crate::components::gxl_mod::meta::ModMeta;
 use crate::components::gxl_prop::Vec2Mapable;
 use crate::components::gxl_spc::GxlSpace;
@@ -15,8 +16,6 @@ use std::collections::VecDeque;
 use std::sync::Arc;
 
 use std::io::Write;
-
-use super::meta::EnvMeta;
 
 #[derive(Clone, Getters, Debug, Default)]
 pub struct GxlEnv {
