@@ -157,7 +157,7 @@ impl AiClient {
     pub async fn send_request_with_functions(
         &self,
         request: AiRequest,
-        funcs: &Vec<FunctionDefinition>,
+        funcs: &[FunctionDefinition],
     ) -> AiResult<AiResponse> {
         let mut ctx = OperationContext::want("send_request_fun")
             .with_auto_log()
@@ -168,7 +168,7 @@ impl AiClient {
 
         let response = if let Some(provider) = self.providers.get(&provider_type) {
             if provider.supports_function_calling() {
-                provider.send_request_with_functions(&request, &funcs).await
+                provider.send_request_with_functions(&request, funcs).await
             } else {
                 Err(AiError::from(AiErrReason::from_biz(
                     "TODO: provider does not support function calling".to_string(),

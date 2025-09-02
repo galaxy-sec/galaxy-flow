@@ -36,24 +36,6 @@ async fn main() -> orion_ai::AiResult<()> {
         }
     }
     /*
-    match &status_response.tool_calls {
-        Some(function_calls) => {
-            println!("✅ AI 请求执行Git状态检查");
-            for function_call in function_calls {
-                println!("   - 调用函数: {}", function_call.function.name);
-            }
-
-            println!("\n⚙️ 执行Git状态检查...");
-            let status_result = client
-                .handle_function_calls(&status_response, &registry)
-                .await?;
-            println!("📋 Git状态结果:\n{}", status_result);
-        }
-        None => {
-            println!("❌ AI 没有调用Git函数，返回文本响应:");
-            println!("📝 {}", status_response.content);
-        }
-    }
 
     // 7. 场景2: 添加修改的文件
     println!("\n=== ➕ 场景2: 添加修改的文件 ===");

@@ -74,7 +74,7 @@ impl AiExecUnitBuilder {
         self
     }
     pub fn with_role_opt(mut self, role_name: Option<String>) -> Self {
-        self.role = role_name.map(|x| AiRoleID::new(x));
+        self.role = role_name.map(AiRoleID::new);
         self
     }
 

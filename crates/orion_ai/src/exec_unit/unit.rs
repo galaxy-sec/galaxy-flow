@@ -35,7 +35,7 @@ impl std::fmt::Debug for AiExecUnit {
                 "registry",
                 &format!("FunctionRegistry({})", self.registry.get_functions().len()),
             )
-            .field("client", &format!("AiClient"))
+            .field("client", &"AiClient".to_string())
             .finish()
     }
 }

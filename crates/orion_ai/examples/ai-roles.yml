@@ -1,26 +1,19 @@
-{
-  "choices":
-    [
-      {
-        "finish_reason": "stop",
-        "index": 0,
-        "message":
-          {
-            "content": "要检查当前Git仓库的状态，查看哪些文件被修改了，可以使用以下命令：\n\n```bash\ngit status\n```\n\n这个命令会显示：\n- 已修改但未暂存的文件（红色显示）\n- 已暂存但未提交的文件（绿色显示）\n- 未跟踪的文件（未被Git管理的文件）\n\n如果你想要更简洁的输出，可以使用：\n\n```bash\ngit status -s\n```\n\n或者使用短选项：\n\n```bash\ngit status --short\n```\n\n这会以更紧凑的格式显示状态，例如：\n- `M` 表示修改的文件\n- `A` 表示新增的文件\n- `D` 表示删除的文件\n- `??` 表示未跟踪的文件\n\n如果你只想查看已修改的文件，可以使用：\n\n```bash\ngit diff --name-only\n```\n\n这会列出所有已修改但未暂存的文件名。",
-            "reasoning_content": "我需要检查当前Git仓库的状态，看看有哪些文件被修改了。这可以通过`git status`命令来完成。这个命令会显示工作目录和暂存区的状态，包括已修改、已暂存和未跟踪的文件。\n\n让我执行这个命令并查看结果。",
-            "role": "assistant",
-          },
-      },
-    ],
-  "created": 1756805379,
-  "id": "20250902172937a7c24ef0859c4157",
-  "model": "glm-4.5",
-  "request_id": "20250902172937a7c24ef0859c4157",
-  "usage":
-    {
-      "completion_tokens": 243,
-      "prompt_tokens": 72,
-      "prompt_tokens_details": { "cached_tokens": 0 },
-      "total_tokens": 315,
-    },
-}
+default_role:
+  id: galactiward
+default_model: deepseek-chat
+roles:
+  developer:
+    name: developer
+    description: 专注于代码开发的技术专家
+    system_prompt: 你是一个专业的开发者，擅长高质量的代码实现、系统设计和技术问题解决。
+    rules_path: ai-rules/developer
+  operations:
+    name: operations
+    description: 专注于系统运维的专家
+    system_prompt: 你是一个专业的运维专家，擅长诊断系统问题、和解决问题。
+    rules_path: ai-rules/operations
+  galactiward:
+    name: galactiward
+    description: 专注于Galaxy生态专家
+    system_prompt: 通过Galaxy资料，解决Galaxy问题
+    rules_path: ai-rules/galactiward

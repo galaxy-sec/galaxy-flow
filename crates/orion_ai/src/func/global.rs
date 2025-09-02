@@ -47,6 +47,15 @@ impl GlobalFunctionRegistry {
         // 硬编码注册 Git 工具
         Self::register_git_tools(&mut registry)?;
 
+        // 注册文件系统工具
+        Self::register_filesystem_tools(&mut registry)?;
+
+        // 注册系统信息工具
+        Self::register_system_info_tools(&mut registry)?;
+
+        // 注册网络工具
+        Self::register_network_tools(&mut registry)?;
+
         Ok(registry)
     }
 
@@ -74,6 +83,102 @@ impl GlobalFunctionRegistry {
                 .map_err(|e| {
                     orion_error::UvsReason::validation_error(format!(
                         "Failed to register git executor: {}",
+                        e
+                    ))
+                })?;
+        }
+
+        Ok(())
+    }
+
+    /// 注册文件系统工具
+    fn register_filesystem_tools(
+        registry: &mut FunctionRegistry,
+    ) -> Result<(), orion_error::UvsReason> {
+        use crate::func::system::{create_fs_functions, FileSystemExecutor};
+        use std::sync::Arc;
+
+        let fs_functions = create_fs_functions();
+        for function in fs_functions {
+            registry.register_function(function).map_err(|e| {
+                orion_error::UvsReason::validation_error(format!(
+                    "Failed to register filesystem function: {}",
+                    e
+                ))
+            })?;
+        }
+
+        let fs_executor = Arc::new(FileSystemExecutor);
+        for function_name in fs_executor.supported_functions() {
+            registry
+                .register_executor(function_name, fs_executor.clone())
+                .map_err(|e| {
+                    orion_error::UvsReason::validation_error(format!(
+                        "Failed to register filesystem executor: {}",
+                        e
+                    ))
+                })?;
+        }
+
+        Ok(())
+    }
+
+    /// 注册系统信息工具
+    fn register_system_info_tools(
+        registry: &mut FunctionRegistry,
+    ) -> Result<(), orion_error::UvsReason> {
+        use crate::func::system::{create_sys_functions, SystemInfoExecutor};
+        use std::sync::Arc;
+
+        let sys_functions = create_sys_functions();
+        for function in sys_functions {
+            registry.register_function(function).map_err(|e| {
+                orion_error::UvsReason::validation_error(format!(
+                    "Failed to register system info function: {}",
+                    e
+                ))
+            })?;
+        }
+
+        let sys_executor = Arc::new(SystemInfoExecutor);
+        for function_name in sys_executor.supported_functions() {
+            registry
+                .register_executor(function_name, sys_executor.clone())
+                .map_err(|e| {
+                    orion_error::UvsReason::validation_error(format!(
+                        "Failed to register system info executor: {}",
+                        e
+                    ))
+                })?;
+        }
+
+        Ok(())
+    }
+
+    /// 注册网络工具
+    fn register_network_tools(
+        registry: &mut FunctionRegistry,
+    ) -> Result<(), orion_error::UvsReason> {
+        use crate::func::system::{create_net_functions, NetworkExecutor};
+        use std::sync::Arc;
+
+        let net_functions = create_net_functions();
+        for function in net_functions {
+            registry.register_function(function).map_err(|e| {
+                orion_error::UvsReason::validation_error(format!(
+                    "Failed to register network function: {}",
+                    e
+                ))
+            })?;
+        }
+
+        let net_executor = Arc::new(NetworkExecutor);
+        for function_name in net_executor.supported_functions() {
+            registry
+                .register_executor(function_name, net_executor.clone())
+                .map_err(|e| {
+                    orion_error::UvsReason::validation_error(format!(
+                        "Failed to register network executor: {}",
                         e
                     ))
                 })?;
@@ -237,6 +342,18 @@ mod global_registry_tests {
         assert!(function_names.contains(&"git-add".to_string()));
         assert!(function_names.contains(&"git-push".to_string()));
         assert!(function_names.contains(&"git-diff".to_string()));
+
+        // 验证新的系统命令工具已注册
+        assert!(function_names.contains(&"fs-ls".to_string()));
+        assert!(function_names.contains(&"fs-pwd".to_string()));
+        assert!(function_names.contains(&"fs-cat".to_string()));
+        assert!(function_names.contains(&"fs-find".to_string()));
+
+        assert!(function_names.contains(&"sys-uname".to_string()));
+        assert!(function_names.contains(&"sys-ps".to_string()));
+        assert!(function_names.contains(&"sys-df".to_string()));
+
+        assert!(function_names.contains(&"net-ping".to_string()));
     }
 
     #[tokio::test]
@@ -253,8 +370,14 @@ mod global_registry_tests {
         let registry2 = GlobalFunctionRegistry::get_registry().unwrap();
         let function_names2 = registry2.get_supported_function_names();
 
-        // 验证两个副本包含相同的函数
-        assert_eq!(function_names1, function_names2);
+        // 验证两个副本包含相同的函数（不考虑顺序）
+        assert_eq!(function_names1.len(), function_names2.len());
+        for function_name in &function_names1 {
+            assert!(function_names2.contains(function_name));
+        }
+        for function_name in &function_names2 {
+            assert!(function_names1.contains(function_name));
+        }
 
         // 验证两个副本都可以正常工作
         for function_name in &function_names1 {
