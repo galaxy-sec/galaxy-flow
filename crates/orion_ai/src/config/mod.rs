@@ -2,6 +2,7 @@ pub mod loader;
 pub mod roles;
 pub mod structures;
 pub mod traits;
+mod utils;
 
 pub use traits::*;
 

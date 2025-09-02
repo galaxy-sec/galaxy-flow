@@ -2,17 +2,16 @@ use crate::config::RoleConfigManager;
 use crate::error::{AiError, AiResult};
 use crate::provider::{AiProvider, AiProviderType, AiRequest, AiResponse, FunctionDefinition};
 use crate::roleid::AiRoleID;
-use crate::{AiConfig, AiErrReason, AiRouter, FunctionRegistry, GlobalFunctionRegistry};
+use crate::{
+    AiClientTrait, AiConfig, AiErrReason, AiRouter, FunctionRegistry, GlobalFunctionRegistry,
+};
 use async_trait::async_trait;
 use getset::Getters;
 use log::error;
-use orion_error::{
-    ContextRecord, ErrorWith, OperationContext, ToStructError, UvsBizFrom, UvsConfFrom,
-};
+use orion_conf::ErrorWith;
+use orion_error::{ContextRecord, OperationContext, ToStructError, UvsBizFrom, UvsConfFrom};
 use std::collections::HashMap;
 use std::sync::Arc;
-
-use super::trais::AiClientTrait;
 
 /// 主AI客户端，统一的API接口
 #[derive(Getters)]
@@ -65,11 +64,10 @@ impl AiClientTrait for AiClient {
         user_input: &str,
         func: Vec<FunctionDefinition>,
     ) -> AiResult<AiResponse> {
-        let request = self
-            .build_ai_request(role, user_input)?
-            .with_functions(Some(func));
+        let request = self.build_ai_request(role, user_input)?;
+        //.with_functions(Some(func));
         // 3. 发送请求
-        let mut response = self.send_request(request).await?;
+        let mut response = self.send_request_with_functions(request, &func).await?;
 
         // 4. 在响应中添加角色信息
         response.content = format!("[角色: {}]\n\n{}", role.description(), response.content);
@@ -159,7 +157,7 @@ impl AiClient {
     pub async fn send_request_with_functions(
         &self,
         request: AiRequest,
-        registry: &FunctionRegistry,
+        funcs: &Vec<FunctionDefinition>,
     ) -> AiResult<AiResponse> {
         let mut ctx = OperationContext::want("send_request_fun")
             .with_auto_log()
@@ -170,12 +168,7 @@ impl AiClient {
 
         let response = if let Some(provider) = self.providers.get(&provider_type) {
             if provider.supports_function_calling() {
-                let functions = registry.get_functions();
-                let function_refs: Vec<FunctionDefinition> =
-                    functions.into_iter().cloned().collect();
-                provider
-                    .send_request_with_functions(&request, &function_refs)
-                    .await
+                provider.send_request_with_functions(&request, &funcs).await
             } else {
                 Err(AiError::from(AiErrReason::from_biz(
                     "TODO: provider does not support function calling".to_string(),
@@ -224,37 +217,18 @@ impl AiClient {
     }
 
     /// 发送带预注册函数的请求
-    pub async fn send_request_with_preset_functions(
+    pub async fn send_request_with_all_functions(
         &self,
         request: AiRequest,
     ) -> AiResult<AiResponse> {
         let registry = self.get_function_registry()?;
-        self.send_request_with_functions(request, &registry).await
-    }
-
-    /// 🎯 发送带指定工具列表的请求
-    pub async fn send_request_with_filtered_functions(
-        &self,
-        request: AiRequest,
-        tools: &[String],
-    ) -> AiResult<AiResponse> {
-        let registry = self.get_registry_with_tools(tools)?;
-        self.send_request_with_functions(request, &registry).await
+        self.send_request_with_functions(request, &registry.clone_functions())
+            .await
     }
 
     /// 处理预注册的函数调用
     pub async fn handle_preset_function_calls(&self, response: &AiResponse) -> AiResult<String> {
         let registry = self.get_function_registry()?;
-        self.handle_function_calls(response, &registry).await
-    }
-
-    /// 🎯 处理指定工具列表的函数调用
-    pub async fn handle_filtered_function_calls(
-        &self,
-        response: &AiResponse,
-        tools: &[String],
-    ) -> AiResult<String> {
-        let registry = self.get_registry_with_tools(tools)?;
         self.handle_function_calls(response, &registry).await
     }
 }

@@ -8,7 +8,8 @@ use std::collections::HashMap;
 use std::env::home_dir;
 use std::path::PathBuf;
 
-use crate::const_val::gxl_const::AI_CONF_FILE;
+use crate::config::utils::first_parent_file;
+use crate::const_val::gxl_const::{AI_CONF_FILE, PRJ_AI_CONF_PATH};
 use crate::provider::AiProviderType;
 use crate::{AiErrReason, AiResult};
 
@@ -95,14 +96,11 @@ impl AiConfig {
             .ok_or_else(|| AiErrReason::from_res("Cannot find home directory"))?
             .join(".galaxy");
         let gal_ai_conf = galaxy_dir.join(AI_CONF_FILE);
-        let prj_ai_conf = PathBuf::from("./_gal").join(AI_CONF_FILE);
-        let ai_conf = if prj_ai_conf.exists() {
-            prj_ai_conf
-        } else if gal_ai_conf.exists() {
-            gal_ai_conf
-        } else {
+        let prj_conf = first_parent_file(PRJ_AI_CONF_PATH);
+        let ai_conf = prj_conf.unwrap_or(gal_ai_conf);
+        if !ai_conf.exists() {
             return AiErrReason::from_conf("miss ai config".to_string()).err_result();
-        };
+        }
         info!("ai config {}", ai_conf.display());
         let conf = AiConfig::from_yml(&ai_conf)
             .map_err(|e| AiErrReason::from_conf(format!("ai_conf :{e}")))?;

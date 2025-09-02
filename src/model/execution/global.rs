@@ -83,10 +83,13 @@ pub fn load_secfile(vars_dict: &mut VarDict) -> ExecResult<()> {
 /// 从当前目录开始向上查找 _gal/project.toml 文件
 /// 如果找到则返回其绝对路径的PathBuf，未找到则返回None
 pub fn find_project_define() -> Option<PathBuf> {
+    find_gal_file("project.toml")
+}
+pub fn find_gal_file(file_name: &str) -> Option<PathBuf> {
     let mut current_dir = std::env::current_dir().expect("Failed to get current directory");
 
     loop {
-        let project_file = current_dir.join("_gal").join("project.toml");
+        let project_file = current_dir.join("_gal").join(file_name);
         if project_file.exists() {
             //let project_root = current_dir.clone();
             return Some(current_dir);

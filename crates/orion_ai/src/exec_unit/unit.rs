@@ -83,18 +83,34 @@ impl AiExecUnit {
             .role_funs_request(&self.role, prompt, self.registry().clone_functions())
             .await?;
 
-        // 将 AiResponse 转换为 ExecutionResult
+        // 立即执行模式 (方案1): 检测到工具调用后立即执行
+        // 注意：这是一个同步执行实现，AI会基于工具结果结束第一轮对话
+        // TODO: 未来可扩展为支持多轮工具调用的链式执行模式
         let tool_results = if let Some(tool_calls) = &response.tool_calls {
-            tool_calls
-                .iter()
-                .map(|tool_call| {
-                    FunctionResult {
-                        name: tool_call.function.name.clone(),
-                        result: serde_json::Value::Null, // 工具调用结果需要后续处理
-                        error: None,
+            let mut results = Vec::new();
+
+            for tool_call in tool_calls {
+                // 使用函数注册表实际执行工具调用
+                let execution_result = self.registry.execute_function(tool_call).await;
+
+                match execution_result {
+                    Ok(result) => {
+                        results.push(FunctionResult {
+                            name: tool_call.function.name.clone(),
+                            result: result.result, // 实际执行结果
+                            error: None,
+                        });
                     }
-                })
-                .collect()
+                    Err(e) => {
+                        results.push(FunctionResult {
+                            name: tool_call.function.name.clone(),
+                            result: serde_json::Value::Null,
+                            error: Some(e.to_string()), // 记录错误信息
+                        });
+                    }
+                }
+            }
+            results
         } else {
             Vec::new()
         };

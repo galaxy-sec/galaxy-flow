@@ -1,66 +1,41 @@
-use std::path::PathBuf;
-
-use orion_ai::client::{load_key_dict, AiClientBuilder};
-use orion_ai::func::git::{create_git_functions, GitFunctionExecutor};
-use orion_ai::provider::AiRequest;
-use orion_ai::{AiConfig, FunctionExecutor, FunctionRegistry};
-use orion_variate::vars::EnvEvalable;
+use orion_ai::client::utils::load_sec_dict;
+use orion_ai::types::ExecutionStatus;
+use orion_ai::{AiExecUnitBuilder, GlobalFunctionRegistry};
+use orion_conf::ErrorWith;
+use orion_error::{ErrorConv, TestAssert};
 
 #[tokio::main]
 async fn main() -> orion_ai::AiResult<()> {
     env_logger::init();
-    // 1. 配置 DeepSeek API
-    let config = if let Some(dict) = load_key_dict("sec_deepseek_api_key") {
-        println!("✅ 使用  API 进行 Git 操作");
-        AiConfig::example().env_eval(&dict)
-    } else {
-        println!("❌ 错误: 需要配置 k API 密钥");
-        println!("请设置 sec_deepseek_api_key 配置!");
-        return Ok(());
-    };
+    GlobalFunctionRegistry::initialize().assert();
 
-    // 2. 创建客户端
-    let client = AiClientBuilder::new(config)
-        .with_role(PathBuf::from("./examples/ai-roles.yml"))
-        .build()?;
-
-    // 3. 创建函数注册表
-    let mut registry = FunctionRegistry::new();
-
-    // 4. 注册Git函数
-    let git_functions = create_git_functions();
-    for function in git_functions {
-        registry.register_function(function)?;
-    }
-
-    // 5. 为每个Git函数注册执行器
-    let git_executor = std::sync::Arc::new(GitFunctionExecutor);
-    for function_name in git_executor.supported_functions() {
-        registry.register_executor(function_name, git_executor.clone())?;
-    }
-
-    println!("\n🔧 注册的 Git 函数:");
-    for func in registry.get_functions() {
-        println!("   - {}: {}", func.name, func.description);
-    }
+    let ai_exec = AiExecUnitBuilder::new(load_sec_dict()?)
+        .with_role("developer")
+        .with_tools(vec!["git-status".to_string()])
+        .build()
+        .err_conv()
+        .want("create ai exec unit")?;
 
     // 6. 场景1: 检查Git状态
     println!("\n=== 📊 场景1: 检查Git状态 ===");
-    let status_request = AiRequest::builder()
-        .model("deepseek-chat")
-        .system_prompt(
-            "你是一个Git助手。当用户要求检查Git状态时，你必须调用git_status函数。".to_string(),
-        )
-        .user_prompt("请检查当前Git仓库的状态，看看有哪些文件被修改了".to_string())
-        .functions(create_git_functions())
-        .enable_function_calling(true)
-        .build();
 
     println!("📤 发送Git状态检查请求...");
-    let status_response = client
-        .send_request_with_functions(status_request, &registry)
+    let response = ai_exec
+        .execute_with_func("请检查当前Git仓库的状态，看看有哪些文件被修改了")
         .await?;
 
+    match response.status {
+        ExecutionStatus::Success => {
+            println!("✅  {} ", response.content);
+            for call in response.tool_calls {
+                println!("✅  {:#} ", call.result);
+            }
+        }
+        _ => {
+            eprintln!("❌ {}", response.content);
+        }
+    }
+    /*
     match &status_response.tool_calls {
         Some(function_calls) => {
             println!("✅ AI 请求执行Git状态检查");
@@ -227,5 +202,6 @@ async fn main() -> orion_ai::AiResult<()> {
 
     // 11. 总结
     println!("\n🎉 Git 工作流示例完成！");
+    */
     Ok(())
 }

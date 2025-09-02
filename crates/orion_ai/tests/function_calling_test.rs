@@ -62,7 +62,7 @@ async fn test_mock_provider_function_calling() -> orion_ai::AiResult<()> {
         .build();
 
     let response1 = client
-        .send_request_with_functions(request1, &registry)
+        .send_request_with_functions(request1, &registry.clone_functions())
         .await?;
 
     // 验证第一个测试的函数调用
@@ -96,7 +96,7 @@ async fn test_mock_provider_function_calling() -> orion_ai::AiResult<()> {
         .build();
 
     let response2 = client
-        .send_request_with_functions(request2, &registry)
+        .send_request_with_functions(request2, &registry.clone_functions())
         .await?;
 
     // 验证第二个测试的函数调用
@@ -195,7 +195,7 @@ async fn test_mock_provider_single_function_call() -> orion_ai::AiResult<()> {
         .build();
 
     let response = client
-        .send_request_with_functions(request, &registry)
+        .send_request_with_functions(request, &registry.clone_functions())
         .await?;
 
     assert!(response.tool_calls.is_some(), "应该返回函数调用");

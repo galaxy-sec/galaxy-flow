@@ -5,6 +5,8 @@ use orion_error::{
 };
 
 use crate::config::roles::manager::RoleConfigManager;
+use crate::config::utils::first_parent_file;
+use crate::const_val::gxl_const::PRJ_AI_ROLE_PATH;
 use crate::error::{AiErrReason, AiError, AiResult};
 use std::path::PathBuf;
 
@@ -34,7 +36,6 @@ impl RoleConfigLoader {
     /// 分层加载角色配置管理器
     /// 优先级：项目级配置 > 用户级配置
     pub fn layered_load(role_file: Option<PathBuf>) -> AiResult<RoleConfigManager> {
-        let project_roles_path = role_file.unwrap_or(PathBuf::from("_gal/ai-roles.yml"));
         let mut ctx = OperationContext::want("ai roles")
             .with_auto_log()
             .with_mod_path("ai/conf");
@@ -44,31 +45,21 @@ impl RoleConfigLoader {
             AiError::from(AiErrReason::from_conf("无法获取用户主目录".to_string()))
         })?;
         let user_roles_path = user_home.join(".galaxy/ai-roles.yml");
+        let role_path = role_file
+            .or(first_parent_file(PRJ_AI_ROLE_PATH))
+            .unwrap_or(user_roles_path);
 
         // 优先使用项目级配置
-        if project_roles_path.exists() {
+        if role_path.exists() {
             println!(
                 "Loading project-level roles configuration from {}...",
-                project_roles_path.display()
+                role_path.display()
             );
-            let manager = RoleConfigManager::from_yml(&project_roles_path).err_conv()?;
+            let manager = RoleConfigManager::from_yml(&role_path).err_conv()?;
             for k in manager.roles().keys() {
                 info!("load role :{k}");
             }
-            ctx.record("role-file", &project_roles_path);
-            ctx.record("default mod ", manager.default_model().as_str());
-            ctx.mark_suc();
-            return Ok(manager);
-        }
-
-        // 其次使用用户级配置
-        if user_roles_path.exists() {
-            println!(
-                "Loading user-level roles configuration from {}...",
-                user_roles_path.display()
-            );
-            let manager = RoleConfigManager::from_yml(&user_roles_path).err_conv()?;
-            ctx.record("role-file", &user_roles_path);
+            ctx.record("role-file", &role_path);
             ctx.record("default mod ", manager.default_model().as_str());
             ctx.mark_suc();
             return Ok(manager);
@@ -77,8 +68,7 @@ impl RoleConfigLoader {
         Err(AiError::from(AiErrReason::from_conf(
             "未找到有效的角色配置文件".to_string(),
         )))
-        .with(&project_roles_path)
-        .with(&user_roles_path)
+        .with(&role_path)
     }
 
     /// 获取分层规则配置路径
