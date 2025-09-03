@@ -1,13 +1,18 @@
+use std::path::PathBuf;
+
 use orion_ai::client::utils::load_sec_dict;
 use orion_ai::types::ExecutionStatus;
 use orion_ai::{AiExecUnitBuilder, GlobalFunctionRegistry};
-use orion_conf::ErrorWith;
+use orion_conf::{ErrorOwe, ErrorWith};
 use orion_error::{ErrorConv, TestAssert};
+use orion_infra::path::ensure_path;
 
 #[tokio::main]
 async fn main() -> orion_ai::AiResult<()> {
     env_logger::init();
     GlobalFunctionRegistry::initialize().assert();
+
+    let case_work_path = ensure_path(PathBuf::from("./examples/git_case")).owe_res()?;
 
     let ai_exec = AiExecUnitBuilder::new(load_sec_dict()?)
         .with_role("developer")
