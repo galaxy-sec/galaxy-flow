@@ -100,8 +100,8 @@ impl AsyncRunnableTrait for AiExecutor {
 
 #[cfg(test)]
 mod tests {
-    use orion_ai::client::load_key_dict;
     use orion_ai::GlobalFunctionRegistry;
+    use orion_ai::client::load_key_dict;
     use orion_error::TestAssert;
     use orion_variate::vars::EnvEvalable;
 
