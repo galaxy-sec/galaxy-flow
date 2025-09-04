@@ -150,6 +150,7 @@ mod tests {
     fn test_exp() {
         let mut dict = VarSpace::default();
         dict.global_mut().set("val", SecValueType::nor_from(1));
+        dict.global_mut().set("val_1", SecValueType::nor_from(1));
         dict.global_mut().set("val2", SecValueType::nor_from(2));
         dict.global_mut().set("val_f", SecValueType::nor_from(1.14));
         dict.global_mut()
@@ -163,6 +164,10 @@ mod tests {
         assert!(!exp.decide(ExecContext::default(), &dict).assert());
 
         let mut data = r#" ${val} == 1"#;
+        let exp = run_gxl(gal_exp, &mut data).assert();
+        assert!(exp.decide(ExecContext::default(), &dict).assert());
+
+        let mut data = r#" ${val} == ${val_1}"#;
         let exp = run_gxl(gal_exp, &mut data).assert();
         assert!(exp.decide(ExecContext::default(), &dict).assert());
 

@@ -130,7 +130,7 @@ impl Evaluation for CmpExpress<u32, u32> {
 impl<T, E> Evaluation for CmpExpress<T, E>
 where
     T: ValueEval<E> + Debug + Clone,
-    E: PartialEq + PartialOrd + WildEq,
+    E: ValueEval<E> + PartialEq + PartialOrd + WildEq,
     //    A: EvalArgs,
 {
     fn decide(&self, _ctx: ExecContext, vars_dict: &VarSpace) -> DecideResult {
@@ -138,14 +138,19 @@ where
             .first
             .eval(vars_dict)
             .map_err(|e| EvalError::ValueError(format!("{:?} , e:{}", self.first.clone(), e)))?;
+        let second = self
+            .second
+            .eval(vars_dict)
+            .map_err(|e| EvalError::ValueError(format!("{:?} , e:{}", self.first.clone(), e)))?;
+
         match self.relation {
-            BinRelation::EQ => Ok(first.eq(&self.second)),
-            BinRelation::WE => Ok(first.we(&self.second)),
-            BinRelation::NE => Ok(!first.eq(&self.second)),
-            BinRelation::GE => Ok(first.ge(&self.second)),
-            BinRelation::GT => Ok(first.gt(&self.second)),
-            BinRelation::LE => Ok(first.le(&self.second)),
-            BinRelation::LT => Ok(first.lt(&self.second)),
+            BinRelation::EQ => Ok(first.eq(&second)),
+            BinRelation::WE => Ok(first.we(&second)),
+            BinRelation::NE => Ok(!first.eq(&second)),
+            BinRelation::GE => Ok(first.ge(&second)),
+            BinRelation::GT => Ok(first.gt(&second)),
+            BinRelation::LE => Ok(first.le(&second)),
+            BinRelation::LT => Ok(first.lt(&second)),
         }
     }
 }
