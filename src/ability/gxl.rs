@@ -65,9 +65,13 @@ impl AsyncRunnableWithSenderTrait for GxRun {
             };
 
         let exp = EnvExpress::from_env_mix(vars_dict.global().clone());
+        let mut flow = Vec::new();
+        for x in &self.flow_cmd {
+            flow.push(exp.eval(x.as_str())?);
+        }
         let cmd = GxlCmd {
             env: exp.eval(&self.env_conf)?,
-            flow: self.flow_cmd.clone(),
+            flow,
             debug: 0,
             conf: Some(exp.eval(&self.gxl_path)?),
             log: None,
