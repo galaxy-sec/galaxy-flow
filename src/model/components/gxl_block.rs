@@ -180,7 +180,7 @@ impl AppendAble<Vec<BlockAction>> for BlockNode {
 #[cfg(test)]
 mod tests {
 
-    use crate::friendly::New2;
+    use crate::{cmd::GxlCmd, friendly::New2};
     use orion_sec::sec::{NoSecConv, SecFrom, SecValueObj, SecValueType, SecValueVec};
     use orion_variate::vars::UpperKey;
 
@@ -200,7 +200,7 @@ mod tests {
         let mut block = BlockNode::new();
         let prop = GxlVar::new("test", "hello");
         block.append(prop);
-        let ctx = ExecContext::new(Some(false), false);
+        let ctx = ExecContext::new(GxlCmd::default());
         let def = VarSpace::default();
         let res = block.async_exec(ctx, def, None).await;
         assert!(res.is_ok());
@@ -247,7 +247,7 @@ mod tests {
         ));
 
         // 创建执行上下文
-        let ctx = ExecContext::new(Some(false), false);
+        let ctx = ExecContext::new(GxlCmd::default());
         let mut var_dict = VarDict::default();
 
         // 导出 props

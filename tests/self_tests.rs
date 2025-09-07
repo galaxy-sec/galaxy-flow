@@ -1,5 +1,6 @@
 extern crate galaxy_flow;
 
+use galaxy_flow::cmd::GxlCmd;
 use galaxy_flow::execution::VarSpace;
 use galaxy_flow::infra::once_init_log;
 use galaxy_flow::types::AnyResult;
@@ -18,10 +19,9 @@ async fn prj_conf() -> AnyResult<()> {
         .assemble()
         .assert();
     spc.exec(
+        GxlCmd::default(),
         vec!["default".into()],
         vec!["conf".into()],
-        Some(false),
-        false,
         VarSpace::sys_init()?,
         None,
     )

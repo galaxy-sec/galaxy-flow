@@ -151,7 +151,7 @@ pub fn err_code_prompt(code: &str) -> String {
 #[cfg(test)]
 mod tests {
 
-    use crate::{execution::VarSpace, infra::once_init_log, types::AnyResult};
+    use crate::{cmd::GxlCmd, execution::VarSpace, infra::once_init_log, types::AnyResult};
 
     use super::GxLoader;
 
@@ -168,10 +168,9 @@ mod tests {
         println!("mods:{}", spc.len());
         assert!(spc.len() > 1);
         spc.exec(
+            GxlCmd::default(),
             ["default".into()].to_vec(),
             ["conf".into()].to_vec(),
-            Some(true),
-            false,
             VarSpace::sys_init()?,
             None,
         )

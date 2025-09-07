@@ -68,7 +68,7 @@ impl AsyncRunnableWithSenderTrait for GxRun {
             debug: 0,
             conf: Some(exp.eval(&self.gxl_path)?),
             log: None,
-            quiet: ctx.quiet().unwrap_or(false),
+            quiet: ctx.quiet(),
             cmd_args: vec![],
             dryrun,
             ai: false,

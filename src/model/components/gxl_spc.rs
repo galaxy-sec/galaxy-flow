@@ -1,6 +1,7 @@
 use super::{gxl_flow::meta::FlowMeta, prelude::*};
 use crate::{
     ability::prelude::TaskValue,
+    cmd::GxlCmd,
     execution::{
         sequence::{ExecSequence, SequAppender, SequLoader},
         unit::{RunUnitGuard, RunUnitLable},
@@ -197,16 +198,15 @@ impl GxlSpace {
     #[requires(self.assembled)]
     pub async fn exec<VS: Into<Vec<String>>>(
         &self,
+        cmd: GxlCmd,
         envs_name: VS,
         flows_name: VS,
-        out: Option<bool>,
-        dryrun: bool,
         var_space: VarSpace,
         sender: Option<Sender<ReadSignal>>,
     ) -> RunResult<()> {
         info!(
             target: "execution",
-            "Starting execution stack with output: {:?}", out
+            "Starting execution stack with output: {:?}", cmd.quiet,
         );
 
         let envs: Vec<String> = envs_name.into();
@@ -216,7 +216,7 @@ impl GxlSpace {
         warn!(target : "exec","inherted vars :\n{}", var_space.inherited());
         info!(target : "exec","inherted vars :\n{}", var_space.global());
 
-        let main_ctx = ExecContext::new(out, dryrun);
+        let main_ctx = ExecContext::new(cmd);
         for flow_name in flow_names {
             self.execute_flow(&main_ctx, &var_space, &envs, &flow_name, sender.clone())
                 .await?;

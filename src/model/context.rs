@@ -5,8 +5,8 @@ use std::sync::Arc;
 
 use getset::{CopyGetters, Getters};
 
-use crate::friendly::AppendAble;
 use crate::cmd::GxlCmd;
+use crate::friendly::AppendAble;
 
 #[derive(Debug, Clone, Default, Getters, CopyGetters)]
 pub struct ExecContext {
@@ -16,25 +16,30 @@ pub struct ExecContext {
     abs_path: String,
     #[getset(get = "pub")]
     cur_path: String,
-    #[getset(get_copy = "pub")]
-    quiet: Option<bool>,
-    #[getset(get = "pub")]
-    dryrun: bool,
+    //#[getset(get_copy = "pub")]
+    //quiet: Option<bool>,
+    //#[getset(get = "pub")]
+    //dryrun: bool,
     #[getset(get = "pub")]
     gxl_cmd: Arc<GxlCmd>,
 }
 impl ExecContext {
-    pub fn new(out: Option<bool>, dryrun: bool) -> Self {
+    pub fn new(cmd: GxlCmd) -> Self {
         let cur_path = env::current_dir().unwrap();
         let cur_path = cur_path.as_path().to_str().unwrap();
 
         ExecContext {
             abs_path: String::from(""),
             cur_path: String::from(cur_path),
-            quiet: out,
-            dryrun,
+            gxl_cmd: Arc::new(cmd),
             ..Default::default()
         }
+    }
+    pub fn dryrun(&self) -> bool {
+        self.gxl_cmd().dryrun
+    }
+    pub fn quiet(&self) -> bool {
+        self.gxl_cmd().quiet
     }
 
     pub fn path(&self) -> &str {

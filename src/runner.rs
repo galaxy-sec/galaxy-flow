@@ -9,24 +9,24 @@ use orion_error::{ErrorConv, ErrorWith, UvsConfFrom};
 use std::{path::Path, sync::mpsc::Sender};
 
 /// Galaxy Flow 运行器
-/// 
+///
 /// GxlRunner负责执行GxlCmd命令，加载配置文件并运行指定的流程。
-/// 
+///
 /// Galaxy Flow Runner
-/// 
+///
 /// GxlRunner is responsible for executing GxlCmd commands, loading configuration files, and running specified flows.
 pub struct GxlRunner {}
 impl GxlRunner {
     /// 执行Galaxy Flow命令
-    /// 
+    ///
     /// 此方法执行以下步骤：
     /// 1. 验证命令参数
     /// 2. 加载配置文件
     /// 3. 解析流程名称
     /// 4. 执行指定的流程
-    /// 
+    ///
     /// Execute Galaxy Flow command
-    /// 
+    ///
     /// This method performs the following steps:
     /// 1. Validate command parameters
     /// 2. Load configuration file
@@ -75,8 +75,7 @@ impl GxlRunner {
                     .map(String::from)
                     .collect();
                 // 执行流程 / Execute flows
-                spc.exec(envs, flws, Some(cmd.quiet), cmd.dryrun, vars, sender)
-                    .await?;
+                spc.exec(cmd, envs, flws, vars, sender).await?;
                 println!("\ngod job!");
             }
             Ok(())

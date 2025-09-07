@@ -1,4 +1,5 @@
 use clap::{ArgAction, Parser};
+use getset::WithSetters;
 
 /// Galaxy Flow Command Line Interface
 ///
@@ -7,11 +8,12 @@ use clap::{ArgAction, Parser};
 /// Galaxy Flow Command Line Interface
 ///
 /// GxlCmd is the command line interface structure for Galaxy Flow, used to parse and process command line arguments.
-#[derive(Parser, Debug, Clone, Default)] // requires `derive` feature
+#[derive(Parser, Debug, Clone, Default, WithSetters)] // requires `derive` feature
 #[command(version, about = "Galaxy Flow - A powerful workflow automation tool", long_about = None)]
 #[command(
     after_help = "Examples:\n  gxl -e dev -f ./config.gxl flow1 flow2\n  gxl -e prod --cmd-arg \"-x -y\" flow1\n  gxl -e test --dryrun flow1\n\n示例：\n  gxl -e dev -f ./config.gxl flow1 flow2\n  gxl -e prod --cmd-arg \"-x -y\" flow1\n  gxl -e test --dryrun flow1"
 )]
+#[getset(set_with = "pub")]
 pub struct GxlCmd {
     /// 环境名称 / Environment name
     ///

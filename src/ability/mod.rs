@@ -14,6 +14,7 @@ pub mod shell;
 pub mod version;
 use prelude::VarSpace;
 
+use crate::cmd::GxlCmd;
 use crate::const_val::gxl_const;
 use crate::{context::ExecContext, infra::once_init_log, traits::Setter, ExecResult};
 
@@ -22,7 +23,7 @@ pub struct StubFlowAbi {}
 #[allow(dead_code)]
 pub fn ability_env_init() -> (ExecContext, VarSpace) {
     once_init_log();
-    let context = ExecContext::new(Some(false), false);
+    let context = ExecContext::new(GxlCmd::default());
     let mut def = VarSpace::default();
     def.global_mut()
         .set(gxl_const::PRJ_ROOT, context.cur_path().as_str());
