@@ -52,7 +52,7 @@ pub fn parse_suc_code(suc: &str) -> Vec<i32> {
 }
 
 pub use crate::ability::{
-    ai::ai_executor::AiExecutor as GxAIFun,
+    ai::ai_task::AiTaskExecutor as GxAIFun,
     assert::GxAssert,
     cmd::GxCmd,
     echo::GxEcho,

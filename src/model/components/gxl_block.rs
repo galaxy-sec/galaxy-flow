@@ -7,8 +7,8 @@ use async_trait::async_trait;
 use derive_more::From;
 use std::sync::mpsc::Sender;
 
-use crate::ability::ai::ai_executor::AiExecutor;
-use crate::ability::ai::chat_executor::ChatExecutor;
+use crate::ability::ai::ai_chat::AiChatExecutor;
+use crate::ability::ai::ai_task::AiTaskExecutor;
 use crate::ability::archive::GxTar;
 use crate::ability::archive::GxUnTar;
 use crate::ability::delegate::ActCall;
@@ -25,8 +25,8 @@ use crate::util::redirect::ReadSignal;
 
 #[derive(Clone, From)]
 pub enum BlockAction {
-    AiChat(ChatExecutor),
-    AiFun(AiExecutor),
+    AiChat(AiChatExecutor),
+    AiFun(AiTaskExecutor),
     Shell(GxShell),
     Command(GxCmd),
     GxlRun(GxRun),

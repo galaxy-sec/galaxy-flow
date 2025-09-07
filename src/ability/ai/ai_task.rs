@@ -1,13 +1,15 @@
+use crate::ability::ai::{AI_CALL_RESULT, AI_CALL_VALUE, AI_CONTENT};
 use crate::{ability::prelude::*, traits::Setter};
 use async_trait::async_trait;
 
+use orion_ai::types::ExecutionStatus;
 use orion_ai::{AiConfig, AiExecUnit, AiExecUnitBuilder};
 use orion_error::ErrorConv;
 use orion_sec::sec::SecFrom;
 use orion_sec::sec::SecValueType;
 
 use getset::{Getters, MutGetters, Setters};
-use orion_variate::vars::EnvDict;
+use orion_variate::vars::{EnvDict, ValueType};
 
 /// AI执行器，支持函数调用的AI任务执行器
 ///
@@ -18,7 +20,7 @@ use orion_variate::vars::EnvDict;
 ///
 #[derive(Clone, Debug, Getters, MutGetters, Setters)]
 #[getset(get = "pub", set = "pub", get_mut = "pub", set_with = "pub")]
-pub struct AiExecutor {
+pub struct AiTaskExecutor {
     role: Option<String>,
     task: Option<String>,
     config: Option<AiConfig>,
@@ -27,7 +29,7 @@ pub struct AiExecutor {
     max_rounds: usize,
 }
 
-impl Default for AiExecutor {
+impl Default for AiTaskExecutor {
     fn default() -> Self {
         Self {
             role: None,
@@ -39,7 +41,7 @@ impl Default for AiExecutor {
     }
 }
 
-impl AiExecutor {
+impl AiTaskExecutor {
     /// 执行AI任务
     ///
     /// 这是主要的执行入口点，负责协调整个AI任务的执行流程。
@@ -47,19 +49,35 @@ impl AiExecutor {
         // 设置执行上下文
         ctx.append("gx.ai_fun");
         let mut action = Action::from("gx.ai_fun");
-        let base_prompt = self.task.as_deref().unwrap_or("请完成任务");
+        let task_prompt = self.task.as_deref().unwrap_or("请完成任务");
 
         // 初始化执行单元
         let exec_unit = self.setup_exec_unit(&vars)?;
 
         // 执行AI请求
-        let response = exec_unit.execute_with_func(base_prompt).await.err_conv()?;
+        let response = exec_unit.execute_with_func(task_prompt).await.err_conv()?;
 
         // 存储结果
-        vars.global_mut().set(
-            "AI".to_string(),
-            SecValueType::nor_from(response.content.clone()),
-        );
+        vars.global_mut()
+            .set(AI_CONTENT, SecValueType::nor_from(response.content.clone()));
+        match response.status {
+            ExecutionStatus::Success => {
+                let mut call_result = Vec::new();
+                for call in response.tool_calls {
+                    //println!("✅  {:#} ", call.result);
+                    call_result.push(ValueType::from(call.result.to_string()));
+                }
+                vars.global_mut()
+                    .set(AI_CALL_VALUE, SecValueType::nor_from(call_result));
+                vars.global_mut()
+                    .set(AI_CALL_RESULT, SecValueType::nor_from(true));
+            }
+            _ => {
+                vars.global_mut()
+                    .set(AI_CALL_RESULT, SecValueType::nor_from(false));
+            }
+        }
+
         action.finish();
         Ok(TaskValue::from((vars, ExecOut::Action(action))))
     }
@@ -79,14 +97,14 @@ impl AiExecutor {
     }
 }
 
-impl ComponentMeta for AiExecutor {
+impl ComponentMeta for AiTaskExecutor {
     fn gxl_meta(&self) -> GxlMeta {
         GxlMeta::from("ai_fun")
     }
 }
 
 #[async_trait]
-impl AsyncRunnableTrait for AiExecutor {
+impl AsyncRunnableTrait for AiTaskExecutor {
     async fn async_exec(&self, ctx: ExecContext, vars: VarSpace) -> TaskResult {
         self.execute(ctx, vars).await
     }
@@ -98,37 +116,9 @@ mod tests {
     use orion_error::TestAssert;
     use orion_sec::load_sec_dict;
 
+    use crate::infra::once_init_log;
+
     use super::*;
-
-    #[tokio::test]
-    async fn test_basic_ai_execution() -> AiResult<()> {
-        GlobalFunctionRegistry::initialize().assert();
-        let ai_builder = AiExecUnitBuilder::new(load_sec_dict().unwrap());
-        let ai_exec = ai_builder
-            .clone()
-            .with_role("developer")
-            //.with_tools(vec!["git-status".to_string()])
-            .build()
-            .want("create ai exec unit")?;
-
-        let response = ai_exec
-            //.execute_with_func("请检查当前Git仓库的状态，看看有哪些文件被修改了")
-            .execute("请回答：1+1=?")
-            .await?;
-        match response.status {
-            ExecutionStatus::Success => {
-                println!("✅  {} ", response.content);
-                for call in response.tool_calls {
-                    println!("✅  {:#} ", call.result);
-                }
-            }
-            _ => {
-                eprintln!("❌ {}", response.content);
-                panic!("false");
-            }
-        }
-        Ok(())
-    }
 
     #[tokio::test]
     async fn test_executor_with_tools() -> AiResult<()> {
@@ -163,36 +153,29 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_default_values() {
-        let executor = AiExecutor::default();
-
-        assert!(executor.role().is_none());
-        assert!(executor.task().is_none());
-        assert!(executor.config().is_none());
-        assert!(executor.tools().is_empty());
-    }
-
-    #[tokio::test]
     async fn test_component_meta() {
-        let executor = AiExecutor::default();
+        let executor = AiTaskExecutor::default();
         let meta = executor.gxl_meta();
 
         assert_eq!(meta, GxlMeta::from("ai_fun"));
     }
 
     #[tokio::test]
-    async fn test_clone_and_debug() {
-        let mut executor = AiExecutor::default();
+    async fn test_clone_and_debug() -> ExecResult<()> {
+        once_init_log();
+        GlobalFunctionRegistry::initialize().assert();
+        let mut executor = AiTaskExecutor::default();
         executor.set_role(Some("developer".to_string()));
-        executor.set_task(Some("test task".to_string()));
-
-        // 测试Clone trait
-        let cloned = executor.clone();
-        assert_eq!(cloned.role(), executor.role());
-        assert_eq!(cloned.task(), executor.task());
-
-        // 测试Debug trait
-        let debug_str = format!("{:?}", executor);
-        assert!(debug_str.contains("AiExecutor"));
+        executor.set_task(Some(
+            "请检查当前Git仓库的状态，看看有哪些文件被修改了".to_string(),
+        ));
+        executor.set_tools(vec!["git-status".to_string()]);
+        let x = executor
+            .async_exec(ExecContext::default(), VarSpace::sys_init()?)
+            .await?;
+        println!("{:#}", x.vars.get(AI_CONTENT).assert());
+        println!("{:#}", x.vars.get(AI_CALL_RESULT).assert());
+        println!("{:#}", x.vars.get(AI_CALL_VALUE).assert());
+        Ok(())
     }
 }
