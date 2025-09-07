@@ -1,7 +1,8 @@
 use crate::{const_val::gxl_const, error::AssembleReason, ExecReason, ExecResult};
-use orion_ai::AiErrReason;
+use orion_ai::{AiErrReason, OrionAiReason};
 use orion_error::{ErrorCode, StructError, UvsReason};
 
+use orion_sec::SecReason;
 use serde::Serialize;
 use thiserror::Error;
 
@@ -14,6 +15,10 @@ pub enum RunReason {
     #[error("args error {0}")]
     Args(String),
     #[error("{0}")]
+    Ai(AiErrReason),
+    #[error("{0}")]
+    Sec(SecReason),
+    #[error("{0}")]
     Uvs(UvsReason),
 }
 impl From<UvsReason> for RunReason {
@@ -22,9 +27,13 @@ impl From<UvsReason> for RunReason {
     }
 }
 
-impl From<AiErrReason> for RunReason {
-    fn from(value: AiErrReason) -> Self {
-        UvsReason::from(value).into()
+impl From<OrionAiReason> for RunReason {
+    fn from(value: OrionAiReason) -> Self {
+        match value {
+            OrionAiReason::Ai(reason) => Self::Ai(reason),
+            OrionAiReason::Sec(reason) => Self::Sec(reason),
+            OrionAiReason::Uvs(reason) => Self::Uvs(reason),
+        }
     }
 }
 
@@ -35,6 +44,8 @@ impl ErrorCode for RunReason {
             RunReason::Exec(_) => 540,
             RunReason::Args(_) => 550,
             RunReason::Uvs(uvs_reason) => uvs_reason.error_code(),
+            RunReason::Ai(_) => todo!(),
+            RunReason::Sec(_) => todo!(),
         }
     }
 }
@@ -120,6 +131,12 @@ pub fn report_gxl_error(e: RunError) {
         }
         RunReason::Args(e) => {
             println!("ARGS ERROR: {e}\n",);
+        }
+        RunReason::Ai(e) => {
+            println!("Ai ERROR: {e}\n",);
+        }
+        RunReason::Sec(e) => {
+            println!("Sec ERROR: {e}\n",);
         }
     }
     if let Some(pos) = e.position() {

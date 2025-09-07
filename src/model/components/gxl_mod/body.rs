@@ -342,7 +342,8 @@ mod test {
     use super::*;
     use crate::friendly::{MultiNew2, New2};
     use orion_error::TestAssertWithMsg;
-    use orion_sec::sec::{SecFrom, SecValueType, ToUniCase};
+    use orion_sec::sec::{SecFrom, SecValueType};
+    use orion_variate::vars::UpperKey;
 
     use crate::{
         components::{
@@ -495,11 +496,11 @@ mod test {
 
         println!("{:?}", vars.global().maps());
         assert_eq!(
-            vars.global().maps().get(&"ENV_KEY1".to_unicase()),
+            vars.global().maps().get(&UpperKey::from("ENV_KEY1")),
             Some(&SecValueType::nor_from("value1".to_string()))
         );
         assert_eq!(
-            vars.global().maps().get(&"ENV_KEY3".to_unicase()),
+            vars.global().maps().get(&UpperKey::from("ENV_KEY3")),
             Some(&SecValueType::nor_from("value1".to_string()))
         );
         Ok(())

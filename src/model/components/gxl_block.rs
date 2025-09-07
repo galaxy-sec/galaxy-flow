@@ -181,7 +181,8 @@ impl AppendAble<Vec<BlockAction>> for BlockNode {
 mod tests {
 
     use crate::friendly::New2;
-    use orion_sec::sec::{NoSecConv, SecFrom, SecValueObj, SecValueType, SecValueVec, ToUniCase};
+    use orion_sec::sec::{NoSecConv, SecFrom, SecValueObj, SecValueType, SecValueVec};
+    use orion_variate::vars::UpperKey;
 
     //test RgBlock append
     use super::*;
@@ -212,8 +213,14 @@ mod tests {
 
         // 创建测试数据
         let mut sys_a = SecValueObj::new();
-        sys_a.insert("mod1".to_unicase(), SecValueType::nor_from("A".to_string()));
-        sys_a.insert("mod2".to_unicase(), SecValueType::nor_from("B".to_string()));
+        sys_a.insert(
+            UpperKey::from("mod1"),
+            SecValueType::nor_from("A".to_string()),
+        );
+        sys_a.insert(
+            UpperKey::from("mod2"),
+            SecValueType::nor_from("B".to_string()),
+        );
 
         let sys_b = SecValueVec::from(vec![
             SecValueType::nor_from("C".to_string()),

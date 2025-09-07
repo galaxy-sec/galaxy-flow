@@ -3,7 +3,7 @@ use chrono;
 // 🎯 工具调用结果结构
 use getset::{Getters, MutGetters, Setters, WithSetters};
 use orion_sec::sec::{SecFrom, SecValueObj, SecValueType};
-use unicase::UniCase;
+use orion_variate::vars::UpperKey;
 #[derive(Clone, Debug, Getters, Setters, WithSetters, MutGetters)]
 #[getset(get = "pub", set = "pub", get_mut = "pub", set_with = "pub")]
 pub struct ToolCallResult {
@@ -36,22 +36,22 @@ impl From<ToolCallResult> for SecValueObj {
     fn from(value: ToolCallResult) -> Self {
         let mut ins = SecValueObj::new();
         ins.insert(
-            UniCase::from("tool_name"),
+            UpperKey::from("tool_name"),
             SecValueType::nor_from(value.tool_name().clone()),
         );
 
         match value.result() {
             Ok(c) => {
-                ins.insert(UniCase::from("result_flag"), SecValueType::nor_from(true));
+                ins.insert(UpperKey::from("result_flag"), SecValueType::nor_from(true));
                 ins.insert(
-                    UniCase::from("result_content"),
+                    UpperKey::from("result_content"),
                     SecValueType::nor_from(c.clone()),
                 );
             }
             Err(c) => {
-                ins.insert(UniCase::from("result_flag"), SecValueType::nor_from(false));
+                ins.insert(UpperKey::from("result_flag"), SecValueType::nor_from(false));
                 ins.insert(
-                    UniCase::from("result_content"),
+                    UpperKey::from("result_content"),
                     SecValueType::nor_from(c.clone()),
                 );
             }
