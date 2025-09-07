@@ -22,9 +22,9 @@ use galaxy_flow::err::*;
 use galaxy_flow::execution::VarSpace;
 use galaxy_flow::galaxy::Galaxy;
 use galaxy_flow::infra::configure_run_logging;
-use galaxy_flow::runner::{GxlCmd, GxlRunner};
 use galaxy_flow::util::diagnose::ai_diagnose;
 use galaxy_flow::GxLoader;
+use galaxy_flow::{cmd::GxlCmd, runner::GxlRunner};
 use include_dir::{include_dir, Dir};
 use orion_error::ErrorConv;
 use orion_variate::addr::GitRepository;
@@ -215,9 +215,9 @@ mod tests {
             log: None,
             debug: 0,
             env: "default".into(),
-            flow: vec!["echo".into()],
-            quiet: Some(true),
-            cmd_arg: String::new(),
+            flows: vec!["echo".into()],
+            quiet: true,
+            cmd_args: vec![],
             dryrun: false,
             mod_update: false,
             ai: false,

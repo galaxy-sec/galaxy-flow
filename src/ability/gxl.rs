@@ -8,10 +8,7 @@ use crate::ability::prelude::*;
 use crate::const_val::gxl_const;
 use crate::execution::runnable::AsyncRunnableWithSenderTrait;
 use crate::util::redirect::ReadSignal;
-use crate::{
-    runner::{GxlCmd, GxlRunner},
-    util::path::WorkDir,
-};
+use crate::{cmd::GxlCmd, runner::GxlRunner, util::path::WorkDir};
 
 #[derive(Clone, Debug, Default, Builder, PartialEq, Getters)]
 pub struct GxRun {
@@ -67,12 +64,12 @@ impl AsyncRunnableWithSenderTrait for GxRun {
         let exp = EnvExpress::from_env_mix(vars_dict.global().clone());
         let cmd = GxlCmd {
             env: exp.eval(&self.env_conf)?,
-            flow: self.flow_cmd.clone(),
+            flows: self.flow_cmd.clone(),
             debug: 0,
             conf: Some(exp.eval(&self.gxl_path)?),
             log: None,
-            quiet: ctx.quiet(),
-            cmd_arg: String::new(),
+            quiet: ctx.quiet().unwrap_or(false),
+            cmd_args: vec![],
             dryrun,
             ai: false,
             mod_update,

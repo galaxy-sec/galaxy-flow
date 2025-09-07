@@ -1,17 +1,27 @@
 use std::collections::HashMap;
 use std::env;
 
-use crate::friendly::AppendAble;
+use std::sync::Arc;
 
-#[derive(Debug, Clone, Default, Getters)]
+use getset::{CopyGetters, Getters};
+
+use crate::friendly::AppendAble;
+use crate::cmd::GxlCmd;
+
+#[derive(Debug, Clone, Default, Getters, CopyGetters)]
 pub struct ExecContext {
+    #[getset(get = "pub")]
     env_vars: HashMap<String, String>,
+    #[getset(get = "pub")]
     abs_path: String,
+    #[getset(get = "pub")]
     cur_path: String,
-    #[getter(copy)]
+    #[getset(get_copy = "pub")]
     quiet: Option<bool>,
+    #[getset(get = "pub")]
     dryrun: bool,
-    //accessor: Rc<UniversalAccessor>,
+    #[getset(get = "pub")]
+    gxl_cmd: Arc<GxlCmd>,
 }
 impl ExecContext {
     pub fn new(out: Option<bool>, dryrun: bool) -> Self {

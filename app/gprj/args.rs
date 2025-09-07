@@ -2,7 +2,7 @@
 use clap::ArgAction;
 use clap::Parser;
 use derive_getters::Getters;
-use galaxy_flow::runner::GxlCmd;
+use galaxy_flow::cmd::GxlCmd;
 
 #[derive(Debug, Parser, Clone)] // requires `derive` feature
 #[command(name = "gprj adm")]
