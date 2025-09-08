@@ -104,14 +104,14 @@ impl ExecSequence {
         let mut job = Job::from(&self.name);
         for (index, item) in self.run_items.iter().enumerate() {
             info!(target: ctx.path(), "executing item {}: {} ", index, item.gxl_meta().full_name());
-            if trans_manage.in_transaction_trigger(item.is_transaction()) {
-                if let Some(undo) = item.undo_hold() {
-                    let mut sequ = ExecSequence::default();
-                    spc.find_flow(&undo, &mut sequ).err_conv()?;
-                    for undo in sequ.run_items() {
-                        info!(target: ctx.path(), "regist undo {}", undo.gxl_meta().name());
-                        trans_manage.add_undo_task(undo.clone(), def.clone());
-                    }
+            if trans_manage.in_transaction_trigger(item.is_transaction())
+                && let Some(undo) = item.undo_hold()
+            {
+                let mut sequ = ExecSequence::default();
+                spc.find_flow(&undo, &mut sequ).err_conv()?;
+                for undo in sequ.run_items() {
+                    info!(target: ctx.path(), "regist undo {}", undo.gxl_meta().name());
+                    trans_manage.add_undo_task(undo.clone(), def.clone());
                 }
             }
             match self
@@ -160,16 +160,16 @@ fn build_exec_queue(
     item: &ComHold,
 ) -> ExecResult<VecDeque<ComHold>> {
     let mut sub_queue = VecDeque::new();
-    if ctx.dryrun() {
-        if let Some(dryrun_meta) = item.dryrun_hold() {
-            let mut sequ = ExecSequence::default();
-            spc.find_flow(&dryrun_meta, &mut sequ).err_conv()?;
-            for dryrun in sequ.run_items() {
-                info!(target: ctx.path(), "regist undo {}", dryrun.gxl_meta().name());
-                sub_queue.push_back(dryrun.clone());
-            }
-            return Ok(sub_queue);
+    if ctx.dryrun()
+        && let Some(dryrun_meta) = item.dryrun_hold()
+    {
+        let mut sequ = ExecSequence::default();
+        spc.find_flow(&dryrun_meta, &mut sequ).err_conv()?;
+        for dryrun in sequ.run_items() {
+            info!(target: ctx.path(), "regist undo {}", dryrun.gxl_meta().name());
+            sub_queue.push_back(dryrun.clone());
         }
+        return Ok(sub_queue);
     }
     sub_queue.push_back(item.clone());
     Ok(sub_queue)

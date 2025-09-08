@@ -154,11 +154,9 @@ impl From<HashMap<String, String>> for VarDict {
 }
 impl Getter<&UpperKey, SecValueType> for VarDict {
     fn must_get(&self, key: &UpperKey) -> &SecValueType {
-        if let Some(val) = self.maps.get(key) {
-            val
-        } else {
-            panic!("un get key {}", key.as_str());
-        }
+        self.maps
+            .get(key)
+            .unwrap_or_else(|| panic!("un get key {}", key.as_str()))
     }
     fn get_copy(&self, key: &UpperKey) -> Option<SecValueType> {
         self.maps.value_get(key.as_str())
@@ -166,11 +164,9 @@ impl Getter<&UpperKey, SecValueType> for VarDict {
 }
 impl Getter<&str, SecValueType> for VarDict {
     fn must_get(&self, key: &str) -> &SecValueType {
-        if let Some(val) = self.maps.get(&key.to_uppercase()) {
-            val
-        } else {
-            panic!("un get key {key}");
-        }
+        self.maps
+            .get(&key.to_uppercase())
+            .unwrap_or_else(|| panic!("un get key {key}"))
     }
     fn get_copy(&self, key: &str) -> Option<SecValueType> {
         self.maps.value_get(key)

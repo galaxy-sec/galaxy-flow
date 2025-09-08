@@ -14,25 +14,18 @@ use winnow::combinator::separated;
 use super::atom::take_var_ref_name;
 
 pub fn parse_log(pair: (&str, &str)) -> log::Level {
-    if pair.0 == "log" {
-        if let Ok(level_int) = pair.1.parse::<u32>() {
-            match level_int {
-                1 => {
-                    return log::Level::Info;
-                }
-                2 => {
-                    return log::Level::Debug;
-                }
-                3 => {
-                    return log::Level::Trace;
-                }
-                _ => {
-                    return log::Level::Info;
-                }
-            }
+    if pair.0 == "log"
+        && let Ok(level_int) = pair.1.parse::<u32>()
+    {
+        match level_int {
+            1 => log::Level::Info,
+            2 => log::Level::Debug,
+            3 => log::Level::Trace,
+            _ => log::Level::Info,
         }
+    } else {
+        log::Level::Info
     }
-    log::Level::Info
 }
 
 pub fn ext_meta_names(input: &mut &str) -> Result<String> {

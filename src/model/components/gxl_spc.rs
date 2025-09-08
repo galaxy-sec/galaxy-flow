@@ -306,10 +306,10 @@ impl GxlSpace {
         guard: &RunUnitGuard,
         sequ: &mut impl SequAppender,
     ) -> ExecResult<()> {
-        if let Some(mod_meta) = meta.host() {
-            if let Some(mox) = self.mods.get(mod_meta.name()) {
-                return self.mod_load_flow(mox, meta.name(), guard, sequ);
-            }
+        if let Some(mod_meta) = meta.host()
+            && let Some(mox) = self.mods.get(mod_meta.name())
+        {
+            return self.mod_load_flow(mox, meta.name(), guard, sequ);
         }
         Err(ExecError::from(ExecReason::Miss(meta.long_name())))
     }

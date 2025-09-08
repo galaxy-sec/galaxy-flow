@@ -6,16 +6,16 @@ use galaxy_flow::cmd::GxlCmd;
 #[test]
 fn test_gxl_cmd_default() {
     // 测试 GxlCmd 的默认值
-    let cmd = GxlCmd::try_parse_from(&["gxl"]).expect("Failed to parse default command");
+    let cmd = GxlCmd::try_parse_from(["gxl"]).expect("Failed to parse default command");
 
     assert_eq!(cmd.debug, 0);
-    assert_eq!(cmd.dryrun, false);
-    assert_eq!(cmd.ai, false);
-    assert_eq!(cmd.mod_update, false);
+    assert!(!cmd.dryrun);
+    assert!(!cmd.ai);
+    assert!(!cmd.mod_update);
     assert!(cmd.cmd_args.is_empty());
     assert!(cmd.conf.is_none());
     assert!(cmd.log.is_none());
-    assert_eq!(cmd.quiet, false);
+    assert!(!cmd.quiet);
     assert!(cmd.flows.is_empty());
     assert!(cmd.flows.is_empty());
 }
@@ -23,7 +23,7 @@ fn test_gxl_cmd_default() {
 #[test]
 fn test_gxl_cmd_with_args() {
     // 测试 GxlCmd 带参数的情况
-    let cmd = GxlCmd::try_parse_from(&[
+    let cmd = GxlCmd::try_parse_from([
         "gxl",
         "-e",
         "dev",
@@ -45,10 +45,10 @@ fn test_gxl_cmd_with_args() {
     assert_eq!(cmd.debug, 1);
     assert_eq!(cmd.conf, Some("./_gal/work.gxl".to_string()));
     assert_eq!(cmd.log, Some("cmd=debug".to_string()));
-    assert_eq!(cmd.quiet, true);
-    assert_eq!(cmd.dryrun, true);
-    assert_eq!(cmd.ai, true);
-    assert_eq!(cmd.mod_update, true);
+    assert!(cmd.quiet);
+    assert!(cmd.dryrun);
+    assert!(cmd.ai);
+    assert!(cmd.mod_update);
     assert!(cmd.cmd_args.is_empty());
     assert_eq!(cmd.flows, vec!["flow1".to_string(), "flow2".to_string()]);
 }
@@ -56,7 +56,7 @@ fn test_gxl_cmd_with_args() {
 #[test]
 fn test_gxl_cmd_with_hyphen_args() {
     // 测试 GxlCmd 带连字符参数的情况
-    let cmd = GxlCmd::try_parse_from(&["gxl", "-e", "test", "--cmd-arg", "-custom", "flow1"])
+    let cmd = GxlCmd::try_parse_from(["gxl", "-e", "test", "--cmd-arg", "-custom", "flow1"])
         .expect("Failed to parse command with hyphen args");
 
     assert_eq!(cmd.cmd_args, vec!["-custom".to_string()]);
@@ -66,7 +66,7 @@ fn test_gxl_cmd_with_hyphen_args() {
 #[test]
 fn test_gxl_cmd_multiple_flows() {
     // 测试 GxlCmd 多个流程的情况
-    let cmd = GxlCmd::try_parse_from(&["gxl", "-e", "prod", "build,test,deploy"])
+    let cmd = GxlCmd::try_parse_from(["gxl", "-e", "prod", "build,test,deploy"])
         .expect("Failed to parse command with multiple flows");
 
     assert!(cmd.cmd_args.is_empty());
@@ -76,7 +76,7 @@ fn test_gxl_cmd_multiple_flows() {
 #[test]
 fn test_gxl_cmd_separate_flows() {
     // 测试 GxlCmd 分离的多个流程的情况
-    let cmd = GxlCmd::try_parse_from(&["gxl", "-e", "staging", "build", "test", "deploy"])
+    let cmd = GxlCmd::try_parse_from(["gxl", "-e", "staging", "build", "test", "deploy"])
         .expect("Failed to parse command with separate flows");
 
     assert!(cmd.cmd_args.is_empty());
