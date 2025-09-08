@@ -1,7 +1,7 @@
 extern crate galaxy_flow;
 
 use clap::Parser;
-use galaxy_flow::cmd::{gxl_cmd::GFlowCmd, GxlCmd};
+use galaxy_flow::cmd::gxl_cmd::GFlowCmd;
 
 #[test]
 fn test_gxl_cmd_default() {
@@ -89,5 +89,3 @@ fn test_gxl_cmd_separate_flows() {
         ]
     );
 }
-
-

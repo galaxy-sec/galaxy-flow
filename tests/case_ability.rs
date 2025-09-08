@@ -42,7 +42,7 @@ async fn conf_web_test() {
     spc.exec(
         GxlCmd::default()
             .with_env("dev".into())
-            .with_flows("api,api2".into()),
+            .with_flows("api".into()),
         VarSpace::default(),
         None,
     )

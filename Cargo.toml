@@ -29,7 +29,8 @@ orion_conf = "~0.1"
 #orion-error = { git = "https://github.com/galaxy-sec/orion-error.git", tag = "v0.4.0" }
 #orion_conf = { git = "https://github.com/galaxy-sec/orion-common.git", tag = "v0.3.0" }
 orion-sec= { git = "https://github.com/galaxy-sec/orion-sec.git", tag = "v0.2.0" }
-orion-ai= { path = "../orion-ai"  }
+orion-ai= { git = "https://github.com/galaxy-sec/orion-ai.git", tag = "v0.2.1" }
+#orion-ai= { path = "../orion-ai"  }
 #orion-ai= { git = "https://github.com/galaxy-sec/orion-ai.git", branch = "main" }
 orion_infra = { git = "https://github.com/galaxy-sec/orion-infra.git", tag = "v0.3.1" }
 orion_variate = { git = "https://github.com/galaxy-sec/orion-variate.git", tag = "v0.9.1" }

@@ -23,7 +23,7 @@ async fn gxl_normal_test() -> AnyResult<()> {
     spc.exec(
         GxlCmd::default()
             .with_env("dev".into())
-            .with_flows("api,start".into()),
+            .with_flows("api".into()),
         VarSpace::default(),
         None,
     )

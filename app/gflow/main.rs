@@ -66,8 +66,9 @@ async fn main() -> RunResult<()> {
             Err(e) => {
                 report_gxl_error(e);
                 if cmd.ai
-                    && let Err(e) = ai_diagnose(&var_space).await {
-                        report_gxl_error(e);
+                    && let Err(e) = ai_diagnose(&var_space).await
+                {
+                    report_gxl_error(e);
                 }
             }
 

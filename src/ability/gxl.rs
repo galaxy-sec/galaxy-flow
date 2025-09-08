@@ -53,13 +53,7 @@ impl AsyncRunnableWithSenderTrait for GxRun {
         let _g = WorkDir::change(run_path.clone())
             .owe_res()
             .with(&run_path)?;
-        do_gxl_run(
-            cmd,
-            &vars_dict,
-            self.env_isolate,
-            sender,
-        )
-        .await?;
+        do_gxl_run(cmd, &vars_dict, self.env_isolate, sender).await?;
         action.finish();
         Ok(TaskValue::from((vars_dict, ExecOut::Action(action))))
     }
@@ -76,9 +70,7 @@ pub async fn do_gxl_run(
     sender: Option<Sender<ReadSignal>>,
 ) -> ExecResult<TaskValue> {
     let sub_var_space = VarSpace::inherit_init(vars_dict.clone(), isolate)?;
-    GxlRunner::run(cmd, sub_var_space, sender)
-        .await
-        .err_conv()
+    GxlRunner::run(cmd, sub_var_space, sender).await.err_conv()
 }
 
 #[cfg(test)]

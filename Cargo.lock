@@ -2159,7 +2159,8 @@ dependencies = [
 
 [[package]]
 name = "orion-ai"
-version = "0.2.0"
+version = "0.2.1"
+source = "git+https://github.com/galaxy-sec/orion-ai.git?tag=v0.2.1#4de78c6a1273ba8ec6e3dad01dfcb754217ed7d5"
 dependencies = [
  "anyhow",
  "async-trait",
