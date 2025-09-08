@@ -61,4 +61,24 @@ impl GxlRunner {
         }
         Err(RunReason::from_conf("gflow exec fail!".to_string()).into())
     }
+    pub async fn info(conf: Option<String>, vars: VarSpace) -> RunResult<()> {
+        if let Some(ref conf) = conf {
+            // 检查配置文件是否存在 / Check if configuration file exists
+            if !Path::new(conf.as_str()).exists() {
+                return Err(RunReason::from_conf("gflow conf not exists".to_string()).into())
+                    .with(("conf", conf.clone()));
+            }
+            let loader = GxLoader::new();
+
+            let spc = loader
+                .parse_file(conf.as_str(), false, &vars)
+                .await?
+                .assemble()
+                .err_conv()?;
+            spc.show().err_conv()?;
+            Ok(())
+        } else {
+            Err(RunReason::from_conf("gflow miss gxl file".to_string()).into())
+        }
+    }
 }

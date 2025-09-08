@@ -32,7 +32,7 @@ use orion_variate::vars::EnvDict;
 pub struct AiGxlCall {
     key: String,
     role: Option<String>,
-    task: Option<String>,
+    desp: String,
     config: Option<AiConfig>,
     flow: String,
     exe_unit: OnceLock<Arc<AiExecUnit>>,
@@ -45,7 +45,7 @@ impl Default for AiGxlCall {
         Self {
             key: String::new(),
             role: None,
-            task: None,
+            desp: "unknow".to_string(),
             config: None,
             flow: "unknow".to_string(),
             exe_unit: OnceLock::new(),
@@ -58,7 +58,7 @@ impl Default for AiGxlCall {
 impl AiGxlCall {
     pub async fn execute_call(&self) -> AiResult<ExecutionResult> {
         if let Some(exec_unit) = self.exe_unit.get() {
-            let task_prompt = self.task.as_deref().unwrap_or("请完成任务");
+            let task_prompt = self.desp();
             return exec_unit.execute_with_func(task_prompt).await;
         } else {
             unreachable!("ai-exec_unit not initialized. Call setup_exec_unit first.")
@@ -97,12 +97,12 @@ impl AiGxlCall {
         Ok(())
     }
     fn call_key(&self) -> String {
-        format!("gxl_{}", self.key)
+        format!("gxl-{}", self.key)
     }
     fn call_define(&self) -> FunctionDefinition {
         FunctionDefinition {
             name: self.call_key(),
-            description: self.task().clone().unwrap_or("gxl call".to_string()),
+            description: self.desp().clone(),
             parameters: vec![],
         }
     }

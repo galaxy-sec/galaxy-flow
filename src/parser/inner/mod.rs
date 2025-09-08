@@ -13,8 +13,9 @@ pub mod ver;
 pub use assert::gal_assert;
 pub use cmd::gal_cmd;
 
-pub mod ai;
-pub mod ai_fun;
+pub mod ai_chat;
+pub mod ai_regst;
+pub mod ai_task;
 pub use common::*;
 pub use load::*;
 pub use read::*;
