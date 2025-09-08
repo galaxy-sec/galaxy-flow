@@ -2,7 +2,7 @@
 use clap::ArgAction;
 use clap::Parser;
 use derive_getters::Getters;
-use galaxy_flow::cmd::GxlCmd;
+use galaxy_flow::cmd::gxl_cmd::GFlowCmd;
 
 #[derive(Debug, Parser, Clone)] // requires `derive` feature
 #[command(name = "gprj adm")]
@@ -12,7 +12,7 @@ pub enum GxAdmCmd {
     Init(InitCmd),
     #[command(subcommand)]
     Update(UpdateCmd),
-    Adm(GxlCmd),
+    Adm(GFlowCmd),
     #[command(subcommand)]
     Conf(ConfCmd),
     Check,

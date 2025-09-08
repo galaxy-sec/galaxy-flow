@@ -16,6 +16,7 @@ use args::ConfCmd;
 use args::UpdateCmd;
 use clap::Parser;
 use galaxy_flow::GxLoader;
+use galaxy_flow::cmd::gxl_cmd::GFlowCmd;
 use galaxy_flow::conf::conf_init;
 use galaxy_flow::conf::conf_path;
 use galaxy_flow::const_val::gxl_const::CONFIG_FILE;
@@ -75,15 +76,16 @@ impl GxAdm {
         Ok(())
     }
 
-    async fn do_adm_cmd(mut cmd: GxlCmd) -> RunResult<()> {
+    async fn do_adm_cmd(mut cmd: GFlowCmd) -> RunResult<()> {
         configure_run_logging(cmd.log.clone(), cmd.debug);
         debug!("galaxy flow running .....");
         if cmd.conf.is_none() {
             cmd.conf = Some("./_gal/adm.gxl".to_string());
         }
         let var_space = VarSpace::sys_init().err_conv()?;
-        for flow in &cmd.flows {
-            if let Err(e) = GxlRunner::run(cmd.clone(), flow.clone(), var_space.clone(), None).await
+        for cmd in &cmd.list_cmd() {
+            if let Err(e) =
+                GxlRunner::run(cmd.clone(), cmd.flows.clone(), var_space.clone(), None).await
             {
                 report_gxl_error(e);
                 if cmd.ai {

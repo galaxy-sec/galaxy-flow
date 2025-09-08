@@ -117,7 +117,7 @@ impl ComponentMeta for AiGxlCall {
 impl FunctionExecutor for AiGxlCall {
     async fn execute(&self, function_call: &FunctionCall) -> AiResult<FunctionResult> {
         let cmd = self.exe_cmd().get().cloned().expect("exe_cmd not exists");
-        let cmd = cmd.with_flows(vec![self.flow().clone()]);
+        let cmd = cmd.with_flows(self.flow().clone());
         let vars = self.exe_vars().get().cloned().expect("exe_vars not exists");
         let task_value = do_gxl_run(cmd, self.flow.clone(), &vars, true, None)
             .await

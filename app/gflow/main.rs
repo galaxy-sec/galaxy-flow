@@ -3,16 +3,17 @@ extern crate log;
 extern crate clap;
 
 use clap::Parser;
+use galaxy_flow::cmd::gxl_cmd::GFlowCmd;
 use galaxy_flow::conf::load_gxl_config;
 use galaxy_flow::const_val::gxl_const;
 use galaxy_flow::err::{RunResult, report_gxl_error};
 use galaxy_flow::execution::VarSpace;
 use galaxy_flow::infra::configure_run_logging;
 use galaxy_flow::model::task_report::task_rc_config::init_redirect_and_parent_task;
+use galaxy_flow::runner::GxlRunner;
 use galaxy_flow::traits::Setter;
 use galaxy_flow::util::diagnose::ai_diagnose;
 use galaxy_flow::util::redirect::stop_redirect;
-use galaxy_flow::{cmd::GxlCmd, runner::GxlRunner};
 use orion_ai::GlobalFunctionRegistry;
 use orion_error::{ErrorConv, UvsBizFrom};
 use std::env;
@@ -25,7 +26,7 @@ async fn main() -> RunResult<()> {
 
     // 检查是否请求版本信息
 
-    let mut cmd = GxlCmd::parse();
+    let mut cmd = GFlowCmd::parse();
     // 加载task配置
 
     configure_run_logging(cmd.log.clone(), cmd.debug);
@@ -60,8 +61,8 @@ async fn main() -> RunResult<()> {
     var_space
         .global_mut()
         .set(gxl_const::CMD_MODUP, cmd.mod_update);
-    for flow in &cmd.flows {
-        match GxlRunner::run(cmd.clone(), flow.clone(), var_space.clone(), None).await {
+    for cmd in cmd.list_cmd() {
+        match GxlRunner::run(cmd.clone(), cmd.flows.clone(), var_space.clone(), None).await {
             Err(e) => {
                 report_gxl_error(e);
                 if cmd.ai {

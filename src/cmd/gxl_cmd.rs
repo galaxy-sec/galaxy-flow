@@ -1,6 +1,58 @@
 use clap::{ArgAction, Parser};
-use getset::{Setters, WithSetters};
+use getset::{Getters, Setters, WithSetters};
 
+#[derive(Debug, Clone, WithSetters, Setters, Getters)] // requires `derive` feature
+#[getset(set_with = "pub", get = "pub")]
+pub struct GxlCmd {
+    env: String,
+
+    pub flows: String,
+
+    pub debug: usize,
+
+    pub conf: Option<String>,
+
+    pub log: Option<String>,
+
+    pub quiet: bool,
+
+    pub cmd_args: Vec<String>,
+
+    pub dryrun: bool,
+    pub ai: bool,
+    pub mod_update: bool,
+}
+
+impl GxlCmd {
+    pub fn get_env_list(&self) -> Vec<String> {
+        if self.env.is_empty() {
+            Vec::new()
+        } else {
+            self.env
+                .split(',')
+                .map(|s| s.trim().to_string())
+                .filter(|s| !s.is_empty())
+                .collect()
+        }
+    }
+}
+
+impl Default for GxlCmd {
+    fn default() -> Self {
+        Self {
+            env: "default".to_string(),
+            flows: "unknow".to_string(),
+            debug: 0,
+            conf: None,
+            log: None,
+            quiet: false,
+            cmd_args: Vec::new(),
+            dryrun: false,
+            ai: false,
+            mod_update: false,
+        }
+    }
+}
 /// Galaxy Flow Command Line Interface
 ///
 /// GxlCmd是Galaxy Flow的命令行接口结构体，用于解析和处理命令行参数。
@@ -14,7 +66,7 @@ use getset::{Setters, WithSetters};
     after_help = "Examples:\n  gxl -e dev -f ./config.gxl flow1 flow2\n  gxl -e prod --cmd-arg \"-x -y\" flow1\n  gxl -e test --dryrun flow1\n\n示例：\n  gxl -e dev -f ./config.gxl flow1 flow2\n  gxl -e prod --cmd-arg \"-x -y\" flow1\n  gxl -e test --dryrun flow1"
 )]
 #[getset(set_with = "pub")]
-pub struct GxlCmd {
+pub struct GFlowCmd {
     /// 环境名称 / Environment name
     ///
     /// 指定运行环境，例如：dev, test, prod
@@ -116,7 +168,7 @@ pub struct GxlCmd {
     pub mod_update: bool,
 }
 
-impl GxlCmd {
+impl GFlowCmd {
     /// 获取所有流程名称
     ///
     /// 合并flows和flow_names字段，返回所有要执行的流程名称列表
@@ -181,21 +233,22 @@ impl GxlCmd {
         }
         Ok(())
     }
-}
-
-impl Default for GxlCmd {
-    fn default() -> Self {
-        Self {
-            env: "default".to_string(),
-            flows: Vec::new(),
-            debug: 0,
-            conf: None,
-            log: None,
-            quiet: false,
-            cmd_args: Vec::new(),
-            dryrun: false,
-            ai: false,
-            mod_update: false,
+    pub fn list_cmd(&self) -> Vec<GxlCmd> {
+        let mut cmds = Vec::new();
+        for flow in self.get_all_flows() {
+            cmds.push(GxlCmd {
+                env: self.env.clone(),
+                flows: flow.clone(),
+                debug: self.debug,
+                conf: self.conf.clone(),
+                log: self.log.clone(),
+                quiet: self.quiet,
+                cmd_args: self.cmd_args.clone(),
+                dryrun: self.dryrun,
+                ai: self.ai,
+                mod_update: self.mod_update,
+            })
         }
+        cmds
     }
 }

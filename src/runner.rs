@@ -39,11 +39,6 @@ impl GxlRunner {
         vars: VarSpace,
         sender: Option<Sender<ReadSignal>>,
     ) -> RunResult<TaskValue> {
-        // 验证参数 / Validate parameters
-        if let Err(err) = cmd.validate() {
-            return Err(RunReason::Args(err).into());
-        }
-
         let loader = GxLoader::new();
         if let Some(ref conf) = cmd.conf {
             // 检查配置文件是否存在 / Check if configuration file exists

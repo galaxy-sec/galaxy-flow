@@ -199,7 +199,6 @@ impl GxlSpace {
     pub async fn exec<S: Into<String>>(
         &self,
         cmd: GxlCmd,
-        flow: S,
         var_space: VarSpace,
         sender: Option<Sender<ReadSignal>>,
     ) -> RunResult<TaskValue> {
@@ -207,9 +206,8 @@ impl GxlSpace {
             target: "execution",
             "Starting execution stack with output: {:?}", cmd.quiet,
         );
-        let flow = flow.into();
         let envs: Vec<String> = cmd.get_env_list();
-        warn!(target : "exec","Executing with envs: {}, flows: {flow}", envs.join(",") );
+        warn!(target : "exec","Executing with envs: {}, flow:{}", envs.join(",") , cmd.flows() );
         warn!(target : "exec","inherted vars :\n{}", var_space.inherited());
         info!(target : "exec","inherted vars :\n{}", var_space.global());
 
