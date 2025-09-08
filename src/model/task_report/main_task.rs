@@ -1,10 +1,10 @@
 use crate::{
-    task_report::task_rc_config::{build_task_url, report_enable, TaskUrlType},
+    task_report::task_rc_config::{TaskUrlType, build_task_url, report_enable},
     util::http_handle::send_http_request,
 };
 use serde::Serialize;
 use std::env;
-use time::{format_description, OffsetDateTime};
+use time::{OffsetDateTime, format_description};
 
 #[derive(Debug, Serialize, Clone)]
 pub struct MainTask {
@@ -18,7 +18,9 @@ pub struct MainTask {
 pub async fn create_main_task(task_name: String) {
     let datetime = OffsetDateTime::now_local().unwrap_or_else(|_| OffsetDateTime::now_utc());
     let parent_id = datetime.unix_timestamp();
-    std::env::set_var("task_id", parent_id.to_string());
+    unsafe {
+        std::env::set_var("task_id", parent_id.to_string());
+    }
     // 检查报告中心是否启用
     // 如果未启用，则不创建主任务,直接返回
     if !report_enable().await {
