@@ -1,5 +1,7 @@
 use crate::ability::prelude::*;
+use crate::ability::GxCmd;
 use crate::ability::GxRun;
+use crate::cmd::GxlCmd;
 use crate::execution::runnable::AsyncRunnableWithSenderTrait;
 use crate::util::OptionFrom;
 use async_trait::async_trait;
@@ -32,6 +34,7 @@ pub struct AiGxlCall {
     flow: String,
     exe_unit: OnceLock<Arc<AiExecUnit>>,
     exe_vars: OnceLock<VarSpace>,
+    exe_cmd: OnceLock<GxlCmd>,
 }
 
 impl Default for AiGxlCall {
@@ -44,14 +47,12 @@ impl Default for AiGxlCall {
             flow: "unknow".to_string(),
             exe_unit: OnceLock::new(),
             exe_vars: OnceLock::new(),
+            exe_cmd: OnceLock::new(),
         }
     }
 }
 
 impl AiGxlCall {
-    /// 执行AI任务
-    ///
-    /// 这是主要的执行入口点，负责协调整个AI任务的执行流程。
     pub async fn execute_call(&self) -> AiResult<ExecutionResult> {
         if let Some(exec_unit) = self.exe_unit.get() {
             let task_prompt = self.task.as_deref().unwrap_or("请完成任务");
@@ -64,7 +65,7 @@ impl AiGxlCall {
     /// 创建执行单元
     ///
     /// 使用配置创建AI执行单元，封装客户端、角色和函数注册表。
-    fn setup_exec_unit(&self, vars: &VarSpace) -> ExecResult<()> {
+    fn setup_exec_unit(&self, ctx: ExecContext, vars: &VarSpace) -> ExecResult<()> {
         // 使用构建器创建执行单元
         if self.exe_unit.get().is_none() {
             let exec_unit = Arc::new(
@@ -83,6 +84,11 @@ impl AiGxlCall {
         if self.exe_vars.get().is_none() {
             self.exe_vars
                 .set(vars.clone())
+                .expect("OnceLock should not be already set");
+        }
+        if self.exe_cmd.get().is_none() {
+            self.exe_cmd
+                .set(ctx.gxl_cmd().as_ref().clone())
                 .expect("OnceLock should not be already set");
         }
         Ok(())
@@ -107,6 +113,12 @@ impl ComponentMeta for AiGxlCall {
 #[async_trait::async_trait]
 impl FunctionExecutor for AiGxlCall {
     async fn execute(&self, function_call: &FunctionCall) -> AiResult<FunctionResult> {
+        let cmd = self.exe_cmd().get().clone().expect("exe_cmd not exists");
+        let cmd = cmd.with_flows(vec![self.flow().clone()]);
+        let vars = self.exe_vars().get().cloned().expect("exe_vars not exists");
+        //let run_path = PathBuf::from(exp.eval(&self.run_path)?);
+        do_gxl_run(run_path, cmd, &vars, true, None).await?;
+
         let gxl = GxRun::new("./", "./", "env", vec![self.flow.clone()], true);
         let result = gxl
             .async_exec(
@@ -142,9 +154,9 @@ impl FunctionExecutor for AiGxlCall {
 
 #[async_trait]
 impl AsyncRunnableTrait for AiGxlCall {
-    async fn async_exec(&self, _ctx: ExecContext, vars: VarSpace) -> TaskResult {
+    async fn async_exec(&self, ctx: ExecContext, vars: VarSpace) -> TaskResult {
         let fun_key = self.call_key();
-        self.setup_exec_unit(&vars)?;
+        self.setup_exec_unit(ctx, &vars)?;
         GlobalFunctionRegistry::register_function(self.call_define()).err_conv()?;
         GlobalFunctionRegistry::register_executor(fun_key, Arc::new(self.clone())).err_conv()?;
         Ok(TaskValue::new(vars, ExecOut::Ignore))

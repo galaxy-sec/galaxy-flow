@@ -42,7 +42,6 @@ impl GxlRunner {
             return Err(RunReason::Args(err).into());
         }
 
-        // 创建配置加载器 / Create configuration loader
         let loader = GxLoader::new();
         if let Some(ref conf) = cmd.conf {
             // 检查配置文件是否存在 / Check if configuration file exists
@@ -50,17 +49,13 @@ impl GxlRunner {
                 return Err(RunReason::from_conf("gflow conf not exists".to_string()).into())
                     .with(("conf", conf.clone()));
             }
-            // 解析配置文件并组装空间 / Parse configuration file and assemble space
+
             let spc = loader
                 .parse_file(conf.as_str(), cmd.mod_update, &vars)
                 .await?
                 .assemble()
                 .err_conv()?;
-            // 确定要执行的流程列表 / Determine the list of flows to execute
-            // 使用get_all_flows方法获取所有流程名称
-            // Use get_all_flows method to get all flow names
 
-            // 如果没有指定流程，只显示配置信息 / If no flows are specified, only show configuration information
             if cmd.flows.is_empty() {
                 spc.show().err_conv()?;
                 return Ok(());

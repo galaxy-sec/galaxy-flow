@@ -1,9 +1,11 @@
+use std::path::PathBuf;
 use std::sync::mpsc::Sender;
 
 use orion_error::ErrorConv;
 
 use crate::ability::prelude::*;
 
+use crate::cmd::GxlCmd;
 use crate::execution::runnable::AsyncRunnableWithSenderTrait;
 use crate::util::redirect::ReadSignal;
 use crate::{runner::GxlRunner, util::path::WorkDir};
@@ -53,15 +55,8 @@ impl AsyncRunnableWithSenderTrait for GxRun {
             .with_env(exp.eval(&self.env_conf)?)
             .with_conf(Some(exp.eval(&self.gxl_path)?));
 
-        let run_path = exp.eval(&self.run_path)?;
-        let _g = WorkDir::change(run_path)
-            .owe_res()
-            .with(self.run_path().clone())?;
-        debug!(target:ctx.path(), "{cmd:#?}");
-        let sub_var_space = VarSpace::inherit_init(vars_dict.clone(), self.env_isolate)?;
-        GxlRunner::run(cmd, sub_var_space, sender)
-            .await
-            .err_conv()?;
+        let run_path = PathBuf::from(exp.eval(&self.run_path)?);
+        do_gxl_run(run_path, cmd, &vars_dict, self.env_isolate, sender).await?;
         action.finish();
         Ok(TaskValue::from((vars_dict, ExecOut::Action(action))))
     }
@@ -70,6 +65,22 @@ impl ComponentMeta for GxRun {
     fn gxl_meta(&self) -> GxlMeta {
         GxlMeta::from("gx.gxl")
     }
+}
+pub async fn do_gxl_run(
+    run_path: PathBuf,
+    cmd: GxlCmd,
+    vars_dict: &VarSpace,
+    isolate: bool,
+    sender: Option<Sender<ReadSignal>>,
+) -> ExecResult<()> {
+    let _g = WorkDir::change(run_path.clone())
+        .owe_res()
+        .with(&run_path)?;
+    let sub_var_space = VarSpace::inherit_init(vars_dict.clone(), isolate)?;
+    GxlRunner::run(cmd, sub_var_space, sender)
+        .await
+        .err_conv()?;
+    Ok(())
 }
 
 #[cfg(test)]
