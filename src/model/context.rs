@@ -1,30 +1,45 @@
 use std::collections::HashMap;
 use std::env;
 
+use std::sync::Arc;
+
+use getset::{CopyGetters, Getters};
+
+use crate::cmd::GxlCmd;
 use crate::friendly::AppendAble;
 
-#[derive(Debug, Clone, Default, Getters)]
+#[derive(Debug, Clone, Default, Getters, CopyGetters)]
 pub struct ExecContext {
+    #[getset(get = "pub")]
     env_vars: HashMap<String, String>,
+    #[getset(get = "pub")]
     abs_path: String,
+    #[getset(get = "pub")]
     cur_path: String,
-    #[getter(copy)]
-    quiet: Option<bool>,
-    dryrun: bool,
-    //accessor: Rc<UniversalAccessor>,
+    //#[getset(get_copy = "pub")]
+    //quiet: Option<bool>,
+    //#[getset(get = "pub")]
+    //dryrun: bool,
+    #[getset(get = "pub")]
+    gxl_cmd: Arc<GxlCmd>,
 }
 impl ExecContext {
-    pub fn new(out: Option<bool>, dryrun: bool) -> Self {
+    pub fn new(cmd: GxlCmd) -> Self {
         let cur_path = env::current_dir().unwrap();
         let cur_path = cur_path.as_path().to_str().unwrap();
 
         ExecContext {
             abs_path: String::from(""),
             cur_path: String::from(cur_path),
-            quiet: out,
-            dryrun,
+            gxl_cmd: Arc::new(cmd),
             ..Default::default()
         }
+    }
+    pub fn dryrun(&self) -> bool {
+        self.gxl_cmd().dryrun
+    }
+    pub fn quiet(&self) -> bool {
+        self.gxl_cmd().quiet
     }
 
     pub fn path(&self) -> &str {

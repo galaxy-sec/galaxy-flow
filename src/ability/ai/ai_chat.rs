@@ -3,7 +3,7 @@ use orion_error::ErrorConv;
 use orion_variate::vars::EnvDict;
 use std::path::PathBuf;
 
-use crate::ability::prelude::*;
+use crate::ability::{ai::AI_CONTENT, prelude::*};
 use crate::model::traits::Setter;
 use getset::{Getters, MutGetters, Setters};
 use orion_error::{ToStructError, UvsResFrom};
@@ -18,14 +18,14 @@ use orion_sec::sec::{SecFrom, SecValueType};
 ///
 #[derive(Clone, Debug, Default, Getters, MutGetters, Setters)]
 #[getset(get = "pub", set = "pub", get_mut = "pub", set_with = "pub")]
-pub struct ChatExecutor {
+pub struct AiChatExecutor {
     prompt_file: Option<String>,
     prompt_msg: Option<String>,
     config: Option<AiConfig>,
     role: Option<String>,
 }
 
-impl ChatExecutor {
+impl AiChatExecutor {
     /// 执行AI聊天任务
     ///
     /// 这是主要的执行入口点，负责协调AI对话的整个执行流程。
@@ -54,7 +54,7 @@ impl ChatExecutor {
 
         // 存储结果
         vars.global_mut()
-            .set("AI".to_string(), SecValueType::nor_from(response.clone()));
+            .set(AI_CONTENT, SecValueType::nor_from(response.clone()));
 
         action.finish();
         Ok(TaskValue::from((vars, ExecOut::Action(action))))
@@ -76,8 +76,6 @@ impl ChatExecutor {
         // 执行AI请求
         let response = exec_unit.execute(message).await.err_conv()?;
 
-        //let timestamp = Local::now().to_rfc3339();
-
         println!(
             "AI Response:\nContent: {}\nModel: {:#?}\n",
             response.content, response.metadata
@@ -86,14 +84,14 @@ impl ChatExecutor {
     }
 }
 
-impl ComponentMeta for ChatExecutor {
+impl ComponentMeta for AiChatExecutor {
     fn gxl_meta(&self) -> GxlMeta {
         GxlMeta::from("gx.ai_chat")
     }
 }
 
 #[async_trait]
-impl AsyncRunnableTrait for ChatExecutor {
+impl AsyncRunnableTrait for AiChatExecutor {
     async fn async_exec(&self, ctx: ExecContext, vars: VarSpace) -> TaskResult {
         self.execute(ctx, vars).await
     }
@@ -102,11 +100,16 @@ impl AsyncRunnableTrait for ChatExecutor {
 #[cfg(test)]
 mod tests {
 
+    use orion_ai::GlobalFunctionRegistry;
+    use orion_error::TestAssert;
+
+    use crate::{ability::ai::AI_CONTENT, infra::once_init_log};
+
     use super::*;
 
     #[tokio::test]
     async fn test_default_values() {
-        let executor = ChatExecutor::default();
+        let executor = AiChatExecutor::default();
 
         assert!(executor.prompt_file().is_none());
         assert!(executor.prompt_msg().is_none());
@@ -116,7 +119,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_builder_pattern() {
-        let mut executor = ChatExecutor::default();
+        let mut executor = AiChatExecutor::default();
         executor.set_role(Some("developer".to_string()));
         executor.set_prompt_msg(Some("test message".to_string()));
         executor.set_prompt_file(Some("test.txt".to_string()));
@@ -128,25 +131,24 @@ mod tests {
 
     #[tokio::test]
     async fn test_component_meta() {
-        let executor = ChatExecutor::default();
+        let executor = AiChatExecutor::default();
         let meta = executor.gxl_meta();
 
         assert_eq!(meta, GxlMeta::from("gx.ai_chat"));
     }
 
     #[tokio::test]
-    async fn test_clone_and_debug() {
-        let mut executor = ChatExecutor::default();
+    async fn test_basic_ai_execution() -> ExecResult<()> {
+        once_init_log();
+        GlobalFunctionRegistry::initialize().assert();
+        let mut executor = AiChatExecutor::default();
         executor.set_role(Some("developer".to_string()));
-        executor.set_prompt_msg(Some("test message".to_string()));
+        executor.set_prompt_msg(Some("请回答：1+1=?".to_string()));
+        let x = executor
+            .async_exec(ExecContext::default(), VarSpace::sys_init()?)
+            .await?;
 
-        // 测试Clone trait
-        let cloned = executor.clone();
-        assert_eq!(cloned.role(), executor.role());
-        assert_eq!(cloned.prompt_msg(), executor.prompt_msg());
-
-        // 测试Debug trait
-        let debug_str = format!("{:?}", executor);
-        assert!(debug_str.contains("ChatExecutor"));
+        println!("{:#}", x.vars.get(AI_CONTENT).assert());
+        Ok(())
     }
 }

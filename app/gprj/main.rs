@@ -22,9 +22,9 @@ use galaxy_flow::err::*;
 use galaxy_flow::execution::VarSpace;
 use galaxy_flow::galaxy::Galaxy;
 use galaxy_flow::infra::configure_run_logging;
-use galaxy_flow::runner::{GxlCmd, GxlRunner};
 use galaxy_flow::util::diagnose::ai_diagnose;
 use galaxy_flow::GxLoader;
+use galaxy_flow::{cmd::GxlCmd, runner::GxlRunner};
 use include_dir::{include_dir, Dir};
 use orion_error::ErrorConv;
 use orion_variate::addr::GitRepository;
@@ -210,18 +210,11 @@ mod tests {
         let result = init_local(Some(init_local_path.clone()));
         assert!(result.is_ok());
         let _cur = WorkDir::change(init_local_path).assert();
-        GxAdm::do_adm_cmd(GxlCmd {
-            conf: Some("./_gal/adm.gxl".to_string()),
-            log: None,
-            debug: 0,
-            env: "default".into(),
-            flow: vec!["echo".into()],
-            quiet: Some(true),
-            cmd_arg: String::new(),
-            dryrun: false,
-            mod_update: false,
-            ai: false,
-        })
+        GxAdm::do_adm_cmd(
+            GxlCmd::default()
+                .with_conf(Some("./_gal/adm.gxl".into()))
+                .with_flows(vec!["echo".into()]),
+        )
         .await
         .assert();
     }

@@ -1,6 +1,6 @@
 use orion_variate::opt::OptionFrom;
 
-use crate::ability::ai::ai_executor::AiExecutor as GxAIFun;
+use crate::ability::ai::ai_task::AiTaskExecutor as GxAIFun;
 use crate::parser::inner::prelude::*;
 
 pub fn gal_ai_fun(input: &mut &str) -> Result<GxAIFun> {

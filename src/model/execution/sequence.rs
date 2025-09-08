@@ -160,7 +160,7 @@ fn build_exec_queue(
     item: &ComHold,
 ) -> ExecResult<VecDeque<ComHold>> {
     let mut sub_queue = VecDeque::new();
-    if *ctx.dryrun() {
+    if ctx.dryrun() {
         if let Some(dryrun_meta) = item.dryrun_hold() {
             let mut sequ = ExecSequence::default();
             spc.find_flow(&dryrun_meta, &mut sequ).err_conv()?;

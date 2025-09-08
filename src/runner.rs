@@ -1,26 +1,53 @@
 use crate::{
+    cmd::GxlCmd,
     err::{RunReason, RunResult},
     execution::VarSpace,
-    infra::DfxArgsGetter,
     util::redirect::ReadSignal,
     GxLoader,
 };
-use clap::ArgAction;
 use orion_error::{ErrorConv, ErrorWith, UvsConfFrom};
 use std::{path::Path, sync::mpsc::Sender};
 
+/// Galaxy Flow 运行器
+///
+/// GxlRunner负责执行GxlCmd命令，加载配置文件并运行指定的流程。
+///
+/// Galaxy Flow Runner
+///
+/// GxlRunner is responsible for executing GxlCmd commands, loading configuration files, and running specified flows.
 pub struct GxlRunner {}
 impl GxlRunner {
+    /// 执行Galaxy Flow命令
+    ///
+    /// 此方法执行以下步骤：
+    /// 1. 验证命令参数
+    /// 2. 加载配置文件
+    /// 3. 解析流程名称
+    /// 4. 执行指定的流程
+    ///
+    /// Execute Galaxy Flow command
+    ///
+    /// This method performs the following steps:
+    /// 1. Validate command parameters
+    /// 2. Load configuration file
+    /// 3. Parse flow names
+    /// 4. Execute specified flows
     pub async fn run(
         cmd: GxlCmd,
         vars: VarSpace,
         sender: Option<Sender<ReadSignal>>,
     ) -> RunResult<()> {
+        // 验证参数 / Validate parameters
+        if let Err(err) = cmd.validate() {
+            return Err(RunReason::Args(err).into());
+        }
+
         let loader = GxLoader::new();
-        if let Some(conf) = cmd.conf {
+        if let Some(ref conf) = cmd.conf {
+            // 检查配置文件是否存在 / Check if configuration file exists
             if !Path::new(conf.as_str()).exists() {
                 return Err(RunReason::from_conf("gflow conf not exists".to_string()).into())
-                    .with(("conf", conf));
+                    .with(("conf", conf.clone()));
             }
 
             let spc = loader
@@ -28,70 +55,18 @@ impl GxlRunner {
                 .await?
                 .assemble()
                 .err_conv()?;
-            if cmd.flow.is_empty() {
+
+            if cmd.flows.is_empty() {
                 spc.show().err_conv()?;
                 return Ok(());
             } else {
-                let envs: Vec<String> = cmd.env.split(',').map(String::from).collect();
-                let flws: Vec<String> = if cmd.flow.len() == 1 {
-                    cmd.flow[0].split(',').map(String::from).collect()
-                } else {
-                    cmd.flow.clone()
-                    //cmd.flow.iter().collect()
-                };
-                spc.exec(envs, flws, cmd.quiet, cmd.dryrun, vars, sender)
-                    .await?;
+                // 解析环境列表 / Parse environment list
+                spc.exec(cmd, vars, sender).await?;
                 println!("\ngod job!");
             }
             Ok(())
         } else {
             Err(RunReason::from_conf("gflow conf is empty".to_string()).into())
         }
-    }
-}
-use clap::Parser;
-
-#[derive(Parser, Debug, Clone)] // requires `derive` feature
-#[command(version, about, long_about = None,)]
-pub struct GxlCmd {
-    /// env name ; eg: -e dev
-    #[arg(short = 'e', long = "env", default_value = "default")]
-    pub env: String,
-    /// flow name ; eg: conf,test,package
-    pub flow: Vec<String>,
-    /// debug level ; eg: -d 1
-    #[arg(short = 'd', long = "debug", default_value = "0")]
-    pub debug: usize,
-    /// conf file ;  default is  work(./_rg/work.gxl) adm (./_rg/adm.gxl)
-    #[arg(short = 'f', long = "conf")]
-    pub conf: Option<String>,
-    /// config log ; eg: --log  cmd=debug,parse=info
-    #[arg(long = "log")]
-    pub log: Option<String>,
-    #[arg(short = 'q', long = "quiet")]
-    pub quiet: Option<bool>,
-    #[arg( allow_hyphen_values = true,  // 关键设置：允许值以 - 开头
-        last = true,                 // 关键设置：捕获所有剩余参数
-        value_name = "cmd_args",
-        default_value = ""
-    )]
-    pub cmd_arg: String,
-    /// run at dryrun mode
-    #[arg(long = "dryrun", action = ArgAction::SetTrue, default_value = "false")]
-    pub dryrun: bool,
-
-    #[arg(long = "ai", action = ArgAction::SetTrue, default_value = "false")]
-    pub ai: bool,
-    ///update remote gxl mod
-    #[arg(long = "mod_up", action = ArgAction::SetTrue, default_value = "false")]
-    pub mod_update: bool,
-}
-impl DfxArgsGetter for GxlCmd {
-    fn debug_level(&self) -> usize {
-        self.debug
-    }
-
-    fn log_setting(&self) -> Option<String> {
-        self.log.clone()
     }
 }

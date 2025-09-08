@@ -42,10 +42,7 @@ impl GxShell {
         let ext_cmd = exp.eval(self.shell.as_str())?;
         let mut expect = self.expect.clone();
 
-        // 若未设置全局输出模式，则使用局部模式
-        if let Some(quiet) = ctx.quiet() {
-            expect.quiet = quiet;
-        }
+        expect.quiet = ctx.quiet();
         if let Some(arg_file) = &self.arg_file {
             let dict = if arg_file.extension() == PathBuf::from("data.json").extension() {
                 ValueDict::from_json(arg_file)

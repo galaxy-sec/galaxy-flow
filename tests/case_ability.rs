@@ -1,5 +1,6 @@
 extern crate galaxy_flow;
 
+use galaxy_flow::cmd::GxlCmd;
 use galaxy_flow::execution::VarSpace;
 use galaxy_flow::infra::once_init_log;
 use galaxy_flow::types::AnyResult;
@@ -18,10 +19,9 @@ async fn conf_base_test() -> AnyResult<()> {
         .assemble()
         .assert();
     spc.exec(
-        vec!["default".into()],
-        vec!["test".into()],
-        Some(false),
-        false,
+        GxlCmd::default()
+            .with_env("default".into())
+            .with_flows(vec!["test".into()]),
         VarSpace::default(),
         None,
     )
@@ -42,10 +42,9 @@ async fn conf_web_test() {
         .assemble()
         .assert();
     spc.exec(
-        vec!["dev".into()],
-        vec!["api".into(), "api2".into()],
-        Some(false),
-        false,
+        GxlCmd::default()
+            .with_env("dev".into())
+            .with_flows(vec!["api".into(), "api2".into()]),
         VarSpace::default(),
         None,
     )

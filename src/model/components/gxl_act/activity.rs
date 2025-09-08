@@ -91,10 +91,7 @@ impl Activity {
 
         //let mut opt = dict.get("expect").clone();
         let mut opt = ShellOption::new();
-        // 若未设置全局的输出模式，则使用局部模式
-        if let Some(quiet) = ctx.quiet() {
-            opt.quiet = quiet;
-        }
+        opt.quiet = ctx.quiet();
 
         gxl_sh!(
             LogicScope::Outer,
@@ -132,6 +129,7 @@ mod tests {
 
     use crate::{
         ability::ability_env_init,
+        cmd::GxlCmd,
         context::ExecContext,
         primitive::{GxlAParam, GxlFParam},
         util::OptionFrom,
@@ -153,7 +151,7 @@ mod tests {
         let activity = Activity::new(meta);
 
         // Create context
-        let ctx = ExecContext::new(Some(false), false);
+        let ctx = ExecContext::new(GxlCmd::default());
 
         // Create var space with executer
         let vars = VarSpace::default();

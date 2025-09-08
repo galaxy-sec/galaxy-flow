@@ -1,7 +1,7 @@
 default_role:
   id: galactiward
-default_model: glm-4.5
-#default_model: deepseek-chat
+#default_model: glm-4.5
+default_model: deepseek-chat
 roles:
   operations:
     name: operations

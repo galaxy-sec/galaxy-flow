@@ -9,7 +9,7 @@ use galaxy_flow::err::{report_gxl_error, RunResult};
 use galaxy_flow::execution::VarSpace;
 use galaxy_flow::infra::configure_run_logging;
 use galaxy_flow::model::task_report::task_rc_config::init_redirect_and_parent_task;
-use galaxy_flow::runner::{GxlCmd, GxlRunner};
+use galaxy_flow::{cmd::GxlCmd, runner::GxlRunner};
 use galaxy_flow::traits::Setter;
 use galaxy_flow::util::diagnose::ai_diagnose;
 use galaxy_flow::util::redirect::stop_redirect;
@@ -42,7 +42,7 @@ async fn main() -> RunResult<()> {
     }
     println!("✅ 全局函数注册表初始化完成");
 
-    let redirect = init_redirect_and_parent_task(cmd.flow.concat(), cmd.ai)
+    let redirect = init_redirect_and_parent_task(cmd.flows.concat(), cmd.ai)
         .await
         .err_conv()?;
     println!("galaxy-flow : {}", env!("CARGO_PKG_VERSION"));
@@ -53,7 +53,7 @@ async fn main() -> RunResult<()> {
     }
     var_space
         .global_mut()
-        .set(gxl_const::CMD_ARG, cmd.cmd_arg.clone());
+        .set(gxl_const::CMD_ARG, cmd.cmd_args.join(" "));
     var_space
         .global_mut()
         .set(gxl_const::CMD_DRYRUN, cmd.dryrun);

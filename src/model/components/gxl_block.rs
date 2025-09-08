@@ -7,8 +7,8 @@ use async_trait::async_trait;
 use derive_more::From;
 use std::sync::mpsc::Sender;
 
-use crate::ability::ai::ai_executor::AiExecutor;
-use crate::ability::ai::chat_executor::ChatExecutor;
+use crate::ability::ai::ai_chat::AiChatExecutor;
+use crate::ability::ai::ai_task::AiTaskExecutor;
 use crate::ability::archive::GxTar;
 use crate::ability::archive::GxUnTar;
 use crate::ability::delegate::ActCall;
@@ -25,8 +25,8 @@ use crate::util::redirect::ReadSignal;
 
 #[derive(Clone, From)]
 pub enum BlockAction {
-    AiChat(ChatExecutor),
-    AiFun(AiExecutor),
+    AiChat(AiChatExecutor),
+    AiFun(AiTaskExecutor),
     Shell(GxShell),
     Command(GxCmd),
     GxlRun(GxRun),
@@ -180,7 +180,7 @@ impl AppendAble<Vec<BlockAction>> for BlockNode {
 #[cfg(test)]
 mod tests {
 
-    use crate::friendly::New2;
+    use crate::{cmd::GxlCmd, friendly::New2};
     use orion_sec::sec::{NoSecConv, SecFrom, SecValueObj, SecValueType, SecValueVec};
     use orion_variate::vars::UpperKey;
 
@@ -200,7 +200,7 @@ mod tests {
         let mut block = BlockNode::new();
         let prop = GxlVar::new("test", "hello");
         block.append(prop);
-        let ctx = ExecContext::new(Some(false), false);
+        let ctx = ExecContext::new(GxlCmd::default());
         let def = VarSpace::default();
         let res = block.async_exec(ctx, def, None).await;
         assert!(res.is_ok());
@@ -247,7 +247,7 @@ mod tests {
         ));
 
         // 创建执行上下文
-        let ctx = ExecContext::new(Some(false), false);
+        let ctx = ExecContext::new(GxlCmd::default());
         let mut var_dict = VarDict::default();
 
         // 导出 props

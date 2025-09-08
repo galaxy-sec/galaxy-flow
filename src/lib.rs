@@ -35,6 +35,7 @@ pub mod err;
 pub mod model;
 pub mod ability;
 pub mod calculate;
+pub mod cmd;
 pub mod conf;
 pub mod const_val;
 pub mod debug;
