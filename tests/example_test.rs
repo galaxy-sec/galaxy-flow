@@ -20,9 +20,7 @@ mod tests {
             .assemble()
             .assert();
         spc.exec(
-            GxlCmd::default(),
-            vec!["default".into()],
-            vec!["conf".into()],
+            GxlCmd::default().with_flows(vec!["conf".into()]),
             VarSpace::default(),
             None,
         )
@@ -42,9 +40,7 @@ mod tests {
             .assemble()
             .assert();
         spc.exec(
-            GxlCmd::default(),
-            vec!["default".into()],
-            vec!["conf".into()],
+            GxlCmd::default().with_flows(vec!["conf".into()]),
             VarSpace::default(),
             None,
         )
@@ -64,9 +60,7 @@ mod tests {
             .assemble()
             .assert();
         spc.exec(
-            GxlCmd::default(),
-            vec!["default".into()],
-            vec!["conf".into()],
+            GxlCmd::default().with_flows(vec!["conf".into()]),
             VarSpace::default(),
             None,
         )
@@ -85,9 +79,7 @@ mod tests {
             .assemble()
             .assert();
         spc.exec(
-            GxlCmd::default(),
-            vec!["default".into()],
-            vec!["assert_main".into()],
+            GxlCmd::default().with_flows(vec!["assert_main".into()]),
             VarSpace::default(),
             None,
         )
@@ -106,9 +98,7 @@ mod tests {
             .assemble()
             .assert();
         spc.exec(
-            GxlCmd::default(),
-            vec!["default".into()],
-            vec!["conf".into()],
+            GxlCmd::default().with_flows(vec!["conf".into()]),
             VarSpace::default(),
             None,
         )
@@ -129,9 +119,9 @@ mod tests {
             .assert();
         let result = spc
             .exec(
-                GxlCmd::default(),
-                vec!["default".into()],
-                vec!["trans1".into()],
+                GxlCmd::default()
+                    .with_env("default".into())
+                    .with_flows(vec!["trans1".into()]),
                 VarSpace::default(),
                 None,
             )
@@ -159,9 +149,10 @@ mod tests {
             .assemble()
             .assert();
         spc.exec(
-            GxlCmd::default().with_dryrun(true),
-            vec!["default".into()],
-            vec!["start".into()],
+            GxlCmd::default()
+                .with_dryrun(true)
+                .with_env("default".into())
+                .with_flows(vec!["start".into()]),
             VarSpace::default(),
             None,
         )
@@ -169,9 +160,7 @@ mod tests {
 
         let fail = spc
             .exec(
-                GxlCmd::default(),
-                vec!["default".into()],
-                vec!["start".into()],
+                GxlCmd::default().with_flows(vec!["start".into()]),
                 VarSpace::default(),
                 None,
             )

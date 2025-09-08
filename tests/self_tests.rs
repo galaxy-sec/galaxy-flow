@@ -19,9 +19,7 @@ async fn prj_conf() -> AnyResult<()> {
         .assemble()
         .assert();
     spc.exec(
-        GxlCmd::default(),
-        vec!["default".into()],
-        vec!["conf".into()],
+        GxlCmd::default().with_flows(vec!["conf".into()]),
         VarSpace::sys_init()?,
         None,
     )

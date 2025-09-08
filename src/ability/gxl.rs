@@ -1,14 +1,12 @@
 use std::sync::mpsc::Sender;
 
 use orion_error::ErrorConv;
-use orion_sec::sec::SecValueType;
 
 use crate::ability::prelude::*;
 
-use crate::const_val::gxl_const;
 use crate::execution::runnable::AsyncRunnableWithSenderTrait;
 use crate::util::redirect::ReadSignal;
-use crate::{cmd::GxlCmd, runner::GxlRunner, util::path::WorkDir};
+use crate::{runner::GxlRunner, util::path::WorkDir};
 
 #[derive(Clone, Debug, Default, Builder, PartialEq, Getters)]
 pub struct GxRun {
@@ -48,32 +46,13 @@ impl AsyncRunnableWithSenderTrait for GxRun {
     ) -> TaskResult {
         ctx.append("gx.run");
         let mut action = Action::from("gx.run");
-        let dryrun = if let Some(SecValueType::Bool(dryrun)) = vars_dict.get(gxl_const::CMD_DRYRUN)
-        {
-            *dryrun.value()
-        } else {
-            false
-        };
-        let mod_update =
-            if let Some(SecValueType::Bool(mod_up)) = vars_dict.get(gxl_const::CMD_MODUP) {
-                *mod_up.value()
-            } else {
-                false
-            };
 
         let exp = EnvExpress::from_env_mix(vars_dict.global().clone());
-        let cmd = GxlCmd {
-            env: exp.eval(&self.env_conf)?,
-            flows: self.flow_cmd.clone(),
-            debug: 0,
-            conf: Some(exp.eval(&self.gxl_path)?),
-            log: None,
-            quiet: ctx.quiet(),
-            cmd_args: vec![],
-            dryrun,
-            ai: false,
-            mod_update,
-        };
+        let cmd = ctx.gxl_cmd().as_ref().clone();
+        let cmd = cmd
+            .with_env(exp.eval(&self.env_conf)?)
+            .with_conf(Some(exp.eval(&self.gxl_path)?));
+
         let run_path = exp.eval(&self.run_path)?;
         let _g = WorkDir::change(run_path)
             .owe_res()

@@ -1,5 +1,5 @@
 use clap::{ArgAction, Parser};
-use getset::WithSetters;
+use getset::{Setters, WithSetters};
 
 /// Galaxy Flow Command Line Interface
 ///
@@ -8,7 +8,7 @@ use getset::WithSetters;
 /// Galaxy Flow Command Line Interface
 ///
 /// GxlCmd is the command line interface structure for Galaxy Flow, used to parse and process command line arguments.
-#[derive(Parser, Debug, Clone, Default, WithSetters)] // requires `derive` feature
+#[derive(Parser, Debug, Clone, WithSetters, Setters)] // requires `derive` feature
 #[command(version, about = "Galaxy Flow - A powerful workflow automation tool", long_about = None)]
 #[command(
     after_help = "Examples:\n  gxl -e dev -f ./config.gxl flow1 flow2\n  gxl -e prod --cmd-arg \"-x -y\" flow1\n  gxl -e test --dryrun flow1\n\n示例：\n  gxl -e dev -f ./config.gxl flow1 flow2\n  gxl -e prod --cmd-arg \"-x -y\" flow1\n  gxl -e test --dryrun flow1"
@@ -22,7 +22,8 @@ pub struct GxlCmd {
     /// Specify the runtime environment, e.g.: dev, test, prod
     /// 示例/Example: -e dev
     #[arg(short = 'e', long = "env", default_value = "default")]
-    pub env: String,
+    #[getset(set = "pub")]
+    env: String,
 
     /// 位置参数流程名称 / Positional flow names
     ///
@@ -139,6 +140,27 @@ impl GxlCmd {
         }
     }
 
+    /// 将环境字符串按逗号分解为向量
+    ///
+    /// 将env字段中的字符串按逗号分隔，返回字符串向量
+    /// 如果env为空字符串，则返回空向量
+    ///
+    /// Split environment string by comma into vector
+    ///
+    /// Split the string in the env field by comma and return a vector of strings
+    /// If env is an empty string, return an empty vector
+    pub fn get_env_list(&self) -> Vec<String> {
+        if self.env.is_empty() {
+            Vec::new()
+        } else {
+            self.env
+                .split(',')
+                .map(|s| s.trim().to_string())
+                .filter(|s| !s.is_empty())
+                .collect()
+        }
+    }
+
     /// 验证命令行参数的有效性
     ///
     /// 检查命令行参数是否满足基本要求，包括：
@@ -158,5 +180,22 @@ impl GxlCmd {
             return Err("Cannot specify cmd_args without flows".to_string());
         }
         Ok(())
+    }
+}
+
+impl Default for GxlCmd {
+    fn default() -> Self {
+        Self {
+            env: "default".to_string(),
+            flows: Vec::new(),
+            debug: 0,
+            conf: None,
+            log: None,
+            quiet: false,
+            cmd_args: Vec::new(),
+            dryrun: false,
+            ai: false,
+            mod_update: false,
+        }
     }
 }

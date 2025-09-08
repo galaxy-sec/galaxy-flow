@@ -210,18 +210,11 @@ mod tests {
         let result = init_local(Some(init_local_path.clone()));
         assert!(result.is_ok());
         let _cur = WorkDir::change(init_local_path).assert();
-        GxAdm::do_adm_cmd(GxlCmd {
-            conf: Some("./_gal/adm.gxl".to_string()),
-            log: None,
-            debug: 0,
-            env: "default".into(),
-            flows: vec!["echo".into()],
-            quiet: true,
-            cmd_args: vec![],
-            dryrun: false,
-            mod_update: false,
-            ai: false,
-        })
+        GxAdm::do_adm_cmd(
+            GxlCmd::default()
+                .with_conf(Some("./_gal/adm.gxl".into()))
+                .with_flows(vec!["echo".into()]),
+        )
         .await
         .assert();
     }

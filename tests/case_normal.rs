@@ -21,9 +21,9 @@ async fn gxl_normal_test() -> AnyResult<()> {
         .assert();
     info!("------------------");
     spc.exec(
-        GxlCmd::default(),
-        vec!["dev".into()],
-        vec!["api".into(), "start".into()],
+        GxlCmd::default()
+            .with_env("dev".into())
+            .with_flows(vec!["api".into(), "start".into()]),
         VarSpace::default(),
         None,
     )

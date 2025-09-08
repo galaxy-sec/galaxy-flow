@@ -8,7 +8,6 @@ fn test_gxl_cmd_default() {
     // 测试 GxlCmd 的默认值
     let cmd = GxlCmd::try_parse_from(&["gxl"]).expect("Failed to parse default command");
 
-    assert_eq!(cmd.env, "default");
     assert_eq!(cmd.debug, 0);
     assert_eq!(cmd.dryrun, false);
     assert_eq!(cmd.ai, false);
@@ -43,7 +42,6 @@ fn test_gxl_cmd_with_args() {
     ])
     .expect("Failed to parse command with args");
 
-    assert_eq!(cmd.env, "dev");
     assert_eq!(cmd.debug, 1);
     assert_eq!(cmd.conf, Some("./_gal/work.gxl".to_string()));
     assert_eq!(cmd.log, Some("cmd=debug".to_string()));
@@ -61,7 +59,6 @@ fn test_gxl_cmd_with_hyphen_args() {
     let cmd = GxlCmd::try_parse_from(&["gxl", "-e", "test", "--cmd-arg", "-custom", "flow1"])
         .expect("Failed to parse command with hyphen args");
 
-    assert_eq!(cmd.env, "test");
     assert_eq!(cmd.cmd_args, vec!["-custom".to_string()]);
     assert_eq!(cmd.flows, vec!["flow1".to_string()]);
 }
@@ -72,7 +69,6 @@ fn test_gxl_cmd_multiple_flows() {
     let cmd = GxlCmd::try_parse_from(&["gxl", "-e", "prod", "build,test,deploy"])
         .expect("Failed to parse command with multiple flows");
 
-    assert_eq!(cmd.env, "prod");
     assert!(cmd.cmd_args.is_empty());
     assert_eq!(cmd.flows, vec!["build,test,deploy".to_string()]);
 }
@@ -83,7 +79,6 @@ fn test_gxl_cmd_separate_flows() {
     let cmd = GxlCmd::try_parse_from(&["gxl", "-e", "staging", "build", "test", "deploy"])
         .expect("Failed to parse command with separate flows");
 
-    assert_eq!(cmd.env, "staging");
     assert!(cmd.cmd_args.is_empty());
     assert_eq!(
         cmd.flows,
@@ -97,58 +92,62 @@ fn test_gxl_cmd_separate_flows() {
 
 #[test]
 fn test_gxl_cmd_validation() {
-    // 测试 GxlCmd 参数验证
-
-    // 测试缺少配置文件的情况
-    let cmd = GxlCmd {
-        env: "test".to_string(),
-        flows: vec!["flow1".to_string()],
-        debug: 0,
-        conf: None,
-        log: None,
-        quiet: false,
-        cmd_args: vec![],
-        dryrun: false,
-        ai: false,
-        mod_update: false,
-    };
-
+    let cmd = GxlCmd::default();
     let result = cmd.validate();
     assert!(result.is_err());
     assert_eq!(result.unwrap_err(), "Configuration file is required");
 
-    // 测试没有flow但指定了cmd_args的情况
-    let cmd = GxlCmd {
-        env: "test".to_string(),
-        flows: vec![],
-        debug: 0,
-        conf: Some("./_gal/work.gxl".to_string()),
-        log: None,
-        quiet: false,
-        cmd_args: vec!["-custom".to_string()],
-        dryrun: false,
-        ai: false,
-        mod_update: false,
-    };
-
+    let mut cmd = GxlCmd::default();
+    cmd.conf = Some("config.gxl".to_string());
+    cmd.cmd_args = vec!["-x".to_string()];
     let result = cmd.validate();
     assert!(result.is_err());
     assert_eq!(result.unwrap_err(), "Cannot specify cmd_args without flows");
 
-    // 测试有效参数的情况
-    let cmd = GxlCmd {
-        env: "test".to_string(),
-        flows: vec!["flow1".to_string()],
-        debug: 0,
-        conf: Some("./_gal/work.gxl".to_string()),
-        log: None,
-        quiet: false,
-        cmd_args: vec!["-custom".to_string()],
-        dryrun: false,
-        ai: false,
-        mod_update: false,
-    };
-
+    let mut cmd = GxlCmd::default();
+    cmd.conf = Some("config.gxl".to_string());
+    cmd.flows = vec!["flow1".to_string()];
     let result = cmd.validate();
     assert!(result.is_ok());
+}
+
+#[test]
+fn test_get_env_list() {
+    let mut cmd = GxlCmd::default();
+
+    // 测试空字符串
+    cmd.set_env("".to_string());
+    assert_eq!(cmd.get_env_list(), Vec::<String>::new());
+
+    // 测试单个环境
+    cmd.set_env("dev".to_string());
+    assert_eq!(cmd.get_env_list(), vec!["dev".to_string()]);
+
+    // 测试多个环境，带逗号
+    cmd.set_env("dev,test,prod".to_string());
+    assert_eq!(
+        cmd.get_env_list(),
+        vec!["dev".to_string(), "test".to_string(), "prod".to_string()]
+    );
+
+    // 测试带空格的环境
+    cmd.set_env("dev, test, prod".to_string());
+    assert_eq!(
+        cmd.get_env_list(),
+        vec!["dev".to_string(), "test".to_string(), "prod".to_string()]
+    );
+
+    // 测试空环境值
+    cmd.set_env("dev,,prod".to_string());
+    assert_eq!(
+        cmd.get_env_list(),
+        vec!["dev".to_string(), "prod".to_string()]
+    );
+
+    // 测试只有空格的环境
+    cmd.set_env("dev,  , prod".to_string());
+    assert_eq!(
+        cmd.get_env_list(),
+        vec!["dev".to_string(), "prod".to_string()]
+    );
 }

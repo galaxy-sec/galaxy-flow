@@ -196,11 +196,9 @@ impl ExecOptions {
 
 impl GxlSpace {
     #[requires(self.assembled)]
-    pub async fn exec<VS: Into<Vec<String>>>(
+    pub async fn exec(
         &self,
         cmd: GxlCmd,
-        envs_name: VS,
-        flows_name: VS,
         var_space: VarSpace,
         sender: Option<Sender<ReadSignal>>,
     ) -> RunResult<()> {
@@ -209,8 +207,8 @@ impl GxlSpace {
             "Starting execution stack with output: {:?}", cmd.quiet,
         );
 
-        let envs: Vec<String> = envs_name.into();
-        let flow_names: Vec<String> = flows_name.into();
+        let envs: Vec<String> = cmd.get_env_list();
+        let flow_names: Vec<String> = cmd.flows.clone();
 
         warn!(target : "exec","Executing with envs: {:?}, flows: {:?}", envs, flow_names);
         warn!(target : "exec","inherted vars :\n{}", var_space.inherited());

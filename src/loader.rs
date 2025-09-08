@@ -168,9 +168,9 @@ mod tests {
         println!("mods:{}", spc.len());
         assert!(spc.len() > 1);
         spc.exec(
-            GxlCmd::default(),
-            ["default".into()].to_vec(),
-            ["conf".into()].to_vec(),
+            GxlCmd::default()
+                .with_env("default".into())
+                .with_flows(vec!["conf".into()]),
             VarSpace::sys_init()?,
             None,
         )
