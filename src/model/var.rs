@@ -1,14 +1,15 @@
+use orion_sec::sec::ValueGetter;
 use std::collections::HashMap;
 use std::env::Vars;
 use std::fmt::{Debug, Display};
 
 use indexmap::IndexMap;
-use orion_variate::vars::{EnvDict, ValueDict, ValueType};
+use orion_variate::vars::{EnvDict, UpperKey, ValueDict, ValueType};
 use unicase::UniCase;
 
 use super::execution::DictUse;
 use super::traits::{Getter, Setter};
-use orion_sec::sec::{NoSecConv, SecFrom, SecValueObj, SecValueType, ToUniCase, ValueGetter};
+use orion_sec::sec::{NoSecConv, SecFrom, SecValueObj, SecValueType};
 
 #[derive(Clone, PartialEq, Eq)]
 pub enum VarMeta {
@@ -17,18 +18,18 @@ pub enum VarMeta {
 }
 
 pub type UniString = UniCase<String>;
-pub type UniCaseMap<T> = IndexMap<UniCase<String>, T>;
+pub type UpperStrMap<T> = IndexMap<UpperKey, T>;
 #[derive(Debug, Clone, Default, Getters, PartialEq)]
 pub struct VarDict {
     useage: DictUse,
-    maps: UniCaseMap<SecValueType>,
+    maps: UpperStrMap<SecValueType>,
 }
 
 impl From<Vars> for VarDict {
     fn from(value: Vars) -> Self {
-        let mut maps = UniCaseMap::new();
+        let mut maps = UpperStrMap::new();
         for (k, v) in value {
-            maps.insert(UniCase::from(k), SecValueType::nor_from(v));
+            maps.insert(UpperKey::from(k), SecValueType::nor_from(v));
         }
         Self {
             useage: DictUse::Global,
@@ -36,11 +37,20 @@ impl From<Vars> for VarDict {
         }
     }
 }
+impl From<IndexMap<UpperKey, SecValueType>> for VarDict {
+    fn from(value: IndexMap<UpperKey, SecValueType>) -> Self {
+        Self {
+            useage: DictUse::Global,
+            maps: value,
+        }
+    }
+}
+
 impl From<ValueDict> for VarDict {
     fn from(data: ValueDict) -> Self {
         let mut dict = Self::default();
         for (k, var_def) in data.dict().clone() {
-            dict.set(k, SecValueType::nor_from(var_def));
+            dict.set(k.as_str(), SecValueType::nor_from(var_def));
         }
         dict
     }
@@ -48,11 +58,11 @@ impl From<ValueDict> for VarDict {
 
 impl Display for VarDict {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let mut keys: Vec<_> = self.maps().keys().collect();
-        keys.sort(); // 对键进行排序
+        let keys: Vec<_> = self.maps().keys().collect();
+        //keys.sort(); // 对键进行排序
         for k in keys {
             if let Some(v) = self.maps.get(k) {
-                writeln!(f, "{k:30}: {v}")?;
+                writeln!(f, "{:30}: {v}", k.as_str())?;
             }
         }
         Ok(())
@@ -62,8 +72,8 @@ impl Display for VarDict {
 impl From<VarDict> for EnvDict {
     fn from(value: VarDict) -> Self {
         let mut dict = EnvDict::new();
-        for (k, v) in value.maps() {
-            dict.insert(k.to_uppercase(), v.clone().no_sec());
+        for (k, v) in value.maps {
+            dict.insert(k.clone(), v.no_sec());
         }
         dict
     }
@@ -82,23 +92,23 @@ impl VarDict {
         }
     }
 
-    pub fn export(&self) -> IndexMap<String, ValueType> {
-        let mut map = IndexMap::new();
+    pub fn export(&self) -> IndexMap<UpperKey, ValueType> {
+        let mut map: IndexMap<UpperKey, ValueType> = IndexMap::new();
         for (k, v) in &self.maps {
-            map.insert(k.to_uppercase(), v.clone().no_sec());
+            map.insert(UpperKey::from(k.as_str()), v.clone().no_sec());
         }
         map
     }
     //todo sec  to nor
     pub fn export_str_map(&self) -> IndexMap<String, String> {
-        let data = self.maps.clone().no_sec();
-        let mut map = IndexMap::new();
+        let data = self.maps.clone();
+        let mut map: IndexMap<String, String> = IndexMap::new();
         for (k, v) in data {
-            map.insert(k.to_uppercase(), v.to_string());
+            map.insert(k.as_str().to_string(), v.to_string());
         }
         map
     }
-    pub fn merge(&mut self, map: UniCaseMap<SecValueType>) {
+    pub fn merge(&mut self, map: UpperStrMap<SecValueType>) {
         for (k, v) in map {
             self.maps.insert(k, v);
         }
@@ -109,23 +119,24 @@ impl VarDict {
         }
     }
     pub fn merge_item_obj(&mut self, key: &str, obj: SecValueObj) {
-        if let Some(SecValueType::Obj(found)) = self.maps.get_mut(&key.to_unicase()) {
+        if let Some(SecValueType::Obj(found)) = self.maps.get_mut(key) {
             for (k, v) in obj {
                 found.insert(k, v);
             }
         } else {
-            self.maps.insert(key.to_unicase(), SecValueType::from(obj));
+            self.maps
+                .insert(UpperKey::from(key), SecValueType::from(obj));
             //unreachable!("merge item_obj  miss or not obj");
         }
     }
 
     pub fn sec_set<S: Into<String>>(&mut self, key: S, val: ValueType) {
         self.maps
-            .insert(UniCase::from(key.into()), SecValueType::sec_from(val));
+            .insert(UpperKey::from(key.into()), SecValueType::sec_from(val));
     }
 
     pub fn contains_key(&self, key: &str) -> bool {
-        self.maps().contains_key(&UniCase::from(key.to_string()))
+        self.maps().contains_key(&UpperKey::from(key.to_string()))
     }
     pub fn is_empty(&self) -> bool {
         self.maps().is_empty()
@@ -141,21 +152,21 @@ impl From<HashMap<String, String>> for VarDict {
         dict
     }
 }
-impl Getter<&UniString, SecValueType> for VarDict {
-    fn must_get(&self, key: &UniString) -> &SecValueType {
+impl Getter<&UpperKey, SecValueType> for VarDict {
+    fn must_get(&self, key: &UpperKey) -> &SecValueType {
         if let Some(val) = self.maps.get(key) {
             val
         } else {
-            panic!("un get key {key}",);
+            panic!("un get key {}", key.as_str());
         }
     }
-    fn get_copy(&self, key: &UniString) -> Option<SecValueType> {
-        self.maps.value_get(key)
+    fn get_copy(&self, key: &UpperKey) -> Option<SecValueType> {
+        self.maps.value_get(key.as_str())
     }
 }
 impl Getter<&str, SecValueType> for VarDict {
     fn must_get(&self, key: &str) -> &SecValueType {
-        if let Some(val) = self.maps.get(&key.to_unicase()) {
+        if let Some(val) = self.maps.get(&key.to_uppercase()) {
             val
         } else {
             panic!("un get key {key}");
@@ -170,51 +181,49 @@ impl Setter<&String, String> for VarDict {
     fn set(&mut self, key: &String, val: String) {
         //self.maps.insert(key.clone(), val);
         self.maps
-            .insert(key.to_unicase(), SecValueType::nor_from(val));
+            .insert(UpperKey::from(key), SecValueType::nor_from(val));
     }
 }
 
 impl Setter<String, String> for VarDict {
     fn set(&mut self, key: String, val: String) {
         self.maps
-            .insert(key.to_unicase(), SecValueType::nor_from(val));
+            .insert(UpperKey::from(key), SecValueType::nor_from(val));
     }
 }
 impl Setter<&str, SecValueType> for VarDict {
     fn set(&mut self, key: &str, val: SecValueType) {
-        self.maps.insert(key.to_unicase(), val);
+        self.maps.insert(UpperKey::from(key), val);
     }
 }
 impl Setter<&String, SecValueType> for VarDict {
     fn set(&mut self, key: &String, val: SecValueType) {
-        self.maps.insert(key.to_unicase(), val);
+        self.maps.insert(UpperKey::from(key), val);
     }
 }
 impl Setter<String, SecValueType> for VarDict {
     fn set(&mut self, key: String, val: SecValueType) {
-        self.maps.insert(key.to_unicase(), val);
+        self.maps.insert(UpperKey::from(key), val);
     }
 }
 
 impl Setter<&str, String> for VarDict {
     fn set(&mut self, key: &str, val: String) {
         self.maps
-            .insert(key.to_unicase(), SecValueType::nor_from(val));
+            .insert(UpperKey::from(key), SecValueType::nor_from(val));
     }
 }
 impl Setter<&str, bool> for VarDict {
     fn set(&mut self, key: &str, val: bool) {
         self.maps
-            .insert(key.to_unicase(), SecValueType::nor_from(val));
+            .insert(UpperKey::from(key), SecValueType::nor_from(val));
     }
 }
 
 impl Setter<&str, &str> for VarDict {
     fn set(&mut self, key: &str, val: &str) {
-        self.maps.insert(
-            UniString::from(key.to_string()),
-            SecValueType::nor_from(val.to_string()),
-        );
+        self.maps
+            .insert(UpperKey::from(key), SecValueType::nor_from(val.to_string()));
     }
 }
 
@@ -226,8 +235,8 @@ mod tests {
         let mut def = VarDict::default();
         def.set("src", "hello src");
         def.set("dst", "hello dst");
-        let src = def.must_get("src");
-        let dst = def.must_get("dst");
+        let src = def.must_get("SrC");
+        let dst = def.must_get("DST");
         assert_eq!(*src.to_string(), String::from("hello src"));
         assert_eq!(*dst.to_string(), String::from("hello dst"));
     }

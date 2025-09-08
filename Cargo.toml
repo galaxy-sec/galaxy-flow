@@ -1,7 +1,7 @@
 
 [package]
 
-version = "0.11.0"
+version = "0.12.0"
 authors = ["wukong<sec-wukong@outlook.com>"]
 edition = "2024"
 name = "galaxy_flow"
@@ -28,13 +28,13 @@ orion_conf = "~0.1"
 #orion-error = { path = "../orion-error" }
 #orion-error = { git = "https://github.com/galaxy-sec/orion-error.git", tag = "v0.4.0" }
 #orion_conf = { git = "https://github.com/galaxy-sec/orion-common.git", tag = "v0.3.0" }
+orion-sec= { git = "https://github.com/galaxy-sec/orion-sec.git", tag = "v0.2.0" }
+orion-ai= { path = "../orion-ai"  }
+#orion-ai= { git = "https://github.com/galaxy-sec/orion-ai.git", branch = "main" }
 orion_infra = { git = "https://github.com/galaxy-sec/orion-infra.git", tag = "v0.3.1" }
-orion_variate = { git = "https://github.com/galaxy-sec/orion-variate.git", tag = "v0.9.0" }
+orion_variate = { git = "https://github.com/galaxy-sec/orion-variate.git", tag = "v0.9.1" }
 orion_parse = { path = "crates/orion_parse" }
-orion-sec= { git = "https://github.com/galaxy-sec/orion-sec.git", branch= "main" }
-orion-ai = { git = "https://github.com/galaxy-sec/orion-ai.git", branch= "main" }
-#orion_sec = { path = "crates/orion_sec" }
-#orion_ai = { path = "crates/orion_ai" }
+#orion-sec = { path = "../orion-sec" }
 orion_cond = { path = "crates/orion_cond" }
 #orion_variate = { path = "../orion_variate" }
 #orion_infra = { path = "../orion_infra" }

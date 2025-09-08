@@ -1,10 +1,11 @@
 use derive_more::From;
 use orion_conf::error::SerdeReason;
 use orion_error::{ErrorCode, StructError, UvsReason};
+use orion_sec::{OrionSecReason, SecReason};
 use serde::Serialize;
 use thiserror::Error;
 
-use orion_ai::AiErrReason;
+use orion_ai::{AiErrReason, OrionAiReason};
 
 #[derive(Debug, PartialEq, Serialize, From, Error)]
 pub enum AssembleReason {
@@ -44,6 +45,11 @@ pub enum ExecReason {
     #[error("{0}")]
     Uvs(UvsReason),
     #[error("{0}")]
+    Sec(SecReason),
+    #[error("{0}")]
+    Ai(AiErrReason),
+
+    #[error("{0}")]
     NetWork(String),
 }
 impl From<UvsReason> for ExecReason {
@@ -68,11 +74,30 @@ pub type ExecResult<T> = Result<T, ExecError>;
 
 impl From<AiErrReason> for ExecReason {
     fn from(value: AiErrReason) -> Self {
-        UvsReason::from(value).into()
+        Self::Ai(value)
+    }
+}
+
+impl From<OrionAiReason> for ExecReason {
+    fn from(value: OrionAiReason) -> Self {
+        match value {
+            OrionAiReason::Ai(reason) => ExecReason::Ai(reason),
+            OrionAiReason::Sec(reason) => ExecReason::Sec(reason),
+            OrionAiReason::Uvs(reason) => ExecReason::Uvs(reason),
+        }
     }
 }
 impl From<SerdeReason> for ExecReason {
     fn from(value: SerdeReason) -> Self {
         ExecReason::Serde(format!("Serde error: {value}"))
+    }
+}
+
+impl From<OrionSecReason> for ExecReason {
+    fn from(value: OrionSecReason) -> Self {
+        match value {
+            OrionSecReason::Sec(sec_reason) => Self::Sec(sec_reason),
+            OrionSecReason::Uvs(uvs_reason) => Self::Uvs(uvs_reason),
+        }
     }
 }

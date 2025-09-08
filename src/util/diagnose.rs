@@ -9,7 +9,8 @@ use crate::{err::RunResult, execution::VarSpace, util::redirect::init_redirect_f
 
 pub async fn ai_diagnose(var_space: &VarSpace) -> RunResult<()> {
     let output = init_redirect_file().unwrap();
-    let ai_config = AiConfig::galaxy_load(&EnvDict::from(var_space)).err_conv()?;
+    let ai_config =
+        AiConfig::galaxy_load(&EnvDict::from(var_space.global().export())).err_conv()?;
     let ai_client = AiClientBuilder::new(ai_config)
         .with_timout(60)
         .build()

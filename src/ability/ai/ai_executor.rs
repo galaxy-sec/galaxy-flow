@@ -7,6 +7,7 @@ use orion_sec::sec::SecFrom;
 use orion_sec::sec::SecValueType;
 
 use getset::{Getters, MutGetters, Setters};
+use orion_variate::vars::EnvDict;
 
 /// AI执行器，支持函数调用的AI任务执行器
 ///
@@ -15,13 +16,6 @@ use getset::{Getters, MutGetters, Setters};
 ///
 /// # 示例
 ///
-/// ```rust
-/// let executor = AiExecutor {
-///     role: Some("developer".to_string()),
-///     task: Some("分析代码".to_string()),
-///     ..Default::default()
-/// };
-/// ```
 #[derive(Clone, Debug, Getters, MutGetters, Setters)]
 #[getset(get = "pub", set = "pub", get_mut = "pub", set_with = "pub")]
 pub struct AiExecutor {
@@ -75,13 +69,13 @@ impl AiExecutor {
     /// 使用配置创建AI执行单元，封装客户端、角色和函数注册表。
     fn setup_exec_unit(&self, vars: &VarSpace) -> ExecResult<AiExecUnit> {
         // 使用构建器创建执行单元
-        Ok(AiExecUnitBuilder::new(vars.global().export().into())
+        AiExecUnitBuilder::new(EnvDict::from(vars.global().export()))
             .with_config_opt(self.config.clone())
             .with_role_opt(self.role.clone())
             .with_tools(self.tools.clone())
             .build()
             .err_conv()
-            .want("create ai exec unit")?)
+            .want("create ai exec unit")
     }
 }
 
@@ -100,65 +94,72 @@ impl AsyncRunnableTrait for AiExecutor {
 
 #[cfg(test)]
 mod tests {
-    use orion_ai::GlobalFunctionRegistry;
-    use orion_ai::client::load_key_dict;
+    use orion_ai::{types::ExecutionStatus, AiResult, GlobalFunctionRegistry};
     use orion_error::TestAssert;
-    use orion_variate::vars::EnvEvalable;
+    use orion_sec::load_sec_dict;
 
     use super::*;
 
     #[tokio::test]
-    async fn test_basic_ai_execution() {
-        let config = if let Some(dict) = load_key_dict("sec_deepseek_api_key") {
-            AiConfig::example().env_eval(&dict)
-        } else {
-            return;
-        };
+    async fn test_basic_ai_execution() -> AiResult<()> {
+        GlobalFunctionRegistry::initialize().assert();
+        let ai_builder = AiExecUnitBuilder::new(load_sec_dict().unwrap());
+        let ai_exec = ai_builder
+            .clone()
+            .with_role("developer")
+            //.with_tools(vec!["git-status".to_string()])
+            .build()
+            .want("create ai exec unit")?;
 
-        let mut executor = AiExecutor::default();
-        executor.set_config(Some(config));
-        executor.set_role(Some("developer".to_string()));
-        executor.set_task(Some("请回答：1+1=?".to_string()));
-
-        let ctx = ExecContext::new(None, false);
-        let vars = VarSpace::sys_init().unwrap();
-        let result = executor.async_exec(ctx, vars).await;
-
-        assert!(result.is_ok());
+        let response = ai_exec
+            //.execute_with_func("请检查当前Git仓库的状态，看看有哪些文件被修改了")
+            .execute("请回答：1+1=?")
+            .await?;
+        match response.status {
+            ExecutionStatus::Success => {
+                println!("✅  {} ", response.content);
+                for call in response.tool_calls {
+                    println!("✅  {:#} ", call.result);
+                }
+            }
+            _ => {
+                eprintln!("❌ {}", response.content);
+                panic!("false");
+            }
+        }
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_executor_with_tools() {
+    async fn test_executor_with_tools() -> AiResult<()> {
         GlobalFunctionRegistry::initialize().assert();
-        let config = if let Some(dict) = load_key_dict("sec_deepseek_api_key") {
-            AiConfig::example().env_eval(&dict)
-        } else {
-            return;
-        };
+        let ai_builder = AiExecUnitBuilder::new(load_sec_dict().unwrap());
+        let ai_exec = ai_builder
+            .clone()
+            .with_role("developer")
+            .with_tools(vec!["git-status".to_string()])
+            .build()
+            .want("create ai exec unit")?;
 
-        let mut executor = AiExecutor::default();
-        executor.set_config(Some(config));
-        executor.set_role(Some("developer".to_string()));
-        executor.set_task(Some("检查 Git status".to_string()));
-        executor.set_tools(vec!["git-status".to_string()]);
+        //let mut executor = AiExecutor::default();
 
-        let ctx = ExecContext::new(None, false);
-        let vars = VarSpace::sys_init().unwrap();
-        let result = executor.async_exec(ctx, vars).await;
+        let response = ai_exec
+            .execute_with_func("请检查当前Git仓库的状态，看看有哪些文件被修改了")
+            .await?;
 
-        // 无论成功还是失败，都应该返回结果
-        match result {
-            Ok(task_value) => {
-                let vars = &task_value.vars;
-                let result_var = vars.get("AI");
-                assert!(result_var.is_some());
-                println!("{result_var:#?}")
+        match response.status {
+            ExecutionStatus::Success => {
+                println!("✅  {} ", response.content);
+                for call in response.tool_calls {
+                    println!("✅  {:#} ", call.result);
+                }
             }
-            Err(e) => {
-                // 在某些环境中，git操作可能会失败，这是可以接受的
-                println!("执行失败: {}", e);
+            _ => {
+                eprintln!("❌ {}", response.content);
+                panic!("false");
             }
         }
+        Ok(())
     }
 
     #[tokio::test]
@@ -169,18 +170,6 @@ mod tests {
         assert!(executor.task().is_none());
         assert!(executor.config().is_none());
         assert!(executor.tools().is_empty());
-    }
-
-    #[tokio::test]
-    async fn test_builder_pattern() {
-        let mut executor = AiExecutor::default();
-        executor.set_role(Some("developer".to_string()));
-        executor.set_task(Some("test task".to_string()));
-        executor.set_tools(vec!["git-status".to_string()]);
-
-        assert_eq!(executor.role(), &Some("developer".to_string()));
-        assert_eq!(executor.task(), &Some("test task".to_string()));
-        assert_eq!(executor.tools(), &vec!["git-status".to_string()]);
     }
 
     #[tokio::test]

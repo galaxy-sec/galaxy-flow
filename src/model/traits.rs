@@ -1,7 +1,8 @@
 use std::sync::Arc;
 
 use orion_error::{ToStructError, UvsLogicFrom};
-use orion_sec::sec::{SecFrom, SecValueObj, SecValueType, ToUniCase};
+use orion_sec::sec::{SecFrom, SecValueObj, SecValueType};
+use orion_variate::vars::UpperKey;
 
 use crate::{
     evaluator::{EnvExpress, VarParser},
@@ -54,7 +55,7 @@ pub trait PropsTrait {
                         exp.insert_from(old_ver_key.clone(), val.clone());
                         exp.insert_from(prefix.to_string(), obj.clone());
                         info!(target: ctx.path(),"{old_ver_key:10} = {val}",);
-                        obj.insert(prop.key().to_unicase(), val.clone());
+                        obj.insert(UpperKey::from(prop.key()), val.clone());
                     } else {
                         return ExecReason::from_logic(format!("nor var ref {x}")).err_result();
                     }
@@ -65,12 +66,12 @@ pub trait PropsTrait {
                             let val = exp.eval(v.value())?;
                             info!(target: ctx.path(),"{old_ver_key:10} = {}",val.cut_str(20));
                             dict.set(&old_ver_key, val.clone());
-                            obj.insert(prop.key().to_unicase(), SecValueType::nor_from(val));
+                            obj.insert(UpperKey::from(prop.key()), SecValueType::nor_from(val));
                         }
                         _ => {
                             info!(target: ctx.path(),"{old_ver_key:10} = {x}");
                             dict.set(&old_ver_key, x.clone());
-                            obj.insert(prop.key().to_unicase(), x.clone());
+                            obj.insert(UpperKey::from(prop.key()), x.clone());
                         }
                     }
                     exp.insert_from(prefix.to_string(), obj.clone());

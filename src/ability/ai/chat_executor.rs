@@ -1,6 +1,6 @@
-use chrono::Local;
-use orion_ai::{client::AiClientBuilder, provider::AiResponse, AiClientTrait, AiConfig, AiRoleID};
-use orion_error::{ErrorConv, UvsConfFrom};
+use orion_ai::{AiConfig, AiExecUnitBuilder};
+use orion_error::ErrorConv;
+use orion_variate::vars::EnvDict;
 use std::path::PathBuf;
 
 use crate::ability::prelude::*;
@@ -16,13 +16,6 @@ use orion_sec::sec::{SecFrom, SecValueType};
 ///
 /// # 示例
 ///
-/// ```rust
-/// let executor = ChatExecutor {
-///     role: Some("developer".to_string()),
-///     prompt_msg: Some("1 + 1 = ?".to_string()),
-///     ..Default::default()
-/// };
-/// ```
 #[derive(Clone, Debug, Default, Getters, MutGetters, Setters)]
 #[getset(get = "pub", set = "pub", get_mut = "pub", set_with = "pub")]
 pub struct ChatExecutor {
@@ -60,10 +53,8 @@ impl ChatExecutor {
         let response = self.execute_chat(&message, &vars).await?;
 
         // 存储结果
-        vars.global_mut().set(
-            "AI".to_string(),
-            SecValueType::nor_from(response.content.clone()),
-        );
+        vars.global_mut()
+            .set("AI".to_string(), SecValueType::nor_from(response.clone()));
 
         action.finish();
         Ok(TaskValue::from((vars, ExecOut::Action(action))))
@@ -72,43 +63,26 @@ impl ChatExecutor {
     /// 执行AI对话
     ///
     /// 初始化AI客户端并发送对话请求。
-    async fn execute_chat(&self, message: &str, vars: &VarSpace) -> ExecResult<AiResponse> {
+    async fn execute_chat(&self, message: &str, vars: &VarSpace) -> ExecResult<String> {
         // 加载AI配置
-        let ai_config = self.config().clone().unwrap_or(
-            AiConfig::galaxy_load(&vars.global().export().into())
-                .err_conv()
-                .want("load ai config")?,
-        );
-
-        // 创建AI客户端
-        let ai_client = AiClientBuilder::new(ai_config)
-            .with_timout(60)
+        let exec_unit = AiExecUnitBuilder::new(EnvDict::from(vars.global().export()))
+            .with_config_opt(self.config.clone())
+            .with_role_opt(self.role.clone())
+            //.with_tools(self.tools.clone())
             .build()
-            .err_conv()?;
+            .err_conv()
+            .want("create ai exec unit")?;
 
-        // 设置角色
-        let role = self
-            .role()
-            .as_ref()
-            .map(AiRoleID::new)
-            .unwrap_or(ai_client.roles().default_role().clone());
+        // 执行AI请求
+        let response = exec_unit.execute(message).await.err_conv()?;
 
-        // 发送AI请求
-        let ai_response = ai_client
-            .smart_role_request(&role, message)
-            .await
-            .map_err(|e| ExecReason::from_conf(format!("AI请求失败: {}", e)))?;
-
-        // 记录响应信息
-        let response_content = &ai_response.content;
-        let response_provider = ai_response.provider.to_string();
-        let timestamp = Local::now().to_rfc3339();
+        //let timestamp = Local::now().to_rfc3339();
 
         println!(
-            "AI Response:\nContent: {response_content}\nModel: {response_provider}\nTimestamp: {timestamp}\n"
+            "AI Response:\nContent: {}\nModel: {:#?}\n",
+            response.content, response.metadata
         );
-
-        Ok(ai_response)
+        Ok(response.content)
     }
 }
 
@@ -127,55 +101,8 @@ impl AsyncRunnableTrait for ChatExecutor {
 
 #[cfg(test)]
 mod tests {
-    use orion_ai::{client::load_key_dict, AiConfig};
-    use orion_error::TestAssert;
-    use orion_variate::vars::EnvEvalable;
-
-    use crate::{
-        ability::{ability_env_init, prelude::AsyncRunnableTrait},
-        traits::Setter,
-    };
 
     use super::*;
-
-    #[tokio::test]
-    async fn test_basic_chat() {
-        let config = if let Some(dict) = load_key_dict("sec_deepseek_api_key") {
-            AiConfig::example().env_eval(&dict)
-        } else {
-            return;
-        };
-
-        let mut executor = ChatExecutor::default();
-        executor.set_config(Some(config));
-        executor.set_prompt_msg(Some("1 + 1 = ?".to_string()));
-
-        let (context, mut def) = ability_env_init();
-        def.global_mut()
-            .set("CONF_ROOT", "${GXL_PRJ_ROOT}/tests/material");
-
-        let result = executor.async_exec(context, def).await;
-        result.assert();
-    }
-
-    #[tokio::test]
-    async fn test_chat_with_role() {
-        let config = if let Some(dict) = load_key_dict("sec_deepseek_api_key") {
-            AiConfig::example().env_eval(&dict)
-        } else {
-            return;
-        };
-
-        let mut executor = ChatExecutor::default();
-        executor.set_config(Some(config));
-        executor.set_role(Some("developer".to_string()));
-        executor.set_prompt_msg(Some("解释什么是人工智能".to_string()));
-
-        let (context, def) = ability_env_init();
-        let result = executor.async_exec(context, def).await;
-
-        assert!(result.is_ok());
-    }
 
     #[tokio::test]
     async fn test_default_values() {

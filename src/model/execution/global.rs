@@ -1,13 +1,9 @@
 use std::{env::current_dir, path::PathBuf};
 
-use orion_conf::Configable;
 use orion_error::{ErrorOwe, ErrorWith};
-use orion_sec::sec::{SecFrom, SecValueType};
-use orion_variate::vars::{ValueDict, ValueType};
 
 use crate::{traits::Setter, var::VarDict, ExecResult};
 
-use super::dict::{galaxy_dot_path, sec_value_default_path};
 use crate::const_val::gxl_const;
 
 pub fn setup_start_vars(vars_dict: &mut VarDict) -> ExecResult<()> {
@@ -47,6 +43,7 @@ fn format_os_sys() -> String {
     format!("{arch}_{os_type }_{ver_major}",)
 }
 
+/*
 pub fn load_secfile(vars_dict: &mut VarDict) -> ExecResult<()> {
     let env_path = std::env::var("GAL_SEC_FILE_PATH").map(PathBuf::from);
     let default = sec_value_default_path();
@@ -79,6 +76,7 @@ pub fn load_secfile(vars_dict: &mut VarDict) -> ExecResult<()> {
     }
     Ok(())
 }
+*/
 
 /// 从当前目录开始向上查找 _gal/project.toml 文件
 /// 如果找到则返回其绝对路径的PathBuf，未找到则返回None
