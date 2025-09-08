@@ -170,8 +170,7 @@ mod tests {
         spc.exec(
             GxlCmd::default()
                 .with_env("default".into())
-                .with_flows(vec!["conf".into()]),
-            "conf".to_string(),
+                .with_flows("conf".into()),
             VarSpace::sys_init()?,
             None,
         )

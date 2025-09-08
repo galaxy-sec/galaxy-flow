@@ -55,7 +55,6 @@ impl AsyncRunnableWithSenderTrait for GxRun {
             .with(&run_path)?;
         do_gxl_run(
             cmd,
-            self.flow_cmd.clone(),
             &vars_dict,
             self.env_isolate,
             sender,
@@ -72,13 +71,12 @@ impl ComponentMeta for GxRun {
 }
 pub async fn do_gxl_run(
     cmd: GxlCmd,
-    flow: String,
     vars_dict: &VarSpace,
     isolate: bool,
     sender: Option<Sender<ReadSignal>>,
 ) -> ExecResult<TaskValue> {
     let sub_var_space = VarSpace::inherit_init(vars_dict.clone(), isolate)?;
-    GxlRunner::run(cmd, flow, sub_var_space, sender)
+    GxlRunner::run(cmd, sub_var_space, sender)
         .await
         .err_conv()
 }

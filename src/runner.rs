@@ -35,7 +35,6 @@ impl GxlRunner {
     /// 4. Execute specified flows
     pub async fn run(
         cmd: GxlCmd,
-        flow: String,
         vars: VarSpace,
         sender: Option<Sender<ReadSignal>>,
     ) -> RunResult<TaskValue> {
@@ -57,7 +56,7 @@ impl GxlRunner {
                 spc.show().err_conv()?;
             } else {
                 // 解析环境列表 / Parse environment list
-                return spc.exec(cmd, flow, vars, sender).await;
+                return spc.exec(cmd, vars, sender).await;
             }
         }
         Err(RunReason::from_conf("gflow exec fail!".to_string()).into())

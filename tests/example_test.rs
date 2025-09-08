@@ -20,8 +20,7 @@ mod tests {
             .assemble()
             .assert();
         spc.exec(
-            GxlCmd::default().with_flows(vec!["conf".into()]),
-            "conf",
+            GxlCmd::default().with_flows("conf".into()),
             VarSpace::default(),
             None,
         )
@@ -41,8 +40,7 @@ mod tests {
             .assemble()
             .assert();
         spc.exec(
-            GxlCmd::default().with_flows(vec!["conf".into()]),
-            "conf",
+            GxlCmd::default().with_flows("conf".into()),
             VarSpace::default(),
             None,
         )
@@ -62,8 +60,7 @@ mod tests {
             .assemble()
             .assert();
         spc.exec(
-            GxlCmd::default().with_flows(vec!["conf".into()]),
-            "conf",
+            GxlCmd::default().with_flows("conf".into()),
             VarSpace::default(),
             None,
         )
@@ -82,8 +79,7 @@ mod tests {
             .assemble()
             .assert();
         spc.exec(
-            GxlCmd::default().with_flows(vec!["assert_main".into()]),
-            "assert_main",
+            GxlCmd::default().with_flows("assert_main".into()),
             VarSpace::default(),
             None,
         )
@@ -102,8 +98,7 @@ mod tests {
             .assemble()
             .assert();
         spc.exec(
-            GxlCmd::default().with_flows(vec!["conf".into()]),
-            "conf",
+            GxlCmd::default().with_flows("conf".into()),
             VarSpace::default(),
             None,
         )
@@ -126,8 +121,7 @@ mod tests {
             .exec(
                 GxlCmd::default()
                     .with_env("default".into())
-                    .with_flows(vec!["trans1".into()]),
-                "trans1",
+                    .with_flows("trans1".into()),
                 VarSpace::default(),
                 None,
             )
@@ -158,8 +152,7 @@ mod tests {
             GxlCmd::default()
                 .with_dryrun(true)
                 .with_env("default".into())
-                .with_flows(vec!["start".into()]),
-            "start",
+                .with_flows("start".into()),
             VarSpace::default(),
             None,
         )
@@ -167,8 +160,7 @@ mod tests {
 
         let fail = spc
             .exec(
-                GxlCmd::default().with_flows(vec!["start".into()]),
-                "start",
+                GxlCmd::default().with_flows("start".into()),
                 VarSpace::default(),
                 None,
             )

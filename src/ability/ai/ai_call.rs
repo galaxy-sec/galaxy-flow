@@ -119,21 +119,20 @@ impl FunctionExecutor for AiGxlCall {
         let cmd = self.exe_cmd().get().cloned().expect("exe_cmd not exists");
         let cmd = cmd.with_flows(self.flow().clone());
         let vars = self.exe_vars().get().cloned().expect("exe_vars not exists");
-        let task_value = do_gxl_run(cmd, self.flow.clone(), &vars, true, None)
+        let task_value = do_gxl_run(cmd, &vars, true, None)
             .await
             .owe_net()?;
 
         if let (Some(call_result), Some(call_value)) = (
             task_value.vars.get(AI_CALL_RESULT),
             task_value.vars.get(AI_CALL_VALUE),
-        ) {
-            if call_result == SecValueType::sec_from(true) {
+        )
+            && call_result == SecValueType::sec_from(true) {
                 return Ok(FunctionResult {
                     name: function_call.function.name.clone(),
                     result: serde_json::json!(call_value.no_sec()),
                     error: None,
                 });
-            }
         }
         Ok(FunctionResult {
             name: function_call.function.name.clone(),
@@ -169,5 +168,5 @@ impl AsyncRunnableTrait for AiGxlCall {
 #[cfg(test)]
 mod tests {
 
-    use super::*;
+
 }

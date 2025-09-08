@@ -196,7 +196,7 @@ impl ExecOptions {
 
 impl GxlSpace {
     #[requires(self.assembled)]
-    pub async fn exec<S: Into<String>>(
+    pub async fn exec(
         &self,
         cmd: GxlCmd,
         var_space: VarSpace,
@@ -211,8 +211,9 @@ impl GxlSpace {
         warn!(target : "exec","inherted vars :\n{}", var_space.inherited());
         info!(target : "exec","inherted vars :\n{}", var_space.global());
 
-        let main_ctx = ExecContext::new(cmd);
-        self.execute_flow(&main_ctx, &var_space, &envs, &flow, sender.clone())
+        let main_ctx = ExecContext::new(cmd.clone());
+        let flow = cmd.flows();
+        self.execute_flow(&main_ctx, &var_space, &envs, flow, sender.clone())
             .await
     }
 

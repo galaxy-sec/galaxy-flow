@@ -43,7 +43,7 @@ async fn main() -> RunResult<()> {
     }
     println!("✅ 全局函数注册表初始化完成");
 
-    let redirect = init_redirect_and_parent_task(cmd.flows.concat(), cmd.ai)
+    let redirect = init_redirect_and_parent_task(cmd.flows.join(","), cmd.ai)
         .await
         .err_conv()?;
     println!("galaxy-flow : {}", env!("CARGO_PKG_VERSION"));
@@ -62,13 +62,12 @@ async fn main() -> RunResult<()> {
         .global_mut()
         .set(gxl_const::CMD_MODUP, cmd.mod_update);
     for cmd in cmd.list_cmd() {
-        match GxlRunner::run(cmd.clone(), cmd.flows.clone(), var_space.clone(), None).await {
+        match GxlRunner::run(cmd.clone(), var_space.clone(), None).await {
             Err(e) => {
                 report_gxl_error(e);
-                if cmd.ai {
-                    if let Err(e) = ai_diagnose(&var_space).await {
+                if cmd.ai
+                    && let Err(e) = ai_diagnose(&var_space).await {
                         report_gxl_error(e);
-                    }
                 }
             }
 
