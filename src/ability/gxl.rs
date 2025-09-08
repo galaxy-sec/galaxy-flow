@@ -16,16 +16,10 @@ pub struct GxRun {
     gxl_path: String,
     env_conf: String,
     env_isolate: bool,
-    flow_cmd: Vec<String>,
+    flow_cmd: String,
 }
 impl GxRun {
-    pub fn new<S>(
-        run_path: S,
-        gxl_path: S,
-        env_conf: S,
-        flow_cmd: Vec<S>,
-        env_isolate: bool,
-    ) -> Self
+    pub fn new<S>(run_path: S, gxl_path: S, env_conf: S, flow_cmd: S, env_isolate: bool) -> Self
     where
         S: Into<String> + Clone,
     {
@@ -33,7 +27,7 @@ impl GxRun {
             run_path: run_path.into(),
             gxl_path: gxl_path.into(),
             env_conf: env_conf.into(),
-            flow_cmd: flow_cmd.iter().map(|x| x.clone().into()).collect(),
+            flow_cmd: flow_cmd.into(),
             env_isolate,
         }
     }
@@ -56,7 +50,17 @@ impl AsyncRunnableWithSenderTrait for GxRun {
             .with_conf(Some(exp.eval(&self.gxl_path)?));
 
         let run_path = PathBuf::from(exp.eval(&self.run_path)?);
-        do_gxl_run(run_path, cmd, &vars_dict, self.env_isolate, sender).await?;
+        let _g = WorkDir::change(run_path.clone())
+            .owe_res()
+            .with(&run_path)?;
+        do_gxl_run(
+            cmd,
+            self.flow_cmd.clone(),
+            &vars_dict,
+            self.env_isolate,
+            sender,
+        )
+        .await?;
         action.finish();
         Ok(TaskValue::from((vars_dict, ExecOut::Action(action))))
     }
@@ -67,20 +71,16 @@ impl ComponentMeta for GxRun {
     }
 }
 pub async fn do_gxl_run(
-    run_path: PathBuf,
     cmd: GxlCmd,
+    flow: String,
     vars_dict: &VarSpace,
     isolate: bool,
     sender: Option<Sender<ReadSignal>>,
-) -> ExecResult<()> {
-    let _g = WorkDir::change(run_path.clone())
-        .owe_res()
-        .with(&run_path)?;
+) -> ExecResult<TaskValue> {
     let sub_var_space = VarSpace::inherit_init(vars_dict.clone(), isolate)?;
-    GxlRunner::run(cmd, sub_var_space, sender)
+    GxlRunner::run(cmd, flow, sub_var_space, sender)
         .await
-        .err_conv()?;
-    Ok(())
+        .err_conv()
 }
 
 #[cfg(test)]
@@ -96,7 +96,7 @@ mod tests {
             "./examples/assert",
             "_gal/work.gxl",
             "default",
-            vec!["assert_main"],
+            "assert_main",
             true,
         );
         res.async_exec(context, def, None).await.unwrap();

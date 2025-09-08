@@ -1,5 +1,6 @@
 use crate::{
     GxLoader,
+    ability::prelude::TaskValue,
     cmd::GxlCmd,
     err::{RunReason, RunResult},
     execution::VarSpace,
@@ -34,9 +35,10 @@ impl GxlRunner {
     /// 4. Execute specified flows
     pub async fn run(
         cmd: GxlCmd,
+        flow: String,
         vars: VarSpace,
         sender: Option<Sender<ReadSignal>>,
-    ) -> RunResult<()> {
+    ) -> RunResult<TaskValue> {
         // 验证参数 / Validate parameters
         if let Err(err) = cmd.validate() {
             return Err(RunReason::Args(err).into());
@@ -58,15 +60,11 @@ impl GxlRunner {
 
             if cmd.flows.is_empty() {
                 spc.show().err_conv()?;
-                return Ok(());
             } else {
                 // 解析环境列表 / Parse environment list
-                spc.exec(cmd, vars, sender).await?;
-                println!("\ngod job!");
+                return spc.exec(cmd, flow, vars, sender).await;
             }
-            Ok(())
-        } else {
-            Err(RunReason::from_conf("gflow conf is empty".to_string()).into())
         }
+        Err(RunReason::from_conf("gflow exec fail!".to_string()).into())
     }
 }

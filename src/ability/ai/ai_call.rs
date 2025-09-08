@@ -1,10 +1,13 @@
+use crate::ability::ai::AI_CALL_RESULT;
+use crate::ability::ai::AI_CALL_VALUE;
+use crate::ability::gxl::do_gxl_run;
 use crate::ability::prelude::*;
-use crate::ability::GxCmd;
-use crate::ability::GxRun;
 use crate::cmd::GxlCmd;
-use crate::execution::runnable::AsyncRunnableWithSenderTrait;
 use crate::util::OptionFrom;
 use async_trait::async_trait;
+use orion_sec::sec::NoSecConv;
+use orion_sec::sec::SecFrom;
+use orion_sec::sec::SecValueType;
 use std::sync::Arc;
 use std::sync::OnceLock;
 
@@ -113,30 +116,30 @@ impl ComponentMeta for AiGxlCall {
 #[async_trait::async_trait]
 impl FunctionExecutor for AiGxlCall {
     async fn execute(&self, function_call: &FunctionCall) -> AiResult<FunctionResult> {
-        let cmd = self.exe_cmd().get().clone().expect("exe_cmd not exists");
+        let cmd = self.exe_cmd().get().cloned().expect("exe_cmd not exists");
         let cmd = cmd.with_flows(vec![self.flow().clone()]);
         let vars = self.exe_vars().get().cloned().expect("exe_vars not exists");
-        //let run_path = PathBuf::from(exp.eval(&self.run_path)?);
-        do_gxl_run(run_path, cmd, &vars, true, None).await?;
+        let task_value = do_gxl_run(cmd, self.flow.clone(), &vars, true, None)
+            .await
+            .owe_net()?;
 
-        let gxl = GxRun::new("./", "./", "env", vec![self.flow.clone()], true);
-        let result = gxl
-            .async_exec(
-                ExecContext::default(),
-                self.exe_vars.get().cloned().unwrap_or(VarSpace::default()),
-                None,
-            )
-            .await;
-        //let response = self.execute_call().await?;
-        return Ok(if response.tool_calls.is_empty() {
-            FunctionResult {
-                name: function_call.function.name.clone(),
-                result: serde_json::json!(false),
-                error: "call no response".to_opt(),
+        if let (Some(call_result), Some(call_value)) = (
+            task_value.vars.get(AI_CALL_RESULT),
+            task_value.vars.get(AI_CALL_VALUE),
+        ) {
+            if call_result == SecValueType::sec_from(true) {
+                return Ok(FunctionResult {
+                    name: function_call.function.name.clone(),
+                    result: serde_json::json!(call_value.no_sec()),
+                    error: None,
+                });
             }
-        } else {
-            response.tool_calls[0].clone()
-        });
+        }
+        Ok(FunctionResult {
+            name: function_call.function.name.clone(),
+            result: serde_json::json!(false),
+            error: "call no response".to_opt(),
+        })
     }
 
     fn supported_functions(&self) -> Vec<String> {
@@ -165,29 +168,6 @@ impl AsyncRunnableTrait for AiGxlCall {
 
 #[cfg(test)]
 mod tests {
-    use orion_ai::GlobalFunctionRegistry;
-    use orion_error::TestAssert;
-
-    use crate::infra::once_init_log;
 
     use super::*;
-
-    #[tokio::test]
-    async fn test_clone_and_debug() -> ExecResult<()> {
-        once_init_log();
-        GlobalFunctionRegistry::initialize().assert();
-        let mut executor = AiGxlCall::default();
-        executor.set_role(Some("developer".to_string()));
-        executor.set_task(Some(
-            "请检查当前Git仓库的状态，看看有哪些文件被修改了".to_string(),
-        ));
-        executor.set_tools(vec!["git-status".to_string()]);
-        let _x = executor
-            .async_exec(ExecContext::default(), VarSpace::sys_init()?)
-            .await?;
-        //println!("{:#}", x.vars.get(AI_CONTENT).assert());
-        //println!("{:#}", x.vars.get(AI_CALL_RESULT).assert());
-        //println!("{:#}", x.vars.get(AI_CALL_VALUE).assert());
-        Ok(())
-    }
 }

@@ -60,19 +60,21 @@ async fn main() -> RunResult<()> {
     var_space
         .global_mut()
         .set(gxl_const::CMD_MODUP, cmd.mod_update);
-    match GxlRunner::run(cmd.clone(), var_space.clone(), None).await {
-        Err(e) => {
-            report_gxl_error(e);
-            if cmd.ai {
-                if let Err(e) = ai_diagnose(&var_space).await {
-                    report_gxl_error(e);
+    for flow in &cmd.flows {
+        match GxlRunner::run(cmd.clone(), flow.clone(), var_space.clone(), None).await {
+            Err(e) => {
+                report_gxl_error(e);
+                if cmd.ai {
+                    if let Err(e) = ai_diagnose(&var_space).await {
+                        report_gxl_error(e);
+                    }
                 }
             }
-        }
 
-        Ok(_) => {
-            let _ = stop_redirect(redirect);
-            return Ok(());
+            Ok(_) => {
+                let _ = stop_redirect(redirect);
+                return Ok(());
+            }
         }
     }
     let _ = stop_redirect(redirect);

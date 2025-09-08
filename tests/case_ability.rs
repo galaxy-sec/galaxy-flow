@@ -19,9 +19,8 @@ async fn conf_base_test() -> AnyResult<()> {
         .assemble()
         .assert();
     spc.exec(
-        GxlCmd::default()
-            .with_env("default".into())
-            .with_flows(vec!["test".into()]),
+        GxlCmd::default().with_flows(vec!["test".into()]),
+        "test",
         VarSpace::default(),
         None,
     )
@@ -45,6 +44,7 @@ async fn conf_web_test() {
         GxlCmd::default()
             .with_env("dev".into())
             .with_flows(vec!["api".into(), "api2".into()]),
+        "api",
         VarSpace::default(),
         None,
     )

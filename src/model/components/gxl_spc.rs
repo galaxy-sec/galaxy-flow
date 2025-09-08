@@ -196,31 +196,26 @@ impl ExecOptions {
 
 impl GxlSpace {
     #[requires(self.assembled)]
-    pub async fn exec(
+    pub async fn exec<S: Into<String>>(
         &self,
         cmd: GxlCmd,
+        flow: S,
         var_space: VarSpace,
         sender: Option<Sender<ReadSignal>>,
-    ) -> RunResult<()> {
+    ) -> RunResult<TaskValue> {
         info!(
             target: "execution",
             "Starting execution stack with output: {:?}", cmd.quiet,
         );
-
+        let flow = flow.into();
         let envs: Vec<String> = cmd.get_env_list();
-        let flow_names: Vec<String> = cmd.flows.clone();
-
-        warn!(target : "exec","Executing with envs: {:?}, flows: {:?}", envs, flow_names);
+        warn!(target : "exec","Executing with envs: {}, flows: {flow}", envs.join(",") );
         warn!(target : "exec","inherted vars :\n{}", var_space.inherited());
         info!(target : "exec","inherted vars :\n{}", var_space.global());
 
         let main_ctx = ExecContext::new(cmd);
-        for flow_name in flow_names {
-            self.execute_flow(&main_ctx, &var_space, &envs, &flow_name, sender.clone())
-                .await?;
-        }
-
-        Ok(())
+        self.execute_flow(&main_ctx, &var_space, &envs, &flow, sender.clone())
+            .await
     }
 
     #[requires(self.assembled)]
@@ -231,7 +226,7 @@ impl GxlSpace {
         envs: &[String],
         flow_name: &str,
         sender: Option<Sender<ReadSignal>>,
-    ) -> RunResult<()> {
+    ) -> RunResult<TaskValue> {
         let flow_name = self.normalize_flow_name(flow_name);
         println!("execute flow: {}", flow_name);
 
@@ -251,14 +246,11 @@ impl GxlSpace {
             .await
             .err_conv()
         {
-            Ok(TaskValue { rec, .. }) => {
-                task_local_report(rec);
-                Ok(())
+            Ok(task) => {
+                task_local_report(task.rec().clone());
+                Ok(task)
             }
-            Err(do_err) => {
-                //todo report;
-                Err(do_err)
-            }
+            Err(do_err) => Err(do_err),
         }
     }
 

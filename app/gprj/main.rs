@@ -82,10 +82,13 @@ impl GxAdm {
             cmd.conf = Some("./_gal/adm.gxl".to_string());
         }
         let var_space = VarSpace::sys_init().err_conv()?;
-        if let Err(e) = GxlRunner::run(cmd.clone(), var_space.clone(), None).await {
-            report_gxl_error(e);
-            if cmd.ai {
-                ai_diagnose(&var_space).await?;
+        for flow in &cmd.flows {
+            if let Err(e) = GxlRunner::run(cmd.clone(), flow.clone(), var_space.clone(), None).await
+            {
+                report_gxl_error(e);
+                if cmd.ai {
+                    ai_diagnose(&var_space).await?;
+                }
             }
         }
         Ok(())

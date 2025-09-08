@@ -171,6 +171,7 @@ mod tests {
             GxlCmd::default()
                 .with_env("default".into())
                 .with_flows(vec!["conf".into()]),
+            "conf".to_string(),
             VarSpace::sys_init()?,
             None,
         )

@@ -22,6 +22,7 @@ async fn conf_simple_test() -> AnyResult<()> {
         GxlCmd::default()
             .with_env("dev".into())
             .with_flows(vec!["api".into()]),
+        "api",
         VarSpace::default(),
         None,
     )
@@ -45,6 +46,7 @@ async fn conf_cond_test() -> RunResult<()> {
         GxlCmd::default()
             .with_env("dev".into())
             .with_flows(vec!["api".into(), "start".into()]),
+        "api",
         VarSpace::default(),
         None,
     )

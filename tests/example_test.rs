@@ -21,6 +21,7 @@ mod tests {
             .assert();
         spc.exec(
             GxlCmd::default().with_flows(vec!["conf".into()]),
+            "conf",
             VarSpace::default(),
             None,
         )
@@ -41,6 +42,7 @@ mod tests {
             .assert();
         spc.exec(
             GxlCmd::default().with_flows(vec!["conf".into()]),
+            "conf",
             VarSpace::default(),
             None,
         )
@@ -61,6 +63,7 @@ mod tests {
             .assert();
         spc.exec(
             GxlCmd::default().with_flows(vec!["conf".into()]),
+            "conf",
             VarSpace::default(),
             None,
         )
@@ -80,6 +83,7 @@ mod tests {
             .assert();
         spc.exec(
             GxlCmd::default().with_flows(vec!["assert_main".into()]),
+            "assert_main",
             VarSpace::default(),
             None,
         )
@@ -99,6 +103,7 @@ mod tests {
             .assert();
         spc.exec(
             GxlCmd::default().with_flows(vec!["conf".into()]),
+            "conf",
             VarSpace::default(),
             None,
         )
@@ -122,6 +127,7 @@ mod tests {
                 GxlCmd::default()
                     .with_env("default".into())
                     .with_flows(vec!["trans1".into()]),
+                "trans1",
                 VarSpace::default(),
                 None,
             )
@@ -153,6 +159,7 @@ mod tests {
                 .with_dryrun(true)
                 .with_env("default".into())
                 .with_flows(vec!["start".into()]),
+            "start",
             VarSpace::default(),
             None,
         )
@@ -161,6 +168,7 @@ mod tests {
         let fail = spc
             .exec(
                 GxlCmd::default().with_flows(vec!["start".into()]),
+                "start",
                 VarSpace::default(),
                 None,
             )
