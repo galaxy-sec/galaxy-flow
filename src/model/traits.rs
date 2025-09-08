@@ -5,15 +5,15 @@ use orion_sec::sec::{SecFrom, SecValueObj, SecValueType};
 use orion_variate::vars::UpperKey;
 
 use crate::{
+    ExecReason,
     evaluator::{EnvExpress, VarParser},
     menu::GxMenu,
     util::str_utils::{StringCutter, UpperKeyMaker},
-    ExecReason,
 };
 
 use super::{
-    components::gxl_var::GxlVar, context::ExecContext, error::AResult,
-    execution::sequence::ExecSequence, var::VarDict, ExecResult,
+    ExecResult, components::gxl_var::GxlVar, context::ExecContext, error::AResult,
+    execution::sequence::ExecSequence, var::VarDict,
 };
 
 pub trait DependTrait<T>: Sized {

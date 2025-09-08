@@ -4,10 +4,10 @@ pub use orion_parse::{
     symbol::{symbol_semicolon, wn_desc},
 };
 pub use winnow::{
+    Parser, Result,
     ascii::{line_ending, till_line_ending},
     combinator::{fail, opt},
     token::{take_till, take_until, take_while},
-    Parser, Result,
 };
 
 pub use orion_parse::atom::take_var_path;

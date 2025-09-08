@@ -142,12 +142,12 @@ mod tests {
         ability_env_init();
 
         // Create activity meta
-        let meta =
-            ActivityMeta::build("test_activity").with_params(vec![GxlFParam::new("executer")
-                .with_default_value(
-                    SecValueType::nor_from("./src/model/components/gxl_act/echo.sh".to_string())
-                        .to_opt(),
-                )]);
+        let meta = ActivityMeta::build("test_activity").with_params(vec![
+            GxlFParam::new("executer").with_default_value(
+                SecValueType::nor_from("./src/model/components/gxl_act/echo.sh".to_string())
+                    .to_opt(),
+            ),
+        ]);
         let activity = Activity::new(meta);
 
         // Create context

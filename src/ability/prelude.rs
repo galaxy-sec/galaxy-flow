@@ -8,12 +8,12 @@ pub use crate::friendly::AppendAble;
 pub use crate::meta::*;
 pub use crate::model::expect::ShellOption;
 pub use crate::traits::PropsTrait;
-pub use crate::{gxl_sh, ExecResult};
 pub use crate::{ExecError, ExecReason};
+pub use crate::{ExecResult, gxl_sh};
 pub use orion_error::ErrorOwe;
 pub use orion_error::ErrorWith;
 
+pub use crate::execution::VarSpace;
 pub use crate::execution::runnable::ComponentMeta;
 pub use crate::execution::runnable::TaskValue;
-pub use crate::execution::VarSpace;
 pub use async_trait::async_trait;

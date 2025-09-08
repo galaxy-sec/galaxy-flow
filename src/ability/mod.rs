@@ -16,7 +16,7 @@ use prelude::VarSpace;
 
 use crate::cmd::GxlCmd;
 use crate::const_val::gxl_const;
-use crate::{context::ExecContext, infra::once_init_log, traits::Setter, ExecResult};
+use crate::{ExecResult, context::ExecContext, infra::once_init_log, traits::Setter};
 
 pub struct StubFlowAbi {}
 

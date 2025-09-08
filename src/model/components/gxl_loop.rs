@@ -73,7 +73,7 @@ impl AsyncRunnableWithSenderTrait for GxlLoop {
                         "loop only support obj,list {}",
                         self.var_name()
                     )))
-                    .err_result()
+                    .err_result();
                 }
             }
             return Ok(TaskValue::from((cur_dict, ExecOut::Task(task))));

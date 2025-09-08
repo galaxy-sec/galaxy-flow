@@ -1,11 +1,11 @@
 use super::prelude::*;
+use crate::ExecReason;
+use crate::ExecResult;
 use crate::components::gxl_extend::ModAddr;
 use crate::evaluator::EnvExpress;
 use crate::execution::VarSpace;
 use crate::parser::abilities::addr::gal_extern_mod;
 use crate::parser::abilities::addr::gal_git_path;
-use crate::ExecReason;
-use crate::ExecResult;
 use orion_error::ContextRecord;
 use orion_error::ErrorOwe;
 use orion_error::ErrorWith;

@@ -2,9 +2,9 @@ use crate::parser::atom::{spaced_desc, take_var_ref_fmt};
 use crate::parser::prelude::*;
 use orion_parse::atom::take_var_name;
 use winnow::{
+    Parser,
     ascii::multispace0,
     combinator::{preceded, separated},
-    Parser,
 };
 
 #[derive(Default, Debug, Clone, Getters)]

@@ -1,7 +1,7 @@
 use std::{fs::read_to_string, path::PathBuf};
 
 use colored::Colorize;
-use orion_ai::{client::AiClientBuilder, AiClientTrait, AiConfig, AiRoleID};
+use orion_ai::{AiClientTrait, AiConfig, AiRoleID, client::AiClientBuilder};
 use orion_error::{ErrorConv, ErrorOwe};
 use orion_variate::vars::EnvDict;
 

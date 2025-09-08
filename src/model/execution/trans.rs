@@ -5,7 +5,7 @@ use crate::{
     execution::runnable::AsyncRunnableWithSenderTrait,
 };
 
-use super::{hold::ComHold, VarSpace};
+use super::{VarSpace, hold::ComHold};
 
 // 事务管理器，跟踪事务状态和撤销任务
 #[derive(Clone, Default)]
@@ -64,15 +64,15 @@ pub type ComTrans = TransactionManager<ComHold>;
 mod tests {
     use super::*;
     use crate::{
+        ExecReason,
         ability::prelude::{AsyncRunnableTrait, ExecOut, TaskResult, TaskValue},
         context::ExecContext,
         meta::GxlMeta,
         util::redirect::ReadSignal,
-        ExecReason,
     };
     use async_trait::async_trait;
     use orion_error::UvsLogicFrom;
-    use std::sync::{mpsc::Sender, Arc, Mutex};
+    use std::sync::{Arc, Mutex, mpsc::Sender};
 
     // Mock runnable task for testing
     #[derive(Clone)]

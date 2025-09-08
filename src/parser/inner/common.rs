@@ -2,7 +2,7 @@ use super::prelude::*;
 use orion_parse::symbol::symbol_comma;
 use winnow::combinator::separated;
 
-use crate::components::{gxl_var::*, GxlProps};
+use crate::components::{GxlProps, gxl_var::*};
 use crate::expect::ShellOption;
 use crate::parser::abilities::define::gal_var_assign_obj;
 use crate::parser::abilities::param::gal_formal_param;

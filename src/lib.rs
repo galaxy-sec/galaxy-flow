@@ -50,5 +50,5 @@ pub mod galaxy;
 pub mod infra;
 pub mod runner;
 pub mod types;
-pub use crate::loader::{get_parse_code, GxLoader};
+pub use crate::loader::{GxLoader, get_parse_code};
 pub use model::*;

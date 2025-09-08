@@ -3,16 +3,16 @@ use std::sync::mpsc::Sender;
 use async_trait::async_trait;
 use serde::Serialize;
 
+use crate::ExecResult;
 use crate::context::ExecContext;
 use crate::execution::task::Task;
 use crate::meta::GxlMeta;
 use crate::primitive::GxlAParams;
 use crate::util::redirect::ReadSignal;
-use crate::ExecResult;
 
+use super::VarSpace;
 use super::action::Action;
 use super::job::Job;
-use super::VarSpace;
 pub type PipeSender = std::sync::mpsc::Sender<String>;
 pub type PipeReceiver = std::sync::mpsc::Receiver<String>;
 pub type Pipe = (PipeReceiver, PipeSender);

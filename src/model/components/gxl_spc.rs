@@ -390,7 +390,7 @@ mod tests {
     use crate::friendly::New2;
     use crate::{
         ability::prelude::GxlVar,
-        components::{gxl_mod::meta::ModMeta, GxlEnv, GxlFlow, GxlMod, GxlProps},
+        components::{GxlEnv, GxlFlow, GxlMod, GxlProps, gxl_mod::meta::ModMeta},
         execution::exec_init_env,
         types::AnyResult,
     };

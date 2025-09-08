@@ -1,7 +1,7 @@
 use crate::friendly::New3;
 
 use crate::{
-    annotation::{AnnTypeEnum, Annotation, ComUsage, GetArgValue, TaskMessage, FST_ARG_TAG},
+    annotation::{AnnTypeEnum, Annotation, ComUsage, FST_ARG_TAG, GetArgValue, TaskMessage},
     data::FunDto,
     types::PairVec,
 };

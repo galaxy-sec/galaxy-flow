@@ -1,10 +1,10 @@
 use crate::ability::prelude::{GxlVar, TaskValue};
+use crate::components::GxlProps;
 use crate::components::gxl_env::meta::EnvMeta;
 use crate::components::gxl_mod::meta::ModMeta;
 use crate::components::gxl_prop::Vec2Mapable;
 use crate::components::gxl_spc::GxlSpace;
 use crate::components::gxl_utls::mod_obj_name;
-use crate::components::GxlProps;
 use crate::data::{AnnDto, FunDto};
 use crate::model::components::prelude::*;
 
@@ -221,7 +221,7 @@ mod tests {
     use orion_error::TestAssert;
 
     use crate::{
-        components::{gxl_spc::GxlSpace, gxl_var::GxlVar, GxlEnv},
+        components::{GxlEnv, gxl_spc::GxlSpace, gxl_var::GxlVar},
         infra::once_init_log,
         model::components::GxlMod,
         traits::{DependTrait, PropsTrait},

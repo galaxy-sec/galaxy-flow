@@ -7,10 +7,10 @@ use orion_variate::vars::EnvDict;
 use super::global::{setup_gxlrun_vars, setup_start_vars};
 use crate::evaluator::{EnvExpress, VarParser};
 use crate::{
+    ExecReason, ExecResult,
     primitive::{GxlAParams, GxlFParams, GxlObject},
     traits::Setter,
     var::VarDict,
-    ExecReason, ExecResult,
 };
 
 #[derive(Debug, Clone, Default, PartialEq, From, Getters)]

@@ -1,6 +1,6 @@
 use crate::ability::prelude::*;
 use crate::execution::action::Action;
-use handlebars::{to_json, Handlebars};
+use handlebars::{Handlebars, to_json};
 use orion_error::{ContextRecord, OperationContext};
 use serde::Serialize;
 use std::fmt::Display;

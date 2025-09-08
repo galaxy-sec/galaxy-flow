@@ -1,4 +1,4 @@
-use crate::{const_val::gxl_const, error::AssembleReason, ExecReason, ExecResult};
+use crate::{ExecReason, ExecResult, const_val::gxl_const, error::AssembleReason};
 use orion_ai::{AiErrReason, OrionAiReason};
 use orion_error::{ErrorCode, StructError, UvsReason};
 

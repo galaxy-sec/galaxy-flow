@@ -112,7 +112,7 @@ impl AsyncRunnableTrait for AiTaskExecutor {
 
 #[cfg(test)]
 mod tests {
-    use orion_ai::{types::ExecutionStatus, AiResult, GlobalFunctionRegistry};
+    use orion_ai::{AiResult, GlobalFunctionRegistry, types::ExecutionStatus};
     use orion_error::TestAssert;
     use orion_sec::load_sec_dict;
 

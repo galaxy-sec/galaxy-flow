@@ -1,9 +1,9 @@
 use crate::{
+    GxLoader,
     cmd::GxlCmd,
     err::{RunReason, RunResult},
     execution::VarSpace,
     util::redirect::ReadSignal,
-    GxLoader,
 };
 use orion_error::{ErrorConv, ErrorWith, UvsConfFrom};
 use std::{path::Path, sync::mpsc::Sender};

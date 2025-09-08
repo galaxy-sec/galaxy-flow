@@ -15,6 +15,7 @@ use crate::args::InitCmd;
 use args::ConfCmd;
 use args::UpdateCmd;
 use clap::Parser;
+use galaxy_flow::GxLoader;
 use galaxy_flow::conf::conf_init;
 use galaxy_flow::conf::conf_path;
 use galaxy_flow::const_val::gxl_const::CONFIG_FILE;
@@ -23,9 +24,8 @@ use galaxy_flow::execution::VarSpace;
 use galaxy_flow::galaxy::Galaxy;
 use galaxy_flow::infra::configure_run_logging;
 use galaxy_flow::util::diagnose::ai_diagnose;
-use galaxy_flow::GxLoader;
 use galaxy_flow::{cmd::GxlCmd, runner::GxlRunner};
-use include_dir::{include_dir, Dir};
+use include_dir::{Dir, include_dir};
 use orion_error::ErrorConv;
 use orion_variate::addr::GitRepository;
 

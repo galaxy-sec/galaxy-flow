@@ -7,21 +7,21 @@ use crate::data::AnnDto;
 use crate::evaluator::VarParser;
 use crate::model::components::prelude::*;
 
-use crate::annotation::{ComUsage, Dryrunable, GetArgValue, TaskMessage, Transaction, FST_ARG_TAG};
+use crate::annotation::{ComUsage, Dryrunable, FST_ARG_TAG, GetArgValue, TaskMessage, Transaction};
 use crate::execution::runnable::AsyncRunnableWithSenderTrait;
 use crate::execution::task::Task;
 use crate::task_report::task_notification::TaskNotice;
-use crate::task_report::task_rc_config::{build_task_url, report_enable, TaskUrlType};
+use crate::task_report::task_rc_config::{TaskUrlType, build_task_url, report_enable};
 use crate::task_report::task_result_report::TaskReport;
 use crate::traits::DependTrait;
 
 use crate::components::gxl_block::BlockNode;
 use crate::util::http_handle::{create_and_send_task_notice, send_http_request};
-use crate::util::redirect::{init_redirect_file, read_log_content, seek_log_file_end, ReadSignal};
+use crate::util::redirect::{ReadSignal, init_redirect_file, read_log_content, seek_log_file_end};
 use contracts::requires;
 use derive_getters::Getters;
 use std::io::Write;
-use std::sync::{mpsc, Arc, Mutex};
+use std::sync::{Arc, Mutex, mpsc};
 
 use super::anno::FlowAnnFunc;
 use super::meta::{FlowMeta, FlowMetaHold};

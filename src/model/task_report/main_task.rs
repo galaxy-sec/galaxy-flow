@@ -65,7 +65,9 @@ mod tests {
     #[test]
     fn test_get_task_parent_id() {
         let parent_id = 123;
-        env::set_var("task_id", parent_id.to_string());
+        unsafe {
+            env::set_var("task_id", parent_id.to_string());
+        }
 
         let retrieved_id = get_task_parent_id().assert();
         assert_eq!(retrieved_id, parent_id.to_string());

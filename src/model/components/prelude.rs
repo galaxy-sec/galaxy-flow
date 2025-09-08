@@ -15,10 +15,10 @@ pub use crate::traits::PropsTrait;
 pub use crate::context::ExecContext;
 pub use crate::traits::MergeTrait;
 
-pub use crate::traits::ExecLoadTrait;
 pub use crate::ExecError;
 pub use crate::ExecReason;
 pub use crate::ExecResult;
+pub use crate::traits::ExecLoadTrait;
 
 pub use crate::err::{RunError, RunReason, RunResult};
 
@@ -27,7 +27,7 @@ pub use crate::execution::sequence::ExecSequence;
 
 pub use async_trait::async_trait;
 
-pub use crate::execution::runnable::ComponentMeta;
 pub use crate::execution::VarSpace;
+pub use crate::execution::runnable::ComponentMeta;
 pub use derive_getters::Getters;
 pub use orion_error::{ErrorWith, WithContext};

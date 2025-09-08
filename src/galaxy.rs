@@ -2,7 +2,7 @@ use home::home_dir;
 use orion_ai::{AiConfig, RoleConfigManager};
 use orion_conf::Yamlable;
 use orion_error::{ErrorOwe, UvsResFrom};
-use orion_variate::addr::access_ctrl::{serv::NetAccessCtrl, Rule, Unit};
+use orion_variate::addr::access_ctrl::{Rule, Unit, serv::NetAccessCtrl};
 
 use crate::{
     const_val::gxl_const::{AI_CONF_FILE, AI_ROLE_FILE, NET_ACCESS_CTRL_FILE},
@@ -79,10 +79,12 @@ mod tests {
 
         // 临时修改HOME环境变量
         let old_home = std::env::var("HOME").unwrap();
-        std::env::set_var("HOME", temp_dir);
+        unsafe {
+            std::env::set_var("HOME", temp_dir);
+        }
 
         // 确保清理
-        let _cleanup = || {
+        let _cleanup = || unsafe {
             std::env::set_var("HOME", &old_home);
         };
 

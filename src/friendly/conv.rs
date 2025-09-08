@@ -1,17 +1,9 @@
 pub fn opt_zero(v: usize) -> Option<usize> {
-    if v == 0 {
-        None
-    } else {
-        Some(v)
-    }
+    if v == 0 { None } else { Some(v) }
 }
 
 pub fn opt_or<T>(first: Option<T>, second: Option<T>) -> Option<T> {
-    if first.is_some() {
-        first
-    } else {
-        second
-    }
+    if first.is_some() { first } else { second }
 }
 
 pub fn val_or<T>(first: Option<T>, second: T) -> T {

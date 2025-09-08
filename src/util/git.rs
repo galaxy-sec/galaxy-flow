@@ -6,9 +6,9 @@ use orion_variate::types::UpdateUnit;
 use orion_variate::update::DownloadOptions;
 use orion_variate::vars::EnvDict;
 
+use crate::ExecResult;
 use crate::evaluator::EnvExpress;
 use crate::evaluator::VarParser;
-use crate::ExecResult;
 
 use std::path::PathBuf;
 

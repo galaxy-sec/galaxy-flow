@@ -5,7 +5,7 @@ mod tests {
     use galaxy_flow::err::report_gxl_error;
     use galaxy_flow::execution::VarSpace;
     use galaxy_flow::util::path::WorkDirWithLock;
-    use galaxy_flow::{err::RunResult, infra::once_init_log, GxLoader};
+    use galaxy_flow::{GxLoader, err::RunResult, infra::once_init_log};
     use orion_error::TestAssert;
 
     #[tokio::test(flavor = "current_thread")]

@@ -1,6 +1,6 @@
 use super::prelude::*;
 
-use crate::ability::{gxl::GxRunBuilder, GxRun};
+use crate::ability::{GxRun, gxl::GxRunBuilder};
 
 pub fn gal_run(input: &mut &str) -> Result<GxRun> {
     let mut builder = GxRunBuilder::default();

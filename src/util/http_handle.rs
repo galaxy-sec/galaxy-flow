@@ -1,10 +1,10 @@
 use crate::{
+    ExecReason,
     execution::task::Task,
     task_report::{
         task_notification::{TaskNotice, TaskOutline},
-        task_rc_config::{build_task_url, report_enable, set_report_enable, TaskUrlType},
+        task_rc_config::{TaskUrlType, build_task_url, report_enable, set_report_enable},
     },
-    ExecReason,
 };
 use colored::Colorize;
 use orion_error::StructError;

@@ -1,13 +1,13 @@
 use crate::ability::prelude::GxlVar;
 use crate::ability::prelude::TaskValue;
+use crate::components::GxlEnv;
+use crate::components::GxlFlow;
+use crate::components::GxlProps;
 use crate::components::gxl_act::activity::Activity;
 use crate::components::gxl_flow::meta::FlowMeta;
 use crate::components::gxl_fun::fun::GxlFun;
 use crate::components::gxl_prop::Vec2Mapable;
 use crate::components::gxl_spc::GxlSpace;
-use crate::components::GxlEnv;
-use crate::components::GxlFlow;
-use crate::components::GxlProps;
 use crate::model::components::prelude::*;
 
 use crate::execution::runnable::ComponentMeta;
@@ -347,8 +347,8 @@ mod test {
 
     use crate::{
         components::{
-            gxl_block::BlockNode, gxl_env::meta::EnvMeta, gxl_flow::meta::FlowMeta,
-            gxl_spc::GxlSpace, gxl_var::GxlVar, GxlEnv, GxlFlow, GxlMod, GxlProps,
+            GxlEnv, GxlFlow, GxlMod, GxlProps, gxl_block::BlockNode, gxl_env::meta::EnvMeta,
+            gxl_flow::meta::FlowMeta, gxl_spc::GxlSpace, gxl_var::GxlVar,
         },
         context::ExecContext,
         execution::sequence::ExecSequence,
@@ -392,21 +392,27 @@ mod test {
         if let Some(target) = result {
             assert_eq!(target.meta.name(), "mod1");
             assert_eq!(target.props().items().len(), 3);
-            assert!(target
-                .props()
-                .items()
-                .iter()
-                .any(|(_, x)| x.key() == &"k1".to_string()));
-            assert!(target
-                .props()
-                .items()
-                .iter()
-                .any(|(_, x)| x.key() == &"k2".to_string()));
-            assert!(target
-                .props()
-                .items()
-                .iter()
-                .any(|(_, x)| x.key() == &"k3".to_string()));
+            assert!(
+                target
+                    .props()
+                    .items()
+                    .iter()
+                    .any(|(_, x)| x.key() == &"k1".to_string())
+            );
+            assert!(
+                target
+                    .props()
+                    .items()
+                    .iter()
+                    .any(|(_, x)| x.key() == &"k2".to_string())
+            );
+            assert!(
+                target
+                    .props()
+                    .items()
+                    .iter()
+                    .any(|(_, x)| x.key() == &"k3".to_string())
+            );
             assert_eq!(
                 target.props.get("k2").map(|x| x.val()),
                 Some(&GxlObject::from_val("v2".to_string()))

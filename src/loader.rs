@@ -3,8 +3,8 @@ use crate::execution::VarSpace;
 use crate::parser::abilities::ignore_comment;
 use crate::parser::externs::ExternGit;
 use crate::parser::externs::ExternParser;
-use crate::parser::stc_spc::gal_stc_spc;
 use crate::parser::stc_spc::WinnowErrorEx;
+use crate::parser::stc_spc::gal_stc_spc;
 use crate::util::accessor::build_accessor;
 
 use std::fs;

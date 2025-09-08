@@ -2,7 +2,7 @@ use std::{env::current_dir, path::PathBuf};
 
 use orion_error::{ErrorOwe, ErrorWith};
 
-use crate::{traits::Setter, var::VarDict, ExecResult};
+use crate::{ExecResult, traits::Setter, var::VarDict};
 
 use crate::const_val::gxl_const;
 

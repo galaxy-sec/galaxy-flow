@@ -81,8 +81,8 @@ mod tests {
 
     use super::{CondExec, IFExpress, StuBlock};
     use crate::ability::prelude::{TaskResult, TaskValue, VarSpace};
-    use crate::calculate::express::ExpressEnum;
     use crate::calculate::CmpExpress;
+    use crate::calculate::express::ExpressEnum;
     use crate::components::gxl_cond::TGxlCond;
     use crate::context::ExecContext;
     use crate::execution::runnable::ExecOut;
