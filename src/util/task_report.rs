@@ -19,11 +19,9 @@ pub fn task_local_report(out: ExecOut) {
     let path = Path::new(dir_path);
 
     // report目录不存在则创建
-    if !path.exists() {
-        if let Err(e) = create_dir_all(path) {
-            println!("Failed to create directory '{dir_path}': {e}",);
-            return;
-        }
+    if let Err(e) = create_dir_all(path) {
+        println!("Failed to create directory '{dir_path}': {e}",);
+        return;
     }
 
     let file_name = format!("{dir_path}/task_{now}.yaml",);

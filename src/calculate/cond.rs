@@ -33,10 +33,10 @@ where
             self.true_block.cond_exec(ctx, def).await
         } else {
             for cond in &self.elseif_blocks {
-                if let Ok(task_value) = cond.cond.cond_exec(ctx.clone(), def.clone()).await {
-                    if task_value.rec() != &ExecOut::Ignore {
-                        return Ok(task_value);
-                    }
+                if let Ok(task_value) = cond.cond.cond_exec(ctx.clone(), def.clone()).await
+                    && task_value.rec() != &ExecOut::Ignore
+                {
+                    return Ok(task_value);
                 }
             }
             if let Some(false_cond) = self.false_block.as_ref() {

@@ -241,10 +241,10 @@ impl GxlFun {
         shared_output: &Arc<Mutex<String>>,
         start_pos: Arc<Mutex<u64>>,
     ) -> Result<(), ExecReason> {
-        if let Ok(output) = shared_output.lock() {
-            if !output.is_empty() {
-                task.stdout = output.clone();
-            }
+        if let Ok(output) = shared_output.lock()
+            && !output.is_empty()
+        {
+            task.stdout = output.clone();
         }
 
         let log_path = init_redirect_file()?;
