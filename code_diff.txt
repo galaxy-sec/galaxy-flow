@@ -1,313 +1,435 @@
 diff --git a/app/gflow/main.rs b/app/gflow/main.rs
-index 3749819..4849965 100644
+index 4849965..c421342 100644
 --- a/app/gflow/main.rs
 +++ b/app/gflow/main.rs
-@@ -61,20 +61,24 @@ async fn main() -> RunResult<()> {
+@@ -55,12 +55,6 @@ async fn main() -> RunResult<()> {
      var_space
          .global_mut()
-         .set(gxl_const::CMD_MODUP, cmd.mod_update);
--    for cmd in cmd.list_cmd() {
--        match GxlRunner::run(cmd.clone(), var_space.clone(), None).await {
--            Err(e) => {
--                report_gxl_error(e);
--                if cmd.ai
--                    && let Err(e) = ai_diagnose(&var_space).await
--                {
-+    if cmd.list_cmd().is_empty() {
-+        GxlRunner::info(cmd.conf.clone(), var_space).await?;
-+    } else {
-+        for cmd in cmd.list_cmd() {
-+            match GxlRunner::run(cmd.clone(), var_space.clone(), None).await {
-+                Err(e) => {
-                     report_gxl_error(e);
-+                    if cmd.ai
-+                        && let Err(e) = ai_diagnose(&var_space).await
-+                    {
-+                        report_gxl_error(e);
-+                    }
-                 }
--            }
- 
--            Ok(_) => {
--                let _ = stop_redirect(redirect);
--                return Ok(());
-+                Ok(_) => {
-+                    let _ = stop_redirect(redirect);
-+                    return Ok(());
-+                }
-             }
-         }
-     }
-diff --git a/src/ability/ai/ai_call.rs b/src/ability/ai/ai_call.rs
-index 70c051a..653e33f 100644
---- a/src/ability/ai/ai_call.rs
-+++ b/src/ability/ai/ai_call.rs
-@@ -32,7 +32,7 @@ use orion_variate::vars::EnvDict;
- pub struct AiGxlCall {
-     key: String,
-     role: Option<String>,
--    task: Option<String>,
-+    desp: String,
-     config: Option<AiConfig>,
-     flow: String,
-     exe_unit: OnceLock<Arc<AiExecUnit>>,
-@@ -45,7 +45,7 @@ impl Default for AiGxlCall {
-         Self {
-             key: String::new(),
-             role: None,
--            task: None,
-+            desp: "unknow".to_string(),
-             config: None,
-             flow: "unknow".to_string(),
-             exe_unit: OnceLock::new(),
-@@ -58,7 +58,7 @@ impl Default for AiGxlCall {
- impl AiGxlCall {
-     pub async fn execute_call(&self) -> AiResult<ExecutionResult> {
-         if let Some(exec_unit) = self.exe_unit.get() {
--            let task_prompt = self.task.as_deref().unwrap_or("请完成任务");
-+            let task_prompt = self.desp();
-             return exec_unit.execute_with_func(task_prompt).await;
-         } else {
-             unreachable!("ai-exec_unit not initialized. Call setup_exec_unit first.")
-@@ -97,12 +97,12 @@ impl AiGxlCall {
+         .set(gxl_const::CMD_ARG, cmd.cmd_args.join(" "));
+-    var_space
+-        .global_mut()
+-        .set(gxl_const::CMD_DRYRUN, cmd.dryrun);
+-    var_space
+-        .global_mut()
+-        .set(gxl_const::CMD_MODUP, cmd.mod_update);
+     if cmd.list_cmd().is_empty() {
+         GxlRunner::info(cmd.conf.clone(), var_space).await?;
+     } else {
+diff --git a/app/gprj/main.rs b/app/gprj/main.rs
+index 83d4a00..2a96169 100644
+--- a/app/gprj/main.rs
++++ b/app/gprj/main.rs
+@@ -19,13 +19,15 @@ use galaxy_flow::GxLoader;
+ use galaxy_flow::cmd::gxl_cmd::GFlowCmd;
+ use galaxy_flow::conf::conf_init;
+ use galaxy_flow::conf::conf_path;
++use galaxy_flow::const_val::gxl_const::CMD_ARG;
+ use galaxy_flow::const_val::gxl_const::CONFIG_FILE;
+ use galaxy_flow::err::*;
+ use galaxy_flow::execution::VarSpace;
+ use galaxy_flow::galaxy::Galaxy;
+ use galaxy_flow::infra::configure_run_logging;
++use galaxy_flow::runner::GxlRunner;
++use galaxy_flow::traits::Setter;
+ use galaxy_flow::util::diagnose::ai_diagnose;
+-use galaxy_flow::{cmd::GxlCmd, runner::GxlRunner};
+ use include_dir::{Dir, include_dir};
+ use orion_error::ErrorConv;
+ use orion_variate::addr::GitRepository;
+@@ -76,55 +78,33 @@ impl GxAdm {
          Ok(())
      }
-     fn call_key(&self) -> String {
--        format!("gxl_{}", self.key)
-+        format!("gxl-{}", self.key)
-     }
-     fn call_define(&self) -> FunctionDefinition {
-         FunctionDefinition {
-             name: self.call_key(),
--            description: self.task().clone().unwrap_or("gxl call".to_string()),
-+            description: self.desp().clone(),
-             parameters: vec![],
-         }
-     }
-diff --git a/src/parser/inner/ai.rs b/src/parser/inner/ai.rs
-deleted file mode 100644
-index e4cb1fd..0000000
---- a/src/parser/inner/ai.rs
-+++ /dev/null
-@@ -1,57 +0,0 @@
--use super::super::prelude::*;
--use super::call::action_call_args;
--
--use crate::ability::ai::ai_chat::AiChatExecutor as GxAIChat;
--use crate::parser::domain::gal_keyword;
--use crate::util::OptionFrom;
--
--pub fn gal_ai_chat(input: &mut &str) -> Result<GxAIChat> {
--    let mut chat = GxAIChat::default();
--    gal_keyword("gx.ai_chat", input)?;
--    let props = action_call_args.parse_next(input)?;
--    for one in props {
--        let key = one.0.to_lowercase();
--        if key == "default" || key == "prompt" {
--            chat.set_prompt_msg(one.1.to_opt());
--        } else if key == "prompt_file" {
--            chat.set_prompt_file(one.1.to_opt());
--        } else if key == "role" {
--            chat.set_role(one.1.to_opt());
--        }
--    }
--    Ok(chat)
--}
--
--#[cfg(test)]
--mod tests {
--
--    use orion_error::TestAssert;
--
--    use super::*;
--
--    #[test]
--    fn ai_chat_msg() {
--        let mut data = r#"
--             gx.ai_chat( prompt: "1+1=?" ) ;"#;
--        let obj = gal_ai_chat(&mut data).assert();
--        assert_eq!(data, "");
--        assert_eq!(obj.prompt_msg(), &Some("1+1=?".to_string()));
--    }
--    #[test]
--    fn ai_chat_default() {
--        let mut data = r#"
--             gx.ai_chat( "1+1=?" ) ;"#;
--        let obj = gal_ai_chat(&mut data).assert();
--        assert_eq!(data, "");
--        assert_eq!(obj.prompt_msg(), &Some("1+1=?".to_string()));
--    }
--    #[test]
--    fn ai_chat_file() {
--        let mut data = r#"
--             gx.ai_chat( prompt_file: "./ai_chat.txt" , role: "developer") ;"#;
--        let obj = gal_ai_chat(&mut data).assert();
--        assert_eq!(data, "");
--        assert_eq!(obj.prompt_file(), &Some("./ai_chat.txt".to_string()));
--        assert_eq!(obj.role(), &Some("developer".to_string()));
--    }
--}
-diff --git a/src/parser/inner/ai_fun.rs b/src/parser/inner/ai_fun.rs
-deleted file mode 100644
-index 504f10e..0000000
---- a/src/parser/inner/ai_fun.rs
-+++ /dev/null
-@@ -1,92 +0,0 @@
--use orion_variate::opt::OptionFrom;
--
--use crate::ability::ai::ai_task::AiTaskExecutor as GxAIFun;
--use crate::parser::inner::prelude::*;
--
--pub fn gal_ai_fun(input: &mut &str) -> Result<GxAIFun> {
--    let mut ai_fun = GxAIFun::default();
--    gal_keyword("gx.ai_fun", input)?;
--    let props = action_call_args.parse_next(input)?;
--    for one in props {
--        let key = one.0.to_lowercase();
--        if key == "role" {
--            ai_fun.set_role(one.1.to_opt());
--        } else if key == "task" {
--            ai_fun.set_task(one.1.to_opt());
--        } else if key == "tools" {
--            let tools: Vec<String> = one.1.split(",").map(String::from).collect();
--            ai_fun.set_tools(tools);
--        }
--    }
--    Ok(ai_fun)
--}
--
--#[cfg(test)]
--mod tests {
--    use super::*;
--
--    #[test]
--    fn test_parse_ai_fun_with_role() {
--        let mut input = r#"gx.ai_fun(
--            role: "developer",
--            task: "检查代码"
--        );"#;
--
--        let ai_fun = gal_ai_fun(&mut input).unwrap();
--
--        assert_eq!(ai_fun.role(), &Some("developer".to_string()));
--        assert_eq!(ai_fun.task(), &Some("检查代码".to_string()));
--    }
--
--    #[test]
--    fn test_parse_ai_fun_with_tools_list() {
--        let mut input = r#"gx.ai_fun(
--            role: "developer",
--            task: "使用指定的 Git 工具",
--            tools: "git-status,git-add"
--        );"#;
--
--        let ai_fun = gal_ai_fun(&mut input).unwrap();
--        assert_eq!(ai_fun.role(), &Some("developer".to_string()));
--        assert_eq!(ai_fun.task(), &Some("使用指定的 Git 工具".to_string()));
--        assert_eq!(
--            ai_fun.tools(),
--            &vec!["git-status".to_string(), "git-add".to_string()]
--        );
--    }
--
--    #[test]
--    fn test_parse_ai_fun_with_max_rounds_default() {
--        let mut input = r#"gx.ai_fun(
--            role: "developer",
--            task: "执行任务"
--        );"#;
--
--        let ai_fun = gal_ai_fun(&mut input).unwrap();
--        assert_eq!(ai_fun.role(), &Some("developer".to_string()));
--        assert_eq!(ai_fun.task(), &Some("执行任务".to_string()));
--        assert_eq!(*ai_fun.max_rounds(), 3); // 默认值
--    }
--
--    #[test]
--    fn test_parse_ai_fun_with_all_params() {
--        let mut input = r#"gx.ai_fun(
--            role: "developer",
--            task: "执行完整Git工作流",
--            tools: "git-status,git-add,git-commit",
--        );"#;
--
--        let ai_fun = gal_ai_fun(&mut input).unwrap();
--        assert_eq!(ai_fun.role(), &Some("developer".to_string()));
--        assert_eq!(ai_fun.task(), &Some("执行完整Git工作流".to_string()));
--        assert_eq!(
--            ai_fun.tools(),
--            &vec![
--                "git-status".to_string(),
--                "git-add".to_string(),
--                "git-commit".to_string()
--            ]
--        );
--        assert_eq!(*ai_fun.max_rounds(), 3);
--    }
--}
-diff --git a/src/parser/inner/mod.rs b/src/parser/inner/mod.rs
-index 27d4a5c..fbc7d2e 100644
---- a/src/parser/inner/mod.rs
-+++ b/src/parser/inner/mod.rs
-@@ -13,8 +13,9 @@ pub mod ver;
- pub use assert::gal_assert;
- pub use cmd::gal_cmd;
  
--pub mod ai;
--pub mod ai_fun;
-+pub mod ai_chat;
-+pub mod ai_regst;
-+pub mod ai_task;
- pub use common::*;
- pub use load::*;
- pub use read::*;
-diff --git a/src/parser/stc_blk.rs b/src/parser/stc_blk.rs
-index 9d843f7..678ead6 100644
---- a/src/parser/stc_blk.rs
-+++ b/src/parser/stc_blk.rs
-@@ -1,5 +1,5 @@
--use super::inner::ai::gal_ai_chat;
--use super::inner::ai_fun::gal_ai_fun;
-+use super::inner::ai_chat::gal_ai_chat;
-+use super::inner::ai_task::gal_ai_task;
- use super::inner::call::gal_call;
- use super::inner::cmd::gal_cmd_block;
- use super::inner::gxl::gal_run;
-@@ -74,7 +74,7 @@ pub fn gal_sentens_item(input: &mut &str) -> Result<BlockAction> {
-         return gal_ai_chat.parse_next(input).map(BlockAction::AiChat);
-     }
-     if starts_with("gx.ai_fun", input) {
--        return gal_ai_fun.parse_next(input).map(BlockAction::AiFun);
-+        return gal_ai_task.parse_next(input).map(BlockAction::AiFun);
-     }
- 
-     if starts_with("gx.run", input) {
-diff --git a/src/runner.rs b/src/runner.rs
-index 4610483..bc17331 100644
---- a/src/runner.rs
-+++ b/src/runner.rs
-@@ -61,4 +61,24 @@ impl GxlRunner {
-         }
-         Err(RunReason::from_conf("gflow exec fail!".to_string()).into())
-     }
-+    pub async fn info(conf: Option<String>, vars: VarSpace) -> RunResult<()> {
-+        if let Some(ref conf) = conf {
-+            // 检查配置文件是否存在 / Check if configuration file exists
-+            if !Path::new(conf.as_str()).exists() {
-+                return Err(RunReason::from_conf("gflow conf not exists".to_string()).into())
-+                    .with(("conf", conf.clone()));
-+            }
-+            let loader = GxLoader::new();
+-    async fn do_adm_cmd(cmd: GFlowCmd) -> RunResult<()> {
++    async fn do_adm_cmd(mut cmd: GFlowCmd) -> RunResult<()> {
+         configure_run_logging(cmd.log.clone(), cmd.debug);
++        let mut var_space = VarSpace::sys_init().err_conv()?;
++        var_space.global_mut().set(CMD_ARG, cmd.cmd_args.join(" "));
 +
-+            let spc = loader
-+                .parse_file(conf.as_str(), false, &vars)
-+                .await?
-+                .assemble()
-+                .err_conv()?;
-+            spc.show().err_conv()?;
-+            Ok(())
-+        } else {
-+            Err(RunReason::from_conf("gflow miss gxl file".to_string()).into())
+         debug!("galaxy flow running ....");
+         if cmd.conf.is_none() {
+-            // 创建一个新的GxlCmd，使用GFlowCmd的配置
+-            let mut gxl_cmd = GxlCmd::default().with_env("default".to_string());
+-            gxl_cmd.conf = Some("./_gal/adm.gxl".to_string());
+-            gxl_cmd.debug = cmd.debug;
+-            gxl_cmd.log = cmd.log.clone();
+-            gxl_cmd.quiet = cmd.quiet;
+-            gxl_cmd.dryrun = cmd.dryrun;
+-            gxl_cmd.ai = cmd.ai;
+-            gxl_cmd.mod_update = cmd.mod_update;
+-            gxl_cmd.cmd_args = cmd.cmd_args.clone();
+-
+-            // 使用GFlowCmd中的flows来设置GxlCmd的flows
+-            if !cmd.flows.is_empty() {
+-                gxl_cmd.flows = cmd.flows.join(",");
+-            }
+-
+-            let var_space = VarSpace::sys_init().err_conv()?;
+-            if let Err(e) = GxlRunner::run(gxl_cmd.clone(), var_space.clone(), None).await {
+-                report_gxl_error(e);
+-                if cmd.ai {
+-                    ai_diagnose(&var_space).await?;
+-                }
+-            }
++            let main_conf = "./_gal/adm.gxl";
++            cmd.conf = Some(main_conf.to_string());
 +        }
-+    }
- }
++        if cmd.list_cmd().is_empty() {
++            GxlRunner::info(cmd.conf.clone(), var_space).await?;
+         } else {
+-            // 如果conf已经设置，使用GFlowCmd的配置创建GxlCmd
+-            let mut gxl_cmd = GxlCmd::default().with_env("default".to_string());
+-            gxl_cmd.conf = Some(cmd.conf.unwrap());
+-            gxl_cmd.debug = cmd.debug;
+-            gxl_cmd.log = cmd.log.clone();
+-            gxl_cmd.quiet = cmd.quiet;
+-            gxl_cmd.dryrun = cmd.dryrun;
+-            gxl_cmd.ai = cmd.ai;
+-            gxl_cmd.mod_update = cmd.mod_update;
+-            gxl_cmd.cmd_args = cmd.cmd_args.clone();
+-
+-            // 使用GFlowCmd中的flows来设置GxlCmd的flows
+-            if !cmd.flows.is_empty() {
+-                gxl_cmd.flows = cmd.flows.join(",");
+-            }
+-
+-            let var_space = VarSpace::sys_init().err_conv()?;
+-            if let Err(e) = GxlRunner::run(gxl_cmd.clone(), var_space.clone(), None).await {
+-                report_gxl_error(e);
+-                if cmd.ai {
+-                    ai_diagnose(&var_space).await?;
++            for cmd in cmd.list_cmd() {
++                match GxlRunner::run(cmd.clone(), var_space.clone(), None).await {
++                    Err(e) => {
++                        report_gxl_error(e);
++                        if cmd.ai
++                            && let Err(e) = ai_diagnose(&var_space).await
++                        {
++                            report_gxl_error(e);
++                        }
++                    }
++
++                    Ok(_) => {
++                        return Ok(());
++                    }
+                 }
+             }
+         }
+diff --git a/code_diff.txt b/code_diff.txt
+index 962b833..36a0a94 100644
+--- a/code_diff.txt
++++ b/code_diff.txt
+@@ -1,313 +0,0 @@
+-diff --git a/app/gflow/main.rs b/app/gflow/main.rs
+-index 3749819..4849965 100644
+---- a/app/gflow/main.rs
+-+++ b/app/gflow/main.rs
+-@@ -61,20 +61,24 @@ async fn main() -> RunResult<()> {
+-     var_space
+-         .global_mut()
+-         .set(gxl_const::CMD_MODUP, cmd.mod_update);
+--    for cmd in cmd.list_cmd() {
+--        match GxlRunner::run(cmd.clone(), var_space.clone(), None).await {
+--            Err(e) => {
+--                report_gxl_error(e);
+--                if cmd.ai
+--                    && let Err(e) = ai_diagnose(&var_space).await
+--                {
+-+    if cmd.list_cmd().is_empty() {
+-+        GxlRunner::info(cmd.conf.clone(), var_space).await?;
+-+    } else {
+-+        for cmd in cmd.list_cmd() {
+-+            match GxlRunner::run(cmd.clone(), var_space.clone(), None).await {
+-+                Err(e) => {
+-                     report_gxl_error(e);
+-+                    if cmd.ai
+-+                        && let Err(e) = ai_diagnose(&var_space).await
+-+                    {
+-+                        report_gxl_error(e);
+-+                    }
+-                 }
+--            }
+- 
+--            Ok(_) => {
+--                let _ = stop_redirect(redirect);
+--                return Ok(());
+-+                Ok(_) => {
+-+                    let _ = stop_redirect(redirect);
+-+                    return Ok(());
+-+                }
+-             }
+-         }
+-     }
+-diff --git a/src/ability/ai/ai_call.rs b/src/ability/ai/ai_call.rs
+-index 70c051a..653e33f 100644
+---- a/src/ability/ai/ai_call.rs
+-+++ b/src/ability/ai/ai_call.rs
+-@@ -32,7 +32,7 @@ use orion_variate::vars::EnvDict;
+- pub struct AiGxlCall {
+-     key: String,
+-     role: Option<String>,
+--    task: Option<String>,
+-+    desp: String,
+-     config: Option<AiConfig>,
+-     flow: String,
+-     exe_unit: OnceLock<Arc<AiExecUnit>>,
+-@@ -45,7 +45,7 @@ impl Default for AiGxlCall {
+-         Self {
+-             key: String::new(),
+-             role: None,
+--            task: None,
+-+            desp: "unknow".to_string(),
+-             config: None,
+-             flow: "unknow".to_string(),
+-             exe_unit: OnceLock::new(),
+-@@ -58,7 +58,7 @@ impl Default for AiGxlCall {
+- impl AiGxlCall {
+-     pub async fn execute_call(&self) -> AiResult<ExecutionResult> {
+-         if let Some(exec_unit) = self.exe_unit.get() {
+--            let task_prompt = self.task.as_deref().unwrap_or("请完成任务");
+-+            let task_prompt = self.desp();
+-             return exec_unit.execute_with_func(task_prompt).await;
+-         } else {
+-             unreachable!("ai-exec_unit not initialized. Call setup_exec_unit first.")
+-@@ -97,12 +97,12 @@ impl AiGxlCall {
+-         Ok(())
+-     }
+-     fn call_key(&self) -> String {
+--        format!("gxl_{}", self.key)
+-+        format!("gxl-{}", self.key)
+-     }
+-     fn call_define(&self) -> FunctionDefinition {
+-         FunctionDefinition {
+-             name: self.call_key(),
+--            description: self.task().clone().unwrap_or("gxl call".to_string()),
+-+            description: self.desp().clone(),
+-             parameters: vec![],
+-         }
+-     }
+-diff --git a/src/parser/inner/ai.rs b/src/parser/inner/ai.rs
+-deleted file mode 100644
+-index e4cb1fd..0000000
+---- a/src/parser/inner/ai.rs
+-+++ /dev/null
+-@@ -1,57 +0,0 @@
+--use super::super::prelude::*;
+--use super::call::action_call_args;
+--
+--use crate::ability::ai::ai_chat::AiChatExecutor as GxAIChat;
+--use crate::parser::domain::gal_keyword;
+--use crate::util::OptionFrom;
+--
+--pub fn gal_ai_chat(input: &mut &str) -> Result<GxAIChat> {
+--    let mut chat = GxAIChat::default();
+--    gal_keyword("gx.ai_chat", input)?;
+--    let props = action_call_args.parse_next(input)?;
+--    for one in props {
+--        let key = one.0.to_lowercase();
+--        if key == "default" || key == "prompt" {
+--            chat.set_prompt_msg(one.1.to_opt());
+--        } else if key == "prompt_file" {
+--            chat.set_prompt_file(one.1.to_opt());
+--        } else if key == "role" {
+--            chat.set_role(one.1.to_opt());
+--        }
+--    }
+--    Ok(chat)
+--}
+--
+--#[cfg(test)]
+--mod tests {
+--
+--    use orion_error::TestAssert;
+--
+--    use super::*;
+--
+--    #[test]
+--    fn ai_chat_msg() {
+--        let mut data = r#"
+--             gx.ai_chat( prompt: "1+1=?" ) ;"#;
+--        let obj = gal_ai_chat(&mut data).assert();
+--        assert_eq!(data, "");
+--        assert_eq!(obj.prompt_msg(), &Some("1+1=?".to_string()));
+--    }
+--    #[test]
+--    fn ai_chat_default() {
+--        let mut data = r#"
+--             gx.ai_chat( "1+1=?" ) ;"#;
+--        let obj = gal_ai_chat(&mut data).assert();
+--        assert_eq!(data, "");
+--        assert_eq!(obj.prompt_msg(), &Some("1+1=?".to_string()));
+--    }
+--    #[test]
+--    fn ai_chat_file() {
+--        let mut data = r#"
+--             gx.ai_chat( prompt_file: "./ai_chat.txt" , role: "developer") ;"#;
+--        let obj = gal_ai_chat(&mut data).assert();
+--        assert_eq!(data, "");
+--        assert_eq!(obj.prompt_file(), &Some("./ai_chat.txt".to_string()));
+--        assert_eq!(obj.role(), &Some("developer".to_string()));
+--    }
+--}
+-diff --git a/src/parser/inner/ai_fun.rs b/src/parser/inner/ai_fun.rs
+-deleted file mode 100644
+-index 504f10e..0000000
+---- a/src/parser/inner/ai_fun.rs
+-+++ /dev/null
+-@@ -1,92 +0,0 @@
+--use orion_variate::opt::OptionFrom;
+--
+--use crate::ability::ai::ai_task::AiTaskExecutor as GxAIFun;
+--use crate::parser::inner::prelude::*;
+--
+--pub fn gal_ai_fun(input: &mut &str) -> Result<GxAIFun> {
+--    let mut ai_fun = GxAIFun::default();
+--    gal_keyword("gx.ai_fun", input)?;
+--    let props = action_call_args.parse_next(input)?;
+--    for one in props {
+--        let key = one.0.to_lowercase();
+--        if key == "role" {
+--            ai_fun.set_role(one.1.to_opt());
+--        } else if key == "task" {
+--            ai_fun.set_task(one.1.to_opt());
+--        } else if key == "tools" {
+--            let tools: Vec<String> = one.1.split(",").map(String::from).collect();
+--            ai_fun.set_tools(tools);
+--        }
+--    }
+--    Ok(ai_fun)
+--}
+--
+--#[cfg(test)]
+--mod tests {
+--    use super::*;
+--
+--    #[test]
+--    fn test_parse_ai_fun_with_role() {
+--        let mut input = r#"gx.ai_fun(
+--            role: "developer",
+--            task: "检查代码"
+--        );"#;
+--
+--        let ai_fun = gal_ai_fun(&mut input).unwrap();
+--
+--        assert_eq!(ai_fun.role(), &Some("developer".to_string()));
+--        assert_eq!(ai_fun.task(), &Some("检查代码".to_string()));
+--    }
+--
+--    #[test]
+--    fn test_parse_ai_fun_with_tools_list() {
+--        let mut input = r#"gx.ai_fun(
+--            role: "developer",
+--            task: "使用指定的 Git 工具",
+--            tools: "git-status,git-add"
+--        );"#;
+--
+--        let ai_fun = gal_ai_fun(&mut input).unwrap();
+--        assert_eq!(ai_fun.role(), &Some("developer".to_string()));
+--        assert_eq!(ai_fun.task(), &Some("使用指定的 Git 工具".to_string()));
+--        assert_eq!(
+--            ai_fun.tools(),
+--            &vec!["git-status".to_string(), "git-add".to_string()]
+--        );
+--    }
+--
+--    #[test]
+--    fn test_parse_ai_fun_with_max_rounds_default() {
+--        let mut input = r#"gx.ai_fun(
+--            role: "developer",
+--            task: "执行任务"
+--        );"#;
+--
+--        let ai_fun = gal_ai_fun(&mut input).unwrap();
+--        assert_eq!(ai_fun.role(), &Some("developer".to_string()));
+--        assert_eq!(ai_fun.task(), &Some("执行任务".to_string()));
+--        assert_eq!(*ai_fun.max_rounds(), 3); // 默认值
+--    }
+--
+--    #[test]
+--    fn test_parse_ai_fun_with_all_params() {
+--        let mut input = r#"gx.ai_fun(
+--            role: "developer",
+--            task: "执行完整Git工作流",
+--            tools: "git-status,git-add,git-commit",
+--        );"#;
+--
+--        let ai_fun = gal_ai_fun(&mut input).unwrap();
+--        assert_eq!(ai_fun.role(), &Some("developer".to_string()));
+--        assert_eq!(ai_fun.task(), &Some("执行完整Git工作流".to_string()));
+--        assert_eq!(
+--            ai_fun.tools(),
+--            &vec![
+--                "git-status".to_string(),
+--                "git-add".to_string(),
+--                "git-commit".to_string()
+--            ]
+--        );
+--        assert_eq!(*ai_fun.max_rounds(), 3);
+--    }
+--}
+-diff --git a/src/parser/inner/mod.rs b/src/parser/inner/mod.rs
+-index 27d4a5c..fbc7d2e 100644
+---- a/src/parser/inner/mod.rs
+-+++ b/src/parser/inner/mod.rs
+-@@ -13,8 +13,9 @@ pub mod ver;
+- pub use assert::gal_assert;
+- pub use cmd::gal_cmd;
+- 
+--pub mod ai;
+--pub mod ai_fun;
+-+pub mod ai_chat;
+-+pub mod ai_regst;
+-+pub mod ai_task;
+- pub use common::*;
+- pub use load::*;
+- pub use read::*;
+-diff --git a/src/parser/stc_blk.rs b/src/parser/stc_blk.rs
+-index 9d843f7..678ead6 100644
+---- a/src/parser/stc_blk.rs
+-+++ b/src/parser/stc_blk.rs
+-@@ -1,5 +1,5 @@
+--use super::inner::ai::gal_ai_chat;
+--use super::inner::ai_fun::gal_ai_fun;
+-+use super::inner::ai_chat::gal_ai_chat;
+-+use super::inner::ai_task::gal_ai_task;
+- use super::inner::call::gal_call;
+- use super::inner::cmd::gal_cmd_block;
+- use super::inner::gxl::gal_run;
+-@@ -74,7 +74,7 @@ pub fn gal_sentens_item(input: &mut &str) -> Result<BlockAction> {
+-         return gal_ai_chat.parse_next(input).map(BlockAction::AiChat);
+-     }
+-     if starts_with("gx.ai_fun", input) {
+--        return gal_ai_fun.parse_next(input).map(BlockAction::AiFun);
+-+        return gal_ai_task.parse_next(input).map(BlockAction::AiFun);
+-     }
+- 
+-     if starts_with("gx.run", input) {
+-diff --git a/src/runner.rs b/src/runner.rs
+-index 4610483..bc17331 100644
+---- a/src/runner.rs
+-+++ b/src/runner.rs
+-@@ -61,4 +61,24 @@ impl GxlRunner {
+-         }
+-         Err(RunReason::from_conf("gflow exec fail!".to_string()).into())
+-     }
+-+    pub async fn info(conf: Option<String>, vars: VarSpace) -> RunResult<()> {
+-+        if let Some(ref conf) = conf {
+-+            // 检查配置文件是否存在 / Check if configuration file exists
+-+            if !Path::new(conf.as_str()).exists() {
+-+                return Err(RunReason::from_conf("gflow conf not exists".to_string()).into())
+-+                    .with(("conf", conf.clone()));
+-+            }
+-+            let loader = GxLoader::new();
+-+
+-+            let spc = loader
+-+                .parse_file(conf.as_str(), false, &vars)
+-+                .await?
+-+                .assemble()
+-+                .err_conv()?;
+-+            spc.show().err_conv()?;
+-+            Ok(())
+-+        } else {
+-+            Err(RunReason::from_conf("gflow miss gxl file".to_string()).into())
+-+        }
+-+    }
+- }

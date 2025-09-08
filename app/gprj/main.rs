@@ -19,13 +19,15 @@ use galaxy_flow::GxLoader;
 use galaxy_flow::cmd::gxl_cmd::GFlowCmd;
 use galaxy_flow::conf::conf_init;
 use galaxy_flow::conf::conf_path;
+use galaxy_flow::const_val::gxl_const::CMD_ARG;
 use galaxy_flow::const_val::gxl_const::CONFIG_FILE;
 use galaxy_flow::err::*;
 use galaxy_flow::execution::VarSpace;
 use galaxy_flow::galaxy::Galaxy;
 use galaxy_flow::infra::configure_run_logging;
+use galaxy_flow::runner::GxlRunner;
+use galaxy_flow::traits::Setter;
 use galaxy_flow::util::diagnose::ai_diagnose;
-use galaxy_flow::{cmd::GxlCmd, runner::GxlRunner};
 use include_dir::{Dir, include_dir};
 use orion_error::ErrorConv;
 use orion_variate::addr::GitRepository;
@@ -76,55 +78,33 @@ impl GxAdm {
         Ok(())
     }
 
-    async fn do_adm_cmd(cmd: GFlowCmd) -> RunResult<()> {
+    async fn do_adm_cmd(mut cmd: GFlowCmd) -> RunResult<()> {
         configure_run_logging(cmd.log.clone(), cmd.debug);
+        let mut var_space = VarSpace::sys_init().err_conv()?;
+        var_space.global_mut().set(CMD_ARG, cmd.cmd_args.join(" "));
+
         debug!("galaxy flow running ....");
         if cmd.conf.is_none() {
-            // 创建一个新的GxlCmd，使用GFlowCmd的配置
-            let mut gxl_cmd = GxlCmd::default().with_env("default".to_string());
-            gxl_cmd.conf = Some("./_gal/adm.gxl".to_string());
-            gxl_cmd.debug = cmd.debug;
-            gxl_cmd.log = cmd.log.clone();
-            gxl_cmd.quiet = cmd.quiet;
-            gxl_cmd.dryrun = cmd.dryrun;
-            gxl_cmd.ai = cmd.ai;
-            gxl_cmd.mod_update = cmd.mod_update;
-            gxl_cmd.cmd_args = cmd.cmd_args.clone();
-
-            // 使用GFlowCmd中的flows来设置GxlCmd的flows
-            if !cmd.flows.is_empty() {
-                gxl_cmd.flows = cmd.flows.join(",");
-            }
-
-            let var_space = VarSpace::sys_init().err_conv()?;
-            if let Err(e) = GxlRunner::run(gxl_cmd.clone(), var_space.clone(), None).await {
-                report_gxl_error(e);
-                if cmd.ai {
-                    ai_diagnose(&var_space).await?;
-                }
-            }
+            let main_conf = "./_gal/adm.gxl";
+            cmd.conf = Some(main_conf.to_string());
+        }
+        if cmd.list_cmd().is_empty() {
+            GxlRunner::info(cmd.conf.clone(), var_space).await?;
         } else {
-            // 如果conf已经设置，使用GFlowCmd的配置创建GxlCmd
-            let mut gxl_cmd = GxlCmd::default().with_env("default".to_string());
-            gxl_cmd.conf = Some(cmd.conf.unwrap());
-            gxl_cmd.debug = cmd.debug;
-            gxl_cmd.log = cmd.log.clone();
-            gxl_cmd.quiet = cmd.quiet;
-            gxl_cmd.dryrun = cmd.dryrun;
-            gxl_cmd.ai = cmd.ai;
-            gxl_cmd.mod_update = cmd.mod_update;
-            gxl_cmd.cmd_args = cmd.cmd_args.clone();
+            for cmd in cmd.list_cmd() {
+                match GxlRunner::run(cmd.clone(), var_space.clone(), None).await {
+                    Err(e) => {
+                        report_gxl_error(e);
+                        if cmd.ai
+                            && let Err(e) = ai_diagnose(&var_space).await
+                        {
+                            report_gxl_error(e);
+                        }
+                    }
 
-            // 使用GFlowCmd中的flows来设置GxlCmd的flows
-            if !cmd.flows.is_empty() {
-                gxl_cmd.flows = cmd.flows.join(",");
-            }
-
-            let var_space = VarSpace::sys_init().err_conv()?;
-            if let Err(e) = GxlRunner::run(gxl_cmd.clone(), var_space.clone(), None).await {
-                report_gxl_error(e);
-                if cmd.ai {
-                    ai_diagnose(&var_space).await?;
+                    Ok(_) => {
+                        return Ok(());
+                    }
                 }
             }
         }

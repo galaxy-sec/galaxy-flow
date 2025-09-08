@@ -55,12 +55,6 @@ async fn main() -> RunResult<()> {
     var_space
         .global_mut()
         .set(gxl_const::CMD_ARG, cmd.cmd_args.join(" "));
-    var_space
-        .global_mut()
-        .set(gxl_const::CMD_DRYRUN, cmd.dryrun);
-    var_space
-        .global_mut()
-        .set(gxl_const::CMD_MODUP, cmd.mod_update);
     if cmd.list_cmd().is_empty() {
         GxlRunner::info(cmd.conf.clone(), var_space).await?;
     } else {
