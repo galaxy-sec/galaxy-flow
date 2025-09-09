@@ -10,8 +10,13 @@ mod envs {
 }
 mod main   {
   flow array_do{
+    TVAR = "RUST";
     for ${CUR} in ${ENV.DATA_LIST} {
+
       gx.echo( "CUR:${CUR}" );
+      if ${CUR} == ${TVAR} {
+        gx.echo ("target : ${CUR}") ;
+      }
     }
   }
   flow obj_do{
