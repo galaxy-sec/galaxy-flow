@@ -41,7 +41,7 @@ impl GxlRunner {
                 };
                 spc.exec(envs, flws, cmd.quiet, cmd.dryrun, vars, sender)
                     .await?;
-                println!("\ngod job!");
+                println!("\ngood job!");
             }
             Ok(())
         } else {
