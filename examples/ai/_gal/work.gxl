@@ -1,4 +1,3 @@
-extern mod os { path= "../../_gal/mods"; }
 mod envs {
     env default {}
 }
@@ -10,5 +9,9 @@ mod main   {
   flow ci_msg {
     gx.cmd("git diff > code_diff.txt");
     gx.ai_chat( "Generate git commit message", prompt_file : "./code_diff.txt");
+  }
+  flow dev_ai {
+        gx.ai_regist(flow :"ci_msg", desc: "gen git commit message");
+        gx.ai_task( task: "生成代码提交说明", role : "developer" ) ;
   }
 }

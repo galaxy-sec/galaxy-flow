@@ -76,7 +76,7 @@ mod main  {
   }
 
     flow dev_ai {
-        gx.ai_regist(flow :"ci_msg", desc: "gen git commit message");
+        //gx.ai_regist(flow :"ci_msg", desc: "gen git commit message");
         //gx.ai_task( task: "生成代码提交说明", role : "developer" ) ;
     }
 

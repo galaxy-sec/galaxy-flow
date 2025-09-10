@@ -31,7 +31,7 @@ use orion_variate::vars::EnvDict;
 ///
 #[derive(Debug, Getters, MutGetters, Setters, Clone)]
 #[getset(get = "pub", set = "pub", get_mut = "pub", set_with = "pub")]
-pub struct AiGxlCall {
+pub struct GxlAiRegist {
     key: String,
     role: Option<String>,
     desp: String,
@@ -42,7 +42,7 @@ pub struct AiGxlCall {
     exe_cmd: OnceLock<GxlCmd>,
 }
 
-impl Default for AiGxlCall {
+impl Default for GxlAiRegist {
     fn default() -> Self {
         Self {
             key: String::new(),
@@ -57,7 +57,7 @@ impl Default for AiGxlCall {
     }
 }
 
-impl AiGxlCall {
+impl GxlAiRegist {
     pub async fn execute_call(&self) -> AiResult<ExecutionResult> {
         if let Some(exec_unit) = self.exe_unit.get() {
             let task_prompt = self.desp();
@@ -110,13 +110,13 @@ impl AiGxlCall {
     }
 }
 
-impl ComponentMeta for AiGxlCall {
+impl ComponentMeta for GxlAiRegist {
     fn gxl_meta(&self) -> GxlMeta {
-        GxlMeta::from("ai_fun")
+        GxlMeta::from("ai_regist")
     }
 }
 #[async_trait::async_trait]
-impl FunctionExecutor for AiGxlCall {
+impl FunctionExecutor for GxlAiRegist {
     async fn execute(&self, function_call: &FunctionCall) -> AiResult<FunctionResult> {
         let cmd = self.exe_cmd().get().cloned().expect("exe_cmd not exists");
         let cmd = cmd.with_flows(self.flow().clone());
@@ -155,7 +155,7 @@ impl FunctionExecutor for AiGxlCall {
 }
 
 #[async_trait]
-impl AsyncRunnableTrait for AiGxlCall {
+impl AsyncRunnableTrait for GxlAiRegist {
     async fn async_exec(&self, ctx: ExecContext, vars: VarSpace) -> TaskResult {
         let fun_key = self.call_key();
         let mut op_ctx = OperationContext::want("regist tool");

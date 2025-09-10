@@ -6,6 +6,7 @@ mod tests {
     use galaxy_flow::execution::VarSpace;
     use galaxy_flow::util::path::WorkDirWithLock;
     use galaxy_flow::{GxLoader, err::RunResult, infra::once_init_log};
+    use orion_ai::GlobalFunctionRegistry;
     use orion_error::TestAssert;
 
     #[tokio::test(flavor = "current_thread")]
@@ -166,6 +167,39 @@ mod tests {
             )
             .await;
         assert!(fail.is_err());
+        Ok(())
+    }
+
+    #[tokio::test(flavor = "current_thread")]
+    async fn example_ai() -> RunResult<()> {
+        once_init_log();
+        let vars = VarSpace::sys_init().assert();
+
+        GlobalFunctionRegistry::initialize().assert();
+        let _dir = WorkDirWithLock::change("./examples/ai");
+        let loader = GxLoader::new();
+        let spc = loader
+            .parse_file("./_gal/work.gxl", false, &vars)
+            .await?
+            .assemble()
+            .assert();
+        spc.exec(
+            GxlCmd::default().with_flows("dev_ai".into()),
+            VarSpace::default(),
+            None,
+        )
+        .await?;
+
+        /*
+        let fail = spc
+            .exec(
+                GxlCmd::default().with_flows("start".into()),
+                VarSpace::default(),
+                None,
+            )
+            .await;
+        assert!(fail.is_err());
+        */
         Ok(())
     }
 }

@@ -78,7 +78,7 @@ pub fn gal_sentens_item(input: &mut &str) -> Result<BlockAction> {
         return gal_ai_task.parse_next(input).map(BlockAction::AiTask);
     }
     if starts_with("gx.ai_regist", input) {
-        return gal_ai_regist.parse_next(input).map(BlockAction::AiCall);
+        return gal_ai_regist.parse_next(input).map(BlockAction::AiRegist);
     }
 
     if starts_with("gx.run", input) {

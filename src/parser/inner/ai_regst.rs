@@ -1,12 +1,12 @@
 use super::super::prelude::*;
 use super::call::action_call_args;
 
-use crate::ability::ai::ai_call::AiGxlCall;
+use crate::ability::ai::ai_call::GxlAiRegist;
 use crate::parser::domain::gal_keyword;
 use crate::util::OptionFrom;
 
-pub fn gal_ai_regist(input: &mut &str) -> Result<AiGxlCall> {
-    let mut call = AiGxlCall::default();
+pub fn gal_ai_regist(input: &mut &str) -> Result<GxlAiRegist> {
+    let mut call = GxlAiRegist::default();
     gal_keyword("gx.ai_regist", input)?;
     let props = action_call_args.parse_next(input)?;
     for one in props {
