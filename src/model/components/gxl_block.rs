@@ -7,6 +7,7 @@ use async_trait::async_trait;
 use derive_more::From;
 use std::sync::mpsc::Sender;
 
+use crate::ability::ai::ai_call::AiGxlCall;
 use crate::ability::ai::ai_chat::AiChatExecutor;
 use crate::ability::ai::ai_task::AiTaskExecutor;
 use crate::ability::archive::GxTar;
@@ -26,7 +27,8 @@ use crate::util::redirect::ReadSignal;
 #[derive(Clone, From)]
 pub enum BlockAction {
     AiChat(AiChatExecutor),
-    AiFun(AiTaskExecutor),
+    AiTask(AiTaskExecutor),
+    AiCall(AiGxlCall),
     Shell(GxShell),
     Command(GxCmd),
     GxlRun(GxRun),
@@ -75,7 +77,8 @@ impl AsyncRunnableWithSenderTrait for BlockAction {
     ) -> TaskResult {
         match self {
             BlockAction::AiChat(o) => o.async_exec(ctx, dct).await,
-            BlockAction::AiFun(o) => o.async_exec(ctx, dct).await,
+            BlockAction::AiTask(o) => o.async_exec(ctx, dct).await,
+            BlockAction::AiCall(o) => o.async_exec(ctx, dct).await,
             BlockAction::GxlRun(o) => o.async_exec(ctx, dct, sender).await,
             BlockAction::Loop(o) => o.async_exec(ctx, dct, sender).await,
             BlockAction::Shell(o) => o.async_exec(ctx, dct).await,
@@ -130,8 +133,9 @@ impl DependTrait<&GxlSpace> for BlockNode {
         };
         for x in self.items {
             let item = match x {
-                BlockAction::AiFun(v) => BlockAction::AiFun(v.clone()),
+                BlockAction::AiTask(v) => BlockAction::AiTask(v.clone()),
                 BlockAction::AiChat(v) => BlockAction::AiChat(v.clone()),
+                BlockAction::AiCall(v) => BlockAction::AiCall(v.clone()),
                 BlockAction::Tpl(v) => BlockAction::Tpl(v.clone()),
                 BlockAction::Tar(v) => BlockAction::Tar(v.clone()),
                 BlockAction::UnTar(v) => BlockAction::UnTar(v.clone()),

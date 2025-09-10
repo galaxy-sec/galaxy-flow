@@ -5,6 +5,8 @@ use crate::ability::prelude::*;
 use crate::cmd::GxlCmd;
 use crate::util::OptionFrom;
 use async_trait::async_trait;
+use orion_error::ContextRecord;
+use orion_error::OperationContext;
 use orion_sec::sec::NoSecConv;
 use orion_sec::sec::SecFrom;
 use orion_sec::sec::SecValueType;
@@ -156,9 +158,12 @@ impl FunctionExecutor for AiGxlCall {
 impl AsyncRunnableTrait for AiGxlCall {
     async fn async_exec(&self, ctx: ExecContext, vars: VarSpace) -> TaskResult {
         let fun_key = self.call_key();
+        let mut op_ctx = OperationContext::want("regist tool");
+        op_ctx.record("fun", fun_key.as_str());
         self.setup_exec_unit(ctx, &vars)?;
         GlobalFunctionRegistry::register_function(self.call_define()).err_conv()?;
         GlobalFunctionRegistry::register_executor(fun_key, Arc::new(self.clone())).err_conv()?;
+        op_ctx.mark_suc();
         Ok(TaskValue::new(vars, ExecOut::Ignore))
     }
 }

@@ -47,8 +47,8 @@ impl AiTaskExecutor {
     /// 这是主要的执行入口点，负责协调整个AI任务的执行流程。
     pub async fn execute(&self, mut ctx: ExecContext, mut vars: VarSpace) -> TaskResult {
         // 设置执行上下文
-        ctx.append("gx.ai_fun");
-        let mut action = Action::from("gx.ai_fun");
+        ctx.append("gx.ai_task");
+        let mut action = Action::from("gx.ai_task");
         let task_prompt = self.task.as_deref().unwrap_or("请完成任务");
 
         // 初始化执行单元

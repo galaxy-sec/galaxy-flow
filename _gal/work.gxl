@@ -75,5 +75,9 @@ mod main  {
     gx.ai_chat( "Generate a brief summary for the git commit message", prompt_file : "./code_diff.txt");
   }
 
+    flow dev_ai {
+        gx.ai_regist(flow :"ci_msg", desc: "gen git commit message");
+        //gx.ai_task( task: "生成代码提交说明", role : "developer" ) ;
+    }
 
 }
