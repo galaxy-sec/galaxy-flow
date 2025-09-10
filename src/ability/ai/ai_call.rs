@@ -32,7 +32,6 @@ use orion_variate::vars::EnvDict;
 #[derive(Debug, Getters, MutGetters, Setters, Clone)]
 #[getset(get = "pub", set = "pub", get_mut = "pub", set_with = "pub")]
 pub struct GxlAiRegist {
-    key: String,
     role: Option<String>,
     desp: String,
     config: Option<AiConfig>,
@@ -45,7 +44,6 @@ pub struct GxlAiRegist {
 impl Default for GxlAiRegist {
     fn default() -> Self {
         Self {
-            key: String::new(),
             role: None,
             desp: "unknow".to_string(),
             config: None,
@@ -99,7 +97,7 @@ impl GxlAiRegist {
         Ok(())
     }
     fn call_key(&self) -> String {
-        format!("gxl-{}", self.key)
+        format!("gxl-{}", self.flow())
     }
     fn call_define(&self) -> FunctionDefinition {
         FunctionDefinition {
@@ -158,7 +156,9 @@ impl FunctionExecutor for GxlAiRegist {
 impl AsyncRunnableTrait for GxlAiRegist {
     async fn async_exec(&self, ctx: ExecContext, vars: VarSpace) -> TaskResult {
         let fun_key = self.call_key();
-        let mut op_ctx = OperationContext::want("regist tool").with_auto_log();
+        let mut op_ctx = OperationContext::want("regist tool")
+            .with_auto_log()
+            .with_mod_path("gxl/ai");
         op_ctx.record("fun", fun_key.as_str());
         self.setup_exec_unit(ctx, &vars)?;
         GlobalFunctionRegistry::register_function(self.call_define()).err_conv()?;
