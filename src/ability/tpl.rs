@@ -80,7 +80,7 @@ impl GxTpl {
         let tpl = PathBuf::from(exp.eval(dto.tpl.as_str())?);
         let dst = PathBuf::from(exp.eval(dto.dst.as_str())?);
 
-        let mut err_ctx = OperationContext::want("render tpl path");
+        let mut err_ctx = OperationContext::want("render tpl path").with_auto_log();
         // 处理目录模板
         if dto.engine != TPlEngineType::Handlebars {
             return Err(ExecReason::Args(format!(
@@ -161,7 +161,7 @@ impl GxTpl {
         debug!(target: ctx.path(), "tpl:{}", tpl.display());
         debug!(target: ctx.path(),  "dst:{}", dst.display());
 
-        let mut err_ctx = OperationContext::want("render tpl");
+        let mut err_ctx = OperationContext::want("render tpl").with_auto_log();
         err_ctx.record("tpl", tpl);
         // 2. 验证模板文件
         let tpl_path = Path::new(&tpl);

@@ -158,7 +158,7 @@ impl FunctionExecutor for GxlAiRegist {
 impl AsyncRunnableTrait for GxlAiRegist {
     async fn async_exec(&self, ctx: ExecContext, vars: VarSpace) -> TaskResult {
         let fun_key = self.call_key();
-        let mut op_ctx = OperationContext::want("regist tool");
+        let mut op_ctx = OperationContext::want("regist tool").with_auto_log();
         op_ctx.record("fun", fun_key.as_str());
         self.setup_exec_unit(ctx, &vars)?;
         GlobalFunctionRegistry::register_function(self.call_define()).err_conv()?;
