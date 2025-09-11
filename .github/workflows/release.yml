@@ -28,8 +28,13 @@ jobs:
         include:
           - os: ubuntu-22.04
             target: x86_64-unknown-linux-gnu
+<<<<<<< HEAD
           - os: ubuntu-22.04
             target: x86_64-unknown-linux-musl
+=======
+          - os: ubuntu-20.04
+            target: x86_64-unknown-linux-gnu
+>>>>>>> 3dfccb27182bc8ff2e26db56b15ca4eaa82f37e7
           - os: macos-14
             target: aarch64-apple-darwin
     steps:
