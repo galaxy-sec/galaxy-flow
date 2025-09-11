@@ -1,0 +1,124 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop, release/*]
+  pull_request:
+    branches: [main, develop, release/*]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  test:
+    name: Test
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        rust: [stable, beta]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.rust }}
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo test --all-features -- --test-threads=1
+
+  fmt:
+    name: Rustfmt
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+      - run: cargo fmt --all -- --check
+
+  clippy:
+    name: Clippy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo clippy --all-targets --all-features -- -D warnings
+
+  security:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: rustsec/audit-check@v1.4.1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+  musl-check:
+    name: Musl Compatibility Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Install cross-compilation tools
+        uses: taiki-e/setup-cross-toolchain-action@v1
+        with:
+          target: x86_64-unknown-linux-musl
+      - name: Install musl target
+        run: rustup target add x86_64-unknown-linux-musl
+      - name: Check musl compatibility
+        run: cargo check --target x86_64-unknown-linux-musl --all-features
+      - name: Clippy musl check
+        run: cargo clippy --target x86_64-unknown-linux-musl --all-features -- -D warnings
+      - name: Configure static linking environment
+        run: |
+          echo "RUSTFLAGS=-C target-feature=+crt-static" >> $GITHUB_ENV
+          echo "PKG_CONFIG_ALL_STATIC=1" >> $GITHUB_ENV
+          echo "OPENSSL_STATIC=1" >> $GITHUB_ENV
+          echo "LIBZ_SYS_STATIC=1" >> $GITHUB_ENV
+
+      - name: Build musl debug binary for verification
+        run: cargo build --target x86_64-unknown-linux-musl --all-features
+      - name: Verify musl static linking
+        run: |
+          echo "Verifying musl static linking..."
+          echo "Debug info: Testing binary with ldd..."
+          ldd_result=$(ldd ./target/x86_64-unknown-linux-musl/debug/gflow 2>&1)
+          echo "ldd output: $ldd_result"
+          if echo "$ldd_result" | grep -q "statically linked"; then
+            echo "✓ musl binary verified as statically linked"
+          else
+            echo "✗ musl binary shows dynamic dependencies:"
+            echo "$ldd_result"
+            exit 1
+          fi
+
+  coverage:
+    name: Code Coverage
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: llvm-tools-preview
+      - uses: Swatinem/rust-cache@v2
+      - uses: taiki-e/install-action@cargo-llvm-cov
+      - run: cargo llvm-cov --all-features --workspace --lcov --output-path lcov.info  -- --test-threads=1
+
+      # 选项1: 使用 Coveralls
+      - name: Upload to Coveralls
+        uses: coverallsapp/github-action@v2
+        with:
+          file: lcov.info
+          format: lcov
+
+      # 选项2: 使用 GitHub Artifacts 作为备选
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        if: failure() # 如果Coveralls失败，保留lcov文件
+        with:
+          name: coverage-lcov
+          path: lcov.info
+          retention-days: 30
