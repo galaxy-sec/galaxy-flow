@@ -22,11 +22,14 @@ jobs:
       matrix:
         target:
           - x86_64-unknown-linux-gnu
+          - x86_64-unknown-linux-musl
           - aarch64-apple-darwin
         rustup_toolchain: [stable]
         include:
           - os: ubuntu-22.04
             target: x86_64-unknown-linux-gnu
+          - os: ubuntu-22.04
+            target: x86_64-unknown-linux-musl
           - os: macos-14
             target: aarch64-apple-darwin
     steps:
@@ -38,17 +41,50 @@ jobs:
         with:
           toolchain: ${{ matrix.rustup_toolchain }}
 
+      - name: Install cross-compilation tools
+        if: matrix.target == 'x86_64-unknown-linux-musl'
+        uses: taiki-e/setup-cross-toolchain-action@v1
+        with:
+          target: ${{ matrix.target }}
+
+      - name: Install musl target
+        if: matrix.target == 'x86_64-unknown-linux-musl'
+        run: rustup target add ${{ matrix.target }}
+
+      - name: Configure static linking environment
+        if: matrix.target == 'x86_64-unknown-linux-musl'
+        run: |
+          echo "RUSTFLAGS=-C target-feature=+crt-static" >> $GITHUB_ENV
+          echo "PKG_CONFIG_ALL_STATIC=1" >> $GITHUB_ENV
+          echo "OPENSSL_STATIC=1" >> $GITHUB_ENV
+          echo "LIBZ_SYS_STATIC=1" >> $GITHUB_ENV
+
       - name: Cargo build
         run: cargo build --release --target ${{ matrix.target }}
 
       - name: Show version
         run: ./target/${{ matrix.target }}/release/gflow --version
 
+      - name: Verify musl static linking
+        if: matrix.target == 'x86_64-unknown-linux-musl'
+        run: |
+          echo "Verifying musl static linking..."
+          echo "Debug info: Testing binary with ldd..."
+          ldd_result=$(ldd ./target/${{ matrix.target }}/release/gflow 2>&1)
+          echo "ldd output: $ldd_result"
+          if echo "$ldd_result" | grep -q "statically linked"; then
+            echo "✓ musl binary verified as statically linked"
+          else
+            echo "✗ musl binary shows dynamic dependencies:"
+            echo "$ldd_result"
+            exit 1
+          fi
+
       - name: Archive (UNIX)
         run: |
           mkdir -p artifacts
           cp -av target/${{ matrix.target }}/release/gflow artifacts/
-          cp -av target/${{ matrix.target }}/release/gprj artifacts/
+          cp -av target/${{ matrix.target }}/release/gprj  artifacts/
           tar -czf ${{ github.event.repository.name }}-${{ github.ref_name }}-${{ matrix.target }}.tar.gz  artifacts
         if: ${{ ! startsWith(matrix.os, 'windows') }}
 
