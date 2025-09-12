@@ -62,7 +62,7 @@ http-types = "2.12"
 lazy_static = "~1.5"
 chrono = "0.4.41"
 log = "~0.4"
-git2 = "0.20"
+git2 = { version = "0.20", features = ["vendored-openssl"] }
 unicase = "~2.8"
 scopeguard = "1.2.0"
 
