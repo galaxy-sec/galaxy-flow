@@ -2,8 +2,9 @@ use std::path::PathBuf;
 
 use crate::ability::prelude::*;
 use getset::{Getters, Setters, WithSetters};
+use orion_accessor::archive::compress;
+use orion_accessor::archive::decompress;
 use orion_error::ToStructError;
-use orion_variate::archive::{compress, decompress};
 
 #[derive(Clone, Default, Debug, PartialEq, Getters, Setters, WithSetters, Builder)]
 #[getset(get = "pub", set = "pub", get_mut, set_with)]
@@ -150,7 +151,7 @@ mod tests {
 
         // 验证压缩文件内容
         let extract_dir = temp_dir.path().join("extract");
-        orion_variate::archive::decompress(&archive_path, &extract_dir).unwrap();
+        decompress(&archive_path, &extract_dir).unwrap();
 
         assert!(extract_dir.join("test.txt").exists());
         assert!(extract_dir.join("subdir").join("nested.txt").exists());

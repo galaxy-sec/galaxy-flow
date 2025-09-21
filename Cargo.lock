@@ -1153,13 +1153,14 @@ dependencies = [
  "log",
  "mockall",
  "once_cell",
+ "orion-accessor",
  "orion-ai",
- "orion-error 0.5.4",
+ "orion-error",
+ "orion-infra",
  "orion-sec",
- "orion_conf 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
- "orion_infra 0.3.1",
+ "orion-variate",
+ "orion_conf",
  "orion_parse",
- "orion_variate",
  "os_info",
  "pretty_env_logger",
  "rand 0.9.2",
@@ -2157,198 +2158,9 @@ dependencies = [
 ]
 
 [[package]]
-name = "orion-ai"
-version = "0.2.1"
-source = "git+https://github.com/galaxy-sec/orion-ai.git?tag=v0.2.1#4de78c6a1273ba8ec6e3dad01dfcb754217ed7d5"
-dependencies = [
- "anyhow",
- "async-trait",
- "chrono",
- "contracts",
- "derive_more",
- "dirs",
- "fs_extra",
- "getset",
- "home",
- "indexmap",
- "lazy_static",
- "libc",
- "log",
- "mockall",
- "once_cell",
- "orion-error 0.5.4",
- "orion-sec",
- "orion_conf 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
- "orion_infra 0.3.1",
- "orion_variate",
- "reqwest",
- "scopeguard",
- "serde",
- "serde_derive",
- "serde_json",
- "serde_yaml",
- "shells",
- "thiserror 2.0.16",
- "time 0.3.43",
- "tokio",
- "tokio-util",
- "toml",
- "unicase",
- "url",
- "walkdir",
- "wildmatch",
-]
-
-[[package]]
-name = "orion-error"
-version = "0.5.1"
-source = "git+https://github.com/galaxy-sec/orion-error.git?tag=v0.5.1#bd7b6323daa2e718a37c07e3e494e92f4bd4eb35"
-dependencies = [
- "derive-getters",
- "derive_more",
- "log",
- "serde",
- "thiserror 2.0.16",
-]
-
-[[package]]
-name = "orion-error"
+name = "orion-accessor"
 version = "0.5.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ac3c3c07d39f70ce6fdcdc5f5eff8494454af616bbf7eeed44e985236ea4d5bf"
-dependencies = [
- "derive-getters",
- "derive_more",
- "log",
- "serde",
- "thiserror 2.0.16",
-]
-
-[[package]]
-name = "orion-sec"
-version = "0.2.0"
-source = "git+https://github.com/galaxy-sec/orion-sec.git?tag=v0.2.0#9214865a58358ea27d6dba591bf6f48d466be69f"
-dependencies = [
- "chrono",
- "contracts",
- "derive_more",
- "fs_extra",
- "getset",
- "indexmap",
- "log",
- "once_cell",
- "orion-error 0.5.4",
- "orion_conf 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
- "orion_variate",
- "serde",
- "serde_derive",
- "serde_yaml",
- "thiserror 2.0.16",
- "unicase",
- "url",
-]
-
-[[package]]
-name = "orion_cond"
-version = "1.0.0"
-dependencies = [
- "chrono",
- "contracts",
- "derive_more",
- "getset",
- "ipnet",
- "libc",
- "rstest",
- "tempfile",
- "wildmatch",
-]
-
-[[package]]
-name = "orion_conf"
-version = "0.1.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6bbc830e1a58c11465124d8a5be73137af821341877f178254be5a76a65b503c"
-dependencies = [
- "chrono",
- "derive-getters",
- "derive_more",
- "orion-error 0.5.4",
- "serde",
- "serde_derive",
- "serde_ini",
- "serde_json",
- "serde_yaml",
- "thiserror 2.0.16",
- "toml",
-]
-
-[[package]]
-name = "orion_conf"
-version = "0.1.5"
-source = "git+https://github.com/galaxy-sec/orion-conf.git?tag=v0.1.5#68208d52325f47586f96978d8bee0d17d628bbab"
-dependencies = [
- "chrono",
- "derive-getters",
- "derive_more",
- "orion-error 0.5.4",
- "serde",
- "serde_derive",
- "serde_ini",
- "serde_json",
- "serde_yaml",
- "thiserror 2.0.16",
- "toml",
-]
-
-[[package]]
-name = "orion_infra"
-version = "0.3.1"
-source = "git+https://github.com/galaxy-sec/orion-infra.git?tag=v0.3.1#19c5be36ece43120b65d153f43b3b84e5ac0dfad"
-dependencies = [
- "anyhow",
- "derive_more",
- "flexi_logger",
- "log",
- "orion-error 0.5.1",
- "scopeguard",
- "serde",
- "serde_derive",
- "serde_yaml",
- "thiserror 2.0.16",
- "toml",
-]
-
-[[package]]
-name = "orion_infra"
-version = "0.3.2"
-source = "git+https://github.com/galaxy-sec/orion-infra?tag=v0.3.2#ea91a50b252f5b696d6bac5e341175be54521da8"
-dependencies = [
- "anyhow",
- "derive_more",
- "flexi_logger",
- "log",
- "orion-error 0.5.4",
- "scopeguard",
- "serde",
- "serde_derive",
- "serde_yaml",
- "thiserror 2.0.16",
- "toml",
-]
-
-[[package]]
-name = "orion_parse"
-version = "1.0.0"
-dependencies = [
- "orion_cond",
- "orion_conf 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
- "winnow",
-]
-
-[[package]]
-name = "orion_variate"
-version = "0.9.1"
-source = "git+https://github.com/galaxy-sec/orion-variate.git?tag=v0.9.1#e7353af14d94129d9a2f3f56549836a6a8adf201"
+source = "git+https://github.com/galaxy-sec/orion-accessor.git?tag=v0.5.4#86516a3bf7a09c56b000bfc5b10b6c1a75afaa5f"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2369,15 +2181,15 @@ dependencies = [
  "indexmap",
  "indicatif",
  "log",
- "orion-error 0.5.4",
- "orion_conf 0.1.5 (git+https://github.com/galaxy-sec/orion-conf.git?tag=v0.1.5)",
- "orion_infra 0.3.2",
+ "orion-error",
+ "orion-infra",
+ "orion-variate",
+ "orion_conf",
  "os_info",
  "reqwest",
  "scopeguard",
  "serde",
  "serde_derive",
- "serde_ini",
  "serde_json",
  "serde_yaml",
  "tar",
@@ -2389,6 +2201,171 @@ dependencies = [
  "url",
  "walkdir",
  "wildmatch",
+ "winnow",
+]
+
+[[package]]
+name = "orion-ai"
+version = "0.3.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "chrono",
+ "contracts",
+ "derive_more",
+ "dirs",
+ "fs_extra",
+ "getset",
+ "home",
+ "indexmap",
+ "lazy_static",
+ "libc",
+ "log",
+ "mockall",
+ "once_cell",
+ "orion-error",
+ "orion-infra",
+ "orion-sec",
+ "orion-variate",
+ "orion_conf",
+ "reqwest",
+ "scopeguard",
+ "serde",
+ "serde_derive",
+ "serde_json",
+ "serde_yaml",
+ "shells",
+ "thiserror 2.0.16",
+ "time 0.3.43",
+ "tokio",
+ "tokio-util",
+ "toml",
+ "unicase",
+ "url",
+ "uuid",
+ "walkdir",
+ "wildmatch",
+]
+
+[[package]]
+name = "orion-error"
+version = "0.5.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ac3c3c07d39f70ce6fdcdc5f5eff8494454af616bbf7eeed44e985236ea4d5bf"
+dependencies = [
+ "derive-getters",
+ "derive_more",
+ "log",
+ "serde",
+ "thiserror 2.0.16",
+]
+
+[[package]]
+name = "orion-infra"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1b6312e48fe270718cc0757d34d70ddfc4953fa0bed9146a825ed22f2a7b9155"
+dependencies = [
+ "anyhow",
+ "derive_more",
+ "flexi_logger",
+ "log",
+ "orion-error",
+ "orion_conf",
+ "serde",
+ "serde_derive",
+ "thiserror 2.0.16",
+ "toml",
+]
+
+[[package]]
+name = "orion-sec"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "40e765bb2faff70a1325f7d73c75f995ce3226e1da88760c95dff9cee6802931"
+dependencies = [
+ "chrono",
+ "contracts",
+ "derive_more",
+ "fs_extra",
+ "getset",
+ "indexmap",
+ "log",
+ "once_cell",
+ "orion-error",
+ "orion-variate",
+ "orion_conf",
+ "serde",
+ "serde_derive",
+ "serde_yaml",
+ "thiserror 2.0.16",
+ "unicase",
+ "url",
+]
+
+[[package]]
+name = "orion-variate"
+version = "0.10.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "82c64bac262b91854fe4ce621bdc004b8b88bf98c75f71affb88dbe35aa30482"
+dependencies = [
+ "contracts",
+ "derive-getters",
+ "derive_more",
+ "getset",
+ "indexmap",
+ "log",
+ "orion-error",
+ "orion_conf",
+ "os_info",
+ "serde",
+ "serde_derive",
+ "serde_ini",
+ "serde_json",
+ "serde_yaml",
+ "thiserror 2.0.16",
+ "winnow",
+]
+
+[[package]]
+name = "orion_cond"
+version = "1.0.0"
+dependencies = [
+ "chrono",
+ "contracts",
+ "derive_more",
+ "getset",
+ "ipnet",
+ "libc",
+ "rstest",
+ "tempfile",
+ "wildmatch",
+]
+
+[[package]]
+name = "orion_conf"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "223eb4af20821d6a88022b5da48013c990c0447ff82e2b8af2ed10fb0de5bc08"
+dependencies = [
+ "derive-getters",
+ "derive_more",
+ "orion-error",
+ "serde",
+ "serde_derive",
+ "serde_ini",
+ "serde_json",
+ "serde_yaml",
+ "thiserror 2.0.16",
+ "toml",
+]
+
+[[package]]
+name = "orion_parse"
+version = "1.0.0"
+dependencies = [
+ "orion_cond",
+ "orion_conf",
  "winnow",
 ]
 
@@ -3930,7 +3907,9 @@ version = "1.18.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2f87b8aa10b915a06587d0dec516c282ff295b475d94abf425d62b57710070a2"
 dependencies = [
+ "getrandom 0.3.3",
  "js-sys",
+ "serde",
  "wasm-bindgen",
 ]
 
@@ -4397,9 +4376,9 @@ checksum = "ea2f10b9bb0928dfb1b42b65e1f9e36f7f54dbdf08457afefb38afcdec4fa2bb"
 
 [[package]]
 name = "xattr"
-version = "1.5.1"
+version = "1.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "af3a19837351dc82ba89f8a125e22a3c475f05aba604acc023d62b2739ae2909"
+checksum = "32e45ad4206f6d2479085147f02bc2ef834ac85886624a23575ae137c8aa8156"
 dependencies = [
  "libc",
  "rustix",

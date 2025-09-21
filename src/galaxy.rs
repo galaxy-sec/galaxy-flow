@@ -1,8 +1,8 @@
 use home::home_dir;
+use orion_accessor::addr::access_ctrl::{Rule, Unit, serv::NetAccessCtrl};
 use orion_ai::{AiConfig, RoleConfigManager};
 use orion_conf::Yamlable;
 use orion_error::{ErrorOwe, UvsResFrom};
-use orion_variate::addr::access_ctrl::{Rule, Unit, serv::NetAccessCtrl};
 
 use crate::{
     const_val::gxl_const::{AI_CONF_FILE, AI_ROLE_FILE, NET_ACCESS_CTRL_FILE},

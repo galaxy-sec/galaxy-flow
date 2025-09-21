@@ -1,15 +1,14 @@
+use orion_accessor::types::ResourceDownloader;
 use orion_error::ErrorOwe;
-use orion_variate::addr::Address;
-use orion_variate::addr::GitRepository;
-use orion_variate::types::ResourceDownloader;
-use orion_variate::types::UpdateUnit;
-use orion_variate::update::DownloadOptions;
-use orion_variate::vars::EnvDict;
 
 use crate::ExecResult;
 use crate::evaluator::EnvExpress;
 use crate::evaluator::VarParser;
-
+use orion_accessor::addr::Address;
+use orion_accessor::addr::GitRepository;
+use orion_accessor::types::UpdateUnit;
+use orion_accessor::update::DownloadOptions;
+use orion_variate::EnvDict;
 use std::path::PathBuf;
 
 use super::accessor::build_accessor;

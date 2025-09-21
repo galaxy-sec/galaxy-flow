@@ -3,12 +3,12 @@ use std::{
     str::FromStr,
 };
 
-use orion_error::ToStructError;
-use orion_variate::{
+use orion_accessor::{
     addr::{Address, HttpResource},
     types::{ResourceDownloader, ResourceUploader},
     update::{DownloadOptions, HttpMethod, UploadOptions},
 };
+use orion_error::ToStructError;
 
 use crate::{ability::prelude::*, util::accessor::build_accessor};
 
