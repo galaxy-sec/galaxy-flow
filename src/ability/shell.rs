@@ -45,13 +45,13 @@ impl GxShell {
         expect.quiet = ctx.quiet();
         if let Some(arg_file) = &self.arg_file {
             let dict = match arg_file.extension() {
-                Some(ext) if ext == "json" => ValueDict::from_json(arg_file)
+                Some(ext) if ext == "json" => ValueDict::load_json(arg_file)
                     .map_err(|e| ExecReason::Serde(format!("JSON解析失败: {e}")))?,
-                Some(ext) if ext == "yml" || ext == "yaml" => ValueDict::from_yml(arg_file)
+                Some(ext) if ext == "yml" || ext == "yaml" => ValueDict::load_yaml(arg_file)
                     .map_err(|e| ExecReason::Serde(format!("YAML解析失败: {e}")))?,
-                Some(ext) if ext == "toml" => ValueDict::from_toml(arg_file)
+                Some(ext) if ext == "toml" => ValueDict::load_toml(arg_file)
                     .map_err(|e| ExecReason::Serde(format!("TOML解析失败: {e}")))?,
-                Some(ext) if ext == "ini" => ValueDict::from_ini(arg_file)
+                Some(ext) if ext == "ini" => ValueDict::load_ini(arg_file)
                     .map_err(|e| ExecReason::Serde(format!("INI解析失败: {e}")))?,
                 _ => {
                     return ExecReason::from_logic(format!(

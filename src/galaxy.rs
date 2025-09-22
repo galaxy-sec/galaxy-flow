@@ -40,7 +40,7 @@ impl Galaxy {
             let rules = vec![Rule::new("https://google.com/*", "https://google.cn/")];
             let unit = Unit::new(rules, None, None);
             let service = NetAccessCtrl::new(vec![unit], true);
-            service.save_yml(&net_ctrl_path).owe_res()?;
+            service.save_yaml(&net_ctrl_path).owe_res()?;
         }
 
         let ai_conf_path = galaxy_dir.join(AI_CONF_FILE);
@@ -50,12 +50,12 @@ impl Galaxy {
                 ai_conf_path.display()
             );
         } else {
-            AiConfig::example().save_yml(&ai_conf_path).owe_res()?;
+            AiConfig::example().save_yaml(&ai_conf_path).owe_res()?;
         }
         let ai_role_path = galaxy_dir.join(AI_ROLE_FILE);
         if !ai_role_path.exists() {
             RoleConfigManager::default()
-                .save_yml(&ai_role_path)
+                .save_yaml(&ai_role_path)
                 .owe_res()?;
         } else {
             println!(" {} exists! , ai role init ignore", ai_role_path.display());

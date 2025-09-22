@@ -2160,7 +2160,8 @@ dependencies = [
 [[package]]
 name = "orion-accessor"
 version = "0.5.4"
-source = "git+https://github.com/galaxy-sec/orion-accessor.git?tag=v0.5.4#86516a3bf7a09c56b000bfc5b10b6c1a75afaa5f"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9018ee4d846439ef4e8030553e77b78d9dae727a71c09b692a289a84fbc9cedd"
 dependencies = [
  "anyhow",
  "async-trait",

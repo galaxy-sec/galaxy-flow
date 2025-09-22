@@ -13,7 +13,7 @@ pub fn build_accessor(dict: &EnvDict) -> UniversalAccessor {
         .map(|x| x.join(NET_ACCS_CTRL_PATH_FILE))
         .filter(|p| p.exists())
     {
-        match NetAccessCtrl::from_yml(&path) {
+        match NetAccessCtrl::load_yaml(&path) {
             Ok(ctrl) => {
                 let ctrl = ctrl.env_eval(dict);
                 return UniversalAccessor::new(UniversalConfig::default().with_ctrl(ctrl));
