@@ -23,36 +23,32 @@ license = "Apache-2.0"
 
 [workspace.dependencies]
 winnow = "0.7.11"
-orion-error = "~0.5"
-orion_conf = "~0.1"
+orion-error = "0.5"
+orion_conf = { version = "0.4", features = ["yaml", "toml", "json", "ini"] }
 #orion-error = { path = "../orion-error" }
 #orion-error = { git = "https://github.com/galaxy-sec/orion-error.git", tag = "v0.4.0" }
 #orion_conf = { git = "https://github.com/galaxy-sec/orion-common.git", tag = "v0.3.0" }
-orion-sec= { git = "https://github.com/galaxy-sec/orion-sec.git", tag = "v0.2.0" }
-orion-ai= { git = "https://github.com/galaxy-sec/orion-ai.git", tag = "v0.2.1" }
+orion-sec=  "0.3"
+#orion-ai= { git = "https://github.com/galaxy-sec/orion-ai.git", tag = "v0.2.1" }
 #orion-ai= { path = "../orion-ai"  }
 #orion-ai= { git = "https://github.com/galaxy-sec/orion-ai.git", branch = "main" }
-orion_infra = { git = "https://github.com/galaxy-sec/orion-infra.git", tag = "v0.3.1" }
-orion_variate = { git = "https://github.com/galaxy-sec/orion-variate.git", tag = "v0.9.1" }
+orion-infra = "0.4"
+orion-variate =  "0.10"
+orion-accessor = "0.5.4"
 orion_parse = { path = "crates/orion_parse" }
-#orion-sec = { path = "../orion-sec" }
 orion_cond = { path = "crates/orion_cond" }
-#orion_variate = { path = "../orion_variate" }
-#orion_infra = { path = "../orion_infra" }
-#orion_common = { path = "../orion_common" }
-#orion_variate = { path = "../orion_variate" }
-#orion-syspec = { path = "../orion-syspec" }
-tokio = { version = "~1.47", features = ["full"] }
+tokio = { version = "1.47", features = ["full"] }
 derive_more = { version = "2.0", features = ["full"] }
 async-trait = "0.1"
 
 [dependencies]
 orion_conf= { workspace = true }
-orion_infra = { workspace = true }
-orion_variate = { workspace = true }
+orion-infra = { workspace = true }
+orion-variate = { workspace = true }
+orion-accessor = { workspace = true }
 orion_parse = { workspace = true }
 orion-sec = { workspace = true }
-orion-ai = { workspace = true }
+#orion-ai = { workspace = true }
 uuid = "1.0.0"
 derive-getters = "0.5"
 derive_builder = "0.20"

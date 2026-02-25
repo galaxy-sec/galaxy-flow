@@ -1,5 +1,4 @@
 use crate::{ExecReason, ExecResult, const_val::gxl_const, error::AssembleReason};
-use orion_ai::{AiErrReason, OrionAiReason};
 use orion_error::{ErrorCode, StructError, UvsReason};
 
 use orion_sec::SecReason;
@@ -15,8 +14,6 @@ pub enum RunReason {
     #[error("args error {0}")]
     Args(String),
     #[error("{0}")]
-    Ai(AiErrReason),
-    #[error("{0}")]
     Sec(SecReason),
     #[error("{0}")]
     Uvs(UvsReason),
@@ -27,16 +24,6 @@ impl From<UvsReason> for RunReason {
     }
 }
 
-impl From<OrionAiReason> for RunReason {
-    fn from(value: OrionAiReason) -> Self {
-        match value {
-            OrionAiReason::Ai(reason) => Self::Ai(reason),
-            OrionAiReason::Sec(reason) => Self::Sec(reason),
-            OrionAiReason::Uvs(reason) => Self::Uvs(reason),
-        }
-    }
-}
-
 impl ErrorCode for RunReason {
     fn error_code(&self) -> i32 {
         match self {
@@ -44,8 +31,7 @@ impl ErrorCode for RunReason {
             RunReason::Exec(_) => 540,
             RunReason::Args(_) => 550,
             RunReason::Uvs(uvs_reason) => uvs_reason.error_code(),
-            RunReason::Ai(_) => todo!(),
-            RunReason::Sec(_) => todo!(),
+            RunReason::Sec(_) => 560,
         }
     }
 }
@@ -122,6 +108,9 @@ pub fn report_gxl_error(e: RunError) {
             UvsReason::NotFoundError(e) => {
                 println!("Not Found: {e}\n",);
             }
+            other => {
+                println!("ERROR: {other}\n",);
+            }
         },
         RunReason::Gxl(e) => {
             println!("{}{e}\n", gxl_const::ERROR_PREFIX);
@@ -131,9 +120,6 @@ pub fn report_gxl_error(e: RunError) {
         }
         RunReason::Args(e) => {
             println!("ARGS ERROR: {e}\n",);
-        }
-        RunReason::Ai(e) => {
-            println!("Ai ERROR: {e}\n",);
         }
         RunReason::Sec(e) => {
             println!("Sec ERROR: {e}\n",);
@@ -146,7 +132,7 @@ pub fn report_gxl_error(e: RunError) {
         println!("\n[DETAIL]:\n{detail}",);
     }
     println!("\n[CONTEXT]:\n");
-    for x in e.context() {
+    for x in e.context().iter() {
         println!("{x}")
     }
 }

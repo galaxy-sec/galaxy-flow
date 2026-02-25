@@ -1,6 +1,5 @@
 use orion_ai::{AiConfig, AiExecUnitBuilder};
 use orion_error::ErrorConv;
-use orion_variate::vars::EnvDict;
 use std::path::PathBuf;
 
 use crate::ability::{ai::AI_CONTENT, prelude::*};
@@ -8,6 +7,7 @@ use crate::model::traits::Setter;
 use getset::{Getters, MutGetters, Setters};
 use orion_error::{ToStructError, UvsResFrom};
 use orion_sec::sec::{SecFrom, SecValueType};
+use orion_variate::EnvDict;
 
 /// AI聊天执行器，专注于AI对话功能
 ///

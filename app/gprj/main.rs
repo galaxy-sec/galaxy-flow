@@ -29,8 +29,8 @@ use galaxy_flow::runner::GxlRunner;
 use galaxy_flow::traits::Setter;
 use galaxy_flow::util::diagnose::ai_diagnose;
 use include_dir::{Dir, include_dir};
+use orion_accessor::addr::GitRepository;
 use orion_error::ErrorConv;
-use orion_variate::addr::GitRepository;
 
 const ASSETS_DIR: Dir = include_dir!("app/gprj/init");
 #[tokio::main]

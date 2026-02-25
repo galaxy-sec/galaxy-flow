@@ -5,7 +5,22 @@ All notable changes to the Galaxy Flow project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-<<<<<<< HEAD
+## [v0.12.0] - 2026-02-25
+
+### Changed
+- **依赖升级**: 核心依赖迁移至 crates.io 注册版本
+  - `orion_conf`: `~0.1` → `0.4` (trait 重命名: `Yamlable`→`YamlIO`, `Tomlable`→`TomlIO`, `JsonAble`→`JsonIO`, `IniAble`→`IniIO`; 方法重命名: `from_yml`→`load_yaml`, `save_yml`→`save_yaml` 等)
+  - `orion-sec`: `v0.2.0` (git) → `0.3` (registry)
+  - `orion-infra`: `v0.3.1` (git) → `0.4` (registry)
+  - `orion-variate`: `v0.9.1` (git) → `0.10` (registry)
+- **模块迁移**: `orion-variate` 中的 `addr`、`types`、`update`、`archive` 模块迁移至新增依赖 `orion-accessor = 0.5.4`
+
+### Removed
+- **临时移除 orion-ai**: 因 `orion-ai` v0.2.1 依赖旧版 `orion-variate`/`orion-sec` 产生版本冲突，暂时移除 AI 相关功能，待 `orion-ai` 升级后恢复
+  - 移除 `gx.ai_chat`、`gx.ai_task`、`gx.ai_regist` 解析与执行
+  - `ai_diagnose` 暂时禁用
+  - Galaxy 环境初始化不再生成 AI 配置文件
+
 ## [v0.10.0-alpha.1] - 2024-08-07
 ### ✨ 新增功能
 
@@ -24,8 +39,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ```bash
 gm init env --debug 3
 ```
-然后到 [Issues](https://github.com/galaxy-sec/galaxy-flow/issues) 反馈
-=======
 ## [0.10.1] - 2025-08-09
 
 ### Added

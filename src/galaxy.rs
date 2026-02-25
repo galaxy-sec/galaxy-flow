@@ -1,11 +1,10 @@
 use home::home_dir;
-use orion_ai::{AiConfig, RoleConfigManager};
-use orion_conf::Yamlable;
+use orion_accessor::addr::access_ctrl::{Rule, Unit, serv::NetAccessCtrl};
+use orion_conf::YamlIO;
 use orion_error::{ErrorOwe, UvsResFrom};
-use orion_variate::addr::access_ctrl::{Rule, Unit, serv::NetAccessCtrl};
 
 use crate::{
-    const_val::gxl_const::{AI_CONF_FILE, AI_ROLE_FILE, NET_ACCESS_CTRL_FILE},
+    const_val::gxl_const::NET_ACCESS_CTRL_FILE,
     err::{RunReason, RunResult},
 };
 
@@ -40,26 +39,9 @@ impl Galaxy {
             let rules = vec![Rule::new("https://google.com/*", "https://google.cn/")];
             let unit = Unit::new(rules, None, None);
             let service = NetAccessCtrl::new(vec![unit], true);
-            service.save_yml(&net_ctrl_path).owe_res()?;
+            service.save_yaml(&net_ctrl_path).owe_res()?;
         }
 
-        let ai_conf_path = galaxy_dir.join(AI_CONF_FILE);
-        if ai_conf_path.exists() {
-            println!(
-                " {} exists! , ai provider init ignore",
-                ai_conf_path.display()
-            );
-        } else {
-            AiConfig::example().save_yml(&ai_conf_path).owe_res()?;
-        }
-        let ai_role_path = galaxy_dir.join(AI_ROLE_FILE);
-        if !ai_role_path.exists() {
-            RoleConfigManager::default()
-                .save_yml(&ai_role_path)
-                .owe_res()?;
-        } else {
-            println!(" {} exists! , ai role init ignore", ai_role_path.display());
-        }
         Ok(())
     }
 }
@@ -97,7 +79,7 @@ mod tests {
         assert!(galaxy_dir.exists());
         assert!(conf_path.exists());
 
-        NetAccessCtrl::from_yml(&conf_path).assert("redict");
+        NetAccessCtrl::load_yaml(&conf_path).assert("redict");
         // 验证文件内容包含关键字段
         let content = fs::read_to_string(conf_path).unwrap();
         println!("{content}");

@@ -5,8 +5,6 @@ use orion_sec::{OrionSecReason, SecReason};
 use serde::Serialize;
 use thiserror::Error;
 
-use orion_ai::{AiErrReason, OrionAiReason};
-
 #[derive(Debug, PartialEq, Serialize, From, Error)]
 pub enum AssembleReason {
     #[error("miss : {0}")]
@@ -46,8 +44,6 @@ pub enum ExecReason {
     Uvs(UvsReason),
     #[error("{0}")]
     Sec(SecReason),
-    #[error("{0}")]
-    Ai(AiErrReason),
 
     #[error("{0}")]
     NetWork(String),
@@ -72,21 +68,6 @@ impl From<reqwest::Error> for ExecReason {
 pub type ExecError = StructError<ExecReason>;
 pub type ExecResult<T> = Result<T, ExecError>;
 
-impl From<AiErrReason> for ExecReason {
-    fn from(value: AiErrReason) -> Self {
-        Self::Ai(value)
-    }
-}
-
-impl From<OrionAiReason> for ExecReason {
-    fn from(value: OrionAiReason) -> Self {
-        match value {
-            OrionAiReason::Ai(reason) => ExecReason::Ai(reason),
-            OrionAiReason::Sec(reason) => ExecReason::Sec(reason),
-            OrionAiReason::Uvs(reason) => ExecReason::Uvs(reason),
-        }
-    }
-}
 impl From<SerdeReason> for ExecReason {
     fn from(value: SerdeReason) -> Self {
         ExecReason::Serde(format!("Serde error: {value}"))

@@ -1,5 +1,3 @@
-use super::inner::ai_chat::gal_ai_chat;
-use super::inner::ai_task::gal_ai_task;
 use super::inner::call::gal_call;
 use super::inner::cmd::gal_cmd_block;
 use super::inner::gxl::gal_run;
@@ -12,7 +10,6 @@ use crate::ability::prelude::GxlVar;
 use crate::components::gxl_block::{BlockAction, BlockNode};
 use crate::components::gxl_loop::GxlLoop;
 use crate::parser::cond::gal_cond;
-use crate::parser::inner::ai_regst::gal_ai_regist;
 use crate::parser::inner::archive::{gal_tar, gal_untar};
 
 use super::atom::spaced;
@@ -70,15 +67,6 @@ pub fn gal_sentens_item(input: &mut &str) -> Result<BlockAction> {
     }
     if starts_with("gx.shell", input) {
         return gal_shell.map(BlockAction::Shell).parse_next(input);
-    }
-    if starts_with("gx.ai_chat", input) {
-        return gal_ai_chat.parse_next(input).map(BlockAction::AiChat);
-    }
-    if starts_with("gx.ai_task", input) {
-        return gal_ai_task.parse_next(input).map(BlockAction::AiTask);
-    }
-    if starts_with("gx.ai_regist", input) {
-        return gal_ai_regist.parse_next(input).map(BlockAction::AiRegist);
     }
 
     if starts_with("gx.run", input) {
