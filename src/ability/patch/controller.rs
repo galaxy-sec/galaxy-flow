@@ -337,7 +337,8 @@ fn patch_set_line(line: &str, value: &str, marker_token: &str) -> ExecResult<Str
     if let Some(slash_idx) = line[..marker_idx].rfind("//")
         && line[slash_idx + 2..marker_idx].trim().is_empty()
     {
-        marker_comment_start = Some(marker_comment_start.map_or(slash_idx, |cur| cur.max(slash_idx)));
+        marker_comment_start =
+            Some(marker_comment_start.map_or(slash_idx, |cur| cur.max(slash_idx)));
     }
     if let Some(idx) = marker_comment_start {
         suffix_start = idx;
@@ -599,15 +600,8 @@ mod tests {
     #[test]
     fn set_value_with_colon_no_whitespace() {
         let src = "image:app:v1   # @gxl:set(image)\n";
-        let out = apply_patch_text(
-            PatchAction::Set,
-            src,
-            "image",
-            Some("app:v2"),
-            true,
-            "#",
-        )
-        .expect("set should support key:value without spaces");
+        let out = apply_patch_text(PatchAction::Set, src, "image", Some("app:v2"), true, "#")
+            .expect("set should support key:value without spaces");
         assert_eq!(out.changed_lines, 1);
         assert_eq!(out.output, "image:app:v2   # @gxl:set(image)\n");
     }
@@ -615,15 +609,8 @@ mod tests {
     #[test]
     fn set_value_with_json_colon() {
         let src = "\"version\":\"1.0\"   # @gxl:set(version)\n";
-        let out = apply_patch_text(
-            PatchAction::Set,
-            src,
-            "version",
-            Some("\"2.0\""),
-            true,
-            "#",
-        )
-        .expect("set should support quoted key with colon delimiter");
+        let out = apply_patch_text(PatchAction::Set, src, "version", Some("\"2.0\""), true, "#")
+            .expect("set should support quoted key with colon delimiter");
         assert_eq!(out.changed_lines, 1);
         assert_eq!(out.output, "\"version\":\"2.0\"   # @gxl:set(version)\n");
     }
