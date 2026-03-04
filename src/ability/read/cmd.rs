@@ -3,7 +3,7 @@ use crate::components::GxlProps;
 use crate::expect::{LogicScope, ShellOption};
 
 use crate::friendly::New2;
-use orion_error::{UvsDataFrom, UvsReason};
+use orion_error::{ToStructError, UvsFrom};
 
 #[derive(Clone, Debug, PartialEq, Default, Builder)]
 pub struct CmdDTO {
@@ -28,7 +28,9 @@ impl CmdDTO {
             vars_dict.global()
         )?;
         let data_str = String::from_utf8(data).map_err(|msg| {
-            ExecReason::from(UvsReason::from_data(format!("bad result {msg}"), None))
+            ExecReason::from_data()
+                .to_err()
+                .with_detail(format!("bad result {msg}"))
         })?;
         let mut vars = GxlProps::new("cmd");
         vars.append(GxlVar::new(name, data_str.trim().to_string()));

@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use orion_error::{ToStructError, UvsLogicFrom};
+use orion_error::{ToStructError, UvsFrom};
 use orion_sec::sec::{SecFrom, SecValueObj, SecValueType};
 use orion_variate::vars::UpperKey;
 
@@ -57,7 +57,9 @@ pub trait PropsTrait {
                         info!(target: ctx.path(),"{old_ver_key:10} = {val}",);
                         obj.insert(UpperKey::from(prop.key()), val.clone());
                     } else {
-                        return ExecReason::from_logic(format!("nor var ref {x}")).err_result();
+                        return Err(ExecReason::from_logic()
+                            .to_err()
+                            .with_detail(format!("nor var ref {x}")));
                     }
                 }
                 crate::primitive::GxlObject::Value(x) => {

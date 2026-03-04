@@ -71,7 +71,7 @@ mod tests {
         util::redirect::ReadSignal,
     };
     use async_trait::async_trait;
-    use orion_error::UvsLogicFrom;
+    use orion_error::UvsFrom;
     use std::sync::{Arc, Mutex, mpsc::Sender};
 
     // Mock runnable task for testing
@@ -99,7 +99,7 @@ mod tests {
             *count += 1;
 
             if self.should_fail {
-                Err(ExecReason::from_logic("should_fail").into())
+                Err(ExecReason::from_logic().into())
             } else {
                 Ok(TaskValue::new(_vars, ExecOut::Ignore))
             }
@@ -118,7 +118,7 @@ mod tests {
             *count += 1;
 
             if self.should_fail {
-                Err(ExecReason::from_logic("should_fail").into())
+                Err(ExecReason::from_logic().into())
             } else {
                 Ok(TaskValue::new(_vars, ExecOut::Ignore))
             }

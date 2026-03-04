@@ -4,7 +4,7 @@ use crate::ability::prelude::*;
 use crate::traits::Setter;
 
 use orion_conf::{IniIO, JsonIO, YamlIO};
-use orion_error::{ToStructError, UvsLogicFrom};
+use orion_error::{ToStructError, UvsFrom};
 use orion_sec::sec::{SecFrom, SecValueType};
 use orion_variate::vars::ValueType;
 
@@ -47,12 +47,15 @@ impl FileDTO {
                 if let Some(name) = self.name.clone() {
                     vars_dict.global_mut().set(name, SecValueType::from(list));
                 } else {
-                    return ExecReason::from_logic("list cannot set to VarSpace by no name ")
-                        .err_result();
+                    return Err(ExecReason::from_logic()
+                        .to_err()
+                        .with_detail("list cannot set to VarSpace by no name "));
                 }
             }
             _ => {
-                return ExecReason::from_logic("read file only support list and map ").err_result();
+                return Err(ExecReason::from_logic()
+                    .to_err()
+                    .with_detail("read file only support list and map "));
             }
         }
         Ok(TaskValue::from((vars_dict, ExecOut::Ignore)))

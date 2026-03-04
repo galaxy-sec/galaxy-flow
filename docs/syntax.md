@@ -69,7 +69,7 @@ Command = (BuiltinCommand | ActivityCall), whitespace, ";";
 
 (* 内置命令 - 使用函数调用语法 *)
 BuiltinCommand = "gx.", CommandName, whitespace, "(", whitespace, CommandProps, whitespace, ")";
-CommandName = "echo" | "vars" | "cmd" | "read" | "tpl" | "assert" | "ver";
+CommandName = "echo" | "vars" | "cmd" | "read" | "tpl" | "assert" | "ver" | "patch_file";
 CommandProps = {PropertyAssignment}, {",", whitespace, PropertyAssignment};
 PropertyAssignment = PropertyName, whitespace, ":", whitespace, PropertyValue;
 
@@ -212,4 +212,57 @@ extern mod mod_b {
     git = "https://github.com/example/repo.git", 
     channel = "main" 
 }
+```
+
+## gx.patch_file 语法（新增）
+
+`gx.patch_file` 用于基于注释 marker 对文件内容做受控替换/注释。
+
+### 参数
+- `file`：目标文件路径（必填）
+- `action`：`set | comment_line | uncomment_line | comment_block | uncomment_block`（必填）
+- `marker`：marker id（必填）
+- `value`：仅 `action=set` 时必填
+- `strict`：`true/false` 字符串，默认 `true`
+- `dry_run`：`true/false` 字符串，默认 `false`
+- `backup`：`true/false` 字符串，默认 `false`
+- `comment_prefix`：注释前缀，默认 `#`
+
+### Marker 约定
+- 行内替换：`@gxl:set(<id>)`
+- 行注释：`@gxl:line(<id>)`
+- 块注释：
+  - 开始：`@gxl:block(<id>)`
+  - 结束：`@gxl:end(<id>)`
+
+### 示例1：替换版本值
+```gxl
+gx.patch_file(
+    file   : "./Cargo.toml",
+    action : "set",
+    marker : "version",
+    value  : "v2.0"
+);
+```
+
+配套目标行：
+```toml
+version = 1.0   # @gxl:set(version)
+```
+
+### 示例2：注释 features 区块
+```gxl
+gx.patch_file(
+    file   : "./Cargo.toml",
+    action : "comment_block",
+    marker : "res_depend_test"
+);
+```
+
+配套目标块：
+```toml
+# @gxl:block(res_depend_test)
+[features]
+res_depend_test = []
+# @gxl:end(res_depend_test)
 ```

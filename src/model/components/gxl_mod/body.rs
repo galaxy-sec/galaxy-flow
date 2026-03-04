@@ -16,7 +16,7 @@ use crate::meta::*;
 use contracts::requires;
 use derive_getters::Getters;
 use indexmap::IndexMap;
-use orion_error::UvsLogicFrom;
+use orion_error::{ToStructError, UvsFrom};
 use orion_infra::auto_exit_log;
 
 use std::io::Write;
@@ -169,9 +169,11 @@ impl GxlMod {
         debug!(target : "assemble", "will assemble  mix mod {}" , self.meta().name() );
         let mix_name = self.meta().mix().clone();
         for mix in mix_name {
-            let mix_mod = src
-                .get(mix.as_str())
-                .ok_or(AssembleReason::from_logic(format!("no mix: {mix} ")))?;
+            let mix_mod = src.get(mix.as_str()).ok_or_else(|| {
+                AssembleReason::from_logic()
+                    .to_err()
+                    .with_detail(format!("no mix: {mix} "))
+            })?;
             self.merge(mix_mod);
         }
         Ok(self)

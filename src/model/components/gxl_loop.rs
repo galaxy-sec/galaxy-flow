@@ -1,6 +1,6 @@
 use std::sync::mpsc::Sender;
 
-use orion_error::{ToStructError, UvsLogicFrom, UvsReason};
+use orion_error::{ToStructError, UvsFrom};
 use orion_sec::sec::SecValueType;
 
 use super::prelude::*;
@@ -69,11 +69,9 @@ impl AsyncRunnableWithSenderTrait for GxlLoop {
                     }
                 }
                 _ => {
-                    return ExecReason::from(UvsReason::from_logic(format!(
-                        "loop only support obj,list {}",
-                        self.var_name()
-                    )))
-                    .err_result();
+                    return Err(ExecReason::from_logic()
+                        .to_err()
+                        .with_detail(format!("loop only support obj,list {}", self.var_name())));
                 }
             }
             return Ok(TaskValue::from((cur_dict, ExecOut::Task(task))));

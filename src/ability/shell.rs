@@ -5,7 +5,7 @@ use std::path::PathBuf;
 
 use crate::{ability::prelude::*, expect::LogicScope, traits::Setter, var::VarDict};
 use getset::{Getters, MutGetters, Setters, WithSetters};
-use orion_error::{ToStructError, UvsLogicFrom};
+use orion_error::{ToStructError, UvsFrom};
 use orion_variate::vars::ValueDict;
 #[derive(Clone, Debug, Default, PartialEq, Getters, Setters, WithSetters, MutGetters)]
 #[getset(get = "pub", set = "pub", get_mut, set_with)]
@@ -54,11 +54,9 @@ impl GxShell {
                 Some(ext) if ext == "ini" => ValueDict::load_ini(arg_file)
                     .map_err(|e| ExecReason::Serde(format!("INI解析失败: {e}")))?,
                 _ => {
-                    return ExecReason::from_logic(format!(
-                        "unsupport this format {}",
-                        arg_file.display()
-                    ))
-                    .err_result();
+                    return Err(ExecReason::from_logic()
+                        .to_err()
+                        .with_detail(format!("unsupport this format {}", arg_file.display())));
                 }
             };
             vars_dict.global_mut().merge_dict(VarDict::from(dict));

@@ -1,7 +1,7 @@
 use home::home_dir;
 use orion_accessor::addr::access_ctrl::{Rule, Unit, serv::NetAccessCtrl};
 use orion_conf::YamlIO;
-use orion_error::{ErrorOwe, UvsResFrom};
+use orion_error::{ErrorOwe, ToStructError, UvsFrom};
 
 use crate::{
     const_val::gxl_const::NET_ACCESS_CTRL_FILE,
@@ -19,7 +19,11 @@ impl Galaxy {
     pub fn env_init() -> RunResult<()> {
         // 获取家目录并构建环境目录
         let galaxy_dir = home_dir()
-            .ok_or_else(|| RunReason::from_res("Cannot find home directory"))?
+            .ok_or_else(|| {
+                RunReason::from_res()
+                    .to_err()
+                    .with_detail("Cannot find home directory")
+            })?
             .join(".galaxy");
 
         // 创建目录

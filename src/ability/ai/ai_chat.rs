@@ -5,7 +5,7 @@ use std::path::PathBuf;
 use crate::ability::{ai::AI_CONTENT, prelude::*};
 use crate::model::traits::Setter;
 use getset::{Getters, MutGetters, Setters};
-use orion_error::{ToStructError, UvsResFrom};
+use orion_error::{ToStructError, UvsFrom};
 use orion_sec::sec::{SecFrom, SecValueType};
 use orion_variate::EnvDict;
 
@@ -44,7 +44,11 @@ impl AiChatExecutor {
                     .err_result();
             }
             let data = std::fs::read_to_string(prompt_file.as_path())
-                .map_err(|e| ExecReason::from_res(format!("prompt_file:{e}")))?;
+                .map_err(|e| {
+                    ExecReason::from_res()
+                        .to_err()
+                        .with_detail(format!("prompt_file:{e}"))
+                })?;
             message.push('\n');
             message.push_str(data.as_str());
         }

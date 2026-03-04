@@ -72,41 +72,41 @@ pub fn report_gxl_error(e: RunError) {
     println!("[REASON]:");
     match e.reason() {
         RunReason::Uvs(uvs_reason) => match uvs_reason {
-            UvsReason::LogicError(e) => {
-                println!("LOGIC ERROR: {e}\n",);
+            UvsReason::LogicError => {
+                println!("LOGIC ERROR\n",);
             }
-            UvsReason::BusinessError(e) => {
-                println!("BIZ ERROR: {e}\n",);
+            UvsReason::BusinessError => {
+                println!("BIZ ERROR\n",);
             }
-            UvsReason::DataError(e, _) => {
-                println!("DATA ERROR: {e}\n",);
+            UvsReason::DataError => {
+                println!("DATA ERROR\n",);
             }
-            UvsReason::SystemError(e) => {
-                println!("SYS ERROR: {e}\n",);
+            UvsReason::SystemError => {
+                println!("SYS ERROR\n",);
             }
-            UvsReason::ResourceError(e) => {
-                println!("RES ERROR: {e}\n",);
+            UvsReason::ResourceError => {
+                println!("RES ERROR\n",);
             }
-            UvsReason::NetworkError(e) => {
-                println!("Net ERROR: {e}\n",);
+            UvsReason::NetworkError => {
+                println!("NET ERROR\n",);
             }
-            UvsReason::TimeoutError(e) => {
-                println!("Timeout: {e}\n",);
+            UvsReason::TimeoutError => {
+                println!("TIMEOUT\n",);
             }
             UvsReason::ConfigError(e) => {
                 println!("CONF ERROR: {e}\n",);
             }
-            UvsReason::PermissionError(e) => {
-                println!("Permiss ERROR: {e}\n",);
+            UvsReason::PermissionError => {
+                println!("PERMISSION ERROR\n",);
             }
-            UvsReason::ValidationError(e) => {
-                println!("Validate ERROR: {e}\n",);
+            UvsReason::ValidationError => {
+                println!("VALIDATION ERROR\n",);
             }
-            UvsReason::ExternalError(e) => {
-                println!("External ERROR: {e}\n",);
+            UvsReason::ExternalError => {
+                println!("EXTERNAL ERROR\n",);
             }
-            UvsReason::NotFoundError(e) => {
-                println!("Not Found: {e}\n",);
+            UvsReason::NotFoundError => {
+                println!("NOT FOUND\n",);
             }
             other => {
                 println!("ERROR: {other}\n",);

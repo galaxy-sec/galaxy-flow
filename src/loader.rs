@@ -25,6 +25,7 @@ use orion_accessor::update::UpdateScope;
 use orion_error::ContextRecord;
 use orion_error::ErrorConv;
 use orion_error::ErrorOwe;
+use orion_error::ErrorOweBase;
 use orion_error::ErrorWith;
 use orion_error::WithContext;
 use orion_variate::vars::EnvDict;

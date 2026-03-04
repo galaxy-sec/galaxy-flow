@@ -8,7 +8,7 @@ use orion_accessor::{
     types::{ResourceDownloader, ResourceUploader},
     update::{DownloadOptions, HttpMethod, UploadOptions},
 };
-use orion_error::ToStructError;
+use orion_error::{ErrorOweBase, ToStructError};
 
 use crate::{ability::prelude::*, util::accessor::build_accessor};
 

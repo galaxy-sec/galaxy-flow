@@ -6,7 +6,7 @@ use crate::{
     execution::VarSpace,
     util::redirect::ReadSignal,
 };
-use orion_error::{ErrorConv, ErrorWith, UvsConfFrom};
+use orion_error::{ErrorConv, ErrorWith, ToStructError, UvsFrom};
 use std::{path::Path, sync::mpsc::Sender};
 
 /// Galaxy Flow 运行器
@@ -42,8 +42,10 @@ impl GxlRunner {
         if let Some(ref conf) = cmd.conf {
             // 检查配置文件是否存在 / Check if configuration file exists
             if !Path::new(conf.as_str()).exists() {
-                return Err(RunReason::from_conf("gflow conf not exists".to_string()).into())
-                    .with(("conf", conf.clone()));
+                return Err(RunReason::from_conf()
+                    .to_err()
+                    .with_detail("gflow conf not exists"))
+                .with(("conf", conf.clone()));
             }
 
             let spc = loader
@@ -59,14 +61,18 @@ impl GxlRunner {
                 return spc.exec(cmd, vars, sender).await;
             }
         }
-        Err(RunReason::from_conf("gflow exec fail!".to_string()).into())
+        Err(RunReason::from_conf()
+            .to_err()
+            .with_detail("gflow exec fail!"))
     }
     pub async fn info(conf: Option<String>, vars: VarSpace) -> RunResult<()> {
         if let Some(ref conf) = conf {
             // 检查配置文件是否存在 / Check if configuration file exists
             if !Path::new(conf.as_str()).exists() {
-                return Err(RunReason::from_conf("gflow conf not exists".to_string()).into())
-                    .with(("conf", conf.clone()));
+                return Err(RunReason::from_conf()
+                    .to_err()
+                    .with_detail("gflow conf not exists"))
+                .with(("conf", conf.clone()));
             }
             let loader = GxLoader::new();
 
@@ -78,7 +84,9 @@ impl GxlRunner {
             spc.show().err_conv()?;
             Ok(())
         } else {
-            Err(RunReason::from_conf("gflow miss gxl file".to_string()).into())
+            Err(RunReason::from_conf()
+                .to_err()
+                .with_detail("gflow miss gxl file"))
         }
     }
 }
