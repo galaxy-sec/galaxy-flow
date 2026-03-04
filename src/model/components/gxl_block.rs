@@ -10,6 +10,7 @@ use std::sync::mpsc::Sender;
 use crate::ability::archive::GxTar;
 use crate::ability::archive::GxUnTar;
 use crate::ability::delegate::ActCall;
+use crate::ability::patch::GxPatchFile;
 use crate::ability::prelude::TaskValue;
 use crate::ability::shell::GxShell;
 use crate::ability::{
@@ -38,6 +39,7 @@ pub enum BlockAction {
     UnTar(GxUnTar),
     DownLoad(GxDownLoad),
     UpLoad(GxUpLoad),
+    PatchFile(GxPatchFile),
 }
 
 #[derive(Clone, Getters, Default)]
@@ -85,6 +87,7 @@ impl AsyncRunnableWithSenderTrait for BlockAction {
             BlockAction::Read(o) => o.async_exec(ctx, dct).await,
             BlockAction::UpLoad(o) => o.async_exec(ctx, dct).await,
             BlockAction::DownLoad(o) => o.async_exec(ctx, dct).await,
+            BlockAction::PatchFile(o) => o.async_exec(ctx, dct).await,
         }
     }
 }
@@ -139,6 +142,7 @@ impl DependTrait<&GxlSpace> for BlockNode {
                 BlockAction::Call(v) => BlockAction::Call(Box::new(v.assemble(mod_name, src)?)),
                 BlockAction::DownLoad(v) => BlockAction::DownLoad(v.clone()),
                 BlockAction::UpLoad(v) => BlockAction::UpLoad(v.clone()),
+                BlockAction::PatchFile(v) => BlockAction::PatchFile(v.clone()),
             };
             ins.append(item);
         }

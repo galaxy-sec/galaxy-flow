@@ -6,6 +6,7 @@ pub mod delegate;
 pub mod echo;
 pub mod gxl;
 pub mod load;
+pub mod patch;
 pub mod prelude;
 pub mod read;
 pub mod tpl;
