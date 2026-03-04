@@ -9,7 +9,6 @@ use orion_variate::vars::EnvDict;
 use crate::ExecResult;
 use crate::evaluator::EnvExpress;
 use crate::evaluator::VarParser;
-
 use std::path::PathBuf;
 
 use super::accessor::build_accessor;
