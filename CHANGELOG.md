@@ -5,6 +5,26 @@ All notable changes to the Galaxy Flow project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.12.4] - 2026-03-05
+
+### Added
+- **Self-update command set**: Added `gprj self status/check/update/rollback/auto` for upgrade management.
+- **Self-update runtime module**: Added `src/self_update/*` covering policy/state storage, manifest download, checksum verification, install/rollback, and health check.
+- **Repository manifests**: Added `updates/stable/manifest.json`, `updates/alpha/manifest.json`, `updates/beta/manifest.json`, and `updates/README.md`.
+
+### Changed
+- **Release channels**: Unified channels to `stable|alpha|beta` (removed `pre` compatibility mode).
+- **Default manifest source**: `manifest_base_url` now points to this repository raw path under `updates/`.
+- **Version automation**: Switched project version bump flow to `gx.patch_file` marker-based patching in `_gal/adm.gxl`.
+
+### Fixed
+- **Update semantics**: `--dry-run` no longer requires `--yes`.
+- **State persistence**: Expanded failure-state recording for post-manifest update stages.
+- **Lock safety**: Added stale-lock recovery with PID liveness checks.
+- **Rollback robustness**: Hardened backup id validation and prevented path traversal via `rollback --id`.
+- **Installer safety**: Enforced unique binary detection and ignored symlink hits in package scanning.
+- **Temp artifacts**: Added automatic cleanup of self-update temporary directories.
+
 ## [v0.12.0] - 2026-02-25
 
 ### Changed

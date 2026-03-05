@@ -116,10 +116,13 @@ mod tests {
     fn manifest_url_uses_channel_path() {
         let stable =
             SelfUpdateClient::manifest_url("https://example.com/updates", ReleaseChannel::Stable);
-        let pre =
-            SelfUpdateClient::manifest_url("https://example.com/updates/", ReleaseChannel::Pre);
+        let alpha =
+            SelfUpdateClient::manifest_url("https://example.com/updates/", ReleaseChannel::Alpha);
+        let beta =
+            SelfUpdateClient::manifest_url("https://example.com/updates/", ReleaseChannel::Beta);
         assert_eq!(stable, "https://example.com/updates/stable/manifest.json");
-        assert_eq!(pre, "https://example.com/updates/pre/manifest.json");
+        assert_eq!(alpha, "https://example.com/updates/alpha/manifest.json");
+        assert_eq!(beta, "https://example.com/updates/beta/manifest.json");
     }
 
     #[test]

@@ -7,7 +7,8 @@ use serde::{Deserialize, Serialize};
 #[serde(rename_all = "snake_case")]
 pub enum ReleaseChannel {
     Stable,
-    Pre,
+    Alpha,
+    Beta,
 }
 
 impl Default for ReleaseChannel {
@@ -20,14 +21,16 @@ impl ReleaseChannel {
     pub fn as_str(self) -> &'static str {
         match self {
             ReleaseChannel::Stable => "stable",
-            ReleaseChannel::Pre => "pre",
+            ReleaseChannel::Alpha => "alpha",
+            ReleaseChannel::Beta => "beta",
         }
     }
 
     pub fn parse(input: &str) -> Option<Self> {
         match input.trim().to_ascii_lowercase().as_str() {
             "stable" => Some(Self::Stable),
-            "pre" | "preview" | "prerelease" => Some(Self::Pre),
+            "alpha" => Some(Self::Alpha),
+            "beta" => Some(Self::Beta),
             _ => None,
         }
     }
@@ -63,8 +66,7 @@ impl Default for SelfUpdatePolicy {
             channel: ReleaseChannel::Stable,
             interval_hours: 24,
             manifest_base_url:
-                "https://raw.githubusercontent.com/galaxy-operators/galaxy-flow-updates/main/updates"
-                    .to_string(),
+                "https://raw.githubusercontent.com/galaxy-sec/galaxy-flow/main/updates".to_string(),
         }
     }
 }
@@ -132,12 +134,8 @@ mod tests {
             ReleaseChannel::parse("stable"),
             Some(ReleaseChannel::Stable)
         );
-        assert_eq!(ReleaseChannel::parse("pre"), Some(ReleaseChannel::Pre));
-        assert_eq!(ReleaseChannel::parse("preview"), Some(ReleaseChannel::Pre));
-        assert_eq!(
-            ReleaseChannel::parse("prerelease"),
-            Some(ReleaseChannel::Pre)
-        );
+        assert_eq!(ReleaseChannel::parse("alpha"), Some(ReleaseChannel::Alpha));
+        assert_eq!(ReleaseChannel::parse("beta"), Some(ReleaseChannel::Beta));
     }
 
     #[test]
@@ -146,12 +144,17 @@ mod tests {
             ReleaseChannel::parse(" StAbLe "),
             Some(ReleaseChannel::Stable)
         );
-        assert_eq!(ReleaseChannel::parse(" PRE "), Some(ReleaseChannel::Pre));
+        assert_eq!(
+            ReleaseChannel::parse(" ALPHA "),
+            Some(ReleaseChannel::Alpha)
+        );
+        assert_eq!(ReleaseChannel::parse(" BETA "), Some(ReleaseChannel::Beta));
     }
 
     #[test]
     fn parse_release_channel_reject_invalid() {
-        assert_eq!(ReleaseChannel::parse("beta"), None);
+        assert_eq!(ReleaseChannel::parse("gamma"), None);
+        assert_eq!(ReleaseChannel::parse("pre"), None);
         assert_eq!(ReleaseChannel::parse(""), None);
     }
 }

@@ -10,7 +10,7 @@
 1. 出现了 `wproj` / `wparse` 等当前仓库不存在的二进制名称。
 2. 验收标准写了“4 个二进制版本一致”，但当前仓库实际只有 `gprj`、`gflow` 两个 bin（见 `Cargo.toml`）。
 3. CLI 路径引用了不存在的目录（如 `wproj/args.rs`）。
-4. channel 策略描述与当前 `release.yml` 实际流程未对齐（当前是 `v*.*.*` tag 发布 + `-pre` 预发布标记）。
+4. channel 策略描述与当前更新目录策略不一致（当前实现为 `stable/alpha/beta` 三通道）。
 
 本修正版严格基于当前工程结构：
 
@@ -41,7 +41,7 @@
 
 ```bash
 gprj self status
-gprj self check [--channel stable|pre] [--json]
+gprj self check [--channel stable|alpha|beta] [--json]
 gprj self update [--channel <c>] [--to <version>] [--yes] [--dry-run] [--force]
 gprj self rollback [--id <backup_id>]
 gprj self auto enable|disable|set --interval <hours> --mode check|apply
@@ -72,7 +72,7 @@ gprj self auto enable|disable|set --interval <hours> --mode check|apply
 ```toml
 enabled = true
 mode = "check"          # check | apply
-channel = "stable"      # stable | pre
+channel = "stable"      # stable | alpha | beta
 interval_hours = 24
 ```
 
@@ -84,12 +84,11 @@ interval_hours = 24
 2. 构建产物：`gprj` + `gflow` 打进 tar.gz
 3. 预发布判定：tag 含 `-pre` -> `prerelease=true`
 
-因此自动升级通道在当前工程先定义为：
+因此自动升级通道在当前工程定义为：
 
-1. `stable`：普通 semver tag（如 `v0.12.1`）
-2. `pre`：含 `-pre` 的 tag（如 `v0.13.0-pre.1`）
-
-注：原稿里的 `alpha|beta` 可作为后续扩展，不作为当前强制实现。
+1. `stable`：稳定发布
+2. `alpha`：alpha 预发布
+3. `beta`：beta 预发布
 
 ## 6. 远端 Manifest 规范（新增）
 
@@ -98,7 +97,8 @@ interval_hours = 24
 ```text
 updates/
   stable/manifest.json
-  pre/manifest.json
+  alpha/manifest.json
+  beta/manifest.json
 ```
 
 `manifest.json`（MVP 最小字段）：
@@ -206,7 +206,7 @@ src/self_update/
 在现有 `.github/workflows/release.yml` 上新增步骤：
 
 1. 计算每个 target 产物 sha256
-2. 生成 `manifest.json`（stable/pre）
+2. 生成 `manifest.json`（stable/alpha/beta）
 3. 上传 manifest 到 release 资产（或独立 updates 路径）
 
 后续再加：
@@ -220,7 +220,7 @@ src/self_update/
 2. 人为注入校验失败/替换失败时可自动回滚。
 3. 并发触发更新不会破坏安装（lock 生效）。
 4. 默认不误覆盖包管理器安装路径。
-5. `stable` 与 `pre` 的检查/升级命中正确清单。
+5. `stable`、`alpha`、`beta` 的检查/升级命中正确清单。
 
 ## 14. 分阶段实施建议
 
@@ -239,9 +239,8 @@ src/self_update/
 
 ### Phase 3（高级）
 
-1. 渠道扩展（alpha/beta）
-2. 镜像源与离线包
-3. 更细粒度指标与告警
+1. 镜像源与离线包
+2. 更细粒度指标与告警
 
 ---
 

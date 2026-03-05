@@ -303,7 +303,7 @@ fn parse_channel(input: Option<&str>) -> RunResult<Option<ReleaseChannel>> {
         Some(v) => ReleaseChannel::parse(v).map(Some).ok_or_else(|| {
             RunReason::Args("bad channel".into())
                 .to_err()
-                .with_detail(format!("channel={v}, expected=stable|pre"))
+                .with_detail(format!("channel={v}, expected=stable|alpha|beta"))
         }),
     }
 }

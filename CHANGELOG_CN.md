@@ -5,6 +5,26 @@ Galaxy Flow项目所有重要变更将记录在此文件中。
 本格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/) 标准，
 本项目遵循 [语义化版本2.0.0](https://semver.org/lang/zh-CN/spec/v2.0.0.html) 规范。
 
+## [v0.12.4] - 2026-03-05
+
+### 新增
+- **自更新命令集**：新增 `gprj self status/check/update/rollback/auto`。
+- **自更新核心模块**：新增 `src/self_update/*`，覆盖策略/状态存储、manifest 下载、sha256 校验、安装回滚与健康检查。
+- **仓库内更新清单**：新增 `updates/stable/manifest.json`、`updates/alpha/manifest.json`、`updates/beta/manifest.json` 及 `updates/README.md`。
+
+### 变更
+- **发布通道**：统一为 `stable|alpha|beta`（不再兼容 `pre`）。
+- **默认清单源**：`manifest_base_url` 默认指向当前仓库 `updates/` 的 raw 地址。
+- **版本更新流程**：`_gal/adm.gxl` 改为使用 `gx.patch_file` + marker 进行版本号 patch。
+
+### 修复
+- **更新语义**：`--dry-run` 不再依赖 `--yes`。
+- **状态落盘**：补全 update 后半流程失败时的状态记录。
+- **锁安全**：增加 stale lock 回收与 PID 存活检查。
+- **回滚安全**：加强 `rollback --id` 校验，阻断路径穿越。
+- **安装安全**：包内二进制查找要求唯一命中并忽略符号链接。
+- **临时目录**：自更新临时目录改为自动清理。
+
 ## [0.10.1] - 2025-08-09
 
 ### 新增
