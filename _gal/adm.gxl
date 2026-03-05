@@ -41,6 +41,7 @@ mod main   {
     gx.tpl ( tpl: "./updates/manifest_tpl.json", dst : "./updates/${CHANNEL}/manifest.json" )
     gx.echo("${VERSION_PATH}");
     gx.cmd ("git commit -a -m ${VERSION_PATH}" );
+    gx.cmd ("git push");
     gx.cmd ("git tag ${VERSION_PATH}");
     gx.cmd ("git push --tags ");
   }
