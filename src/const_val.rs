@@ -8,6 +8,8 @@ pub mod gxl_const {
     pub const CMD_ARG: &str = "GXL_CMD_ARG";
     /// 项目根目录变量
     pub const PRJ_ROOT: &str = "GXL_PRJ_ROOT";
+    /// Git分支变量
+    pub const GIT_BRANCH: &str = "GXL_GIT_BRANCH";
     /// 系统类型变量
     pub const OS_SYS: &str = "GXL_OS_SYS";
     /// 启动根目录变量

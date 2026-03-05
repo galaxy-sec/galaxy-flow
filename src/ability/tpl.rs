@@ -110,11 +110,15 @@ impl GxTpl {
         } else {
             to_json(dict.global().export())
         };
-        if tpl.is_dir() {
+        let res = if tpl.is_dir() {
             self.render_dir_impl(ctx, &handlebars, &tpl, &dst, &data)
         } else {
             self.render_file_impl(ctx, &handlebars, &tpl, &dst, &data)
+        };
+        if res.is_ok() {
+            err_ctx.mark_suc();
         }
+        res
     }
     fn render_dir_impl<T: Serialize>(
         &self,
@@ -216,6 +220,7 @@ impl GxTpl {
         println!("render {:30} ---> {}", tpl.display(), dst.display());
 
         debug!(target: ctx.path(), "Successfully generated: {}", dst.display());
+        err_ctx.mark_suc();
         Ok(())
     }
 }

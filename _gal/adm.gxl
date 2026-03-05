@@ -1,10 +1,17 @@
 extern mod cfm { git = "https://github.com/galaxy-operators/cfm-gxl.git", branch = "${GXL_CHANNEL:develop}" }
+extern mod ver { path = "./_gal/mods" }
 mod  envs {
   env default {
+     ROOT= "./";
   }
 }
-mod main  : ver_adm {
-  #[auto_load(exit)]
+mod main   {
+
+#[auto_load(entry)]
+  flow _entry : ver.use {
+  }
+
+#[auto_load(exit)]
   flow _set_ver {
     gx.patch_file(
       file   : "./Cargo.toml",
@@ -13,4 +20,22 @@ mod main  : ver_adm {
       value  : r#""${VERSION}""#
     );
   }
+
+  flow v_feats_up  | ver.feature {
+  }
+  flow v_patch_up | ver.patch {
+  }
+  flow tag_alpha | _tag_impl {
+        CHANNEL = "alpha" ;
+  }
+  flow tag_beta {
+  }
+  flow tag_stable {
+  }
+  flow _tag_impl {
+    VERSION_PATH = "${VERSION}-${CHANNEL}";
+    gx.tpl ( tpl: "./updates/manifest_tpl.json", dst : "./updates/${CHANNEL}/manifest.json" )
+    gx.echo("${VERSION_PATH}");
+  }
+
 }

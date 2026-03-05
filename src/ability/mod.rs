@@ -17,6 +17,7 @@ use prelude::VarSpace;
 
 use crate::cmd::GxlCmd;
 use crate::const_val::gxl_const;
+use crate::execution::global::detect_git_branch;
 use crate::{ExecResult, context::ExecContext, infra::once_init_log, traits::Setter};
 
 pub struct StubFlowAbi {}
@@ -25,9 +26,15 @@ pub struct StubFlowAbi {}
 pub fn ability_env_init() -> (ExecContext, VarSpace) {
     once_init_log();
     let context = ExecContext::new(GxlCmd::default());
+    let cur_path = std::path::Path::new(context.cur_path());
     let mut def = VarSpace::default();
     def.global_mut()
         .set(gxl_const::PRJ_ROOT, context.cur_path().as_str());
+    if let Some(branch) = detect_git_branch(cur_path) {
+        def.global_mut().set(gxl_const::GIT_BRANCH, branch);
+    } else {
+        def.global_mut().set(gxl_const::GIT_BRANCH, "UNDEFIN");
+    }
     (context, def)
 }
 
