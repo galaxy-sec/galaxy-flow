@@ -49,6 +49,7 @@ pub mod util;
 pub mod galaxy;
 pub mod infra;
 pub mod runner;
+pub mod self_update;
 pub mod types;
 pub use crate::loader::{GxLoader, get_parse_code};
 pub use model::*;

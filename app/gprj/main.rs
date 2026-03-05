@@ -13,6 +13,8 @@ use std::path::PathBuf;
 use crate::args::GxAdmCmd;
 use crate::args::InitCmd;
 use args::ConfCmd;
+use args::SelfAutoCmd;
+use args::SelfCmd;
 use args::UpdateCmd;
 use clap::Parser;
 use galaxy_flow::GxLoader;
@@ -26,11 +28,15 @@ use galaxy_flow::execution::VarSpace;
 use galaxy_flow::galaxy::Galaxy;
 use galaxy_flow::infra::configure_run_logging;
 use galaxy_flow::runner::GxlRunner;
+use galaxy_flow::self_update::{
+    AutoMode, AutoSetRequest, CheckRequest, ReleaseChannel, SelfUpdateService, UpdateRequest,
+};
 use galaxy_flow::traits::Setter;
 use galaxy_flow::util::diagnose::ai_diagnose;
 use include_dir::{Dir, include_dir};
 use orion_accessor::addr::GitRepository;
 use orion_error::ErrorConv;
+use orion_error::ToStructError;
 
 const ASSETS_DIR: Dir = include_dir!("app/gprj/init");
 #[tokio::main]
@@ -69,6 +75,9 @@ impl GxAdm {
             }
             GxAdmCmd::Check => {
                 Self::do_check_cmd()?;
+            }
+            GxAdmCmd::SelfUpdate(cmd) => {
+                Self::do_self_cmd(cmd).await?;
             } //GxAdmCmd::Vault(cmd) => vault_main(cmd).owe_data()?,
               //GxAdmCmd::Sys(_cmd) => {
               //    let info = HardwareKit::machine_info().owe_sys()?;
@@ -180,6 +189,135 @@ impl GxAdm {
             }
         }
         Ok(())
+    }
+
+    async fn do_self_cmd(cmd: SelfCmd) -> RunResult<()> {
+        let svc = SelfUpdateService::new()?;
+        match cmd {
+            SelfCmd::Status => {
+                let status = svc.status()?;
+                println!("current_version={}", status.current_version);
+                println!("install_dir={}", status.install_dir.display());
+                println!("policy.enabled={}", status.policy.enabled);
+                println!("policy.mode={:?}", status.policy.mode);
+                println!("policy.channel={}", status.policy.channel.as_str());
+                println!("policy.interval_hours={}", status.policy.interval_hours);
+                println!(
+                    "policy.manifest_base_url={}",
+                    status.policy.manifest_base_url
+                );
+                if let Some(v) = status.state.last_remote_version {
+                    println!("state.last_remote_version={v}");
+                }
+                if let Some(v) = status.state.last_result {
+                    println!("state.last_result={v}");
+                }
+                if let Some(v) = status.state.last_error {
+                    println!("state.last_error={v}");
+                }
+            }
+            SelfCmd::Check(args) => {
+                let channel = parse_channel(args.channel.as_deref())?;
+                let req = CheckRequest { channel };
+                let out = svc.check(req).await?;
+                if args.json {
+                    println!(
+                        "{}",
+                        serde_json::to_string_pretty(&serde_json::json!({
+                            "channel": out.channel.as_str(),
+                            "current_version": out.current_version,
+                            "remote_version": out.remote_version,
+                            "has_update": out.has_update
+                        }))
+                        .map_err(|e| RunReason::Exec(e.to_string()).to_err())?
+                    );
+                } else {
+                    println!("channel={}", out.channel.as_str());
+                    println!("current={}", out.current_version);
+                    println!("remote={}", out.remote_version);
+                    println!("has_update={}", out.has_update);
+                }
+            }
+            SelfCmd::Update(args) => {
+                let channel = parse_channel(args.channel.as_deref())?;
+                let req = UpdateRequest {
+                    channel,
+                    to_version: args.to_version.clone(),
+                    yes: args.yes,
+                    dry_run: args.dry_run,
+                    force: args.force,
+                };
+                let out = svc.update(req).await?;
+                println!("channel={}", out.channel.as_str());
+                println!("from={}", out.from_version);
+                println!("to={}", out.to_version);
+                println!("updated={}", out.updated);
+                if let Some(id) = out.backup_id {
+                    println!("backup_id={id}");
+                }
+            }
+            SelfCmd::Rollback(args) => {
+                let out = svc.rollback(args.backup_id.as_deref())?;
+                println!("rollback=true");
+                if let Some(id) = out.backup_id {
+                    println!("backup_id={id}");
+                }
+            }
+            SelfCmd::Auto(cmd) => match cmd {
+                SelfAutoCmd::Enable => {
+                    let out = svc.set_auto(AutoSetRequest {
+                        enabled: Some(true),
+                        ..Default::default()
+                    })?;
+                    println!("auto.enabled={}", out.enabled);
+                }
+                SelfAutoCmd::Disable => {
+                    let out = svc.set_auto(AutoSetRequest {
+                        enabled: Some(false),
+                        ..Default::default()
+                    })?;
+                    println!("auto.enabled={}", out.enabled);
+                }
+                SelfAutoCmd::Set(args) => {
+                    let req = AutoSetRequest {
+                        enabled: None,
+                        mode: parse_mode(args.mode.as_deref())?,
+                        interval_hours: args.interval,
+                        channel: parse_channel(args.channel.as_deref())?,
+                    };
+                    let out = svc.set_auto(req)?;
+                    println!("auto.enabled={}", out.enabled);
+                    println!("auto.mode={:?}", out.mode);
+                    println!("auto.channel={}", out.channel.as_str());
+                    println!("auto.interval_hours={}", out.interval_hours);
+                }
+            },
+        }
+        Ok(())
+    }
+}
+
+fn parse_channel(input: Option<&str>) -> RunResult<Option<ReleaseChannel>> {
+    match input {
+        None => Ok(None),
+        Some(v) => ReleaseChannel::parse(v).map(Some).ok_or_else(|| {
+            RunReason::Args("bad channel".into())
+                .to_err()
+                .with_detail(format!("channel={v}, expected=stable|pre"))
+        }),
+    }
+}
+
+fn parse_mode(input: Option<&str>) -> RunResult<Option<AutoMode>> {
+    match input {
+        None => Ok(None),
+        Some(v) => match v.trim().to_ascii_lowercase().as_str() {
+            "check" => Ok(Some(AutoMode::Check)),
+            "apply" => Ok(Some(AutoMode::Apply)),
+            _ => Err(RunReason::Args("bad auto mode".into())
+                .to_err()
+                .with_detail(format!("mode={v}, expected=check|apply"))),
+        },
     }
 }
 

@@ -1,7 +1,7 @@
 
 [package]
 
-version = "0.12.0"
+version = "0.12.4" # @gxl:set(version)
 authors = ["wukong<sec-wukong@outlook.com>"]
 edition = "2024"
 name = "galaxy_flow"
@@ -101,6 +101,10 @@ time = { version = "0.3.41", features = ["formatting", "local-offset"] }
 serde_yaml = "0.9"
 contracts = "0.6"
 libc = "0.2"
+semver = "1.0"
+sha2 = "0.10"
+flate2 = "1.0"
+tar = "0.4"
 
 [features]
 res_depend_test = []
