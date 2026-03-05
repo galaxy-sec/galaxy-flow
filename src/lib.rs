@@ -21,7 +21,6 @@ extern crate handlebars;
 extern crate serde_json;
 #[macro_use]
 extern crate lazy_static;
-//extern crate http_types;
 
 //extern crate ini;
 extern crate url;
