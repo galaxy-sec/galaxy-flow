@@ -71,15 +71,34 @@ pub fn extract_tar_gz(archive: &Path, dest: &Path) -> RunResult<()> {
 }
 
 pub fn find_binary(root: &Path, bin_name: &str) -> RunResult<PathBuf> {
-    for item in WalkDir::new(root).follow_links(true).into_iter() {
+    let mut matches = Vec::new();
+    for item in WalkDir::new(root).follow_links(false).into_iter() {
         let item = item.map_err(walk_err)?;
+        if item.path().strip_prefix(root).is_err() {
+            continue;
+        }
+        if item.file_type().is_symlink() {
+            continue;
+        }
         if item.file_type().is_file() && item.path().file_name() == Some(OsStr::new(bin_name)) {
-            return Ok(item.path().to_path_buf());
+            matches.push(item.path().to_path_buf());
         }
     }
-    Err(RunReason::Exec("binary not found in package".into())
-        .to_err()
-        .with_detail(format!("bin={bin_name}, root={}", root.display())))
+    if matches.is_empty() {
+        return Err(RunReason::Exec("binary not found in package".into())
+            .to_err()
+            .with_detail(format!("bin={bin_name}, root={}", root.display())));
+    }
+    if matches.len() > 1 {
+        return Err(RunReason::Exec("multiple binaries found in package".into())
+            .to_err()
+            .with_detail(format!(
+                "bin={bin_name}, root={}, count={}",
+                root.display(),
+                matches.len()
+            )));
+    }
+    Ok(matches.remove(0))
 }
 
 pub fn install_dir_from_current_exe() -> RunResult<PathBuf> {
@@ -193,7 +212,7 @@ mod tests {
 
     use tempfile::tempdir;
 
-    use super::{is_remote_newer, normalize_version, verify_sha256};
+    use super::{find_binary, is_remote_newer, normalize_version, verify_sha256};
 
     #[test]
     fn normalize_version_accepts_v_prefix() {
@@ -218,5 +237,17 @@ mod tests {
         let ok = "0f7f071ced9d0deec80c6011cada66dc2af6212d5542e895801898a555da5b70";
         verify_sha256(&file, ok).expect("sha ok");
         assert!(verify_sha256(&file, "0000").is_err());
+    }
+
+    #[test]
+    fn find_binary_rejects_multiple_matches() {
+        let dir = tempdir().expect("tmp dir");
+        let d1 = dir.path().join("a");
+        let d2 = dir.path().join("b");
+        fs::create_dir_all(&d1).expect("mkdir a");
+        fs::create_dir_all(&d2).expect("mkdir b");
+        fs::write(d1.join("gprj"), b"x").expect("write gprj a");
+        fs::write(d2.join("gprj"), b"y").expect("write gprj b");
+        assert!(find_binary(dir.path(), "gprj").is_err());
     }
 }

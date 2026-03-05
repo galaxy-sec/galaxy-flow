@@ -1,6 +1,7 @@
 use std::fs::{self, OpenOptions};
 use std::io::{self, Write};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
+use std::time::Duration;
 
 use orion_error::ToStructError;
 
@@ -14,6 +15,7 @@ const POLICY_FILE: &str = "policy.toml";
 const STATE_FILE: &str = "state.json";
 const LOCK_FILE: &str = "lock";
 const BACKUPS_DIR: &str = "backups";
+const STALE_LOCK_MAX_AGE_SECS: u64 = 24 * 60 * 60;
 
 pub struct FileLock {
     path: PathBuf,
@@ -100,13 +102,34 @@ impl SelfUpdateStorage {
 
     pub fn acquire_lock(&self) -> RunResult<FileLock> {
         let path = self.lock_path();
-        let mut file = OpenOptions::new()
-            .create_new(true)
-            .write(true)
-            .open(&path)
-            .map_err(io_err)?;
-        file.write_all(b"self-update-lock").map_err(io_err)?;
-        Ok(FileLock { path })
+        match create_lock_file(&path) {
+            Ok(lock) => Ok(lock),
+            Err(err) if err.kind() == io::ErrorKind::AlreadyExists => {
+                if lock_is_stale(&path, Duration::from_secs(STALE_LOCK_MAX_AGE_SECS)) {
+                    if let Some(pid) = read_lock_pid(&path) {
+                        if process_is_running(pid) {
+                            return Err(RunReason::Exec("self update is busy".into())
+                                .to_err()
+                                .with_detail(format!(
+                                    "lock_file={}, pid={} still running",
+                                    path.display(),
+                                    pid
+                                )));
+                        }
+                    }
+                    let _ = fs::remove_file(&path);
+                    create_lock_file(&path).map_err(io_err)
+                } else {
+                    Err(RunReason::Exec("self update is busy".into())
+                        .to_err()
+                        .with_detail(format!(
+                            "lock_file={}, remove it manually if previous process crashed",
+                            path.display()
+                        )))
+                }
+            }
+            Err(err) => Err(io_err(err)),
+        }
     }
 
     pub fn create_backup_dir(&self, backup_id: &str) -> RunResult<PathBuf> {
@@ -138,4 +161,68 @@ fn io_err(err: io::Error) -> crate::err::RunError {
 
 fn parse_err(err: impl std::fmt::Display) -> crate::err::RunError {
     RunReason::Exec(err.to_string()).to_err()
+}
+
+fn create_lock_file(path: &Path) -> io::Result<FileLock> {
+    let mut file = OpenOptions::new().create_new(true).write(true).open(path)?;
+    file.write_all(format!("pid={}\n", std::process::id()).as_bytes())?;
+    Ok(FileLock {
+        path: path.to_path_buf(),
+    })
+}
+
+fn lock_is_stale(path: &Path, max_age: Duration) -> bool {
+    let Ok(meta) = fs::metadata(path) else {
+        return false;
+    };
+    let Ok(modified) = meta.modified() else {
+        return false;
+    };
+    let Ok(elapsed) = modified.elapsed() else {
+        return false;
+    };
+    elapsed > max_age
+}
+
+fn read_lock_pid(path: &Path) -> Option<u32> {
+    let text = fs::read_to_string(path).ok()?;
+    for line in text.lines() {
+        let line = line.trim();
+        if let Some(v) = line.strip_prefix("pid=") {
+            if let Ok(pid) = v.trim().parse::<u32>() {
+                return Some(pid);
+            }
+        }
+    }
+    None
+}
+
+#[cfg(unix)]
+fn process_is_running(pid: u32) -> bool {
+    if pid == 0 {
+        return false;
+    }
+    let rc = unsafe { libc::kill(pid as i32, 0) };
+    if rc == 0 {
+        return true;
+    }
+    std::io::Error::last_os_error().raw_os_error() == Some(libc::EPERM)
+}
+
+#[cfg(not(unix))]
+fn process_is_running(_pid: u32) -> bool {
+    false
+}
+
+#[cfg(test)]
+mod tests {
+    use super::read_lock_pid;
+
+    #[test]
+    fn parse_lock_pid() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let path = dir.path().join("lock");
+        std::fs::write(&path, "pid=12345\n").expect("write lock");
+        assert_eq!(read_lock_pid(&path), Some(12345));
+    }
 }

@@ -1,4 +1,5 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
+use std::process::Command;
 
 use chrono::Utc;
 use serde::Serialize;
@@ -10,8 +11,8 @@ use crate::err::{RunReason, RunResult};
 use super::client::SelfUpdateClient;
 use super::installer;
 use super::model::{
-    AutoMode, CheckResult, ManifestAsset, ReleaseChannel, SelfUpdatePolicy, StatusResult,
-    UpdateResult,
+    AutoMode, CheckResult, ManifestAsset, ReleaseChannel, SelfUpdatePolicy, SelfUpdateState,
+    StatusResult, UpdateResult,
 };
 use super::storage::SelfUpdateStorage;
 
@@ -65,14 +66,14 @@ impl SelfUpdateService {
     }
 
     pub async fn check(&self, req: CheckRequest) -> RunResult<CheckResult> {
+        let _lock = self.storage.acquire_lock()?;
         let mut state = self.storage.load_state()?;
         let policy = self.storage.load_policy()?;
         let channel = req.channel.unwrap_or(policy.channel);
-        let temp_dir = temp_dir("check");
-        std::fs::create_dir_all(&temp_dir).map_err(io_err)?;
+        let temp_dir = TempDirGuard::new("check")?;
         let manifest = self
             .client
-            .fetch_manifest(&policy.manifest_base_url, channel, &temp_dir)
+            .fetch_manifest(&policy.manifest_base_url, channel, temp_dir.path())
             .await
             .map_err(|e| {
                 let _ = record_failure_state(
@@ -128,12 +129,11 @@ impl SelfUpdateService {
         let channel = policy.channel;
         let current = env!("CARGO_PKG_VERSION").to_string();
 
-        let temp_dir = temp_dir("update");
-        std::fs::create_dir_all(&temp_dir).map_err(io_err)?;
+        let temp_dir = TempDirGuard::new("update")?;
 
         let manifest = self
             .client
-            .fetch_manifest(&policy.manifest_base_url, channel, &temp_dir)
+            .fetch_manifest(&policy.manifest_base_url, channel, temp_dir.path())
             .await
             .map_err(|e| {
                 let _ = record_failure_state(
@@ -194,6 +194,21 @@ impl SelfUpdateService {
                 updated: false,
             });
         }
+        if req.dry_run {
+            state.last_checked_at = Some(now_text());
+            state.last_channel = Some(channel);
+            state.last_remote_version = Some(remote.clone());
+            state.last_result = Some("dry_run".to_string());
+            state.last_error = None;
+            self.storage.save_state(&state)?;
+            return Ok(UpdateResult {
+                channel,
+                from_version: current,
+                to_version: remote,
+                backup_id: None,
+                updated: false,
+            });
+        }
         if !req.yes {
             let err = RunReason::Args("confirmation required".into())
                 .to_err()
@@ -209,37 +224,124 @@ impl SelfUpdateService {
             return Err(err);
         }
 
-        let target = installer::detect_target_triple()?;
-        let asset = manifest.assets.get(&target).ok_or_else(|| {
-            RunReason::Exec("asset for target not found".into())
-                .to_err()
-                .with_detail(format!("target={target}"))
-        })?;
-
-        if req.dry_run {
-            return Ok(UpdateResult {
+        let target = installer::detect_target_triple().map_err(|e| {
+            let _ = record_failure_state(
+                &self.storage,
+                &mut state,
                 channel,
-                from_version: current,
-                to_version: remote,
-                backup_id: None,
-                updated: false,
-            });
-        }
+                Some(remote.clone()),
+                "update_failed",
+                &e.to_string(),
+            );
+            e
+        })?;
+        let asset = manifest
+            .assets
+            .get(&target)
+            .ok_or_else(|| {
+                RunReason::Exec("asset for target not found".into())
+                    .to_err()
+                    .with_detail(format!("target={target}"))
+            })
+            .map_err(|e| {
+                let _ = record_failure_state(
+                    &self.storage,
+                    &mut state,
+                    channel,
+                    Some(remote.clone()),
+                    "update_failed",
+                    &e.to_string(),
+                );
+                e
+            })?;
 
-        let asset_file = temp_dir.join(format!("update-{target}.tar.gz"));
+        let asset_file = temp_dir.path().join(format!("update-{target}.tar.gz"));
         self.client
             .download_to_path(&asset.url, &asset_file)
-            .await?;
-        installer::verify_sha256(&asset_file, &asset.sha256)?;
+            .await
+            .map_err(|e| {
+                let _ = record_failure_state(
+                    &self.storage,
+                    &mut state,
+                    channel,
+                    Some(remote.clone()),
+                    "update_failed",
+                    &e.to_string(),
+                );
+                e
+            })?;
+        installer::verify_sha256(&asset_file, &asset.sha256).map_err(|e| {
+            let _ = record_failure_state(
+                &self.storage,
+                &mut state,
+                channel,
+                Some(remote.clone()),
+                "update_failed",
+                &e.to_string(),
+            );
+            e
+        })?;
 
-        let unpack_dir = temp_dir.join("unpack");
-        installer::extract_tar_gz(&asset_file, &unpack_dir)?;
-        let new_gprj = installer::find_binary(&unpack_dir, bin_name("gprj").as_str())?;
-        let new_gflow = installer::find_binary(&unpack_dir, bin_name("gflow").as_str())?;
+        let unpack_dir = temp_dir.path().join("unpack");
+        installer::extract_tar_gz(&asset_file, &unpack_dir).map_err(|e| {
+            let _ = record_failure_state(
+                &self.storage,
+                &mut state,
+                channel,
+                Some(remote.clone()),
+                "update_failed",
+                &e.to_string(),
+            );
+            e
+        })?;
+        let new_gprj =
+            installer::find_binary(&unpack_dir, bin_name("gprj").as_str()).map_err(|e| {
+                let _ = record_failure_state(
+                    &self.storage,
+                    &mut state,
+                    channel,
+                    Some(remote.clone()),
+                    "update_failed",
+                    &e.to_string(),
+                );
+                e
+            })?;
+        let new_gflow =
+            installer::find_binary(&unpack_dir, bin_name("gflow").as_str()).map_err(|e| {
+                let _ = record_failure_state(
+                    &self.storage,
+                    &mut state,
+                    channel,
+                    Some(remote.clone()),
+                    "update_failed",
+                    &e.to_string(),
+                );
+                e
+            })?;
 
-        let install_dir = installer::install_dir_from_current_exe()?;
+        let install_dir = installer::install_dir_from_current_exe().map_err(|e| {
+            let _ = record_failure_state(
+                &self.storage,
+                &mut state,
+                channel,
+                Some(remote.clone()),
+                "update_failed",
+                &e.to_string(),
+            );
+            e
+        })?;
         let backup_id = now_id();
-        let backup_dir = self.storage.create_backup_dir(&backup_id)?;
+        let backup_dir = self.storage.create_backup_dir(&backup_id).map_err(|e| {
+            let _ = record_failure_state(
+                &self.storage,
+                &mut state,
+                channel,
+                Some(remote.clone()),
+                "update_failed",
+                &e.to_string(),
+            );
+            e
+        })?;
 
         let install_res =
             installer::backup_and_replace(&install_dir, &backup_dir, &new_gprj, &new_gflow)
@@ -278,32 +380,56 @@ impl SelfUpdateService {
     pub fn rollback(&self, id: Option<&str>) -> RunResult<UpdateResult> {
         let _lock = self.storage.acquire_lock()?;
         let backups = self.storage.list_backups_desc()?;
-        let backup_id = if let Some(id) = id {
-            id.to_string()
-        } else {
-            backups
-                .first()
-                .cloned()
-                .ok_or_else(|| RunReason::Args("no backup found".into()).to_err())?
-        };
-        let backup_dir = self.storage.backups_dir().join(&backup_id);
-        let install_dir = installer::install_dir_from_current_exe()?;
-        installer::rollback(&install_dir, &backup_dir)?;
-        installer::health_check(&install_dir)?;
-
+        let backup_id = select_backup_id(&backups, id)?;
         let mut state = self.storage.load_state()?;
-        state.last_result = Some("rollback".to_string());
-        state.last_error = None;
+        let channel = state.last_channel.unwrap_or_default();
+        let from_version = state
+            .current_version
+            .clone()
+            .unwrap_or_else(|| env!("CARGO_PKG_VERSION").to_string());
+        let backup_dir = self.storage.backups_dir().join(&backup_id);
+        let install_dir = installer::install_dir_from_current_exe().map_err(|e| {
+            let _ = record_rollback_failure_state(&self.storage, &mut state, &e.to_string());
+            e
+        })?;
+        installer::rollback(&install_dir, &backup_dir).map_err(|e| {
+            let _ = record_rollback_failure_state(&self.storage, &mut state, &e.to_string());
+            e
+        })?;
+        installer::health_check(&install_dir).map_err(|e| {
+            let _ = record_rollback_failure_state(&self.storage, &mut state, &e.to_string());
+            e
+        })?;
+        let restored_version = read_installed_version(&install_dir.join(bin_name("gprj")));
         state.installed_at = Some(now_text());
-        self.storage.save_state(&state)?;
-
-        Ok(UpdateResult {
-            channel: state.last_channel.unwrap_or_default(),
-            from_version: env!("CARGO_PKG_VERSION").to_string(),
-            to_version: "rollback".to_string(),
-            backup_id: Some(backup_id),
-            updated: true,
-        })
+        match restored_version {
+            Ok(v) => {
+                state.last_result = Some("rollback".to_string());
+                state.last_error = None;
+                state.current_version = Some(v.clone());
+                self.storage.save_state(&state)?;
+                Ok(UpdateResult {
+                    channel,
+                    from_version,
+                    to_version: v,
+                    backup_id: Some(backup_id),
+                    updated: true,
+                })
+            }
+            Err(e) => {
+                // Rollback is already healthy; keep it successful but record parse warning.
+                state.last_result = Some("rollback_version_unknown".to_string());
+                state.last_error = Some(e.to_string());
+                self.storage.save_state(&state)?;
+                Ok(UpdateResult {
+                    channel,
+                    from_version,
+                    to_version: "unknown".to_string(),
+                    backup_id: Some(backup_id),
+                    updated: true,
+                })
+            }
+        }
     }
 
     pub fn set_auto(&self, req: AutoSetRequest) -> RunResult<SelfUpdatePolicy> {
@@ -327,7 +453,7 @@ impl SelfUpdateService {
 
 fn record_failure_state(
     storage: &SelfUpdateStorage,
-    state: &mut super::model::SelfUpdateState,
+    state: &mut SelfUpdateState,
     channel: ReleaseChannel,
     remote_version: Option<String>,
     result: &str,
@@ -337,6 +463,16 @@ fn record_failure_state(
     state.last_channel = Some(channel);
     state.last_remote_version = remote_version;
     state.last_result = Some(result.to_string());
+    state.last_error = Some(err.to_string());
+    storage.save_state(state)
+}
+
+fn record_rollback_failure_state(
+    storage: &SelfUpdateStorage,
+    state: &mut SelfUpdateState,
+    err: &str,
+) -> RunResult<()> {
+    state.last_result = Some("rollback_failed".to_string());
     state.last_error = Some(err.to_string());
     storage.save_state(state)
 }
@@ -355,6 +491,55 @@ fn temp_dir(prefix: &str) -> PathBuf {
     p
 }
 
+struct TempDirGuard {
+    path: PathBuf,
+}
+
+impl TempDirGuard {
+    fn new(prefix: &str) -> RunResult<Self> {
+        let path = temp_dir(prefix);
+        std::fs::create_dir_all(&path).map_err(io_err)?;
+        Ok(Self { path })
+    }
+
+    fn path(&self) -> &Path {
+        &self.path
+    }
+}
+
+impl Drop for TempDirGuard {
+    fn drop(&mut self) {
+        let _ = std::fs::remove_dir_all(&self.path);
+    }
+}
+
+fn select_backup_id(backups: &[String], id: Option<&str>) -> RunResult<String> {
+    match id {
+        Some(raw) => {
+            if !is_valid_backup_id(raw) {
+                return Err(RunReason::Args("invalid backup id".into())
+                    .to_err()
+                    .with_detail(format!("backup_id={raw}, expected=14 digits")));
+            }
+            if backups.iter().any(|v| v == raw) {
+                Ok(raw.to_string())
+            } else {
+                Err(RunReason::Args("backup id not found".into())
+                    .to_err()
+                    .with_detail(format!("backup_id={raw}")))
+            }
+        }
+        None => backups
+            .first()
+            .cloned()
+            .ok_or_else(|| RunReason::Args("no backup found".into()).to_err()),
+    }
+}
+
+fn is_valid_backup_id(input: &str) -> bool {
+    input.len() == 14 && input.bytes().all(|b| b.is_ascii_digit())
+}
+
 fn now_id() -> String {
     Utc::now().format("%Y%m%d%H%M%S").to_string()
 }
@@ -365,6 +550,43 @@ fn now_text() -> String {
 
 fn io_err(err: std::io::Error) -> crate::err::RunError {
     RunReason::Exec(err.to_string()).to_err()
+}
+
+fn read_installed_version(bin: &std::path::Path) -> RunResult<String> {
+    let out = Command::new(bin)
+        .arg("--version")
+        .output()
+        .map_err(io_err)?;
+    if !out.status.success() {
+        return Err(RunReason::Exec("version command failed".into())
+            .to_err()
+            .with_detail(format!("{} --version exit={}", bin.display(), out.status)));
+    }
+    let text = format!(
+        "{} {}",
+        String::from_utf8_lossy(&out.stdout),
+        String::from_utf8_lossy(&out.stderr)
+    );
+    parse_version_from_text(&text).ok_or_else(|| {
+        RunReason::Exec("cannot parse version output".into())
+            .to_err()
+            .with_detail(format!("bin={}", bin.display()))
+    })
+}
+
+fn parse_version_from_text(text: &str) -> Option<String> {
+    for tok in text.split_whitespace() {
+        let normalized = tok
+            .trim_matches(|c: char| ['"', ',', ':', ';', '(', ')'].contains(&c))
+            .trim();
+        if normalized.is_empty() {
+            continue;
+        }
+        if let Ok(v) = installer::normalize_version(normalized) {
+            return Some(v.to_string());
+        }
+    }
+    None
 }
 
 #[allow(dead_code)]
@@ -380,4 +602,36 @@ fn _asset_for_target<'a>(
     assets
         .get(target)
         .ok_or_else(|| RunReason::Exec("asset not found".into()).to_err())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{parse_version_from_text, select_backup_id};
+
+    #[test]
+    fn backup_id_requires_membership() {
+        let backups = vec!["20260305010101".to_string()];
+        assert!(select_backup_id(&backups, Some("20260305010101")).is_ok());
+        assert!(select_backup_id(&backups, Some("20260305010102")).is_err());
+    }
+
+    #[test]
+    fn backup_id_rejects_path_like_input() {
+        let backups = vec!["20260305010101".to_string()];
+        assert!(select_backup_id(&backups, Some("../20260305010101")).is_err());
+        assert!(select_backup_id(&backups, Some("/tmp/x")).is_err());
+    }
+
+    #[test]
+    fn parse_version_from_output_text() {
+        assert_eq!(
+            parse_version_from_text("gprj 0.12.4"),
+            Some("0.12.4".to_string())
+        );
+        assert_eq!(
+            parse_version_from_text("gflow version v0.12.5-pre.1"),
+            Some("0.12.5-pre.1".to_string())
+        );
+        assert_eq!(parse_version_from_text("version: unknown"), None);
+    }
 }
