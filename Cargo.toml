@@ -108,6 +108,7 @@ tar = "0.4"
 
 [features]
 res_depend_test = []
+network_test = []
 
 
 [dev-dependencies]
