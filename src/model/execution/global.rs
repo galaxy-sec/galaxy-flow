@@ -118,12 +118,11 @@ pub fn detect_git_branch(start_at: &Path) -> Option<String> {
         // Detached HEAD is not a branch name by design.
         return None;
     }
-    if let Ok(head_ref) = repo.find_reference("HEAD") {
-        if let Some(sym) = head_ref.symbolic_target() {
-            if let Some(branch) = sym.strip_prefix("refs/heads/") {
-                return non_empty(branch).map(|v| v.to_string());
-            }
-        }
+    if let Ok(head_ref) = repo.find_reference("HEAD")
+        && let Some(sym) = head_ref.symbolic_target()
+        && let Some(branch) = sym.strip_prefix("refs/heads/")
+    {
+        return non_empty(branch).map(|v| v.to_string());
     }
     None
 }

@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 use orion_accessor::addr::{Address, HttpResource};
 use orion_accessor::types::ResourceDownloader;
 use orion_accessor::update::DownloadOptions;
-use orion_error::ToStructError;
+use orion_error::{ErrorOwe, ErrorWith, ToStructError};
 use orion_variate::vars::EnvDict;
 
 use crate::err::{RunReason, RunResult};
@@ -16,12 +16,8 @@ use super::model::{ReleaseChannel, SelfUpdateManifest};
 pub struct SelfUpdateClient {}
 
 impl SelfUpdateClient {
-    pub fn manifest_url(base: &str, channel: ReleaseChannel) -> String {
-        format!(
-            "{}/{}/manifest.json",
-            base.trim_end_matches('/'),
-            channel.as_str()
-        )
+    pub fn manifest_url(base: &str) -> String {
+        format!("{}/manifest.json", base.trim_end_matches('/'))
     }
 
     pub async fn fetch_manifest(
@@ -30,13 +26,21 @@ impl SelfUpdateClient {
         channel: ReleaseChannel,
         temp_dir: &Path,
     ) -> RunResult<SelfUpdateManifest> {
-        let url = Self::manifest_url(base, channel);
+        let url = Self::manifest_url(base);
         ensure_whitelist(&url)?;
         let path = temp_dir.join(format!("manifest-{}.json", channel.as_str()));
         self.download_to_path(&url, &path).await?;
 
-        let content = fs::read_to_string(path).map_err(io_err)?;
-        let manifest = serde_json::from_str::<SelfUpdateManifest>(&content).map_err(parse_err)?;
+        let content = fs::read_to_string(&path)
+            .owe_res()
+            .want("read self update manifest file")
+            .with(("url", url.as_str()))
+            .with(("path", path.as_path()))?;
+        let manifest = serde_json::from_str::<SelfUpdateManifest>(&content)
+            .owe_data()
+            .want("parse self update manifest")
+            .with(("url", url.as_str()))
+            .with(("path", path.as_path()))?;
         if manifest.channel != channel {
             return Err(RunReason::Exec("manifest channel mismatch".into())
                 .to_err()
@@ -52,31 +56,40 @@ impl SelfUpdateClient {
     pub async fn download_to_path(&self, url: &str, dst: &Path) -> RunResult<PathBuf> {
         ensure_whitelist(url)?;
         if let Some(parent) = dst.parent() {
-            fs::create_dir_all(parent).map_err(io_err)?;
+            fs::create_dir_all(parent)
+                .owe_res()
+                .want("create download destination parent")
+                .with(("path", parent))?;
         }
         let addr = HttpResource::from(url);
         build_accessor(&EnvDict::default())
-            .download_to_local(
-                &Address::from(addr),
-                &dst.to_path_buf(),
-                &DownloadOptions::default(),
-            )
+            .download_to_local(&Address::from(addr), dst, &DownloadOptions::default())
             .await
-            .map_err(res_err)?;
+            .owe_res()
+            .want("download file")
+            .with(("url", url))
+            .with(("dst", dst))?;
         Ok(dst.to_path_buf())
     }
 }
 
 fn ensure_whitelist(url: &str) -> RunResult<()> {
-    let parsed = url::Url::parse(url).map_err(parse_err)?;
+    let parsed = url::Url::parse(url)
+        .owe_data()
+        .want("parse download url")
+        .with(("url", url))?;
     if parsed.scheme() != "https" {
         return Err(RunReason::Args("only https download is allowed".into())
             .to_err()
+            .want("validate download url scheme")
+            .with(("url", url))
             .with_detail(format!("url={url}")));
     }
     let host = parsed
         .host_str()
-        .ok_or_else(|| RunReason::Args("url has no host".into()).to_err())?;
+        .ok_or_else(|| RunReason::Args("url has no host".into()).to_err())
+        .want("validate download url host")
+        .with(("url", url))?;
     let allowed = [
         "github.com",
         "raw.githubusercontent.com",
@@ -92,37 +105,24 @@ fn ensure_whitelist(url: &str) -> RunResult<()> {
     }
     Err(RunReason::Args("download host is not allowed".into())
         .to_err()
+        .want("validate download host allowlist")
+        .with(("url", url))
+        .with(("host", host))
         .with_detail(format!("host={host}")))
-}
-
-fn io_err(err: std::io::Error) -> crate::err::RunError {
-    RunReason::Exec(err.to_string()).to_err()
-}
-
-fn parse_err(err: impl std::fmt::Display) -> crate::err::RunError {
-    RunReason::Exec(err.to_string()).to_err()
-}
-
-fn res_err(err: impl std::fmt::Display) -> crate::err::RunError {
-    RunReason::Exec(err.to_string()).to_err()
 }
 
 #[cfg(test)]
 mod tests {
     use super::{SelfUpdateClient, ensure_whitelist};
-    use crate::self_update::ReleaseChannel;
 
     #[test]
-    fn manifest_url_uses_channel_path() {
-        let stable =
-            SelfUpdateClient::manifest_url("https://example.com/updates", ReleaseChannel::Stable);
-        let alpha =
-            SelfUpdateClient::manifest_url("https://example.com/updates/", ReleaseChannel::Alpha);
-        let beta =
-            SelfUpdateClient::manifest_url("https://example.com/updates/", ReleaseChannel::Beta);
-        assert_eq!(stable, "https://example.com/updates/stable/manifest.json");
-        assert_eq!(alpha, "https://example.com/updates/alpha/manifest.json");
-        assert_eq!(beta, "https://example.com/updates/beta/manifest.json");
+    fn manifest_url_uses_base_path() {
+        let stable = SelfUpdateClient::manifest_url("https://example.com/updates");
+        let alpha = SelfUpdateClient::manifest_url("https://example.com/alpha/updates/");
+        let beta = SelfUpdateClient::manifest_url("https://example.com/beta/updates/");
+        assert_eq!(stable, "https://example.com/updates/manifest.json");
+        assert_eq!(alpha, "https://example.com/alpha/updates/manifest.json");
+        assert_eq!(beta, "https://example.com/beta/updates/manifest.json");
     }
 
     #[test]

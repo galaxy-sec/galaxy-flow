@@ -3,7 +3,7 @@ use std::io::{self, Write};
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 
-use orion_error::ToStructError;
+use orion_error::{ErrorOwe, ErrorWith, ToStructError};
 
 use crate::err::{RunReason, RunResult};
 
@@ -62,7 +62,11 @@ impl SelfUpdateStorage {
     }
 
     pub fn ensure_layout(&self) -> RunResult<()> {
-        fs::create_dir_all(self.backups_dir()).map_err(io_err)?;
+        let backups = self.backups_dir();
+        fs::create_dir_all(&backups)
+            .owe_res()
+            .want("create self update layout")
+            .with(("path", backups.as_path()))?;
         Ok(())
     }
 
@@ -73,14 +77,26 @@ impl SelfUpdateStorage {
             self.save_policy(&def)?;
             return Ok(def);
         }
-        let content = fs::read_to_string(&path).map_err(io_err)?;
-        toml::from_str::<SelfUpdatePolicy>(&content).map_err(parse_err)
+        let content = fs::read_to_string(&path)
+            .owe_res()
+            .want("read self update policy")
+            .with(("path", path.as_path()))?;
+        toml::from_str::<SelfUpdatePolicy>(&content)
+            .owe_data()
+            .want("parse self update policy")
+            .with(("path", path.as_path()))
     }
 
     pub fn save_policy(&self, policy: &SelfUpdatePolicy) -> RunResult<()> {
         let path = self.policy_path();
-        let content = toml::to_string_pretty(policy).map_err(parse_err)?;
-        fs::write(path, content).map_err(io_err)?;
+        let content = toml::to_string_pretty(policy)
+            .owe_data()
+            .want("serialize self update policy")
+            .with(("path", path.as_path()))?;
+        fs::write(&path, content)
+            .owe_res()
+            .want("write self update policy")
+            .with(("path", path.as_path()))?;
         Ok(())
     }
 
@@ -89,14 +105,26 @@ impl SelfUpdateStorage {
         if !path.exists() {
             return Ok(SelfUpdateState::default());
         }
-        let content = fs::read_to_string(path).map_err(io_err)?;
-        serde_json::from_str::<SelfUpdateState>(&content).map_err(parse_err)
+        let content = fs::read_to_string(&path)
+            .owe_res()
+            .want("read self update state")
+            .with(("path", path.as_path()))?;
+        serde_json::from_str::<SelfUpdateState>(&content)
+            .owe_data()
+            .want("parse self update state")
+            .with(("path", path.as_path()))
     }
 
     pub fn save_state(&self, state: &SelfUpdateState) -> RunResult<()> {
         let path = self.state_path();
-        let content = serde_json::to_string_pretty(state).map_err(parse_err)?;
-        fs::write(path, content).map_err(io_err)?;
+        let content = serde_json::to_string_pretty(state)
+            .owe_data()
+            .want("serialize self update state")
+            .with(("path", path.as_path()))?;
+        fs::write(&path, content)
+            .owe_res()
+            .want("write self update state")
+            .with(("path", path.as_path()))?;
         Ok(())
     }
 
@@ -106,19 +134,22 @@ impl SelfUpdateStorage {
             Ok(lock) => Ok(lock),
             Err(err) if err.kind() == io::ErrorKind::AlreadyExists => {
                 if lock_is_stale(&path, Duration::from_secs(STALE_LOCK_MAX_AGE_SECS)) {
-                    if let Some(pid) = read_lock_pid(&path) {
-                        if process_is_running(pid) {
-                            return Err(RunReason::Exec("self update is busy".into())
-                                .to_err()
-                                .with_detail(format!(
-                                    "lock_file={}, pid={} still running",
-                                    path.display(),
-                                    pid
-                                )));
-                        }
+                    if let Some(pid) = read_lock_pid(&path)
+                        && process_is_running(pid)
+                    {
+                        return Err(RunReason::Exec("self update is busy".into())
+                            .to_err()
+                            .with_detail(format!(
+                                "lock_file={}, pid={} still running",
+                                path.display(),
+                                pid
+                            )));
                     }
                     let _ = fs::remove_file(&path);
-                    create_lock_file(&path).map_err(io_err)
+                    create_lock_file(&path)
+                        .owe_res()
+                        .want("create self update lock file")
+                        .with(("path", path.as_path()))
                 } else {
                     Err(RunReason::Exec("self update is busy".into())
                         .to_err()
@@ -128,21 +159,41 @@ impl SelfUpdateStorage {
                         )))
                 }
             }
-            Err(err) => Err(io_err(err)),
+            Err(err) => Err::<FileLock, _>(err)
+                .owe_res()
+                .want("create self update lock file")
+                .with(("path", path.as_path())),
         }
     }
 
     pub fn create_backup_dir(&self, backup_id: &str) -> RunResult<PathBuf> {
         let dir = self.backups_dir().join(backup_id);
-        fs::create_dir_all(&dir).map_err(io_err)?;
+        fs::create_dir_all(&dir)
+            .owe_res()
+            .want("create self update backup dir")
+            .with(("path", dir.as_path()))?;
         Ok(dir)
     }
 
     pub fn list_backups_desc(&self) -> RunResult<Vec<String>> {
         let mut list = Vec::new();
-        for item in fs::read_dir(self.backups_dir()).map_err(io_err)? {
-            let item = item.map_err(io_err)?;
-            if item.file_type().map_err(io_err)?.is_dir() {
+        let backups = self.backups_dir();
+        for item in fs::read_dir(&backups)
+            .owe_res()
+            .want("read self update backups dir")
+            .with(("path", backups.as_path()))?
+        {
+            let item = item
+                .owe_res()
+                .want("read self update backup entry")
+                .with(("path", backups.as_path()))?;
+            if item
+                .file_type()
+                .owe_res()
+                .want("read backup entry file type")
+                .with(("path", item.path().as_path()))?
+                .is_dir()
+            {
                 let file_name = item.file_name();
                 if let Some(name) = file_name.to_str() {
                     list.push(name.to_string());
@@ -153,14 +204,6 @@ impl SelfUpdateStorage {
         list.reverse();
         Ok(list)
     }
-}
-
-fn io_err(err: io::Error) -> crate::err::RunError {
-    RunReason::Exec(err.to_string()).to_err()
-}
-
-fn parse_err(err: impl std::fmt::Display) -> crate::err::RunError {
-    RunReason::Exec(err.to_string()).to_err()
 }
 
 fn create_lock_file(path: &Path) -> io::Result<FileLock> {
@@ -188,10 +231,10 @@ fn read_lock_pid(path: &Path) -> Option<u32> {
     let text = fs::read_to_string(path).ok()?;
     for line in text.lines() {
         let line = line.trim();
-        if let Some(v) = line.strip_prefix("pid=") {
-            if let Ok(pid) = v.trim().parse::<u32>() {
-                return Some(pid);
-            }
+        if let Some(v) = line.strip_prefix("pid=")
+            && let Ok(pid) = v.trim().parse::<u32>()
+        {
+            return Some(pid);
         }
     }
     None

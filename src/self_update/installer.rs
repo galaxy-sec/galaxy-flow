@@ -10,7 +10,7 @@ use sha2::{Digest, Sha256};
 use tar::Archive;
 use walkdir::WalkDir;
 
-use orion_error::ToStructError;
+use orion_error::{ErrorOwe, ErrorWith, ToStructError};
 
 use crate::err::{RunReason, RunResult};
 
@@ -32,7 +32,10 @@ pub fn detect_target_triple() -> RunResult<String> {
 
 pub fn normalize_version(v: &str) -> RunResult<Version> {
     let raw = v.trim().trim_start_matches('v');
-    Version::parse(raw).map_err(parse_err)
+    Version::parse(raw)
+        .owe_data()
+        .want("parse semantic version")
+        .with(("version", v))
 }
 
 pub fn is_remote_newer(current: &str, remote: &str) -> RunResult<bool> {
@@ -40,11 +43,18 @@ pub fn is_remote_newer(current: &str, remote: &str) -> RunResult<bool> {
 }
 
 pub fn verify_sha256(file: &Path, expect: &str) -> RunResult<()> {
-    let mut f = fs::File::open(file).map_err(io_err)?;
+    let mut f = fs::File::open(file)
+        .owe_res()
+        .want("open file for sha256")
+        .with(("path", file))?;
     let mut hasher = Sha256::new();
     let mut buf = [0u8; 8192];
     loop {
-        let n = f.read(&mut buf).map_err(io_err)?;
+        let n = f
+            .read(&mut buf)
+            .owe_res()
+            .want("read file for sha256")
+            .with(("path", file))?;
         if n == 0 {
             break;
         }
@@ -56,6 +66,10 @@ pub fn verify_sha256(file: &Path, expect: &str) -> RunResult<()> {
     }
     Err(RunReason::Exec("sha256 mismatch".into())
         .to_err()
+        .want("verify package sha256")
+        .with(("path", file))
+        .with(("expect", expect))
+        .with(("got", got.as_str()))
         .with_detail(format!(
             "expect={expect}, got={got}, file={}",
             file.display()
@@ -63,17 +77,30 @@ pub fn verify_sha256(file: &Path, expect: &str) -> RunResult<()> {
 }
 
 pub fn extract_tar_gz(archive: &Path, dest: &Path) -> RunResult<()> {
-    fs::create_dir_all(dest).map_err(io_err)?;
-    let file = fs::File::open(archive).map_err(io_err)?;
+    fs::create_dir_all(dest)
+        .owe_res()
+        .want("create extract destination")
+        .with(("path", dest))?;
+    let file = fs::File::open(archive)
+        .owe_res()
+        .want("open package archive")
+        .with(("path", archive))?;
     let gz = GzDecoder::new(file);
     let mut tar = Archive::new(gz);
-    tar.unpack(dest).map_err(io_err)
+    tar.unpack(dest)
+        .owe_res()
+        .want("extract package archive")
+        .with(("archive", archive))
+        .with(("dest", dest))
 }
 
 pub fn find_binary(root: &Path, bin_name: &str) -> RunResult<PathBuf> {
     let mut matches = Vec::new();
     for item in WalkDir::new(root).follow_links(false).into_iter() {
-        let item = item.map_err(walk_err)?;
+        let item = item
+            .owe_res()
+            .want("walk package files")
+            .with(("root", root))?;
         if item.path().strip_prefix(root).is_err() {
             continue;
         }
@@ -102,10 +129,14 @@ pub fn find_binary(root: &Path, bin_name: &str) -> RunResult<PathBuf> {
 }
 
 pub fn install_dir_from_current_exe() -> RunResult<PathBuf> {
-    let exe = std::env::current_exe().map_err(io_err)?;
+    let exe = std::env::current_exe()
+        .owe_sys()
+        .want("resolve current executable path")?;
     exe.parent()
         .map(Path::to_path_buf)
         .ok_or_else(|| RunReason::Exec("cannot resolve install dir".into()).to_err())
+        .want("resolve install dir from current executable")
+        .with(("exe", exe.as_path()))
 }
 
 pub fn backup_and_replace(
@@ -114,7 +145,10 @@ pub fn backup_and_replace(
     new_gprj: &Path,
     new_gflow: &Path,
 ) -> RunResult<()> {
-    fs::create_dir_all(backup_dir).map_err(io_err)?;
+    fs::create_dir_all(backup_dir)
+        .owe_res()
+        .want("create backup directory")
+        .with(("path", backup_dir))?;
     let gprj_path = install_dir.join(bin_name("gprj"));
     let gflow_path = install_dir.join(bin_name("gflow"));
 
@@ -156,7 +190,9 @@ fn exec_version(bin: &Path) -> RunResult<()> {
     let status = Command::new(bin)
         .arg("--version")
         .status()
-        .map_err(io_err)?;
+        .owe_res()
+        .want("run binary version command")
+        .with(("bin", bin))?;
     if status.success() {
         return Ok(());
     }
@@ -167,22 +203,52 @@ fn exec_version(bin: &Path) -> RunResult<()> {
 
 fn copy_file(src: &Path, dst: &Path) -> RunResult<()> {
     if let Some(parent) = dst.parent() {
-        fs::create_dir_all(parent).map_err(io_err)?;
+        fs::create_dir_all(parent)
+            .owe_res()
+            .want("create copy destination parent")
+            .with(("path", parent))?;
     }
-    let mut input = fs::File::open(src).map_err(io_err)?;
-    let mut output = fs::File::create(dst).map_err(io_err)?;
-    copy(&mut input, &mut output).map_err(io_err)?;
-    let perm = fs::metadata(src).map_err(io_err)?.permissions();
-    fs::set_permissions(dst, perm).map_err(io_err)?;
+    let mut input = fs::File::open(src)
+        .owe_res()
+        .want("open source file for copy")
+        .with(("src", src))
+        .with(("dst", dst))?;
+    let mut output = fs::File::create(dst)
+        .owe_res()
+        .want("create destination file for copy")
+        .with(("src", src))
+        .with(("dst", dst))?;
+    copy(&mut input, &mut output)
+        .owe_res()
+        .want("copy file bytes")
+        .with(("src", src))
+        .with(("dst", dst))?;
+    let perm = fs::metadata(src)
+        .owe_res()
+        .want("read source file permissions")
+        .with(("src", src))?
+        .permissions();
+    fs::set_permissions(dst, perm)
+        .owe_res()
+        .want("set destination file permissions")
+        .with(("src", src))
+        .with(("dst", dst))?;
     Ok(())
 }
 
 fn replace_file(src: &Path, dst: &Path) -> RunResult<()> {
     #[cfg(windows)]
     if dst.exists() {
-        fs::remove_file(dst).map_err(io_err)?;
+        fs::remove_file(dst)
+            .owe_res()
+            .want("remove old destination file before replace")
+            .with(("dst", dst))?;
     }
-    fs::rename(src, dst).map_err(io_err)
+    fs::rename(src, dst)
+        .owe_res()
+        .want("replace file")
+        .with(("src", src))
+        .with(("dst", dst))
 }
 
 fn bin_name(base: &str) -> String {
@@ -191,18 +257,6 @@ fn bin_name(base: &str) -> String {
     } else {
         base.to_string()
     }
-}
-
-fn io_err(err: std::io::Error) -> crate::err::RunError {
-    RunReason::Exec(err.to_string()).to_err()
-}
-
-fn parse_err(err: impl std::fmt::Display) -> crate::err::RunError {
-    RunReason::Args(err.to_string()).to_err()
-}
-
-fn walk_err(err: walkdir::Error) -> crate::err::RunError {
-    RunReason::Exec(err.to_string()).to_err()
 }
 
 #[cfg(test)]

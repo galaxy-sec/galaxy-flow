@@ -202,10 +202,6 @@ impl GxAdm {
                 println!("policy.mode={:?}", status.policy.mode);
                 println!("policy.channel={}", status.policy.channel.as_str());
                 println!("policy.interval_hours={}", status.policy.interval_hours);
-                println!(
-                    "policy.manifest_base_url={}",
-                    status.policy.manifest_base_url
-                );
                 if let Some(v) = status.state.last_remote_version {
                     println!("state.last_remote_version={v}");
                 }

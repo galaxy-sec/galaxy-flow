@@ -3,18 +3,13 @@ use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, Default)]
 #[serde(rename_all = "snake_case")]
 pub enum ReleaseChannel {
+    #[default]
     Stable,
     Alpha,
     Beta,
-}
-
-impl Default for ReleaseChannel {
-    fn default() -> Self {
-        Self::Stable
-    }
 }
 
 impl ReleaseChannel {
@@ -36,17 +31,12 @@ impl ReleaseChannel {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, Default)]
 #[serde(rename_all = "snake_case")]
 pub enum AutoMode {
+    #[default]
     Check,
     Apply,
-}
-
-impl Default for AutoMode {
-    fn default() -> Self {
-        Self::Check
-    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -55,7 +45,6 @@ pub struct SelfUpdatePolicy {
     pub mode: AutoMode,
     pub channel: ReleaseChannel,
     pub interval_hours: u64,
-    pub manifest_base_url: String,
 }
 
 impl Default for SelfUpdatePolicy {
@@ -65,8 +54,6 @@ impl Default for SelfUpdatePolicy {
             mode: AutoMode::Check,
             channel: ReleaseChannel::Stable,
             interval_hours: 24,
-            manifest_base_url:
-                "https://raw.githubusercontent.com/galaxy-sec/galaxy-flow/main/updates".to_string(),
         }
     }
 }

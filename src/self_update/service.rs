@@ -4,7 +4,7 @@ use std::process::Command;
 use chrono::Utc;
 use serde::Serialize;
 
-use orion_error::ToStructError;
+use orion_error::{ErrorOwe, ErrorWith, ToStructError};
 
 use crate::err::{RunReason, RunResult};
 
@@ -15,6 +15,13 @@ use super::model::{
     StatusResult, UpdateResult,
 };
 use super::storage::SelfUpdateStorage;
+
+const MANIFEST_BASE_URL_STABLE: &str =
+    "https://raw.githubusercontent.com/galaxy-sec/galaxy-flow/main/updates/stable";
+const MANIFEST_BASE_URL_ALPHA: &str =
+    "https://raw.githubusercontent.com/galaxy-sec/galaxy-flow/alpha/updates/alpha";
+const MANIFEST_BASE_URL_BETA: &str =
+    "https://raw.githubusercontent.com/galaxy-sec/galaxy-flow/beta/updates/beta";
 
 #[derive(Clone, Debug, Default)]
 pub struct CheckRequest {
@@ -71,11 +78,12 @@ impl SelfUpdateService {
         let policy = self.storage.load_policy()?;
         let channel = req.channel.unwrap_or(policy.channel);
         let temp_dir = TempDirGuard::new("check")?;
+        let manifest_base_url = manifest_base_url(channel);
         let manifest = self
             .client
-            .fetch_manifest(&policy.manifest_base_url, channel, temp_dir.path())
+            .fetch_manifest(manifest_base_url, channel, temp_dir.path())
             .await
-            .map_err(|e| {
+            .inspect_err(|e| {
                 let _ = record_failure_state(
                     &self.storage,
                     &mut state,
@@ -84,21 +92,20 @@ impl SelfUpdateService {
                     "check_failed",
                     &e.to_string(),
                 );
-                e
             })?;
 
         let current = env!("CARGO_PKG_VERSION").to_string();
-        let has_update = installer::is_remote_newer(&current, &manifest.version).map_err(|e| {
-            let _ = record_failure_state(
-                &self.storage,
-                &mut state,
-                channel,
-                Some(manifest.version.clone()),
-                "check_failed",
-                &e.to_string(),
-            );
-            e
-        })?;
+        let has_update =
+            installer::is_remote_newer(&current, &manifest.version).inspect_err(|e| {
+                let _ = record_failure_state(
+                    &self.storage,
+                    &mut state,
+                    channel,
+                    Some(manifest.version.clone()),
+                    "check_failed",
+                    &e.to_string(),
+                );
+            })?;
 
         state.last_checked_at = Some(now_text());
         state.last_channel = Some(channel);
@@ -130,12 +137,13 @@ impl SelfUpdateService {
         let current = env!("CARGO_PKG_VERSION").to_string();
 
         let temp_dir = TempDirGuard::new("update")?;
+        let manifest_base_url = manifest_base_url(channel);
 
         let manifest = self
             .client
-            .fetch_manifest(&policy.manifest_base_url, channel, temp_dir.path())
+            .fetch_manifest(manifest_base_url, channel, temp_dir.path())
             .await
-            .map_err(|e| {
+            .inspect_err(|e| {
                 let _ = record_failure_state(
                     &self.storage,
                     &mut state,
@@ -144,30 +152,32 @@ impl SelfUpdateService {
                     "update_failed",
                     &e.to_string(),
                 );
-                e
             })?;
         let remote = manifest.version.clone();
-        if let Some(expect) = &req.to_version {
-            if expect.trim() != remote {
-                let err = RunReason::Args("target version mismatch".into())
-                    .to_err()
-                    .with_detail(format!("expect={expect}, manifest={remote}"));
-                let _ = record_failure_state(
-                    &self.storage,
-                    &mut state,
-                    channel,
-                    Some(remote.clone()),
-                    "update_failed",
-                    &err.to_string(),
-                );
-                return Err(err);
-            }
+        if let Some(expect) = &req.to_version
+            && expect.trim() != remote
+        {
+            let err = RunReason::Args("target version mismatch".into())
+                .to_err()
+                .want("validate target update version")
+                .with(("expect", expect.as_str()))
+                .with(("manifest", remote.as_str()))
+                .with_detail(format!("expect={expect}, manifest={remote}"));
+            let _ = record_failure_state(
+                &self.storage,
+                &mut state,
+                channel,
+                Some(remote.clone()),
+                "update_failed",
+                &err.to_string(),
+            );
+            return Err(err);
         }
 
         let has_update = if req.force {
             true
         } else {
-            installer::is_remote_newer(&current, &remote).map_err(|e| {
+            installer::is_remote_newer(&current, &remote).inspect_err(|e| {
                 let _ = record_failure_state(
                     &self.storage,
                     &mut state,
@@ -176,7 +186,6 @@ impl SelfUpdateService {
                     "update_failed",
                     &e.to_string(),
                 );
-                e
             })?
         };
         if !has_update {
@@ -212,6 +221,9 @@ impl SelfUpdateService {
         if !req.yes {
             let err = RunReason::Args("confirmation required".into())
                 .to_err()
+                .want("confirm update apply")
+                .with(("channel", channel.as_str()))
+                .with(("remote", remote.as_str()))
                 .with_detail("rerun with --yes to apply update, or use --dry-run");
             let _ = record_failure_state(
                 &self.storage,
@@ -224,7 +236,7 @@ impl SelfUpdateService {
             return Err(err);
         }
 
-        let target = installer::detect_target_triple().map_err(|e| {
+        let target = installer::detect_target_triple().inspect_err(|e| {
             let _ = record_failure_state(
                 &self.storage,
                 &mut state,
@@ -233,7 +245,6 @@ impl SelfUpdateService {
                 "update_failed",
                 &e.to_string(),
             );
-            e
         })?;
         let asset = manifest
             .assets
@@ -241,9 +252,11 @@ impl SelfUpdateService {
             .ok_or_else(|| {
                 RunReason::Exec("asset for target not found".into())
                     .to_err()
+                    .want("select package asset for target")
+                    .with(("target", target.as_str()))
                     .with_detail(format!("target={target}"))
             })
-            .map_err(|e| {
+            .inspect_err(|e| {
                 let _ = record_failure_state(
                     &self.storage,
                     &mut state,
@@ -252,14 +265,13 @@ impl SelfUpdateService {
                     "update_failed",
                     &e.to_string(),
                 );
-                e
             })?;
 
         let asset_file = temp_dir.path().join(format!("update-{target}.tar.gz"));
         self.client
             .download_to_path(&asset.url, &asset_file)
             .await
-            .map_err(|e| {
+            .inspect_err(|e| {
                 let _ = record_failure_state(
                     &self.storage,
                     &mut state,
@@ -268,9 +280,8 @@ impl SelfUpdateService {
                     "update_failed",
                     &e.to_string(),
                 );
-                e
             })?;
-        installer::verify_sha256(&asset_file, &asset.sha256).map_err(|e| {
+        installer::verify_sha256(&asset_file, &asset.sha256).inspect_err(|e| {
             let _ = record_failure_state(
                 &self.storage,
                 &mut state,
@@ -279,11 +290,10 @@ impl SelfUpdateService {
                 "update_failed",
                 &e.to_string(),
             );
-            e
         })?;
 
         let unpack_dir = temp_dir.path().join("unpack");
-        installer::extract_tar_gz(&asset_file, &unpack_dir).map_err(|e| {
+        installer::extract_tar_gz(&asset_file, &unpack_dir).inspect_err(|e| {
             let _ = record_failure_state(
                 &self.storage,
                 &mut state,
@@ -292,10 +302,9 @@ impl SelfUpdateService {
                 "update_failed",
                 &e.to_string(),
             );
-            e
         })?;
         let new_gprj =
-            installer::find_binary(&unpack_dir, bin_name("gprj").as_str()).map_err(|e| {
+            installer::find_binary(&unpack_dir, bin_name("gprj").as_str()).inspect_err(|e| {
                 let _ = record_failure_state(
                     &self.storage,
                     &mut state,
@@ -304,10 +313,9 @@ impl SelfUpdateService {
                     "update_failed",
                     &e.to_string(),
                 );
-                e
             })?;
-        let new_gflow =
-            installer::find_binary(&unpack_dir, bin_name("gflow").as_str()).map_err(|e| {
+        let new_gflow = installer::find_binary(&unpack_dir, bin_name("gflow").as_str())
+            .inspect_err(|e| {
                 let _ = record_failure_state(
                     &self.storage,
                     &mut state,
@@ -316,10 +324,9 @@ impl SelfUpdateService {
                     "update_failed",
                     &e.to_string(),
                 );
-                e
             })?;
 
-        let install_dir = installer::install_dir_from_current_exe().map_err(|e| {
+        let install_dir = installer::install_dir_from_current_exe().inspect_err(|e| {
             let _ = record_failure_state(
                 &self.storage,
                 &mut state,
@@ -328,20 +335,21 @@ impl SelfUpdateService {
                 "update_failed",
                 &e.to_string(),
             );
-            e
         })?;
         let backup_id = now_id();
-        let backup_dir = self.storage.create_backup_dir(&backup_id).map_err(|e| {
-            let _ = record_failure_state(
-                &self.storage,
-                &mut state,
-                channel,
-                Some(remote.clone()),
-                "update_failed",
-                &e.to_string(),
-            );
-            e
-        })?;
+        let backup_dir = self
+            .storage
+            .create_backup_dir(&backup_id)
+            .inspect_err(|e| {
+                let _ = record_failure_state(
+                    &self.storage,
+                    &mut state,
+                    channel,
+                    Some(remote.clone()),
+                    "update_failed",
+                    &e.to_string(),
+                );
+            })?;
 
         let install_res =
             installer::backup_and_replace(&install_dir, &backup_dir, &new_gprj, &new_gflow)
@@ -388,17 +396,14 @@ impl SelfUpdateService {
             .clone()
             .unwrap_or_else(|| env!("CARGO_PKG_VERSION").to_string());
         let backup_dir = self.storage.backups_dir().join(&backup_id);
-        let install_dir = installer::install_dir_from_current_exe().map_err(|e| {
+        let install_dir = installer::install_dir_from_current_exe().inspect_err(|e| {
             let _ = record_rollback_failure_state(&self.storage, &mut state, &e.to_string());
-            e
         })?;
-        installer::rollback(&install_dir, &backup_dir).map_err(|e| {
+        installer::rollback(&install_dir, &backup_dir).inspect_err(|e| {
             let _ = record_rollback_failure_state(&self.storage, &mut state, &e.to_string());
-            e
         })?;
-        installer::health_check(&install_dir).map_err(|e| {
+        installer::health_check(&install_dir).inspect_err(|e| {
             let _ = record_rollback_failure_state(&self.storage, &mut state, &e.to_string());
-            e
         })?;
         let restored_version = read_installed_version(&install_dir.join(bin_name("gprj")));
         state.installed_at = Some(now_text());
@@ -498,7 +503,11 @@ struct TempDirGuard {
 impl TempDirGuard {
     fn new(prefix: &str) -> RunResult<Self> {
         let path = temp_dir(prefix);
-        std::fs::create_dir_all(&path).map_err(io_err)?;
+        std::fs::create_dir_all(&path)
+            .owe_res()
+            .want("create self update temp directory")
+            .with(("prefix", prefix))
+            .with(("path", path.as_path()))?;
         Ok(Self { path })
     }
 
@@ -519,6 +528,8 @@ fn select_backup_id(backups: &[String], id: Option<&str>) -> RunResult<String> {
             if !is_valid_backup_id(raw) {
                 return Err(RunReason::Args("invalid backup id".into())
                     .to_err()
+                    .want("validate backup id")
+                    .with(("backup_id", raw))
                     .with_detail(format!("backup_id={raw}, expected=14 digits")));
             }
             if backups.iter().any(|v| v == raw) {
@@ -526,13 +537,16 @@ fn select_backup_id(backups: &[String], id: Option<&str>) -> RunResult<String> {
             } else {
                 Err(RunReason::Args("backup id not found".into())
                     .to_err()
+                    .want("select rollback backup id")
+                    .with(("backup_id", raw))
                     .with_detail(format!("backup_id={raw}")))
             }
         }
         None => backups
             .first()
             .cloned()
-            .ok_or_else(|| RunReason::Args("no backup found".into()).to_err()),
+            .ok_or_else(|| RunReason::Args("no backup found".into()).to_err())
+            .want("select latest rollback backup"),
     }
 }
 
@@ -548,18 +562,26 @@ fn now_text() -> String {
     Utc::now().to_rfc3339()
 }
 
-fn io_err(err: std::io::Error) -> crate::err::RunError {
-    RunReason::Exec(err.to_string()).to_err()
+fn manifest_base_url(channel: ReleaseChannel) -> &'static str {
+    match channel {
+        ReleaseChannel::Stable => MANIFEST_BASE_URL_STABLE,
+        ReleaseChannel::Alpha => MANIFEST_BASE_URL_ALPHA,
+        ReleaseChannel::Beta => MANIFEST_BASE_URL_BETA,
+    }
 }
 
 fn read_installed_version(bin: &std::path::Path) -> RunResult<String> {
     let out = Command::new(bin)
         .arg("--version")
         .output()
-        .map_err(io_err)?;
+        .owe_res()
+        .want("run installed binary version command")
+        .with(("bin", bin))?;
     if !out.status.success() {
         return Err(RunReason::Exec("version command failed".into())
             .to_err()
+            .want("read installed binary version")
+            .with(("bin", bin))
             .with_detail(format!("{} --version exit={}", bin.display(), out.status)));
     }
     let text = format!(
@@ -570,6 +592,8 @@ fn read_installed_version(bin: &std::path::Path) -> RunResult<String> {
     parse_version_from_text(&text).ok_or_else(|| {
         RunReason::Exec("cannot parse version output".into())
             .to_err()
+            .want("parse installed binary version output")
+            .with(("bin", bin))
             .with_detail(format!("bin={}", bin.display()))
     })
 }
@@ -591,7 +615,9 @@ fn parse_version_from_text(text: &str) -> Option<String> {
 
 #[allow(dead_code)]
 fn json_text<T: Serialize>(v: &T) -> RunResult<String> {
-    serde_json::to_string_pretty(v).map_err(|e| RunReason::Exec(e.to_string()).to_err())
+    serde_json::to_string_pretty(v)
+        .owe_data()
+        .want("serialize json text")
 }
 
 #[allow(dead_code)]
@@ -606,7 +632,23 @@ fn _asset_for_target<'a>(
 
 #[cfg(test)]
 mod tests {
-    use super::{parse_version_from_text, select_backup_id};
+    use super::{ReleaseChannel, manifest_base_url, parse_version_from_text, select_backup_id};
+
+    #[test]
+    fn manifest_base_url_matches_channel_branch() {
+        assert_eq!(
+            manifest_base_url(ReleaseChannel::Stable),
+            "https://raw.githubusercontent.com/galaxy-sec/galaxy-flow/main/updates/stable"
+        );
+        assert_eq!(
+            manifest_base_url(ReleaseChannel::Alpha),
+            "https://raw.githubusercontent.com/galaxy-sec/galaxy-flow/alpha/updates/alpha"
+        );
+        assert_eq!(
+            manifest_base_url(ReleaseChannel::Beta),
+            "https://raw.githubusercontent.com/galaxy-sec/galaxy-flow/beta/updates/beta"
+        );
+    }
 
     #[test]
     fn backup_id_requires_membership() {
