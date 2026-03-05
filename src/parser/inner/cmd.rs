@@ -1,8 +1,8 @@
 use super::common::shell_opt_setting;
 use super::prelude::*;
 
-use crate::ability::cmd::GxCmdDtoBuilder;
 use crate::ability::GxCmd;
+use crate::ability::cmd::GxCmdDtoBuilder;
 use crate::expect::ShellOption;
 use crate::parser::domain::{gal_keyword, gal_keyword_alt};
 

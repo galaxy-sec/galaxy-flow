@@ -1,4 +1,5 @@
 mod dict;
+use crate::cmd::GxlCmd;
 use crate::infra::once_init_log;
 
 use super::context::ExecContext;
@@ -18,7 +19,7 @@ pub mod unit;
 #[allow(dead_code)]
 pub fn exec_init_env() -> (ExecContext, VarSpace) {
     once_init_log();
-    let ctx = ExecContext::new(Some(false), false);
+    let ctx = ExecContext::new(GxlCmd::default());
     let def = VarSpace::default();
     (ctx, def)
 }

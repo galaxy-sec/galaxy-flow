@@ -1,4 +1,3 @@
-use super::inner::ai::gal_ai_chat;
 use super::inner::call::gal_call;
 use super::inner::cmd::gal_cmd_block;
 use super::inner::gxl::gal_run;
@@ -16,8 +15,8 @@ use crate::parser::inner::archive::{gal_tar, gal_untar};
 use super::atom::spaced;
 use super::domain::{gal_block_beg, gal_block_end, gal_keyword};
 use super::inner::{
-    gal_assert, gal_cmd, gal_download, gal_echo, gal_prop, gal_read_cmd, gal_read_file,
-    gal_read_stdin, gal_tpl, gal_upload, gal_version,
+    gal_assert, gal_cmd, gal_download, gal_echo, gal_patch_file, gal_prop, gal_read_cmd,
+    gal_read_file, gal_read_stdin, gal_tpl, gal_upload, gal_version,
 };
 
 pub fn gal_block(input: &mut &str) -> Result<BlockNode> {
@@ -69,9 +68,6 @@ pub fn gal_sentens_item(input: &mut &str) -> Result<BlockAction> {
     if starts_with("gx.shell", input) {
         return gal_shell.map(BlockAction::Shell).parse_next(input);
     }
-    if starts_with("gx.ai_chat", input) {
-        return gal_ai_chat.map(BlockAction::AiChat).parse_next(input);
-    }
 
     if starts_with("gx.run", input) {
         return gal_run.map(BlockAction::GxlRun).parse_next(input);
@@ -114,6 +110,9 @@ pub fn gal_sentens_item(input: &mut &str) -> Result<BlockAction> {
     if starts_with("gx.upload", input) {
         return gal_upload.map(BlockAction::UpLoad).parse_next(input);
     }
+    if starts_with("gx.patch_file", input) || starts_with("rg.patch_file", input) {
+        return gal_patch_file.map(BlockAction::PatchFile).parse_next(input);
+    }
     /*
     if starts_with("gx.vault", input) {
         return gal_vault.map(BlockAction::Vault).parse_next(input);
@@ -148,6 +147,7 @@ mod tests {
 
     use orion_error::TestAssert;
 
+    use crate::components::gxl_block::BlockAction;
     use crate::parser::{
         inner::run_gxl,
         stc_blk::{gal_block, gal_loop},
@@ -203,6 +203,23 @@ mod tests {
              }
         "#;
         let _ = run_gxl(gal_block, &mut data).assert();
+        assert_eq!(data, "");
+    }
+
+    #[test]
+    fn test_block_rg_patch_file_alias() {
+        let mut data = r#"
+        {
+             rg.patch_file (
+             file : "./Cargo.toml",
+             action : "set",
+             marker : "version",
+             value : "v2.0",
+             ) ;
+        }"#;
+        let blk = run_gxl(gal_block, &mut data).assert();
+        assert_eq!(blk.items().len(), 1);
+        assert!(matches!(blk.items()[0], BlockAction::PatchFile(_)));
         assert_eq!(data, "");
     }
 }

@@ -1,4 +1,4 @@
-use orion_error::{ToStructError, UvsConfFrom, UvsReason};
+use orion_error::{ErrorOweBase, ToStructError, UvsFrom};
 
 use crate::ability::prelude::*;
 
@@ -121,19 +121,19 @@ impl AsyncRunnableTrait for GxlVersion {
         let data = fs::read_to_string(file_path.as_str())
             .owe_biz()
             .with(format!("version file ({file_path}) "))?;
-        if let Ok((a, b, c, d)) = take_version(&mut data.as_str()) {
-            let mut ver = Version::new(a, b, c, d);
-            ver.auto(&self.verinc);
-            dict.global_mut()
-                .set(&self.export.to_uppercase(), format!("{}", &ver));
-            let mut file = File::create(file_path.as_str()).owe_res()?;
-            file.write_all(ver.to_string().as_bytes()).owe_res()?;
-            Ok(TaskValue::from((dict, ExecOut::Ignore)))
-        } else {
-            Err(ExecReason::from(UvsReason::from_conf(
-                "version file parse failed!".to_string(),
-            ))
-            .to_err())
+        match take_version(&mut data.as_str()) {
+            Ok((a, b, c, d)) => {
+                let mut ver = Version::new(a, b, c, d);
+                ver.auto(&self.verinc);
+                dict.global_mut()
+                    .set(&self.export.to_uppercase(), format!("{}", &ver));
+                let mut file = File::create(file_path.as_str()).owe_res()?;
+                file.write_all(ver.to_string().as_bytes()).owe_res()?;
+                Ok(TaskValue::from((dict, ExecOut::Ignore)))
+            }
+            Err(_) => Err(ExecReason::from_conf()
+                .to_err()
+                .with_detail("version file parse failed!")),
         }
     }
 }

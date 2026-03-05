@@ -1,14 +1,14 @@
-use orion_common::friendly::MultiNew2;
+use crate::friendly::MultiNew2;
 use orion_parse::atom::peek_line;
 
 use super::prelude::*;
 
 use crate::{
     components::{
-        gxl_env::env::anns_from_option_dto,
-        gxl_mod::{meta::ModMeta, ModItem},
-        gxl_var::GxlVar,
         GxlMod,
+        gxl_env::env::anns_from_option_dto,
+        gxl_mod::{ModItem, meta::ModMeta},
+        gxl_var::GxlVar,
     },
     meta::GxlType,
     parser::{gxl_fun::body::gal_stc_fun, stc_flow::body::gal_stc_flow_body},

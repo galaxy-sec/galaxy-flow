@@ -1,4 +1,4 @@
-use orion_common::friendly::New3;
+use crate::friendly::New3;
 
 use crate::{
     annotation::{AnnTypeEnum, Annotation, ComUsage, GetArgValue},

@@ -1,17 +1,19 @@
 use super::prelude::*;
+use crate::ExecReason;
+use crate::ExecResult;
 use crate::components::gxl_extend::ModAddr;
 use crate::evaluator::EnvExpress;
 use crate::execution::VarSpace;
 use crate::parser::abilities::addr::gal_extern_mod;
 use crate::parser::abilities::addr::gal_git_path;
-use crate::ExecReason;
-use crate::ExecResult;
+use orion_accessor::addr::GitRepository;
+use orion_accessor::types::UpdateUnit;
+use orion_accessor::update::DownloadOptions;
+use orion_error::ContextRecord;
 use orion_error::ErrorOwe;
+use orion_error::ErrorOweBase;
 use orion_error::ErrorWith;
 use orion_error::WithContext;
-use orion_variate::addr::GitRepository;
-use orion_variate::types::UpdateUnit;
-use orion_variate::update::DownloadOptions;
 use orion_variate::vars::EnvDict;
 use orion_variate::vars::EnvEvalable;
 use std::fs::read_to_string;
@@ -51,7 +53,7 @@ impl ExternLocal {
         let ee = EnvExpress::from_env();
         let gxl_full_path = format!("{}/{}.gxl", self.path.display(), name);
         let gxl_full_path = crate::evaluator::VarParser::eval(&ee, &gxl_full_path)?;
-        ctx.with("gxl", gxl_full_path.as_str());
+        ctx.record("gxl", gxl_full_path.as_str());
         let code = read_to_string(gxl_full_path.as_str())
             .owe(ExecReason::Gxl("read mod file fail!".to_string()))
             .with(&ctx)?;

@@ -3,8 +3,8 @@ use super::inner::funs::gal_defined;
 use super::prelude::*;
 use orion_parse::define::take_var_ref_name;
 use orion_parse::symbol::{
-    symbol_bracket_beg, symbol_bracket_end, symbol_cmp, symbol_logic_and, symbol_logic_not,
-    symbol_logic_or, LogicSymbol,
+    LogicSymbol, symbol_bracket_beg, symbol_bracket_end, symbol_cmp, symbol_logic_and,
+    symbol_logic_not, symbol_logic_or,
 };
 use winnow::combinator::repeat;
 

@@ -1,18 +1,16 @@
-use std::path::PathBuf;
-
 use derive_more::From;
-use dirs::home_dir;
-use orion_error::ToStructError;
+use orion_error::{ErrorConv, ToStructError};
+use orion_sec::load_secfile;
 use orion_sec::sec::{SecFrom, SecString, SecValueType, ValueGetter};
 use orion_variate::vars::EnvDict;
 
-use super::global::{load_secfile, setup_gxlrun_vars, setup_start_vars};
+use super::global::{setup_gxlrun_vars, setup_start_vars};
 use crate::evaluator::{EnvExpress, VarParser};
 use crate::{
+    ExecReason, ExecResult,
     primitive::{GxlAParams, GxlFParams, GxlObject},
     traits::Setter,
     var::VarDict,
-    ExecReason, ExecResult,
 };
 
 #[derive(Debug, Clone, Default, PartialEq, From, Getters)]
@@ -28,19 +26,13 @@ impl From<&VarSpace> for EnvDict {
     }
 }
 
-pub fn sec_value_default_path() -> PathBuf {
-    galaxy_dot_path().join("sec_value.yml")
-}
-pub fn galaxy_dot_path() -> PathBuf {
-    home_dir()
-        .map(|x| x.join(".galaxy"))
-        .unwrap_or(PathBuf::from("./"))
-}
-
 impl VarSpace {
     pub fn sys_init() -> ExecResult<VarSpace> {
         let mut var_space = VarSpace::default();
-        load_secfile(&mut var_space.inherited)?;
+        let sec_dict = load_secfile().err_conv()?;
+        //let sec_dict = load_secfile()?;
+        var_space.inherited = VarDict::from(sec_dict);
+        //load_secfile(&mut var_space.inherited)?;
         setup_start_vars(&mut var_space.inherited)?;
         setup_gxlrun_vars(&mut var_space.inherited)?;
         var_space.global = var_space.inherited.clone();
@@ -129,49 +121,10 @@ pub enum DictUse {
 
 #[cfg(test)]
 mod tests {
-    use crate::{
-        execution::{dict::sec_value_default_path, global::load_secfile},
-        traits::{Getter, Setter},
-        var::UniCaseMap,
-    };
+    use crate::{traits::Setter, var::UpperStrMap};
 
-    use orion_error::TestAssertWithMsg;
-    use orion_sec::sec::ToUniCase;
-    use std::{env::temp_dir, fs::File, io::Write};
+    use orion_variate::vars::UpperKey;
 
-    #[test]
-    fn test_load_secfile_with_values() {
-        // 创建临时目录和文件
-        //let dir = PathBuf::from("./temp");
-        let dir = temp_dir();
-        let file_path = dir.join("sec_value.yml");
-        if file_path.exists() {
-            std::fs::remove_file(&file_path).assert("remove file");
-        }
-
-        // 写入测试内容
-        let mut file = File::create(&file_path).unwrap();
-        writeln!(file, "key1: value1\nkey2: value2").unwrap();
-
-        // 创建 VarSpace 实例并加载文件
-        let mut var_space = VarSpace::default();
-
-        // 临时修改路径指向我们的测试文件
-        let original_path = sec_value_default_path();
-        std::env::set_var("GAL_SEC_FILE_PATH", file_path.to_str().unwrap());
-
-        load_secfile(&mut var_space.inherited).assert("load secfile");
-
-        // 验证全局变量
-        assert!(var_space.inherited.contains_key("SEC_KEY1"));
-        assert!(var_space.inherited.contains_key("SEC_KEY2"));
-        assert_eq!(
-            format!("{}", var_space.inherited.get_copy("SEC_KEY1").unwrap()),
-            "***".to_string()
-        );
-        // 清理
-        std::env::set_var("GAL_SEC_FILE_PATH", original_path);
-    }
     use super::*;
 
     #[test]
@@ -196,12 +149,12 @@ mod tests {
         let mut var_space = VarSpace::default();
 
         // Create nested structure: user = { name: "Test", id: 42 }
-        let mut user = UniCaseMap::new();
+        let mut user = UpperStrMap::new();
         user.insert(
-            "name".to_unicase(),
+            UpperKey::from("name"),
             SecValueType::nor_from("Test User".to_string()),
         );
-        user.insert("id".to_unicase(), SecValueType::nor_from(42u64));
+        user.insert(UpperKey::from("id"), SecValueType::nor_from(42u64));
 
         var_space.global_mut().set("user", SecValueType::Obj(user));
 
@@ -228,14 +181,14 @@ mod tests {
         let mut var_space = VarSpace::default();
 
         // Create nested structure: app.user.profile.name
-        let mut profile = UniCaseMap::new();
+        let mut profile = UpperStrMap::new();
         profile.insert(
-            "name".to_unicase(),
+            UpperKey::from("name"),
             SecValueType::nor_from("Test User".to_string()),
         );
 
-        let mut user = UniCaseMap::new();
-        user.insert("profile".to_unicase(), SecValueType::Obj(profile));
+        let mut user = UpperStrMap::new();
+        user.insert(UpperKey::from("profile"), SecValueType::Obj(profile));
 
         var_space.global_mut().set("app", SecValueType::Obj(user));
 
@@ -262,9 +215,9 @@ mod tests {
         let mut var_space = VarSpace::default();
 
         // Create structure: parent = { child: "value" }
-        let mut parent = UniCaseMap::new();
+        let mut parent = UpperStrMap::new();
         parent.insert(
-            "child".to_unicase(),
+            UpperKey::from("child"),
             SecValueType::nor_from("value".to_string()),
         );
 

@@ -3,12 +3,12 @@ use std::{
     str::FromStr,
 };
 
-use orion_error::ToStructError;
-use orion_variate::{
+use orion_accessor::{
     addr::{Address, HttpResource},
     types::{ResourceDownloader, ResourceUploader},
     update::{DownloadOptions, HttpMethod, UploadOptions},
 };
+use orion_error::{ErrorOweBase, ToStructError};
 
 use crate::{ability::prelude::*, util::accessor::build_accessor};
 
@@ -100,23 +100,26 @@ impl AsyncRunnableTrait for GxDownLoad {
 
         let accessor = build_accessor(&vars_dict.global().clone().into());
         // 确保父目录存在
-        if let Some(true) = local_file_path.parent().map(|x| x.exists()) {
-            accessor
-                .download_to_local(
-                    &Address::from(addr),
-                    &final_download_path,
-                    &DownloadOptions::default(),
-                )
-                .await
-                .owe_res()
-                .with(&final_download_path)?;
-            action.finish();
-            Ok(TaskValue::from((vars_dict, ExecOut::Action(action))))
-        } else {
-            return ExecReason::Miss("parent path not exists".into())
-                .err_result()
-                .want("gx.download")
-                .with(&local_file_path);
+        match local_file_path.parent() {
+            Some(parent) if parent.exists() => {
+                accessor
+                    .download_to_local(
+                        &Address::from(addr),
+                        &final_download_path,
+                        &DownloadOptions::default(),
+                    )
+                    .await
+                    .owe_res()
+                    .with(&final_download_path)?;
+                action.finish();
+                Ok(TaskValue::from((vars_dict, ExecOut::Action(action))))
+            }
+            _ => {
+                return ExecReason::Miss("parent path not exists".into())
+                    .err_result()
+                    .want("gx.download")
+                    .with(&local_file_path);
+            }
         }
     }
 }

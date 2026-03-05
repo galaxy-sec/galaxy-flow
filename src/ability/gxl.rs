@@ -1,17 +1,14 @@
+use std::path::PathBuf;
 use std::sync::mpsc::Sender;
 
 use orion_error::ErrorConv;
-use orion_sec::sec::SecValueType;
 
 use crate::ability::prelude::*;
 
-use crate::const_val::gxl_const;
+use crate::cmd::GxlCmd;
 use crate::execution::runnable::AsyncRunnableWithSenderTrait;
 use crate::util::redirect::ReadSignal;
-use crate::{
-    runner::{GxlCmd, GxlRunner},
-    util::path::WorkDir,
-};
+use crate::{runner::GxlRunner, util::path::WorkDir};
 
 #[derive(Clone, Debug, Default, Builder, PartialEq, Getters)]
 pub struct GxRun {
@@ -19,16 +16,10 @@ pub struct GxRun {
     gxl_path: String,
     env_conf: String,
     env_isolate: bool,
-    flow_cmd: Vec<String>,
+    flow_cmd: String,
 }
 impl GxRun {
-    pub fn new<S>(
-        run_path: S,
-        gxl_path: S,
-        env_conf: S,
-        flow_cmd: Vec<S>,
-        env_isolate: bool,
-    ) -> Self
+    pub fn new<S>(run_path: S, gxl_path: S, env_conf: S, flow_cmd: S, env_isolate: bool) -> Self
     where
         S: Into<String> + Clone,
     {
@@ -36,7 +27,7 @@ impl GxRun {
             run_path: run_path.into(),
             gxl_path: gxl_path.into(),
             env_conf: env_conf.into(),
-            flow_cmd: flow_cmd.iter().map(|x| x.clone().into()).collect(),
+            flow_cmd: flow_cmd.into(),
             env_isolate,
         }
     }
@@ -51,45 +42,18 @@ impl AsyncRunnableWithSenderTrait for GxRun {
     ) -> TaskResult {
         ctx.append("gx.run");
         let mut action = Action::from("gx.run");
-        let dryrun = if let Some(SecValueType::Bool(dryrun)) = vars_dict.get(gxl_const::CMD_DRYRUN)
-        {
-            *dryrun.value()
-        } else {
-            false
-        };
-        let mod_update =
-            if let Some(SecValueType::Bool(mod_up)) = vars_dict.get(gxl_const::CMD_MODUP) {
-                *mod_up.value()
-            } else {
-                false
-            };
 
         let exp = EnvExpress::from_env_mix(vars_dict.global().clone());
-        let mut flow = Vec::new();
-        for x in &self.flow_cmd {
-            flow.push(exp.eval(x.as_str())?);
-        }
-        let cmd = GxlCmd {
-            env: exp.eval(&self.env_conf)?,
-            flow,
-            debug: 0,
-            conf: Some(exp.eval(&self.gxl_path)?),
-            log: None,
-            quiet: ctx.quiet(),
-            cmd_arg: String::new(),
-            dryrun,
-            ai: false,
-            mod_update,
-        };
-        let run_path = exp.eval(&self.run_path)?;
-        let _g = WorkDir::change(run_path)
+        let cmd = ctx.gxl_cmd().as_ref().clone();
+        let cmd = cmd
+            .with_env(exp.eval(&self.env_conf)?)
+            .with_conf(Some(exp.eval(&self.gxl_path)?));
+
+        let run_path = PathBuf::from(exp.eval(&self.run_path)?);
+        let _g = WorkDir::change(run_path.clone())
             .owe_res()
-            .with(self.run_path().clone())?;
-        debug!(target:ctx.path(), "{cmd:#?}");
-        let sub_var_space = VarSpace::inherit_init(vars_dict.clone(), self.env_isolate)?;
-        GxlRunner::run(cmd, sub_var_space, sender)
-            .await
-            .err_conv()?;
+            .with(&run_path)?;
+        do_gxl_run(cmd, &vars_dict, self.env_isolate, sender).await?;
         action.finish();
         Ok(TaskValue::from((vars_dict, ExecOut::Action(action))))
     }
@@ -98,6 +62,15 @@ impl ComponentMeta for GxRun {
     fn gxl_meta(&self) -> GxlMeta {
         GxlMeta::from("gx.gxl")
     }
+}
+pub async fn do_gxl_run(
+    cmd: GxlCmd,
+    vars_dict: &VarSpace,
+    isolate: bool,
+    sender: Option<Sender<ReadSignal>>,
+) -> ExecResult<TaskValue> {
+    let sub_var_space = VarSpace::inherit_init(vars_dict.clone(), isolate)?;
+    GxlRunner::run(cmd, sub_var_space, sender).await.err_conv()
 }
 
 #[cfg(test)]
@@ -113,7 +86,7 @@ mod tests {
             "./examples/assert",
             "_gal/work.gxl",
             "default",
-            vec!["assert_main"],
+            "assert_main",
             true,
         );
         res.async_exec(context, def, None).await.unwrap();

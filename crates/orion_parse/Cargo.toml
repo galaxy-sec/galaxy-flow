@@ -7,7 +7,8 @@ version.workspace = true
 
 
 [dependencies]
-orion_common = { workspace = true }
+orion_conf= { workspace = true }
+orion_cond = { workspace = true }
 
 #log = "~0.4"
 #thiserror = "~2.0"

@@ -7,11 +7,11 @@ use winnow::combinator::fail;
 use winnow::Parser;
 use winnow::Result;
 
+use crate::ability::GxRead;
 use crate::ability::read::CmdDTOBuilder;
 use crate::ability::read::FileDTOBuilder;
 use crate::ability::read::ReadMode;
 use crate::ability::read::StdinDTO;
-use crate::ability::GxRead;
 use crate::expect::ShellOption;
 use crate::parser::domain::gal_keyword;
 use crate::parser::domain::gal_keyword_alt;

@@ -1,9 +1,9 @@
 use orion_parse::atom::take_var_name;
 use orion_parse::symbol::symbol_comma;
-use winnow::ascii::multispace0;
-use winnow::combinator::separated;
 use winnow::Parser;
 use winnow::Result;
+use winnow::ascii::multispace0;
+use winnow::combinator::separated;
 
 use crate::components::gxl_fun::meta::FunMeta;
 use crate::parser::abilities::param::gal_formal_param;

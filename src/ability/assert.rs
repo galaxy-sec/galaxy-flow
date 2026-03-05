@@ -38,24 +38,32 @@ impl AsyncRunnableTrait for GxAssert {
         debug!(target: ctx.path(), "value  {} :{}", &self.value, value);
         debug!(target: ctx.path(), "expect {} :{}", &self.expect, expect);
 
-        if (value == expect) != self.result {
-            let mut err_msg = format!(
-                "assert fail! result: [{}],\n expect: [{}],\n value:  [{}]",
-                self.result, expect, value
-            );
-            if let Some(msg) = self.error.clone() {
-                err_msg = exp.eval(&msg)?;
+        match value == expect {
+            true if self.result => {
+                println!("assert true : {value}");
+                info!(target: ctx.path(), "value {value} match exprect");
+                Ok(TaskValue::from((vars_dict, ExecOut::Ignore)))
             }
-            println!("{err_msg}");
-            return Err(ExecError::from(ExecReason::Assert(format!(
-                "assert fail! [{}], expect: {},\n value {}",
-                self.result, expect, value
-            ))));
-        } else {
-            println!("assert true : {value}");
+            false if !self.result => {
+                println!("assert true : {value}");
+                info!(target: ctx.path(), "value {value} match exprect");
+                Ok(TaskValue::from((vars_dict, ExecOut::Ignore)))
+            }
+            _ => {
+                let mut err_msg = format!(
+                    "assert fail! result: [{}],\n expect: [{}],\n value:  [{}]",
+                    self.result, expect, value
+                );
+                if let Some(msg) = self.error.clone() {
+                    err_msg = exp.eval(&msg)?;
+                }
+                println!("{err_msg}");
+                Err(ExecError::from(ExecReason::Assert(format!(
+                    "assert fail! [{}], expect: {},\n value {}",
+                    self.result, expect, value
+                ))))
+            }
         }
-        info!(target: ctx.path(), "value {value} match exprect");
-        Ok(TaskValue::from((vars_dict, ExecOut::Ignore)))
     }
 }
 impl ComponentMeta for GxAssert {

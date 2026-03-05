@@ -3,8 +3,8 @@ use crate::execution::VarSpace;
 use crate::parser::abilities::ignore_comment;
 use crate::parser::externs::ExternGit;
 use crate::parser::externs::ExternParser;
-use crate::parser::stc_spc::gal_stc_spc;
 use crate::parser::stc_spc::WinnowErrorEx;
+use crate::parser::stc_spc::gal_stc_spc;
 use crate::util::accessor::build_accessor;
 
 use std::fs;
@@ -16,16 +16,18 @@ use crate::err::*;
 
 use crate::ability::version::Version;
 use once_cell::sync::OnceCell;
+use orion_accessor::addr::Address;
+use orion_accessor::addr::GitRepository;
+use orion_accessor::addr::LocalPath;
+use orion_accessor::types::ResourceDownloader;
+use orion_accessor::update::DownloadOptions;
+use orion_accessor::update::UpdateScope;
+use orion_error::ContextRecord;
 use orion_error::ErrorConv;
 use orion_error::ErrorOwe;
+use orion_error::ErrorOweBase;
 use orion_error::ErrorWith;
 use orion_error::WithContext;
-use orion_variate::addr::Address;
-use orion_variate::addr::GitRepository;
-use orion_variate::addr::LocalPath;
-use orion_variate::types::ResourceDownloader;
-use orion_variate::update::DownloadOptions;
-use orion_variate::update::UpdateScope;
 use orion_variate::vars::EnvDict;
 use orion_variate::vars::ValueDict;
 
@@ -61,7 +63,7 @@ impl GxLoader {
     ) -> RunResult<GxlSpace> {
         info!(target:"parse", "parse file: {conf}" );
         let mut wc = WithContext::want("parse gxl file");
-        wc.with("conf", conf);
+        wc.record("conf", conf);
         let code = read_to_string(conf).owe_conf().with(&wc)?;
         let file_path = Path::new(conf);
         let file_exist_path = file_path.parent();
@@ -150,7 +152,7 @@ pub fn err_code_prompt(code: &str) -> String {
 #[cfg(test)]
 mod tests {
 
-    use crate::{execution::VarSpace, infra::once_init_log, types::AnyResult};
+    use crate::{cmd::GxlCmd, execution::VarSpace, infra::once_init_log, types::AnyResult};
 
     use super::GxLoader;
 
@@ -167,10 +169,9 @@ mod tests {
         println!("mods:{}", spc.len());
         assert!(spc.len() > 1);
         spc.exec(
-            ["default".into()].to_vec(),
-            ["conf".into()].to_vec(),
-            Some(true),
-            false,
+            GxlCmd::default()
+                .with_env("default".into())
+                .with_flows("conf".into()),
             VarSpace::sys_init()?,
             None,
         )

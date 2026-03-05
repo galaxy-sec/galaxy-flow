@@ -1,4 +1,4 @@
-use orion_common::friendly::New2;
+use crate::friendly::New2;
 
 use crate::primitive::GxlObject;
 

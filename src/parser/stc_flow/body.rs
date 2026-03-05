@@ -33,7 +33,7 @@ pub fn gal_stc_flow(input: &mut &str) -> Result<GxlFlow> {
 
 #[cfg(test)]
 mod tests {
-    use orion_common::friendly::New3;
+    use crate::friendly::New3;
     use orion_error::TestAssert;
 
     use crate::{

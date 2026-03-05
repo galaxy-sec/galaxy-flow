@@ -1,4 +1,4 @@
-use orion_common::friendly::AppendAble;
+use crate::friendly::AppendAble;
 use serde::Serialize;
 
 use super::{runnable::ExecOut, task::Task};

@@ -3,9 +3,9 @@ use std::io;
 use crate::ability::prelude::*;
 use crate::components::GxlProps;
 
+use crate::friendly::New2;
 use derive_more::From;
 use getset::{Getters, MutGetters, Setters, WithSetters};
-use orion_common::friendly::New2;
 
 pub trait InputReader {
     fn read_line(&self, buffer: &mut String) -> io::Result<usize>;

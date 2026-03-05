@@ -3,13 +3,14 @@ extern crate log;
 extern crate clap;
 
 use clap::Parser;
+use galaxy_flow::cmd::gxl_cmd::GFlowCmd;
 use galaxy_flow::conf::load_gxl_config;
 use galaxy_flow::const_val::gxl_const;
-use galaxy_flow::err::{report_gxl_error, RunResult};
+use galaxy_flow::err::{RunResult, report_gxl_error};
 use galaxy_flow::execution::VarSpace;
 use galaxy_flow::infra::configure_run_logging;
 use galaxy_flow::model::task_report::task_rc_config::init_redirect_and_parent_task;
-use galaxy_flow::runner::{GxlCmd, GxlRunner};
+use galaxy_flow::runner::GxlRunner;
 use galaxy_flow::traits::Setter;
 use galaxy_flow::util::diagnose::ai_diagnose;
 use galaxy_flow::util::redirect::stop_redirect;
@@ -24,12 +25,13 @@ async fn main() -> RunResult<()> {
 
     // 检查是否请求版本信息
 
-    let mut cmd = GxlCmd::parse();
+    let mut cmd = GFlowCmd::parse();
     // 加载task配置
 
     configure_run_logging(cmd.log.clone(), cmd.debug);
     load_gxl_config();
-    let redirect = init_redirect_and_parent_task(cmd.flow.concat(), cmd.ai)
+
+    let redirect = init_redirect_and_parent_task(cmd.flows.join(","), cmd.ai)
         .await
         .err_conv()?;
     println!("galaxy-flow : {}", env!("CARGO_PKG_VERSION"));
@@ -40,26 +42,26 @@ async fn main() -> RunResult<()> {
     }
     var_space
         .global_mut()
-        .set(gxl_const::CMD_ARG, cmd.cmd_arg.clone());
-    var_space
-        .global_mut()
-        .set(gxl_const::CMD_DRYRUN, cmd.dryrun);
-    var_space
-        .global_mut()
-        .set(gxl_const::CMD_MODUP, cmd.mod_update);
-    match GxlRunner::run(cmd.clone(), var_space.clone(), None).await {
-        Err(e) => {
-            report_gxl_error(e);
-            if cmd.ai {
-                if let Err(e) = ai_diagnose(&var_space).await {
+        .set(gxl_const::CMD_ARG, cmd.cmd_args.join(" "));
+    if cmd.list_cmd().is_empty() {
+        GxlRunner::info(cmd.conf.clone(), var_space).await?;
+    } else {
+        for cmd in cmd.list_cmd() {
+            match GxlRunner::run(cmd.clone(), var_space.clone(), None).await {
+                Err(e) => {
                     report_gxl_error(e);
+                    if cmd.ai
+                        && let Err(e) = ai_diagnose(&var_space).await
+                    {
+                        report_gxl_error(e);
+                    }
+                }
+
+                Ok(_) => {
+                    let _ = stop_redirect(redirect);
+                    return Ok(());
                 }
             }
-        }
-
-        Ok(_) => {
-            let _ = stop_redirect(redirect);
-            return Ok(());
         }
     }
     let _ = stop_redirect(redirect);

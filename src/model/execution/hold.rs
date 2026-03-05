@@ -1,5 +1,5 @@
-use std::sync::mpsc::Sender;
 use std::sync::Arc;
+use std::sync::mpsc::Sender;
 
 use async_trait::async_trait;
 use derive_more::From;
@@ -14,8 +14,8 @@ use crate::meta::GxlMeta;
 use crate::traits::DependTrait;
 use crate::util::redirect::ReadSignal;
 
-use super::runnable::{AsyncRunnableTrait, ComponentMeta, TaskResult, TaskValue};
 use super::VarSpace;
+use super::runnable::{AsyncRunnableTrait, ComponentMeta, TaskResult, TaskValue};
 #[derive(Clone, From)]
 pub enum AsyncComHold {
     #[from(GxlFlow)]

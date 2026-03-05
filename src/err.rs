@@ -1,7 +1,7 @@
-use crate::{const_val::gxl_const, error::AssembleReason, ExecReason, ExecResult};
-use orion_ai::AiErrReason;
+use crate::{ExecReason, ExecResult, const_val::gxl_const, error::AssembleReason};
 use orion_error::{ErrorCode, StructError, UvsReason};
 
+use orion_sec::SecReason;
 use serde::Serialize;
 use thiserror::Error;
 
@@ -14,17 +14,13 @@ pub enum RunReason {
     #[error("args error {0}")]
     Args(String),
     #[error("{0}")]
+    Sec(SecReason),
+    #[error("{0}")]
     Uvs(UvsReason),
 }
 impl From<UvsReason> for RunReason {
     fn from(value: UvsReason) -> Self {
         Self::Uvs(value)
-    }
-}
-
-impl From<AiErrReason> for RunReason {
-    fn from(value: AiErrReason) -> Self {
-        UvsReason::from(value).into()
     }
 }
 
@@ -35,6 +31,7 @@ impl ErrorCode for RunReason {
             RunReason::Exec(_) => 540,
             RunReason::Args(_) => 550,
             RunReason::Uvs(uvs_reason) => uvs_reason.error_code(),
+            RunReason::Sec(_) => 560,
         }
     }
 }
@@ -75,41 +72,44 @@ pub fn report_gxl_error(e: RunError) {
     println!("[REASON]:");
     match e.reason() {
         RunReason::Uvs(uvs_reason) => match uvs_reason {
-            UvsReason::LogicError(e) => {
-                println!("LOGIC ERROR: {e}\n",);
+            UvsReason::LogicError => {
+                println!("LOGIC ERROR\n",);
             }
-            UvsReason::BusinessError(e) => {
-                println!("BIZ ERROR: {e}\n",);
+            UvsReason::BusinessError => {
+                println!("BIZ ERROR\n",);
             }
-            UvsReason::DataError(e, _) => {
-                println!("DATA ERROR: {e}\n",);
+            UvsReason::DataError => {
+                println!("DATA ERROR\n",);
             }
-            UvsReason::SystemError(e) => {
-                println!("SYS ERROR: {e}\n",);
+            UvsReason::SystemError => {
+                println!("SYS ERROR\n",);
             }
-            UvsReason::ResourceError(e) => {
-                println!("RES ERROR: {e}\n",);
+            UvsReason::ResourceError => {
+                println!("RES ERROR\n",);
             }
-            UvsReason::NetworkError(e) => {
-                println!("Net ERROR: {e}\n",);
+            UvsReason::NetworkError => {
+                println!("NET ERROR\n",);
             }
-            UvsReason::TimeoutError(e) => {
-                println!("Timeout: {e}\n",);
+            UvsReason::TimeoutError => {
+                println!("TIMEOUT\n",);
             }
             UvsReason::ConfigError(e) => {
                 println!("CONF ERROR: {e}\n",);
             }
-            UvsReason::PermissionError(e) => {
-                println!("Permiss ERROR: {e}\n",);
+            UvsReason::PermissionError => {
+                println!("PERMISSION ERROR\n",);
             }
-            UvsReason::ValidationError(e) => {
-                println!("Validate ERROR: {e}\n",);
+            UvsReason::ValidationError => {
+                println!("VALIDATION ERROR\n",);
             }
-            UvsReason::ExternalError(e) => {
-                println!("External ERROR: {e}\n",);
+            UvsReason::ExternalError => {
+                println!("EXTERNAL ERROR\n",);
             }
-            UvsReason::NotFoundError(e) => {
-                println!("Not Found: {e}\n",);
+            UvsReason::NotFoundError => {
+                println!("NOT FOUND\n",);
+            }
+            other => {
+                println!("ERROR: {other}\n",);
             }
         },
         RunReason::Gxl(e) => {
@@ -121,6 +121,9 @@ pub fn report_gxl_error(e: RunError) {
         RunReason::Args(e) => {
             println!("ARGS ERROR: {e}\n",);
         }
+        RunReason::Sec(e) => {
+            println!("Sec ERROR: {e}\n",);
+        }
     }
     if let Some(pos) = e.position() {
         println!("\n[POSITION]:\n{pos}",);
@@ -129,7 +132,7 @@ pub fn report_gxl_error(e: RunError) {
         println!("\n[DETAIL]:\n{detail}",);
     }
     println!("\n[CONTEXT]:\n");
-    for x in e.context() {
+    for x in e.context().iter() {
         println!("{x}")
     }
 }

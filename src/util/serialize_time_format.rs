@@ -1,6 +1,6 @@
-use serde::ser::{self, Serializer};
 use serde::Serialize;
-use time::{format_description, OffsetDateTime};
+use serde::ser::{self, Serializer};
+use time::{OffsetDateTime, format_description};
 
 // 序列化时将时间格式化
 pub fn serialize_time_format<S>(value: &OffsetDateTime, serializer: S) -> Result<S::Ok, S::Error>

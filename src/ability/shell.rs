@@ -1,11 +1,11 @@
 use chrono::Local;
-use orion_common::serde::*;
+use orion_conf::{IniIO, JsonIO, TomlIO, YamlIO};
 use rand::Rng;
 use std::path::PathBuf;
 
 use crate::{ability::prelude::*, expect::LogicScope, traits::Setter, var::VarDict};
 use getset::{Getters, MutGetters, Setters, WithSetters};
-use orion_error::{ToStructError, UvsLogicFrom};
+use orion_error::{ToStructError, UvsFrom};
 use orion_variate::vars::ValueDict;
 #[derive(Clone, Debug, Default, PartialEq, Getters, Setters, WithSetters, MutGetters)]
 #[getset(get = "pub", set = "pub", get_mut, set_with)]
@@ -42,31 +42,22 @@ impl GxShell {
         let ext_cmd = exp.eval(self.shell.as_str())?;
         let mut expect = self.expect.clone();
 
-        // 若未设置全局输出模式，则使用局部模式
-        if let Some(quiet) = ctx.quiet() {
-            expect.quiet = quiet;
-        }
+        expect.quiet = ctx.quiet();
         if let Some(arg_file) = &self.arg_file {
-            let dict = if arg_file.extension() == PathBuf::from("data.json").extension() {
-                ValueDict::from_json(arg_file)
-                    .map_err(|e| ExecReason::Serde(format!("JSON解析失败: {e}")))?
-            } else if arg_file.extension() == PathBuf::from("data.yml").extension()
-                || arg_file.extension() == PathBuf::from("data.yaml").extension()
-            {
-                ValueDict::from_yml(arg_file)
-                    .map_err(|e| ExecReason::Serde(format!("YAML解析失败: {e}")))?
-            } else if arg_file.extension() == PathBuf::from("data.toml").extension() {
-                ValueDict::from_toml(arg_file)
-                    .map_err(|e| ExecReason::Serde(format!("TOML解析失败: {e}")))?
-            } else if arg_file.extension() == PathBuf::from("data.ini").extension() {
-                ValueDict::from_ini(arg_file)
-                    .map_err(|e| ExecReason::Serde(format!("INI解析失败: {e}")))?
-            } else {
-                return ExecReason::from_logic(format!(
-                    "unsupport this format {}",
-                    arg_file.display()
-                ))
-                .err_result();
+            let dict = match arg_file.extension() {
+                Some(ext) if ext == "json" => ValueDict::load_json(arg_file)
+                    .map_err(|e| ExecReason::Serde(format!("JSON解析失败: {e}")))?,
+                Some(ext) if ext == "yml" || ext == "yaml" => ValueDict::load_yaml(arg_file)
+                    .map_err(|e| ExecReason::Serde(format!("YAML解析失败: {e}")))?,
+                Some(ext) if ext == "toml" => ValueDict::load_toml(arg_file)
+                    .map_err(|e| ExecReason::Serde(format!("TOML解析失败: {e}")))?,
+                Some(ext) if ext == "ini" => ValueDict::load_ini(arg_file)
+                    .map_err(|e| ExecReason::Serde(format!("INI解析失败: {e}")))?,
+                _ => {
+                    return Err(ExecReason::from_logic()
+                        .to_err()
+                        .with_detail(format!("unsupport this format {}", arg_file.display())));
+                }
             };
             vars_dict.global_mut().merge_dict(VarDict::from(dict));
         }

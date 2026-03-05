@@ -14,25 +14,18 @@ use winnow::combinator::separated;
 use super::atom::take_var_ref_name;
 
 pub fn parse_log(pair: (&str, &str)) -> log::Level {
-    if pair.0 == "log" {
-        if let Ok(level_int) = pair.1.parse::<u32>() {
-            match level_int {
-                1 => {
-                    return log::Level::Info;
-                }
-                2 => {
-                    return log::Level::Debug;
-                }
-                3 => {
-                    return log::Level::Trace;
-                }
-                _ => {
-                    return log::Level::Info;
-                }
-            }
+    if pair.0 == "log"
+        && let Ok(level_int) = pair.1.parse::<u32>()
+    {
+        match level_int {
+            1 => log::Level::Info,
+            2 => log::Level::Debug,
+            3 => log::Level::Trace,
+            _ => log::Level::Info,
         }
+    } else {
+        log::Level::Info
     }
-    log::Level::Info
 }
 
 pub fn ext_meta_names(input: &mut &str) -> Result<String> {
@@ -233,8 +226,7 @@ mod tests {
     }
     #[test]
     fn test_assign() {
-        let mut data =
-            "data= r#\"{\"branchs\" : [{ \"name\": \"develop\" }, { \"name\" : \"release/1\"}]}\"#;";
+        let mut data = "data= r#\"{\"branchs\" : [{ \"name\": \"develop\" }, { \"name\" : \"release/1\"}]}\"#;";
         let (key, val) = run_gxl(gal_var_assign_obj, &mut data).assert();
         assert_eq!(key, "data".to_string());
         assert_eq!(

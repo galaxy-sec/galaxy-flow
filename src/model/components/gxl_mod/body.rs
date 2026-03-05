@@ -1,13 +1,13 @@
 use crate::ability::prelude::GxlVar;
 use crate::ability::prelude::TaskValue;
+use crate::components::GxlEnv;
+use crate::components::GxlFlow;
+use crate::components::GxlProps;
 use crate::components::gxl_act::activity::Activity;
 use crate::components::gxl_flow::meta::FlowMeta;
 use crate::components::gxl_fun::fun::GxlFun;
 use crate::components::gxl_prop::Vec2Mapable;
 use crate::components::gxl_spc::GxlSpace;
-use crate::components::GxlEnv;
-use crate::components::GxlFlow;
-use crate::components::GxlProps;
 use crate::model::components::prelude::*;
 
 use crate::execution::runnable::ComponentMeta;
@@ -16,7 +16,7 @@ use crate::meta::*;
 use contracts::requires;
 use derive_getters::Getters;
 use indexmap::IndexMap;
-use orion_error::UvsLogicFrom;
+use orion_error::{ToStructError, UvsFrom};
 use orion_infra::auto_exit_log;
 
 use std::io::Write;
@@ -169,9 +169,11 @@ impl GxlMod {
         debug!(target : "assemble", "will assemble  mix mod {}" , self.meta().name() );
         let mix_name = self.meta().mix().clone();
         for mix in mix_name {
-            let mix_mod = src
-                .get(mix.as_str())
-                .ok_or(AssembleReason::from_logic(format!("no mix: {mix} ")))?;
+            let mix_mod = src.get(mix.as_str()).ok_or_else(|| {
+                AssembleReason::from_logic()
+                    .to_err()
+                    .with_detail(format!("no mix: {mix} "))
+            })?;
             self.merge(mix_mod);
         }
         Ok(self)
@@ -340,14 +342,15 @@ impl AppendAble<ModItem> for GxlMod {
 mod test {
 
     use super::*;
-    use orion_common::friendly::{MultiNew2, New2};
+    use crate::friendly::{MultiNew2, New2};
     use orion_error::TestAssertWithMsg;
-    use orion_sec::sec::{SecFrom, SecValueType, ToUniCase};
+    use orion_sec::sec::{SecFrom, SecValueType};
+    use orion_variate::vars::UpperKey;
 
     use crate::{
         components::{
-            gxl_block::BlockNode, gxl_env::meta::EnvMeta, gxl_flow::meta::FlowMeta,
-            gxl_spc::GxlSpace, gxl_var::GxlVar, GxlEnv, GxlFlow, GxlMod, GxlProps,
+            GxlEnv, GxlFlow, GxlMod, GxlProps, gxl_block::BlockNode, gxl_env::meta::EnvMeta,
+            gxl_flow::meta::FlowMeta, gxl_spc::GxlSpace, gxl_var::GxlVar,
         },
         context::ExecContext,
         execution::sequence::ExecSequence,
@@ -391,21 +394,27 @@ mod test {
         if let Some(target) = result {
             assert_eq!(target.meta.name(), "mod1");
             assert_eq!(target.props().items().len(), 3);
-            assert!(target
-                .props()
-                .items()
-                .iter()
-                .any(|(_, x)| x.key() == &"k1".to_string()));
-            assert!(target
-                .props()
-                .items()
-                .iter()
-                .any(|(_, x)| x.key() == &"k2".to_string()));
-            assert!(target
-                .props()
-                .items()
-                .iter()
-                .any(|(_, x)| x.key() == &"k3".to_string()));
+            assert!(
+                target
+                    .props()
+                    .items()
+                    .iter()
+                    .any(|(_, x)| x.key() == &"k1".to_string())
+            );
+            assert!(
+                target
+                    .props()
+                    .items()
+                    .iter()
+                    .any(|(_, x)| x.key() == &"k2".to_string())
+            );
+            assert!(
+                target
+                    .props()
+                    .items()
+                    .iter()
+                    .any(|(_, x)| x.key() == &"k3".to_string())
+            );
             assert_eq!(
                 target.props.get("k2").map(|x| x.val()),
                 Some(&GxlObject::from_val("v2".to_string()))
@@ -495,11 +504,11 @@ mod test {
 
         println!("{:?}", vars.global().maps());
         assert_eq!(
-            vars.global().maps().get(&"ENV_KEY1".to_unicase()),
+            vars.global().maps().get(&UpperKey::from("ENV_KEY1")),
             Some(&SecValueType::nor_from("value1".to_string()))
         );
         assert_eq!(
-            vars.global().maps().get(&"ENV_KEY3".to_unicase()),
+            vars.global().maps().get(&UpperKey::from("ENV_KEY3")),
             Some(&SecValueType::nor_from("value1".to_string()))
         );
         Ok(())

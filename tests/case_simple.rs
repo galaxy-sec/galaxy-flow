@@ -1,9 +1,10 @@
 extern crate galaxy_flow;
 
+use galaxy_flow::cmd::GxlCmd;
 use galaxy_flow::execution::VarSpace;
 use galaxy_flow::infra::once_init_log;
 use galaxy_flow::types::AnyResult;
-use galaxy_flow::{err::*, GxLoader};
+use galaxy_flow::{GxLoader, err::*};
 use orion_error::TestAssert;
 
 #[tokio::test]
@@ -18,10 +19,9 @@ async fn conf_simple_test() -> AnyResult<()> {
         .assemble()
         .assert();
     spc.exec(
-        vec!["dev".into()],
-        vec!["api".into()],
-        Some(false),
-        false,
+        GxlCmd::default()
+            .with_env("dev".into())
+            .with_flows("api".into()),
         VarSpace::default(),
         None,
     )
@@ -42,10 +42,9 @@ async fn conf_cond_test() -> RunResult<()> {
         .assemble()
         .assert();
     spc.exec(
-        vec!["dev".into()],
-        vec!["api".into(), "start".into()],
-        Some(false),
-        false,
+        GxlCmd::default()
+            .with_env("dev".into())
+            .with_flows("api,start".into()),
         VarSpace::default(),
         None,
     )

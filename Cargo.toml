@@ -1,9 +1,9 @@
 
 [package]
 
-version = "0.11.4"
+version = "0.12.0" # @gxl:set(version)
 authors = ["wukong<sec-wukong@outlook.com>"]
-edition = "2021"
+edition = "2024"
 name = "galaxy_flow"
 [[bin]]
 name = "gflow"
@@ -14,7 +14,7 @@ name = "gprj"
 path = "app/gprj/main.rs"
 
 [workspace]
-members = [".", "crates/orion_parse", "crates/orion_ai", "crates/orion_sec"]
+members = [".", "crates/orion_parse",  "crates/orion_cond"]
 
 [workspace.package]
 version = "1.0.0"
@@ -23,30 +23,32 @@ license = "Apache-2.0"
 
 [workspace.dependencies]
 winnow = "0.7.11"
+orion-error = "0.6"
+orion_conf = { version = "0.5", features = ["yaml", "toml", "json", "ini"] }
 #orion-error = { path = "../orion-error" }
-orion-error = { git = "https://github.com/galaxy-sec/orion-error.git", tag = "v0.4.0" }
-orion_common = { git = "https://github.com/galaxy-sec/orion-common.git", tag = "v0.3.0" }
-orion_infra = { git = "https://github.com/galaxy-sec/orion-infra.git", tag = "v0.3.0" }
-orion_variate = { git = "https://github.com/galaxy-sec/orion-variate.git", tag = "v0.7.5" }
+#orion-error = { git = "https://github.com/galaxy-sec/orion-error.git", tag = "v0.4.0" }
+#orion_conf = { git = "https://github.com/galaxy-sec/orion-common.git", tag = "v0.3.0" }
+orion-sec=  "0.4"
+#orion-ai= { git = "https://github.com/galaxy-sec/orion-ai.git", tag = "v0.2.1" }
+#orion-ai= { path = "../orion-ai"  }
+#orion-ai= { git = "https://github.com/galaxy-sec/orion-ai.git", branch = "main" }
+orion-infra = "0.5"
+orion-variate =  "0.11"
+orion-accessor = "0.6"
 orion_parse = { path = "crates/orion_parse" }
-orion_sec = { path = "crates/orion_sec" }
-orion_ai = { path = "crates/orion_ai" }
-#orion_variate = { path = "../orion_variate" }
-#orion_infra = { path = "../orion_infra" }
-#orion_common = { path = "../orion_common" }
-#orion_variate = { path = "../orion_variate" }
-#orion-syspec = { path = "../orion-syspec" }
-tokio = { version = "~1.47", features = ["full"] }
+orion_cond = { path = "crates/orion_cond" }
+tokio = { version = "1.47", features = ["full"] }
 derive_more = { version = "2.0", features = ["full"] }
 async-trait = "0.1"
 
 [dependencies]
-orion_common = { workspace = true }
-orion_infra = { workspace = true }
-orion_variate = { workspace = true }
+orion_conf= { workspace = true }
+orion-infra = { workspace = true }
+orion-variate = { workspace = true }
+orion-accessor = { workspace = true }
 orion_parse = { workspace = true }
-orion_sec = { workspace = true }
-orion_ai = { workspace = true }
+orion-sec = { workspace = true }
+#orion-ai = { workspace = true }
 uuid = "1.0.0"
 derive-getters = "0.5"
 derive_builder = "0.20"
@@ -56,15 +58,15 @@ duct = "1.1.0"
 duct_sh = "1.0.0"
 fs_extra = "1.3"
 home = "0.5"
-thiserror = "~2.0"
+thiserror = "2.0"
 handlebars = "6.3"
-#http-types = "2.12"
-lazy_static = "~1.5"
-chrono = "0.4.41"
+http-types = "2.12"
+lazy_static = "1.5"
+chrono = "0.4"
 log = "~0.4"
-git2 = { version = "0.20", features = ["vendored-openssl"] }
-unicase = "~2.8"
-scopeguard = "1.2.0"
+git2 = "0.20"
+unicase = "2.8"
+scopeguard = "1.2"
 
 rand = "0.9"
 mockall = "0.13"
@@ -79,11 +81,11 @@ shells = "0.2"
 toml = "0.9"
 url = "2.5"
 clap = { version = "4.5", features = ["derive"] }
-env_logger = "0.11.0"
-os_info = "~3.12"
+env_logger = "0.11"
+os_info = "3.12"
 winnow = { workspace = true }
 colored = "3.0.0"
-anyhow = "1.0.82"
+anyhow = "1.0"
 include_dir = "0.7"
 walkdir = "2.5"
 wildmatch = "~2.4"
@@ -98,7 +100,11 @@ reqwest = { version = "0.12.11", features = ["json"] }
 time = { version = "0.3.41", features = ["formatting", "local-offset"] }
 serde_yaml = "0.9"
 contracts = "0.6"
-libc = "0.2.174"
+libc = "0.2"
+semver = "1.0"
+sha2 = "0.10"
+flate2 = "1.0"
+tar = "0.4"
 
 [features]
 res_depend_test = []

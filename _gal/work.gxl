@@ -70,10 +70,4 @@ mod main  {
     gx.cmd (  "cp ${MAIN_BLD_BINS}/gflow ${MAIN_HOME_BIN}/${AP}flow"  );
     gx.cmd (  "cp ${MAIN_BLD_BINS}/gprj ${MAIN_HOME_BIN}/${AP}prj"  );
   }
-  flow ci_msg {
-    gx.cmd("git diff > code_diff.txt");
-    gx.ai_chat( "Generate a brief summary for the git commit message", prompt_file : "./code_diff.txt");
-  }
-
-
 }

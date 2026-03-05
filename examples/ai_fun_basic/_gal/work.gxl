@@ -1,0 +1,26 @@
+mod envs {
+    env default {}
+}
+mod main {
+    flow chat_test {
+        gx.ai_fun(
+            role: "developer",
+            prompt: "请回答：1+1=?"
+        );
+    }
+
+    flow task_test {
+        gx.ai_fun(
+            role: "developer",
+            task: "请解释什么是人工智能"
+        );
+    }
+
+    flow combined_test {
+        gx.ai_fun(
+            role: "developer",
+            task: "分析当前时间的重要性",
+            prompt: "请考虑时间在软件开发中的作用"
+        );
+    }
+}

@@ -1,6 +1,7 @@
 use super::{gxl_flow::meta::FlowMeta, prelude::*};
 use crate::{
     ability::prelude::TaskValue,
+    cmd::GxlCmd,
     execution::{
         sequence::{ExecSequence, SequAppender, SequLoader},
         unit::{RunUnitGuard, RunUnitLable},
@@ -195,34 +196,25 @@ impl ExecOptions {
 
 impl GxlSpace {
     #[requires(self.assembled)]
-    pub async fn exec<VS: Into<Vec<String>>>(
+    pub async fn exec(
         &self,
-        envs_name: VS,
-        flows_name: VS,
-        out: Option<bool>,
-        dryrun: bool,
+        cmd: GxlCmd,
         var_space: VarSpace,
         sender: Option<Sender<ReadSignal>>,
-    ) -> RunResult<()> {
+    ) -> RunResult<TaskValue> {
         info!(
             target: "execution",
-            "Starting execution stack with output: {:?}", out
+            "Starting execution stack with output: {:?}", cmd.quiet,
         );
-
-        let envs: Vec<String> = envs_name.into();
-        let flow_names: Vec<String> = flows_name.into();
-
-        warn!(target : "exec","Executing with envs: {:?}, flows: {:?}", envs, flow_names);
+        let envs: Vec<String> = cmd.get_env_list();
+        warn!(target : "exec","Executing with envs: {}, flow:{}", envs.join(",") , cmd.flows() );
         warn!(target : "exec","inherted vars :\n{}", var_space.inherited());
         info!(target : "exec","inherted vars :\n{}", var_space.global());
 
-        let main_ctx = ExecContext::new(out, dryrun);
-        for flow_name in flow_names {
-            self.execute_flow(&main_ctx, &var_space, &envs, &flow_name, sender.clone())
-                .await?;
-        }
-
-        Ok(())
+        let main_ctx = ExecContext::new(cmd.clone());
+        let flow = cmd.flows();
+        self.execute_flow(&main_ctx, &var_space, &envs, flow, sender.clone())
+            .await
     }
 
     #[requires(self.assembled)]
@@ -233,7 +225,7 @@ impl GxlSpace {
         envs: &[String],
         flow_name: &str,
         sender: Option<Sender<ReadSignal>>,
-    ) -> RunResult<()> {
+    ) -> RunResult<TaskValue> {
         let flow_name = self.normalize_flow_name(flow_name);
         println!("execute flow: {}", flow_name);
 
@@ -253,14 +245,11 @@ impl GxlSpace {
             .await
             .err_conv()
         {
-            Ok(TaskValue { rec, .. }) => {
-                task_local_report(rec);
-                Ok(())
+            Ok(task) => {
+                task_local_report(task.rec().clone());
+                Ok(task)
             }
-            Err(do_err) => {
-                //todo report;
-                Err(do_err)
-            }
+            Err(do_err) => Err(do_err),
         }
     }
 
@@ -308,10 +297,10 @@ impl GxlSpace {
         guard: &RunUnitGuard,
         sequ: &mut impl SequAppender,
     ) -> ExecResult<()> {
-        if let Some(mod_meta) = meta.host() {
-            if let Some(mox) = self.mods.get(mod_meta.name()) {
-                return self.mod_load_flow(mox, meta.name(), guard, sequ);
-            }
+        if let Some(mod_meta) = meta.host()
+            && let Some(mox) = self.mods.get(mod_meta.name())
+        {
+            return self.mod_load_flow(mox, meta.name(), guard, sequ);
         }
         Err(ExecError::from(ExecReason::Miss(meta.long_name())))
     }
@@ -389,13 +378,13 @@ pub fn color_show<S: AsRef<str> + Display>(text: S, color: Option<&str>) {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::friendly::New2;
     use crate::{
         ability::prelude::GxlVar,
-        components::{gxl_mod::meta::ModMeta, GxlEnv, GxlFlow, GxlMod, GxlProps},
+        components::{GxlEnv, GxlFlow, GxlMod, GxlProps, gxl_mod::meta::ModMeta},
         execution::exec_init_env,
         types::AnyResult,
     };
-    use orion_common::friendly::New2;
     use orion_error::TestAssert;
 
     #[tokio::test]

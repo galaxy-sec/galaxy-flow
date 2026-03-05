@@ -1,5 +1,5 @@
 use once_cell::sync::OnceCell;
-use orion_infra::logging::{configure_logging, LogConf};
+use orion_infra::logging::{LogConf, configure_logging};
 
 pub trait DfxArgsGetter {
     fn debug_level(&self) -> usize;

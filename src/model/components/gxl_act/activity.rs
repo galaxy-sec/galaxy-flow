@@ -1,3 +1,4 @@
+use crate::friendly::AppendAble;
 use crate::{
     ability::prelude::{Action, TaskValue},
     evaluator::VarParser,
@@ -7,7 +8,7 @@ use crate::{
     primitive::GxlAParams,
 };
 use async_trait::async_trait;
-use orion_common::friendly::AppendAble;
+use orion_error::ContextRecord;
 
 use crate::{
     components::{gxl_mod::meta::ModMeta, gxl_spc::GxlSpace},
@@ -86,14 +87,11 @@ impl Activity {
         let cmd = exp
             .eval(dict.must_get("executer")?.to_string().as_str())
             .with(&r_with)?;
-        r_with.with("exec", cmd.clone());
+        r_with.record("exec", cmd.clone());
 
         //let mut opt = dict.get("expect").clone();
         let mut opt = ShellOption::new();
-        // 若未设置全局的输出模式，则使用局部模式
-        if let Some(quiet) = ctx.quiet() {
-            opt.quiet = quiet;
-        }
+        opt.quiet = ctx.quiet();
 
         gxl_sh!(
             LogicScope::Outer,
@@ -131,6 +129,7 @@ mod tests {
 
     use crate::{
         ability::ability_env_init,
+        cmd::GxlCmd,
         context::ExecContext,
         primitive::{GxlAParam, GxlFParam},
         util::OptionFrom,
@@ -143,16 +142,16 @@ mod tests {
         ability_env_init();
 
         // Create activity meta
-        let meta =
-            ActivityMeta::build("test_activity").with_params(vec![GxlFParam::new("executer")
-                .with_default_value(
-                    SecValueType::nor_from("./src/model/components/gxl_act/echo.sh".to_string())
-                        .to_opt(),
-                )]);
+        let meta = ActivityMeta::build("test_activity").with_params(vec![
+            GxlFParam::new("executer").with_default_value(
+                SecValueType::nor_from("./src/model/components/gxl_act/echo.sh".to_string())
+                    .to_opt(),
+            ),
+        ]);
         let activity = Activity::new(meta);
 
         // Create context
-        let ctx = ExecContext::new(Some(false), false);
+        let ctx = ExecContext::new(GxlCmd::default());
 
         // Create var space with executer
         let vars = VarSpace::default();

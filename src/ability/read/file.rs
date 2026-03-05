@@ -3,8 +3,8 @@ use std::path::PathBuf;
 use crate::ability::prelude::*;
 use crate::traits::Setter;
 
-use orion_common::serde::{IniAble, JsonAble, Yamlable};
-use orion_error::{ToStructError, UvsLogicFrom};
+use orion_conf::{IniIO, JsonIO, YamlIO};
+use orion_error::{ToStructError, UvsFrom};
 use orion_sec::sec::{SecFrom, SecValueType};
 use orion_variate::vars::ValueType;
 
@@ -24,11 +24,11 @@ impl FileDTO {
         let file = self.file.clone();
         let file_path = PathBuf::from(exp.eval(&file)?);
         let values = if file_path.extension() == PathBuf::from("*.ini").extension() {
-            ValueType::from_ini(&file_path).owe_data()?
+            ValueType::load_ini(&file_path).owe_data()?
         } else if file_path.extension() == PathBuf::from("*.json").extension() {
-            ValueType::from_json(&file_path).owe_data()?
+            ValueType::load_json(&file_path).owe_data()?
         } else if file_path.extension() == PathBuf::from("*.yml").extension() {
-            ValueType::from_yml(&file_path).owe_data()?
+            ValueType::load_yaml(&file_path).owe_data()?
         } else {
             return ExecReason::Args(format!("not support format :{}", file_path.display()))
                 .err_result();
@@ -47,15 +47,15 @@ impl FileDTO {
                 if let Some(name) = self.name.clone() {
                     vars_dict.global_mut().set(name, SecValueType::from(list));
                 } else {
-                    return ExecReason::from_logic(
-                        "list cannot set to VarSpace by no name ".into(),
-                    )
-                    .err_result();
+                    return Err(ExecReason::from_logic()
+                        .to_err()
+                        .with_detail("list cannot set to VarSpace by no name "));
                 }
             }
             _ => {
-                return ExecReason::from_logic("read file only support list and map ".into())
-                    .err_result();
+                return Err(ExecReason::from_logic()
+                    .to_err()
+                    .with_detail("read file only support list and map "));
             }
         }
         Ok(TaskValue::from((vars_dict, ExecOut::Ignore)))

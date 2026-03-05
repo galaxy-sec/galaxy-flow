@@ -2,10 +2,10 @@ use async_trait::async_trait;
 use derive_more::From;
 
 use crate::{
+    ExecReason,
     ability::prelude::{AsyncRunnableTrait, ComponentMeta, TaskResult, VarSpace},
     context::ExecContext,
     meta::GxlMeta,
-    ExecReason,
 };
 
 use super::{cmd::CmdDTO, file::FileDTO, stdin::StdinDTO};

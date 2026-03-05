@@ -2,7 +2,7 @@
 use clap::ArgAction;
 use clap::Parser;
 use derive_getters::Getters;
-use galaxy_flow::runner::GxlCmd;
+use galaxy_flow::cmd::gxl_cmd::GFlowCmd;
 
 #[derive(Debug, Parser, Clone)] // requires `derive` feature
 #[command(name = "gprj adm")]
@@ -12,10 +12,12 @@ pub enum GxAdmCmd {
     Init(InitCmd),
     #[command(subcommand)]
     Update(UpdateCmd),
-    Adm(GxlCmd),
+    Adm(GFlowCmd),
     #[command(subcommand)]
     Conf(ConfCmd),
     Check,
+    #[command(name = "self", subcommand)]
+    SelfUpdate(SelfCmd),
 }
 
 #[derive(Debug, Subcommand, Clone)]
@@ -35,6 +37,61 @@ pub enum UpdateCmd {
 #[derive(Debug, Subcommand, Clone)]
 pub enum ConfCmd {
     Init(ConfInitArgs),
+}
+
+#[derive(Debug, Subcommand, Clone)]
+pub enum SelfCmd {
+    Status,
+    Check(SelfCheckArgs),
+    Update(SelfUpdateArgs),
+    Rollback(SelfRollbackArgs),
+    #[command(subcommand)]
+    Auto(SelfAutoCmd),
+}
+
+#[derive(Debug, Args, Clone, Getters)]
+pub struct SelfCheckArgs {
+    #[arg(long)]
+    pub channel: Option<String>,
+    #[arg(long, action = ArgAction::SetTrue, default_value = "false")]
+    pub json: bool,
+}
+
+#[derive(Debug, Args, Clone, Getters)]
+pub struct SelfUpdateArgs {
+    #[arg(long)]
+    pub channel: Option<String>,
+    #[arg(long = "to")]
+    pub to_version: Option<String>,
+    #[arg(long, action = ArgAction::SetTrue, default_value = "false")]
+    pub yes: bool,
+    #[arg(long = "dry-run", action = ArgAction::SetTrue, default_value = "false")]
+    pub dry_run: bool,
+    #[arg(long, action = ArgAction::SetTrue, default_value = "false")]
+    pub force: bool,
+}
+
+#[derive(Debug, Args, Clone, Getters)]
+pub struct SelfRollbackArgs {
+    #[arg(long = "id")]
+    pub backup_id: Option<String>,
+}
+
+#[derive(Debug, Subcommand, Clone)]
+pub enum SelfAutoCmd {
+    Enable,
+    Disable,
+    Set(SelfAutoSetArgs),
+}
+
+#[derive(Debug, Args, Clone, Getters)]
+pub struct SelfAutoSetArgs {
+    #[arg(long)]
+    pub interval: Option<u64>,
+    #[arg(long)]
+    pub mode: Option<String>,
+    #[arg(long)]
+    pub channel: Option<String>,
 }
 
 #[derive(Debug, Args, Getters)]
