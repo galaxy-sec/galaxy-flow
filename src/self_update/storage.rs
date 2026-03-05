@@ -7,11 +7,10 @@ use orion_error::{ErrorOwe, ErrorWith, ToStructError};
 
 use crate::err::{RunReason, RunResult};
 
-use super::model::{SelfUpdatePolicy, SelfUpdateState};
+use super::model::SelfUpdateState;
 
 const GALAXY_DIR: &str = ".galaxy";
 const SELF_UPDATE_DIR: &str = "self_update";
-const POLICY_FILE: &str = "policy.toml";
 const STATE_FILE: &str = "state.json";
 const LOCK_FILE: &str = "lock";
 const BACKUPS_DIR: &str = "backups";
@@ -45,10 +44,6 @@ impl SelfUpdateStorage {
         Ok(this)
     }
 
-    pub fn policy_path(&self) -> PathBuf {
-        self.root.join(POLICY_FILE)
-    }
-
     pub fn state_path(&self) -> PathBuf {
         self.root.join(STATE_FILE)
     }
@@ -67,36 +62,6 @@ impl SelfUpdateStorage {
             .owe_res()
             .want("create self update layout")
             .with(("path", backups.as_path()))?;
-        Ok(())
-    }
-
-    pub fn load_policy(&self) -> RunResult<SelfUpdatePolicy> {
-        let path = self.policy_path();
-        if !path.exists() {
-            let def = SelfUpdatePolicy::default();
-            self.save_policy(&def)?;
-            return Ok(def);
-        }
-        let content = fs::read_to_string(&path)
-            .owe_res()
-            .want("read self update policy")
-            .with(("path", path.as_path()))?;
-        toml::from_str::<SelfUpdatePolicy>(&content)
-            .owe_data()
-            .want("parse self update policy")
-            .with(("path", path.as_path()))
-    }
-
-    pub fn save_policy(&self, policy: &SelfUpdatePolicy) -> RunResult<()> {
-        let path = self.policy_path();
-        let content = toml::to_string_pretty(policy)
-            .owe_data()
-            .want("serialize self update policy")
-            .with(("path", path.as_path()))?;
-        fs::write(&path, content)
-            .owe_res()
-            .want("write self update policy")
-            .with(("path", path.as_path()))?;
         Ok(())
     }
 

@@ -11,8 +11,7 @@ use crate::err::{RunReason, RunResult};
 use super::client::SelfUpdateClient;
 use super::installer;
 use super::model::{
-    AutoMode, CheckResult, ManifestAsset, ReleaseChannel, SelfUpdatePolicy, SelfUpdateState,
-    StatusResult, UpdateResult,
+    CheckResult, ManifestAsset, ReleaseChannel, SelfUpdateState, StatusResult, UpdateResult,
 };
 use super::storage::SelfUpdateStorage;
 
@@ -25,24 +24,16 @@ const MANIFEST_BASE_URL_BETA: &str =
 
 #[derive(Clone, Debug, Default)]
 pub struct CheckRequest {
-    pub channel: Option<ReleaseChannel>,
+    pub channel: ReleaseChannel,
 }
 
 #[derive(Clone, Debug, Default)]
 pub struct UpdateRequest {
-    pub channel: Option<ReleaseChannel>,
+    pub channel: ReleaseChannel,
     pub to_version: Option<String>,
     pub yes: bool,
     pub dry_run: bool,
     pub force: bool,
-}
-
-#[derive(Clone, Debug, Default)]
-pub struct AutoSetRequest {
-    pub enabled: Option<bool>,
-    pub mode: Option<AutoMode>,
-    pub interval_hours: Option<u64>,
-    pub channel: Option<ReleaseChannel>,
 }
 
 #[derive(Clone, Debug)]
@@ -61,13 +52,11 @@ impl SelfUpdateService {
 
     pub fn status(&self) -> RunResult<StatusResult> {
         let install_dir = installer::install_dir_from_current_exe()?;
-        let policy = self.storage.load_policy()?;
         let mut state = self.storage.load_state()?;
         state.current_version = Some(env!("CARGO_PKG_VERSION").to_string());
         Ok(StatusResult {
             current_version: env!("CARGO_PKG_VERSION").to_string(),
             install_dir,
-            policy,
             state,
         })
     }
@@ -75,8 +64,7 @@ impl SelfUpdateService {
     pub async fn check(&self, req: CheckRequest) -> RunResult<CheckResult> {
         let _lock = self.storage.acquire_lock()?;
         let mut state = self.storage.load_state()?;
-        let policy = self.storage.load_policy()?;
-        let channel = req.channel.unwrap_or(policy.channel);
+        let channel = req.channel;
         let temp_dir = TempDirGuard::new("check")?;
         let manifest_base_url = manifest_base_url(channel);
         let manifest = self
@@ -129,11 +117,7 @@ impl SelfUpdateService {
     pub async fn update(&self, req: UpdateRequest) -> RunResult<UpdateResult> {
         let _lock = self.storage.acquire_lock()?;
         let mut state = self.storage.load_state()?;
-        let mut policy = self.storage.load_policy()?;
-        if let Some(ch) = req.channel {
-            policy.channel = ch;
-        }
-        let channel = policy.channel;
+        let channel = req.channel;
         let current = env!("CARGO_PKG_VERSION").to_string();
 
         let temp_dir = TempDirGuard::new("update")?;
@@ -435,24 +419,6 @@ impl SelfUpdateService {
                 })
             }
         }
-    }
-
-    pub fn set_auto(&self, req: AutoSetRequest) -> RunResult<SelfUpdatePolicy> {
-        let mut policy = self.storage.load_policy()?;
-        if let Some(enabled) = req.enabled {
-            policy.enabled = enabled;
-        }
-        if let Some(mode) = req.mode {
-            policy.mode = mode;
-        }
-        if let Some(interval) = req.interval_hours {
-            policy.interval_hours = interval.max(1);
-        }
-        if let Some(channel) = req.channel {
-            policy.channel = channel;
-        }
-        self.storage.save_policy(&policy)?;
-        Ok(policy)
     }
 }
 

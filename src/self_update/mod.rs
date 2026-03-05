@@ -5,7 +5,6 @@ mod service;
 mod storage;
 
 pub use model::{
-    AutoMode, CheckResult, ReleaseChannel, SelfUpdateManifest, SelfUpdatePolicy, SelfUpdateState,
-    StatusResult, UpdateResult,
+    CheckResult, ReleaseChannel, SelfUpdateManifest, SelfUpdateState, StatusResult, UpdateResult,
 };
-pub use service::{AutoSetRequest, CheckRequest, SelfUpdateService, UpdateRequest};
+pub use service::{CheckRequest, SelfUpdateService, UpdateRequest};

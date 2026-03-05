@@ -13,7 +13,6 @@ use std::path::PathBuf;
 use crate::args::GxAdmCmd;
 use crate::args::InitCmd;
 use args::ConfCmd;
-use args::SelfAutoCmd;
 use args::SelfCmd;
 use args::UpdateCmd;
 use clap::Parser;
@@ -28,9 +27,7 @@ use galaxy_flow::execution::VarSpace;
 use galaxy_flow::galaxy::Galaxy;
 use galaxy_flow::infra::configure_run_logging;
 use galaxy_flow::runner::GxlRunner;
-use galaxy_flow::self_update::{
-    AutoMode, AutoSetRequest, CheckRequest, ReleaseChannel, SelfUpdateService, UpdateRequest,
-};
+use galaxy_flow::self_update::{CheckRequest, ReleaseChannel, SelfUpdateService, UpdateRequest};
 use galaxy_flow::traits::Setter;
 use galaxy_flow::util::diagnose::ai_diagnose;
 use include_dir::{Dir, include_dir};
@@ -198,10 +195,6 @@ impl GxAdm {
                 let status = svc.status()?;
                 println!("current_version={}", status.current_version);
                 println!("install_dir={}", status.install_dir.display());
-                println!("policy.enabled={}", status.policy.enabled);
-                println!("policy.mode={:?}", status.policy.mode);
-                println!("policy.channel={}", status.policy.channel.as_str());
-                println!("policy.interval_hours={}", status.policy.interval_hours);
                 if let Some(v) = status.state.last_remote_version {
                     println!("state.last_remote_version={v}");
                 }
@@ -213,7 +206,7 @@ impl GxAdm {
                 }
             }
             SelfCmd::Check(args) => {
-                let channel = parse_channel(args.channel.as_deref())?;
+                let channel = parse_channel(args.channel.as_str())?;
                 let req = CheckRequest { channel };
                 let out = svc.check(req).await?;
                 if args.json {
@@ -235,7 +228,7 @@ impl GxAdm {
                 }
             }
             SelfCmd::Update(args) => {
-                let channel = parse_channel(args.channel.as_deref())?;
+                let channel = parse_channel(args.channel.as_str())?;
                 let req = UpdateRequest {
                     channel,
                     to_version: args.to_version.clone(),
@@ -259,62 +252,17 @@ impl GxAdm {
                     println!("backup_id={id}");
                 }
             }
-            SelfCmd::Auto(cmd) => match cmd {
-                SelfAutoCmd::Enable => {
-                    let out = svc.set_auto(AutoSetRequest {
-                        enabled: Some(true),
-                        ..Default::default()
-                    })?;
-                    println!("auto.enabled={}", out.enabled);
-                }
-                SelfAutoCmd::Disable => {
-                    let out = svc.set_auto(AutoSetRequest {
-                        enabled: Some(false),
-                        ..Default::default()
-                    })?;
-                    println!("auto.enabled={}", out.enabled);
-                }
-                SelfAutoCmd::Set(args) => {
-                    let req = AutoSetRequest {
-                        enabled: None,
-                        mode: parse_mode(args.mode.as_deref())?,
-                        interval_hours: args.interval,
-                        channel: parse_channel(args.channel.as_deref())?,
-                    };
-                    let out = svc.set_auto(req)?;
-                    println!("auto.enabled={}", out.enabled);
-                    println!("auto.mode={:?}", out.mode);
-                    println!("auto.channel={}", out.channel.as_str());
-                    println!("auto.interval_hours={}", out.interval_hours);
-                }
-            },
         }
         Ok(())
     }
 }
 
-fn parse_channel(input: Option<&str>) -> RunResult<Option<ReleaseChannel>> {
-    match input {
-        None => Ok(None),
-        Some(v) => ReleaseChannel::parse(v).map(Some).ok_or_else(|| {
-            RunReason::Args("bad channel".into())
-                .to_err()
-                .with_detail(format!("channel={v}, expected=stable|alpha|beta"))
-        }),
-    }
-}
-
-fn parse_mode(input: Option<&str>) -> RunResult<Option<AutoMode>> {
-    match input {
-        None => Ok(None),
-        Some(v) => match v.trim().to_ascii_lowercase().as_str() {
-            "check" => Ok(Some(AutoMode::Check)),
-            "apply" => Ok(Some(AutoMode::Apply)),
-            _ => Err(RunReason::Args("bad auto mode".into())
-                .to_err()
-                .with_detail(format!("mode={v}, expected=check|apply"))),
-        },
-    }
+fn parse_channel(input: &str) -> RunResult<ReleaseChannel> {
+    ReleaseChannel::parse(input).ok_or_else(|| {
+        RunReason::Args("bad channel".into())
+            .to_err()
+            .with_detail(format!("channel={input}, expected=stable|alpha|beta"))
+    })
 }
 
 fn init_local(path: Option<PathBuf>) -> RunResult<()> {

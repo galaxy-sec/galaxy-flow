@@ -31,33 +31,6 @@ impl ReleaseChannel {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, Default)]
-#[serde(rename_all = "snake_case")]
-pub enum AutoMode {
-    #[default]
-    Check,
-    Apply,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub struct SelfUpdatePolicy {
-    pub enabled: bool,
-    pub mode: AutoMode,
-    pub channel: ReleaseChannel,
-    pub interval_hours: u64,
-}
-
-impl Default for SelfUpdatePolicy {
-    fn default() -> Self {
-        Self {
-            enabled: true,
-            mode: AutoMode::Check,
-            channel: ReleaseChannel::Stable,
-            interval_hours: 24,
-        }
-    }
-}
-
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Default)]
 pub struct SelfUpdateState {
     pub last_checked_at: Option<String>,
@@ -90,7 +63,6 @@ pub struct SelfUpdateManifest {
 pub struct StatusResult {
     pub current_version: String,
     pub install_dir: PathBuf,
-    pub policy: SelfUpdatePolicy,
     pub state: SelfUpdateState,
 }
 

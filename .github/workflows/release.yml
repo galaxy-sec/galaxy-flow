@@ -108,6 +108,11 @@ jobs:
       contents: write
 
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - name: Ensure artifacts dir exists
         run: mkdir -p artifacts
 
@@ -116,6 +121,85 @@ jobs:
         with:
           path: artifacts
           merge-multiple: true
+
+      - name: Resolve manifest target
+        id: manifest_ctx
+        run: |
+          set -euo pipefail
+          tag="${GITHUB_REF_NAME}"
+          version="${tag#v}"
+          channel="stable"
+          branch="main"
+          manifest_path="updates/stable/manifest.json"
+          # Channel resolution:
+          # - any alpha marker -> alpha channel
+          # - beta/pre marker -> beta channel
+          # This prevents prerelease tags from polluting stable manifests.
+          if [[ "$version" == *"-alpha"* || "$version" == *"alpha-"* ]]; then
+            channel="alpha"
+            branch="alpha"
+            manifest_path="updates/alpha/manifest.json"
+          elif [[ "$version" == *"-beta"* || "$version" == *"beta-"* || "$version" == *"-pre"* || "$version" == *"pre-"* ]]; then
+            channel="beta"
+            branch="beta"
+            manifest_path="updates/beta/manifest.json"
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "channel=$channel" >> "$GITHUB_OUTPUT"
+          echo "branch=$branch" >> "$GITHUB_OUTPUT"
+          echo "manifest_path=$manifest_path" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout manifest branch
+        run: |
+          set -euo pipefail
+          branch="${{ steps.manifest_ctx.outputs.branch }}"
+          if git ls-remote --exit-code --heads origin "$branch" >/dev/null; then
+            git fetch origin "$branch"
+            git checkout -B "$branch" "origin/$branch"
+          else
+            echo "Branch '$branch' not found, creating from origin/main"
+            git fetch origin main
+            git checkout -B "$branch" "origin/main"
+          fi
+
+      - name: Generate manifest from release artifacts
+        run: |
+          set -euo pipefail
+          repo="${{ github.event.repository.name }}"
+          tag="${{ github.ref_name }}"
+          channel="${{ steps.manifest_ctx.outputs.channel }}"
+          version="${{ steps.manifest_ctx.outputs.version }}"
+          manifest_path="${{ steps.manifest_ctx.outputs.manifest_path }}"
+          published_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+
+          shopt -s nullglob
+          files=(artifacts/${repo}-${tag}-*.tar.gz)
+          if [[ ${#files[@]} -eq 0 ]]; then
+            echo "No release tar.gz artifacts found under artifacts/"
+            exit 1
+          fi
+
+          assets='{}'
+          for asset in "${files[@]}"; do
+            filename="$(basename "$asset")"
+            target="${filename#${repo}-${tag}-}"
+            target="${target%.tar.gz}"
+            sha256="$(sha256sum "$asset" | awk '{print $1}')"
+            url="https://github.com/${{ github.repository }}/releases/download/${tag}/${filename}"
+            assets="$(jq -c --arg target "$target" --arg url "$url" --arg sha "$sha256" '. + {($target): {url: $url, sha256: $sha}}' <<<"$assets")"
+          done
+
+          mkdir -p "$(dirname "$manifest_path")"
+          jq -n \
+            --arg version "$version" \
+            --arg channel "$channel" \
+            --arg published_at "$published_at" \
+            --arg git_ref "$tag" \
+            --arg git_commit "${GITHUB_SHA}" \
+            --argjson assets "$assets" \
+            '{version:$version, channel:$channel, published_at:$published_at, git_ref:$git_ref, git_commit:$git_commit, assets:$assets}' > "$manifest_path"
+
+          cat "$manifest_path"
 
       - name: Release
         uses: softprops/action-gh-release@c062e08bd532815e2082a85e87e3ef29c3e6d191
@@ -134,5 +218,25 @@ jobs:
             gh attestation verify --owner ${{ github.repository_owner }} <my-artifact>
             ```
           token: ${{ secrets.GITHUB_TOKEN }}
-          prerelease: ${{ contains(github.ref, '-pre') }}
+          prerelease: ${{ steps.manifest_ctx.outputs.channel != 'stable' || contains(github.ref_name, '-pre') }}
           files: artifacts/*
+
+      - name: Commit and push manifest update
+        run: |
+          set -euo pipefail
+          branch="${{ steps.manifest_ctx.outputs.branch }}"
+          channel="${{ steps.manifest_ctx.outputs.channel }}"
+          tag="${{ github.ref_name }}"
+          manifest_path="${{ steps.manifest_ctx.outputs.manifest_path }}"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$manifest_path"
+
+          if git diff --cached --quiet; then
+            echo "Manifest unchanged, skip commit."
+            exit 0
+          fi
+
+          git commit -m "chore(updates): refresh ${channel} manifest for ${tag}"
+          git push origin "$branch"

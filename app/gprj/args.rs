@@ -45,14 +45,12 @@ pub enum SelfCmd {
     Check(SelfCheckArgs),
     Update(SelfUpdateArgs),
     Rollback(SelfRollbackArgs),
-    #[command(subcommand)]
-    Auto(SelfAutoCmd),
 }
 
 #[derive(Debug, Args, Clone, Getters)]
 pub struct SelfCheckArgs {
     #[arg(long)]
-    pub channel: Option<String>,
+    pub channel: String,
     #[arg(long, action = ArgAction::SetTrue, default_value = "false")]
     pub json: bool,
 }
@@ -60,7 +58,7 @@ pub struct SelfCheckArgs {
 #[derive(Debug, Args, Clone, Getters)]
 pub struct SelfUpdateArgs {
     #[arg(long)]
-    pub channel: Option<String>,
+    pub channel: String,
     #[arg(long = "to")]
     pub to_version: Option<String>,
     #[arg(long, action = ArgAction::SetTrue, default_value = "false")]
@@ -75,23 +73,6 @@ pub struct SelfUpdateArgs {
 pub struct SelfRollbackArgs {
     #[arg(long = "id")]
     pub backup_id: Option<String>,
-}
-
-#[derive(Debug, Subcommand, Clone)]
-pub enum SelfAutoCmd {
-    Enable,
-    Disable,
-    Set(SelfAutoSetArgs),
-}
-
-#[derive(Debug, Args, Clone, Getters)]
-pub struct SelfAutoSetArgs {
-    #[arg(long)]
-    pub interval: Option<u64>,
-    #[arg(long)]
-    pub mode: Option<String>,
-    #[arg(long)]
-    pub channel: Option<String>,
 }
 
 #[derive(Debug, Args, Getters)]
