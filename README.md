@@ -37,7 +37,7 @@ Galaxy Flow 是一个面向流程编排的 DSL（GXL），提供两类 CLI：
 ### 1. 一键安装（推荐）
 
 ```bash
-curl -fsSL https://github.com/galaxy-sec/galaxy-flow/raw/main/install.sh | bash
+curl -fsSL https://github.com/galaxy-sec/get/raw/main/install.sh | bash
 ```
 
 默认安装到：`$HOME/bin`
@@ -46,10 +46,10 @@ curl -fsSL https://github.com/galaxy-sec/galaxy-flow/raw/main/install.sh | bash
 
 ```bash
 # alpha channel
-curl -fsSL https://github.com/galaxy-sec/galaxy-flow/raw/main/install.sh | bash -s -- --channel alpha
+curl -fsSL https://github.com/galaxy-sec/get/raw/main/install.sh | bash -s -- --channel alpha
 
 # custom install dir
-curl -fsSL https://github.com/galaxy-sec/galaxy-flow/raw/main/install.sh | INSTALL_DIR=/usr/local/bin bash
+curl -fsSL https://github.com/galaxy-sec/get/raw/main/install.sh | INSTALL_DIR=/usr/local/bin bash
 ```
 
 安装后验证：
