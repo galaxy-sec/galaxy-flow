@@ -1,164 +1,54 @@
-# Galaxy-Flow 实际项目结构文档
+# Galaxy Flow 项目实际结构
 
-## 项目概述
+本文档仅描述当前仓库中的真实结构（以当前工作树代码为准）。
 
-本文档基于实际代码结构，准确描述galaxy-flow项目的模块组成和依赖关系。
+## Workspace 主体
 
-## 实际模块结构
-
-```
+```text
 galaxy-flow/
+├── app/
+│   ├── gflow/main.rs        # gflow CLI 入口
+│   └── gprj/{main,args}.rs  # gprj CLI 入口与参数
 ├── src/
-│   ├── ability/     # 核心能力模块 (13个子模块)
-│   │   ├── mod.rs
-│   │   ├── archive.rs
-│   │   ├── artifact.rs
-│   │   ├── assert.rs
-│   │   ├── cmd.rs
-│   │   ├── delegate.rs
-│   │   ├── echo.rs
-│   │   ├── gxl.rs
-│   │   ├── load.rs
-│   │   ├── prelude.rs
-│   │   ├── read/    # 读取能力子模块
-│   │   ├── shell.rs
-│   │   ├── tpl.rs
-│   │   └── version.rs
-│   ├── calculate/   # 计算模块 (7个子模块)
-│   │   ├── mod.rs
-│   │   ├── compare.rs
-│   │   ├── cond.rs
-│   │   ├── defined.rs
-│   │   ├── dynval.rs
-│   │   ├── express.rs
-│   │   ├── logic.rs
-│   │   └── traits.rs
-│   ├── conf/        # 配置模块 (3个文件)
-│   │   ├── mod.rs
-│   │   ├── gxlconf.rs
-│   │   ├── mod_test.rs
-│   │   └── oprator.rs
-│   ├── evaluator/   # 执行模块 (1个子模块)
-│   │   ├── mod.rs
-│   │   └── runner.rs
-│   ├── model/       # 数据模型模块 (最复杂)
-│   │   ├── mod.rs
-│   │   ├── annotation.rs
-│   │   ├── components/    # 组件定义 (15个文件)
-│   │   ├── context.rs
-│   │   ├── data.rs
-│   │   ├── error.rs
-│   │   ├── execution/     # 执行模型 (11个文件)
-│   │   ├── expect.rs
-│   │   ├── meta.rs
-│   │   ├── primitive.rs
-│   │   ├── sec.rs
-│   │   ├── task_report/   # 任务报告 (5个文件)
-│   │   ├── traits.rs
-│   │   └── var.rs
-│   ├── parser/      # 解析模块 (17个子模块)
-│   │   ├── mod.rs
-│   │   ├── atom.rs
-│   │   ├── code/
-│   │   ├── cond.rs
-│   │   ├── context.rs
-│   │   ├── domain.rs
-│   │   ├── externs.rs
-│   │   ├── gxl_fun/
-│   │   ├── inner/
-│   │   ├── prelude.rs
-│   │   ├── stc_act.rs
-│   │   ├── stc_ann.rs
-│   │   ├── stc_base.rs
-│   │   ├── stc_blk.rs
-│   │   ├── stc_env.rs
-│   │   ├── stc_flow/
-│   │   ├── stc_mod.rs
-│   │   └── stc_spc.rs
-│   └── util/        # 工具模块 (15个子模块)
-│       ├── mod.rs
-│       ├── cache.rs
-│       ├── collection.rs
-│       ├── config.rs
-│       ├── fs.rs
-│       ├── http.rs
-│       ├── json.rs
-│       ├── log.rs
-│       ├── path.rs
-│       ├── prelude.rs
-│       ├── process.rs
-│       ├── regex.rs
-│       ├── shell.rs
-│       ├── string.rs
-│       ├── time.rs
-│       ├── types.rs
-│       └── yaml.rs
-└── docs/structure/  # 实际结构文档
-    ├── ability-actual.md
-    ├── calculate-actual.md
-    ├── conf-actual.md
-    ├── evaluator-actual.md
-    ├── model-actual.md
-    ├── parser-actual.md
-    ├── project-structure-actual.md
-    └── util-actual.md
+│   ├── ability/             # GXL abilities 实现
+│   ├── calculate/           # 表达式与条件计算
+│   ├── conf/                # 项目配置加载
+│   ├── evaluator/           # 环境表达式渲染
+│   ├── model/               # 运行时与语法模型
+│   ├── parser/              # GXL 语法解析
+│   ├── self_update/         # 自升级检查/安装/状态存储
+│   └── util/                # 通用工具
+├── crates/
+│   ├── orion_parse/         # 解析基础能力
+│   └── orion_cond/          # 条件表达式能力
+├── docs/
+├── examples/
+├── tests/
+└── updates/                 # stable/alpha/beta 更新清单
 ```
 
-## 实际模块依赖关系
+## `src` 模块导出概览
 
-```mermaid
-graph TD
-    parser --> model
-    parser --> util
-    parser --> err
-    parser --> types
-    
-    evaluator --> model
-    evaluator --> parser
-    evaluator --> ability
-    evaluator --> util
-    evaluator --> err
-    
-    ability --> model
-    ability --> util
-    ability --> err
-    ability --> const_val
-    
-    calculate --> model
-    calculate --> util
-    calculate --> err
-    
-    conf --> model
-    conf --> util
-    conf --> err
-    
-    util --> err
-    util --> types
-    
-    model --> util
-    model --> err
-    model --> types
-```
+- `ability`: `ai, archive, assert, cmd, delegate, echo, gxl, load, patch, read, shell, tpl, version`
+- `calculate`: `compare, cond, defined, dynval, express, logic, traits`
+- `conf`: `gxlconf, oprator`（`mod_test` 为内部测试模块）
+- `evaluator`: 对外仅导出 `EnvExpress, VarParser`（来自 `env_exp.rs`）
+- `model`: `annotation, components, context, data, error, execution, expect, meta, primitive, task_report, traits, var`
+- `parser`: `atom, domain, externs, abilities, cond, context, gxl_fun, inner, stc_*`
+- `self_update`: `client, installer, model, service, storage`
+- `util`: `git(内部), http_handle, path, shell, accessor, diagnose, redirect` 等
 
-## 模块规模统计
+## 对齐文档
 
-| 模块 | 文件数 | 子目录 | 复杂度 |
-|------|--------|--------|--------|
-| model | 15+ | 3 | 高 |
-| parser | 17+ | 3 | 高 |
-| ability | 13+ | 1 | 中 |
-| util | 15 | 0 | 中 |
-| calculate | 7 | 0 | 低 |
-| conf | 3 | 0 | 低 |
-| evaluator | 2 | 0 | 低 |
+- `docs/structure/ability-actual.md`
+- `docs/structure/calculate-actual.md`
+- `docs/structure/conf-actual.md`
+- `docs/structure/evaluator-actual.md`
+- `docs/structure/model-actual.md`
+- `docs/structure/parser-actual.md`
+- `docs/structure/util-actual.md`
 
-## 注意事项
+## 维护规则
 
-1. 本文档基于实际代码结构，所有列出的文件和目录都在源码中存在
-2. 不包含任何虚构或过度设计的内容
-3. 模块复杂度基于实际文件数量和结构深度评估
-4. 所有依赖关系都基于实际代码中的use语句分析得出
-
-## 文档位置
-
-所有实际结构文档位于：`docs/structure/`目录下，文件名以`-actual.md`结尾，便于与之前的文档区分。
+- 本目录中，`*-actual.md` 是结构事实文档。
+- 同名 `*.md` 仅保留简要入口说明，避免双份内容漂移。
