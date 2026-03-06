@@ -1,93 +1,157 @@
-#  Galaxy Flow
+# Galaxy Flow
 
-Galaxy Flow is a natively AI-integrated DSL for process orchestration, designed for intelligent workflow execution across OPS, DevOps, and SecOps domains.
+Galaxy Flow 是一个面向流程编排的 DSL（GXL），提供两类 CLI：
+- `gflow`：执行工作流（默认读取 `./_gal/work.gxl`）
+- `gprj`：项目管理与管理流执行（默认读取 `./_gal/adm.gxl`）
 
-[![GitHub Actions](https://github.com/galaxy-sec/galaxy-flow/workflows/check/badge.svg)](https://github.com/galaxy-sec/galaxy-flow/actions?query=workflow%3Acheck)
-[![Coverage Status](https://coveralls.io/repos/github/galaxy-sec/galaxy-flow/badge.svg)](https://coveralls.io/github/galaxy-sec/galaxy-flow)
+## Current Status / 当前状态
 
-Galaxy Flow 是一个 原生AI集成的流程编排领域专用语言，适用于 OPS、DevOps、SecOps 等多领域的流程智能化执行。
+- 运行时主链路可用：`parser -> model -> ability -> runner`
+- 内置 `gx.*` 能力可用（见下文）
+- `gprj self` 自更新可用（check/update/rollback）
+- AI 能力当前为降级状态：
+  - `ai_diagnose` 当前是 no-op（仅提示 `AI diagnose is currently disabled`）
+  - `gx.ai_chat` 未作为当前内置 block 能力接入
 
-## 核心能力 / Core Capabilities
+## Core Capabilities / 核心能力
 
-### AI 集成能力 / AI Integration Capabilities
+当前 parser 直接支持的内置能力：
+- `gx.assert`
+- `gx.cmd`
+- `gx.echo`
+- `gx.read_file` / `gx.read_cmd` / `gx.read_stdin`
+- `gx.vars`（仅 env 内）
+- `gx.tpl`
+- `gx.ver`
+- `gx.run`
+- `gx.shell`
+- `gx.tar` / `gx.untar`
+- `gx.download` / `gx.upload`
+- `gx.patch_file`
+- 表达式函数：`defined(${VAR})`
 
-**中文版本：**
-通过 `gx.ai_chat` 组件，GFlow 提供了强大的 AI 对话功能：
-- 支持直接消息提示和文件提示两种输入方式
-- 集成多种 AI 提供商配置，支持灵活的 AI 服务选择
-- 提供 AI 角色管理功能，可以指定不同的 AI 角色进行专门对话
-- 支持从环境变量动态加载 AI 配置，便于部署和管理
-- 异步执行 AI 请求，并将响应结果输出到控制台
+详细说明见 `docs/gxl/inner/index.md`。
 
-**English Version:**
-Through the `gx.ai_chat` component, GFlow provides powerful AI conversation capabilities:
-- Supports both direct message prompts and file prompt input methods
-- Integrates multiple AI provider configurations for flexible AI service selection
-- Provides AI role management functionality, allowing specification of different AI roles for specialized conversations
-- Supports dynamic loading of AI configurations from environment variables for easy deployment and management
-- Asynchronous execution of AI requests with response results output to console
+## 安装说明 / Installation
 
-### 智能诊断能力 / Intelligent Diagnosis Capabilities
+### 1. 一键安装（推荐）
 
-**中文版本：**
-通过 `ai_diagnose` 函数提供 AI 驱动的诊断分析：
-- 自动读取运行输出日志和 `.gxl` 工作流文件
-- 将运行信息和 GXL 文件内容发送给 AI 进行智能分析
-- 使用特定 AI 角色（如 "galactiward"）进行专业的诊断分析
-- 提供详细的分析结果和建议，包括内容、模型信息和时间戳
-- 帮助用户快速定位和解决工作流执行中的问题
-
-**English Version:**
-Through the `ai_diagnose` function, GFlow provides AI-driven diagnostic analysis:
-- Automatically reads execution output logs and `.gxl` workflow files
-- Sends execution information and GXL file content to AI for intelligent analysis
-- Uses specific AI roles (such as "galactiward") for professional diagnostic analysis
-- Provides detailed analysis results and suggestions, including content, model information, and timestamps
-- Helps users quickly identify and resolve issues in workflow execution
-
-### 核心执行能力 / Core Execution Capabilities
-
-**中文版本：**
-GFlow 提供了丰富的执行能力组件，支持复杂的 DevSecOps 场景：
-- **Shell 执行能力** (`gx.shell`): 支持命令行执行，支持参数文件（JSON、YAML、TOML、INI格式），输出变量捕获
-- **文件操作能力**: 提供文件读取、上传、下载功能，支持多种文件操作场景
-- **模板渲染能力**: 支持模板渲染和变量替换，便于动态内容生成
-- **断言验证能力**: 提供条件验证和结果检查，确保工作流执行的可靠性
-- **工作流运行能力**: 支持 GXL 工作流的递归执行，实现复杂流程编排
-- **归档处理能力**: 支持文件压缩和解压操作，便于文件管理和传输
-- **委托执行能力**: 支持任务委托和分布式执行，提高执行效率
-
-**English Version:**
-GFlow provides rich execution capability components, supporting complex DevSecOps scenarios:
-- **Shell Execution Capability** (`gx.shell`): Supports command-line execution with parameter files (JSON, YAML, TOML, INI formats) and output variable capture
-- **File Operations**: Provides file reading, upload, and download functionality for various file operation scenarios
-- **Template Rendering**: Supports template rendering and variable replacement for dynamic content generation
-- **Assertion Validation**: Provides condition validation and result checking to ensure workflow execution reliability
-- **Workflow Execution**: Supports recursive execution of GXL workflows for complex process orchestration
-- **Archive Processing**: Supports file compression and decompression operations for easy file management and transfer
-- **Delegated Execution**: Supports task delegation and distributed execution to improve execution efficiency
-
-## docs
-* [git-docs](https://galaxy-sec.github.io/gxl-docs/)
-* [deepwiki](https://deepwiki.com/galaxy-sec/galaxy-flow)
-
-##  下载
-项目的正式发布版本可在GitHub发布页面获取：
-
-https://github.com/galaxy-sec/galaxy-flow/releases
-
-## 命令行工具
-
-### 核心命令
+```bash
+curl -fsSL https://github.com/galaxy-sec/galaxy-flow/raw/main/install.sh | bash
 ```
+
+默认安装到：`$HOME/bin`
+
+可选参数：
+
+```bash
+# alpha channel
+curl -fsSL https://github.com/galaxy-sec/galaxy-flow/raw/main/install.sh | bash -s -- --channel alpha
+
+# custom install dir
+curl -fsSL https://github.com/galaxy-sec/galaxy-flow/raw/main/install.sh | INSTALL_DIR=/usr/local/bin bash
+```
+
+安装后验证：
+
+```bash
+gprj --version
+gflow --version
+```
+
+如果提示命令不存在，请把安装目录加入 `PATH`（例如 `$HOME/bin`）。
+
+## Quick Start
+
+### Build
+
+```bash
+cargo build --workspace
+```
+
+如果本机启用了 `sccache` 且报错，可临时关闭：
+
+```bash
+RUSTC_WRAPPER='' cargo build --workspace
+```
+
+### Initialize Project
+
+```bash
+gprj init env
+gprj init prj --tpl simple
+```
+
+### Run Flows
+
+```bash
+# 查看工作流信息
 gflow
-gprj
+
+# 运行工作流中的 conf flow
+gflow conf
+
+# 运行管理流中的 conf flow
+gprj adm conf
 ```
 
-#### gflow
-对项目定义的工作流（ work.gxl） 运行
+## CLI Overview
 
-#### gprj
-对项目定义的管理流（ adm.gxl） 运行
+### gflow
 
-![](./images/command-line.jpg)
+```bash
+gflow [OPTIONS] [FLOWS]...
+```
+
+常用参数：`-e/--env`、`-c/--conf`、`-d/--debug`、`--cmd-arg`、`--dryrun`、`--ai`、`--mod_up`
+
+### gprj
+
+```bash
+gprj <COMMAND>
+```
+
+子命令：
+- `init`
+- `update`
+- `adm`
+- `conf`
+- `check`
+- `self`
+
+## Self Update (`gprj self`)
+
+```bash
+gprj self status
+gprj self check --channel <stable|alpha|beta>
+gprj self update --channel <stable|alpha|beta> [--to <version>] [--dry-run] [--force] --yes
+gprj self rollback [--id <backup_id>]
+```
+
+说明：
+- `rollback` 参数是 `--id`，不是 `--backup-id`
+- 更新包下载到临时目录，完成后清理
+- 成功更新后会替换当前安装目录中的 `gprj` 和 `gflow`
+- 备份与状态目录：
+  - `~/.galaxy/self_update/state.json`
+  - `~/.galaxy/self_update/backups/<backup_id>/`
+
+## `gx.patch_file` Notes
+
+- `strict` 默认 `true`，语义是：marker 结构异常即失败
+- 注释/反注释动作要求 `comment_prefix` 非空
+- marker 支持 `@gxl:*`，并兼容 `#@gxl:*`、`//@gxl:*`（匹配 token 本体）
+
+## Docs
+
+- 本仓库使用指南：`docs/guidle/index.md`
+- GXL 语法：`docs/gxl/syntax.md`
+- 内置能力：`docs/gxl/inner/index.md`
+- 结构文档（对齐代码）：`docs/structure/project-structure-actual.md`
+- GitHub Pages: https://galaxy-sec.github.io/gxl-docs/
+- DeepWiki: https://deepwiki.com/galaxy-sec/galaxy-flow
+
+## Release
+
+GitHub Releases:
+- https://github.com/galaxy-sec/galaxy-flow/releases
