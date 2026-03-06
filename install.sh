@@ -9,6 +9,7 @@ DEFAULT_INSTALL_DIR="${HOME}/bin"
 
 CHANNEL="${CHANNEL:-$DEFAULT_CHANNEL}"
 INSTALL_DIR="${INSTALL_DIR:-$DEFAULT_INSTALL_DIR}"
+INSTALL_TMP_DIR=""
 
 usage() {
   cat <<USAGE
@@ -44,6 +45,12 @@ warn() {
 fail() {
   printf '[install][error] %s\n' "$*" >&2
   exit 1
+}
+
+cleanup() {
+  if [[ -n "${INSTALL_TMP_DIR:-}" ]] && [[ -d "${INSTALL_TMP_DIR:-}" ]]; then
+    rm -rf "$INSTALL_TMP_DIR"
+  fi
 }
 
 need_cmd() {
@@ -186,6 +193,8 @@ parse_args() {
 }
 
 main() {
+  trap cleanup EXIT
+
   parse_args "$@"
   CHANNEL="$(printf '%s' "$CHANNEL" | tr '[:upper:]' '[:lower:]')"
 
@@ -198,7 +207,7 @@ main() {
 
   local tmp_dir
   tmp_dir="$(mktemp -d "${TMPDIR:-/tmp}/galaxy-flow-install.XXXXXX")"
-  trap 'rm -rf "$tmp_dir"' EXIT
+  INSTALL_TMP_DIR="$tmp_dir"
 
   local manifest_file
   manifest_file="$tmp_dir/manifest.json"
@@ -247,8 +256,12 @@ main() {
 
   if [[ -n "$asset_sha" ]] && ! is_all_zero_hash "$asset_sha"; then
     local got_sha
+    local got_sha_lc
+    local asset_sha_lc
     got_sha="$(sha256_file "$archive_file")"
-    if [[ "${got_sha,,}" != "${asset_sha,,}" ]]; then
+    got_sha_lc="$(printf '%s' "$got_sha" | tr '[:upper:]' '[:lower:]')"
+    asset_sha_lc="$(printf '%s' "$asset_sha" | tr '[:upper:]' '[:lower:]')"
+    if [[ "$got_sha_lc" != "$asset_sha_lc" ]]; then
       fail "sha256 mismatch: expect=$asset_sha got=$got_sha"
     fi
     log "sha256 verified"
