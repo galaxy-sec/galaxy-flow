@@ -1,17 +1,13 @@
 
 [package]
 
-version = "0.12.2" # @gxl:set(version)
+version = "0.13.0" # @gxl:set(version)
 authors = ["wukong<sec-wukong@outlook.com>"]
 edition = "2024"
 name = "galaxy_flow"
 [[bin]]
-name = "gflow"
-path = "app/gflow/main.rs"
-
-[[bin]]
-name = "gprj"
-path = "app/gprj/main.rs"
+name = "gx"
+path = "app/gx/main.rs"
 
 [workspace]
 members = [".", "crates/orion_parse",  "crates/orion_cond"]

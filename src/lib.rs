@@ -34,6 +34,7 @@ pub mod err;
 pub mod model;
 pub mod ability;
 pub mod calculate;
+pub mod cli;
 pub mod cmd;
 pub mod conf;
 pub mod const_val;
@@ -46,6 +47,7 @@ pub mod parser;
 #[macro_use]
 pub mod util;
 pub mod galaxy;
+pub mod help;
 pub mod infra;
 pub mod runner;
 pub mod self_update;

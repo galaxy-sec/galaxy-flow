@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [v0.12.4] - 2026-03-05
 
 ### Added
-- **Self-update command set**: Added `gprj self status/check/update/rollback/auto` for upgrade management.
+- **Self-update command set**: Added `gx self status/check/update/rollback/auto` for upgrade management.
 - **Self-update runtime module**: Added `src/self_update/*` covering policy/state storage, manifest download, checksum verification, install/rollback, and health check.
 - **Repository manifests**: Added `updates/stable/manifest.json`, `updates/alpha/manifest.json`, `updates/beta/manifest.json`, and `updates/README.md`.
 

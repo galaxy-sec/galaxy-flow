@@ -14,6 +14,8 @@ use orion_error::{ErrorOwe, ErrorWith, ToStructError};
 
 use crate::err::{RunReason, RunResult};
 
+const SELF_UPDATE_BINARIES: &[&str] = &["gx"];
+
 pub fn detect_target_triple() -> RunResult<String> {
     let arch = std::env::consts::ARCH;
     let os = std::env::consts::OS;
@@ -139,50 +141,47 @@ pub fn install_dir_from_current_exe() -> RunResult<PathBuf> {
         .with(("exe", exe.as_path()))
 }
 
-pub fn backup_and_replace(
-    install_dir: &Path,
-    backup_dir: &Path,
-    new_gprj: &Path,
-    new_gflow: &Path,
-) -> RunResult<()> {
+pub fn backup_and_replace(install_dir: &Path, backup_dir: &Path, new_gx: &Path) -> RunResult<()> {
     fs::create_dir_all(backup_dir)
         .owe_res()
         .want("create backup directory")
         .with(("path", backup_dir))?;
-    let gprj_path = install_dir.join(bin_name("gprj"));
-    let gflow_path = install_dir.join(bin_name("gflow"));
+    let new_bins = [new_gx];
 
-    copy_file(&gprj_path, &backup_dir.join(bin_name("gprj")))?;
-    copy_file(&gflow_path, &backup_dir.join(bin_name("gflow")))?;
+    for (idx, bin) in SELF_UPDATE_BINARIES.iter().enumerate() {
+        let live_path = install_dir.join(bin_name(bin));
+        let backup_path = backup_dir.join(bin_name(bin));
+        let stage_path = install_dir.join(format!("{}.new", bin_name(bin)));
 
-    let gprj_stage = install_dir.join(format!("{}.new", bin_name("gprj")));
-    let gflow_stage = install_dir.join(format!("{}.new", bin_name("gflow")));
-    copy_file(new_gprj, &gprj_stage)?;
-    copy_file(new_gflow, &gflow_stage)?;
-
-    replace_file(&gprj_stage, &gprj_path)?;
-    replace_file(&gflow_stage, &gflow_path)?;
+        copy_file(&live_path, &backup_path)?;
+        copy_file(new_bins[idx], &stage_path)?;
+        replace_file(&stage_path, &live_path)?;
+    }
     Ok(())
 }
 
 pub fn rollback(install_dir: &Path, backup_dir: &Path) -> RunResult<()> {
-    let gprj_path = install_dir.join(bin_name("gprj"));
-    let gflow_path = install_dir.join(bin_name("gflow"));
-    let b_gprj = backup_dir.join(bin_name("gprj"));
-    let b_gflow = backup_dir.join(bin_name("gflow"));
-    if !b_gprj.exists() || !b_gflow.exists() {
-        return Err(RunReason::Args("backup is incomplete".into())
-            .to_err()
-            .with_detail(format!("backup_dir={}", backup_dir.display())));
+    for bin in SELF_UPDATE_BINARIES {
+        let live_path = install_dir.join(bin_name(bin));
+        let backup_path = backup_dir.join(bin_name(bin));
+        if !backup_path.exists() {
+            return Err(RunReason::Args("backup is incomplete".into())
+                .to_err()
+                .with_detail(format!(
+                    "backup_dir={}, missing={}",
+                    backup_dir.display(),
+                    backup_path.display()
+                )));
+        }
+        copy_file(&backup_path, &live_path)?;
     }
-    copy_file(&b_gprj, &gprj_path)?;
-    copy_file(&b_gflow, &gflow_path)?;
     Ok(())
 }
 
 pub fn health_check(install_dir: &Path) -> RunResult<()> {
-    exec_version(&install_dir.join(bin_name("gprj")))?;
-    exec_version(&install_dir.join(bin_name("gflow")))?;
+    for bin in SELF_UPDATE_BINARIES {
+        exec_version(&install_dir.join(bin_name(bin)))?;
+    }
     Ok(())
 }
 
@@ -266,7 +265,9 @@ mod tests {
 
     use tempfile::tempdir;
 
-    use super::{find_binary, is_remote_newer, normalize_version, verify_sha256};
+    use super::{
+        SELF_UPDATE_BINARIES, find_binary, is_remote_newer, normalize_version, verify_sha256,
+    };
 
     #[test]
     fn normalize_version_accepts_v_prefix() {
@@ -300,8 +301,13 @@ mod tests {
         let d2 = dir.path().join("b");
         fs::create_dir_all(&d1).expect("mkdir a");
         fs::create_dir_all(&d2).expect("mkdir b");
-        fs::write(d1.join("gprj"), b"x").expect("write gprj a");
-        fs::write(d2.join("gprj"), b"y").expect("write gprj b");
-        assert!(find_binary(dir.path(), "gprj").is_err());
+        fs::write(d1.join("gx"), b"x").expect("write gx a");
+        fs::write(d2.join("gx"), b"y").expect("write gx b");
+        assert!(find_binary(dir.path(), "gx").is_err());
+    }
+
+    #[test]
+    fn self_update_binary_list_includes_gx() {
+        assert_eq!(SELF_UPDATE_BINARIES, ["gx"]);
     }
 }

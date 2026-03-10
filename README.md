@@ -1,14 +1,15 @@
 # Galaxy Flow
 
-Galaxy Flow 是一个面向流程编排的 DSL（GXL），提供两类 CLI：
-- `gflow`：执行工作流（默认读取 `./_gal/work.gxl`）
-- `gprj`：项目管理与管理流执行（默认读取 `./_gal/adm.gxl`）
+Galaxy Flow 是一个面向流程编排的 DSL（GXL），当前以 `gx` 作为统一 CLI 入口：
+- `gx run`：执行工作流（默认读取 `./_gal/work.gxl`）
+- `gx adm`：执行管理流（默认读取 `./_gal/adm.gxl`）
+- `gx init/update/doc/conf/check/self`：项目与工具管理
 
 ## Current Status / 当前状态
 
 - 运行时主链路可用：`parser -> model -> ability -> runner`
 - 内置 `gx.*` 能力可用（见下文）
-- `gprj self` 自更新可用（check/update/rollback）
+- `gx self` 自更新可用（check/update/rollback）
 - AI 能力当前为降级状态：
   - `ai_diagnose` 当前是 no-op（仅提示 `AI diagnose is currently disabled`）
   - `gx.ai_chat` 未作为当前内置 block 能力接入
@@ -55,8 +56,7 @@ curl -fsSL https://github.com/galaxy-sec/get/raw/main/install.sh | INSTALL_DIR=/
 安装后验证：
 
 ```bash
-gprj --version
-gflow --version
+gx --version
 ```
 
 如果提示命令不存在，请把安装目录加入 `PATH`（例如 `$HOME/bin`）。
@@ -78,60 +78,62 @@ RUSTC_WRAPPER='' cargo build --workspace
 ### Initialize Project
 
 ```bash
-gprj init env
-gprj init prj --tpl simple
+gx init env
+gx init prj --tpl simple
 ```
 
 ### Run Flows
 
 ```bash
 # 查看工作流信息
-gflow
+gx run
 
 # 运行工作流中的 conf flow
-gflow conf
+gx run conf
 
 # 运行管理流中的 conf flow
-gprj adm conf
+gx adm conf
 ```
 
 ## CLI Overview
 
-### gflow
+### gx
 
 ```bash
-gflow [OPTIONS] [FLOWS]...
+gx <COMMAND>
 ```
 
-常用参数：`-e/--env`、`-c/--conf`、`-d/--debug`、`--cmd-arg`、`--dryrun`、`--ai`、`--mod_up`
-
-### gprj
-
-```bash
-gprj <COMMAND>
-```
-
-子命令：
+常用子命令：
+- `run`
+- `adm`
 - `init`
 - `update`
-- `adm`
+- `doc`
 - `conf`
 - `check`
 - `self`
 
-## Self Update (`gprj self`)
+### gx run
 
 ```bash
-gprj self status
-gprj self check --channel <stable|alpha|beta>
-gprj self update --channel <stable|alpha|beta> [--to <version>] [--dry-run] [--force] --yes
-gprj self rollback [--id <backup_id>]
+gx run [OPTIONS] [FLOWS]...
+```
+
+常用参数：`-e/--env`、`-c/--conf`、`-d/--debug`、`--cmd-arg`、`--dryrun`、`--ai`、`--mod_up`
+
+## Self Update (`gx self`)
+
+```bash
+gx self status
+gx self check --channel <stable|alpha|beta>
+gx self update --channel <stable|alpha|beta> [--to <version>] [--dry-run] [--force] --yes
+gx self rollback [--id <backup_id>]
 ```
 
 说明：
 - `rollback` 参数是 `--id`，不是 `--backup-id`
 - 更新包下载到临时目录，完成后清理
-- 成功更新后会替换当前安装目录中的 `gprj` 和 `gflow`
+- 成功更新后会替换当前安装目录中的 `gx`
 - 备份与状态目录：
   - `~/.galaxy/self_update/state.json`
   - `~/.galaxy/self_update/backups/<backup_id>/`

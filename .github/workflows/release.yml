@@ -63,14 +63,14 @@ jobs:
         run: cargo build --release --target ${{ matrix.target }}
 
       - name: Show version
-        run: ./target/${{ matrix.target }}/release/gflow --version
+        run: ./target/${{ matrix.target }}/release/gx --version
 
       - name: Verify musl static linking
         if: matrix.target == 'x86_64-unknown-linux-musl'
         run: |
           echo "Verifying musl static linking..."
           echo "Debug info: Testing binary with ldd..."
-          ldd_result=$(ldd ./target/${{ matrix.target }}/release/gflow 2>&1)
+          ldd_result=$(ldd ./target/${{ matrix.target }}/release/gx 2>&1)
           echo "ldd output: $ldd_result"
           if echo "$ldd_result" | grep -q "statically linked"; then
             echo "✓ musl binary verified as statically linked"
@@ -83,8 +83,7 @@ jobs:
       - name: Archive (UNIX)
         run: |
           mkdir -p artifacts
-          cp -av target/${{ matrix.target }}/release/gflow artifacts/
-          cp -av target/${{ matrix.target }}/release/gprj  artifacts/
+          cp -av target/${{ matrix.target }}/release/gx artifacts/
           tar -czf ${{ github.event.repository.name }}-${{ github.ref_name }}-${{ matrix.target }}.tar.gz  artifacts
         if: ${{ ! startsWith(matrix.os, 'windows') }}
 

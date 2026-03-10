@@ -85,7 +85,7 @@ jobs:
         run: |
           echo "Verifying musl static linking..."
           echo "Debug info: Testing binary with ldd..."
-          ldd_result=$(ldd ./target/x86_64-unknown-linux-musl/debug/gflow 2>&1)
+          ldd_result=$(ldd ./target/x86_64-unknown-linux-musl/debug/gx 2>&1)
           echo "ldd output: $ldd_result"
           if echo "$ldd_result" | grep -q "statically linked"; then
             echo "✓ musl binary verified as statically linked"

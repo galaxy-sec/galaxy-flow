@@ -274,28 +274,24 @@ main() {
   mkdir -p "$unpack_dir"
   tar -xzf "$archive_file" -C "$unpack_dir"
 
-  local gprj_src gflow_src
-  gprj_src="$(find "$unpack_dir" -type f -name gprj | head -n 1 || true)"
-  gflow_src="$(find "$unpack_dir" -type f -name gflow | head -n 1 || true)"
+  local gx_src
+  gx_src="$(find "$unpack_dir" -type f -name gx | head -n 1 || true)"
 
-  [[ -n "$gprj_src" ]] || fail "gprj binary not found in archive"
-  [[ -n "$gflow_src" ]] || fail "gflow binary not found in archive"
+  [[ -n "$gx_src" ]] || fail "gx binary not found in archive"
 
   mkdir -p "$INSTALL_DIR"
   [[ -w "$INSTALL_DIR" ]] || fail "install dir is not writable: $INSTALL_DIR"
 
-  cp "$gprj_src" "$INSTALL_DIR/gprj"
-  cp "$gflow_src" "$INSTALL_DIR/gflow"
-  chmod +x "$INSTALL_DIR/gprj" "$INSTALL_DIR/gflow"
+  cp "$gx_src" "$INSTALL_DIR/gx"
+  chmod +x "$INSTALL_DIR/gx"
 
   log "installed to: $INSTALL_DIR"
 
-  if ! command -v gprj >/dev/null 2>&1 || ! command -v gflow >/dev/null 2>&1; then
+  if ! command -v gx >/dev/null 2>&1; then
     warn "'$INSTALL_DIR' is not in PATH. add it to your shell profile."
   fi
 
-  "$INSTALL_DIR/gprj" --version || true
-  "$INSTALL_DIR/gflow" --version || true
+  "$INSTALL_DIR/gx" --version || true
 
   log "done"
 }

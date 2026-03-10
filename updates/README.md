@@ -1,6 +1,6 @@
 # Self-Update Manifests
 
-This directory stores release manifests for `gprj self` update checks.
+This directory stores release manifests for `gx self` update checks.
 
 - `stable/manifest.json`: latest stable release
 - `alpha/manifest.json`: latest alpha release

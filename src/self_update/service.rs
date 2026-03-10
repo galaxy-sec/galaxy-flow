@@ -21,6 +21,7 @@ const MANIFEST_BASE_URL_ALPHA: &str =
     "https://raw.githubusercontent.com/galaxy-sec/galaxy-flow/alpha/updates/alpha";
 const MANIFEST_BASE_URL_BETA: &str =
     "https://raw.githubusercontent.com/galaxy-sec/galaxy-flow/beta/updates/beta";
+const SELF_UPDATE_BINARIES: &[&str] = &["gx"];
 
 #[derive(Clone, Debug, Default)]
 pub struct CheckRequest {
@@ -287,8 +288,8 @@ impl SelfUpdateService {
                 &e.to_string(),
             );
         })?;
-        let new_gprj =
-            installer::find_binary(&unpack_dir, bin_name("gprj").as_str()).inspect_err(|e| {
+        let new_gx =
+            installer::find_binary(&unpack_dir, bin_name("gx").as_str()).inspect_err(|e| {
                 let _ = record_failure_state(
                     &self.storage,
                     &mut state,
@@ -298,18 +299,6 @@ impl SelfUpdateService {
                     &e.to_string(),
                 );
             })?;
-        let new_gflow = installer::find_binary(&unpack_dir, bin_name("gflow").as_str())
-            .inspect_err(|e| {
-                let _ = record_failure_state(
-                    &self.storage,
-                    &mut state,
-                    channel,
-                    Some(remote.clone()),
-                    "update_failed",
-                    &e.to_string(),
-                );
-            })?;
-
         let install_dir = installer::install_dir_from_current_exe().inspect_err(|e| {
             let _ = record_failure_state(
                 &self.storage,
@@ -335,9 +324,8 @@ impl SelfUpdateService {
                 );
             })?;
 
-        let install_res =
-            installer::backup_and_replace(&install_dir, &backup_dir, &new_gprj, &new_gflow)
-                .and_then(|_| installer::health_check(&install_dir));
+        let install_res = installer::backup_and_replace(&install_dir, &backup_dir, &new_gx)
+            .and_then(|_| installer::health_check(&install_dir));
 
         if let Err(e) = install_res {
             let _ = installer::rollback(&install_dir, &backup_dir);
@@ -389,7 +377,7 @@ impl SelfUpdateService {
         installer::health_check(&install_dir).inspect_err(|e| {
             let _ = record_rollback_failure_state(&self.storage, &mut state, &e.to_string());
         })?;
-        let restored_version = read_installed_version(&install_dir.join(bin_name("gprj")));
+        let restored_version = read_primary_installed_version(&install_dir);
         state.installed_at = Some(now_text());
         match restored_version {
             Ok(v) => {
@@ -454,6 +442,18 @@ fn bin_name(base: &str) -> String {
     } else {
         base.to_string()
     }
+}
+
+fn read_primary_installed_version(install_dir: &Path) -> RunResult<String> {
+    for bin in SELF_UPDATE_BINARIES {
+        let path = install_dir.join(bin_name(bin));
+        if path.exists() {
+            return read_installed_version(&path);
+        }
+    }
+    Err(RunReason::Exec("no installed binary found".into())
+        .to_err()
+        .with_detail(format!("install_dir={}", install_dir.display())))
 }
 
 fn temp_dir(prefix: &str) -> PathBuf {
@@ -598,7 +598,10 @@ fn _asset_for_target<'a>(
 
 #[cfg(test)]
 mod tests {
-    use super::{ReleaseChannel, manifest_base_url, parse_version_from_text, select_backup_id};
+    use super::{
+        ReleaseChannel, SELF_UPDATE_BINARIES, manifest_base_url, parse_version_from_text,
+        select_backup_id,
+    };
 
     #[test]
     fn manifest_base_url_matches_channel_branch() {
@@ -633,13 +636,14 @@ mod tests {
     #[test]
     fn parse_version_from_output_text() {
         assert_eq!(
-            parse_version_from_text("gprj 0.12.4"),
+            parse_version_from_text("gx 0.12.4"),
             Some("0.12.4".to_string())
         );
-        assert_eq!(
-            parse_version_from_text("gflow version v0.12.5-pre.1"),
-            Some("0.12.5-pre.1".to_string())
-        );
         assert_eq!(parse_version_from_text("version: unknown"), None);
+    }
+
+    #[test]
+    fn self_update_primary_binary_prefers_gx() {
+        assert_eq!(SELF_UPDATE_BINARIES.first().copied(), Some("gx"));
     }
 }

@@ -11,7 +11,7 @@
   - detached HEAD 或非 git 仓库时值为 `UNDEFIN`。
 
 - `GXL_START_ROOT`
-  - 启动 `gflow/gprj` 时的工作目录。
+  - 启动 `gx` 时的工作目录。
 
 - `GXL_CUR_DIR`
   - 当前执行目录；在 `gx.run` 切换目录时可能与 `GXL_START_ROOT` 不同。

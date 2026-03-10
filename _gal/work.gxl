@@ -1,4 +1,4 @@
-extern mod head { path = "${GXL_START_ROOT}/_gal/"; }
+extern mod head { path = "./_gal/"; }
 
 mod envs  {
    env _common  : rust_env.init   {
@@ -67,7 +67,6 @@ mod main  {
 
     AP = "${ENV_AFT_PREFIX}" ;
     gx.cmd (  "mkdir -p ${MAIN_HOME_BIN}" );
-    gx.cmd (  "cp ${MAIN_BLD_BINS}/gflow ${MAIN_HOME_BIN}/${AP}flow"  );
-    gx.cmd (  "cp ${MAIN_BLD_BINS}/gprj ${MAIN_HOME_BIN}/${AP}prj"  );
+    gx.cmd (  "cp ${MAIN_BLD_BINS}/gx ${MAIN_HOME_BIN}/${AP}x"  );
   }
 }

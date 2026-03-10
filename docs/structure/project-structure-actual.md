@@ -7,8 +7,9 @@
 ```text
 galaxy-flow/
 ├── app/
-│   ├── gflow/main.rs        # gflow CLI 入口
-│   └── gprj/{main,args}.rs  # gprj CLI 入口与参数
+│   └── gx/
+│       ├── main.rs          # gx CLI 入口
+│       └── init/            # 项目初始化模板资源
 ├── src/
 │   ├── ability/             # GXL abilities 实现
 │   ├── calculate/           # 表达式与条件计算

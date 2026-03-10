@@ -8,7 +8,7 @@ Galaxy Flow项目所有重要变更将记录在此文件中。
 ## [v0.12.4] - 2026-03-05
 
 ### 新增
-- **自更新命令集**：新增 `gprj self status/check/update/rollback/auto`。
+- **自更新命令集**：新增 `gx self status/check/update/rollback/auto`。
 - **自更新核心模块**：新增 `src/self_update/*`，覆盖策略/状态存储、manifest 下载、sha256 校验、安装回滚与健康检查。
 - **仓库内更新清单**：新增 `updates/stable/manifest.json`、`updates/alpha/manifest.json`、`updates/beta/manifest.json` 及 `updates/README.md`。
 

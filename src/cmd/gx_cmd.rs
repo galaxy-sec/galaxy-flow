@@ -1,18 +1,21 @@
-//use crate::vault::{SysCmd, VaultCmd};
-use clap::ArgAction;
-use clap::Parser;
+use clap::{ArgAction, Args, Parser, Subcommand};
 use derive_getters::Getters;
-use galaxy_flow::cmd::gxl_cmd::GFlowCmd;
 
-#[derive(Debug, Parser, Clone)] // requires `derive` feature
-#[command(name = "gprj adm")]
-#[command(version, about)]
-pub enum GxAdmCmd {
+use crate::cmd::gxl_cmd::GFlowCmd;
+
+#[derive(Debug, Parser, Clone)]
+#[command(name = "gx")]
+#[command(version, about = "Galaxy Flow unified CLI")]
+#[command(disable_help_subcommand = true)]
+pub enum GxCmd {
+    Run(GFlowCmd),
+    Adm(GFlowCmd),
     #[command(subcommand)]
     Init(InitCmd),
     #[command(subcommand)]
     Update(UpdateCmd),
-    Adm(GFlowCmd),
+    #[command(name = "doc", alias = "docs")]
+    Doc(DocArgs),
     #[command(subcommand)]
     Conf(ConfCmd),
     Check,
@@ -24,11 +27,12 @@ pub enum GxAdmCmd {
 pub enum InitCmd {
     /// init galaxy env
     Env,
-    /// init project with local mod ;
+    /// init project with local mod
     PrjWithLocal,
-    /// init project with remote mod ;
+    /// init project with remote mod
     Prj(InitArgs),
 }
+
 #[derive(Debug, Subcommand, Clone)]
 pub enum UpdateCmd {
     Mod(PrjArgs),
@@ -37,6 +41,13 @@ pub enum UpdateCmd {
 #[derive(Debug, Subcommand, Clone)]
 pub enum ConfCmd {
     Init(ConfInitArgs),
+}
+
+#[derive(Debug, Args, Clone, Getters)]
+pub struct DocArgs {
+    #[arg(long, action = ArgAction::SetTrue, default_value = "false")]
+    pub markdown: bool,
+    pub topic: Option<String>,
 }
 
 #[derive(Debug, Subcommand, Clone)]
@@ -75,31 +86,12 @@ pub struct SelfRollbackArgs {
     pub backup_id: Option<String>,
 }
 
-#[derive(Debug, Args, Getters)]
-pub struct SpecArgs {
-    #[arg(short, long)]
-    pub(crate) name: String,
-}
-#[derive(Debug, Args, Getters)]
-pub struct SySpecArgs {
-    #[arg(short, long)]
-    pub(crate) repo: String,
-}
-
-#[derive(Debug, Args, Getters)]
-pub struct SysInsArgs {
-    #[arg(short, long)]
-    pub(crate) repo: String,
-    #[arg(short, long)]
-    pub(crate) path: String,
-}
-
 #[derive(Debug, Args, Getters, Clone)]
 pub struct InitArgs {
-    /// chose init tpl  from rg-tpl repo. eg: --tpl open_pages , --tpl rust_prj
+    /// chose init tpl from rg-tpl repo. eg: --tpl open_pages
     #[arg(short, long, default_value = "simple")]
     pub(crate) tpl: String,
-    /// branch or tag for rg-tpl repo. eg: --tag  alpha|develop|beta|release/1.0
+    /// branch or tag for rg-tpl repo
     #[arg(short, long)]
     pub(crate) branch: Option<String>,
 
@@ -139,8 +131,35 @@ pub struct PrjArgs {
     pub cmd_print: bool,
 }
 
-#[derive(Debug, Args)]
-pub struct FmtArgs {
-    #[arg(short, long, default_value = "info")]
-    pub(crate) fmt: String,
+#[cfg(test)]
+mod tests {
+    use clap::Parser;
+
+    use super::GxCmd;
+
+    #[test]
+    fn parse_doc_topic() {
+        let cmd = GxCmd::try_parse_from(["gx", "doc", "gx.cmd"]).expect("doc command should parse");
+
+        match cmd {
+            GxCmd::Doc(args) => {
+                assert_eq!(args.topic.as_deref(), Some("gx.cmd"));
+            }
+            other => panic!("unexpected command: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn parse_doc_markdown() {
+        let cmd = GxCmd::try_parse_from(["gx", "doc", "--markdown", "gx.cmd"])
+            .expect("doc markdown command should parse");
+
+        match cmd {
+            GxCmd::Doc(args) => {
+                assert!(args.markdown);
+                assert_eq!(args.topic.as_deref(), Some("gx.cmd"));
+            }
+            other => panic!("unexpected command: {other:?}"),
+        }
+    }
 }

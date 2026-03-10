@@ -2,8 +2,8 @@
 set -euo pipefail
 
 # End-to-end smoke test for:
-#   gprj self update --force --yes
-#   gprj self rollback --id <id>
+#   gx self update --force --yes
+#   gx self rollback --id <id>
 #
 # Defaults:
 #   - run copied binaries from target/debug in a temp install dir
@@ -11,22 +11,15 @@ set -euo pipefail
 #   - channel: alpha
 #
 # Usage:
-#   tests/self_update_update_rollback.sh [channel] [gprj_path]
+#   tests/self_update_update_rollback.sh [channel] [gx_path]
 # Example:
-#   tests/self_update_update_rollback.sh alpha ./target/debug/gprj
+#   tests/self_update_update_rollback.sh alpha ./target/debug/gx
 
 CHANNEL="${1:-alpha}"
-GPRJ_PATH="${2:-./target/debug/gprj}"
+GX_PATH="${2:-./target/debug/gx}"
 
-if [[ ! -x "${GPRJ_PATH}" ]]; then
-  echo "gprj not executable: ${GPRJ_PATH}" >&2
-  exit 1
-fi
-
-GPRJ_DIR="$(cd "$(dirname "${GPRJ_PATH}")" && pwd)"
-GFLOW_PATH="${GPRJ_DIR}/gflow"
-if [[ ! -x "${GFLOW_PATH}" ]]; then
-  echo "gflow not executable (must be sibling of gprj): ${GFLOW_PATH}" >&2
+if [[ ! -x "${GX_PATH}" ]]; then
+  echo "gx not executable: ${GX_PATH}" >&2
   exit 1
 fi
 
@@ -40,16 +33,15 @@ cleanup() {
 }
 trap cleanup EXIT
 
-cp "${GPRJ_PATH}" "${INSTALL_DIR}/gprj"
-cp "${GFLOW_PATH}" "${INSTALL_DIR}/gflow"
-chmod +x "${INSTALL_DIR}/gprj" "${INSTALL_DIR}/gflow"
+cp "${GX_PATH}" "${INSTALL_DIR}/gx"
+chmod +x "${INSTALL_DIR}/gx"
 
 echo "[1/5] status(before)"
-HOME="${HOME_DIR}" "${INSTALL_DIR}/gprj" self status
+HOME="${HOME_DIR}" "${INSTALL_DIR}/gx" self status
 
 echo "[2/5] update --channel ${CHANNEL} --force --yes"
 UPDATE_OUT="$(
-  HOME="${HOME_DIR}" "${INSTALL_DIR}/gprj" self update --channel "${CHANNEL}" --force --yes
+  HOME="${HOME_DIR}" "${INSTALL_DIR}/gx" self update --channel "${CHANNEL}" --force --yes
 )"
 echo "${UPDATE_OUT}"
 
@@ -66,13 +58,13 @@ fi
 
 echo "[3/5] rollback --id ${BACKUP_ID}"
 if ROLLBACK_OUT="$(
-  HOME="${HOME_DIR}" "${INSTALL_DIR}/gprj" self rollback --id "${BACKUP_ID}"
+  HOME="${HOME_DIR}" "${INSTALL_DIR}/gx" self rollback --id "${BACKUP_ID}"
 )"; then
   :
 else
   # Compatibility fallback for older/newer CLI variants.
   ROLLBACK_OUT="$(
-    HOME="${HOME_DIR}" "${INSTALL_DIR}/gprj" self rollback --backup-id "${BACKUP_ID}"
+    HOME="${HOME_DIR}" "${INSTALL_DIR}/gx" self rollback --backup-id "${BACKUP_ID}"
   )"
 fi
 echo "${ROLLBACK_OUT}"
@@ -83,7 +75,7 @@ if ! grep -q "^rollback=true$" <<<"${ROLLBACK_OUT}"; then
 fi
 
 echo "[4/5] status(after)"
-HOME="${HOME_DIR}" "${INSTALL_DIR}/gprj" self status
+HOME="${HOME_DIR}" "${INSTALL_DIR}/gx" self status
 
 echo "[5/5] PASS"
 echo "work_dir=${WORK_DIR}"

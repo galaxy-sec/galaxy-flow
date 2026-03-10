@@ -44,7 +44,7 @@ impl GxlRunner {
             if !Path::new(conf.as_str()).exists() {
                 return Err(RunReason::from_conf()
                     .to_err()
-                    .with_detail("gflow conf not exists"))
+                    .with_detail("gx run conf not exists"))
                 .with(("conf", conf.clone()));
             }
 
@@ -63,7 +63,7 @@ impl GxlRunner {
         }
         Err(RunReason::from_conf()
             .to_err()
-            .with_detail("gflow exec fail!"))
+            .with_detail("gx run exec fail!"))
     }
     pub async fn info(conf: Option<String>, vars: VarSpace) -> RunResult<()> {
         if let Some(ref conf) = conf {
@@ -71,7 +71,7 @@ impl GxlRunner {
             if !Path::new(conf.as_str()).exists() {
                 return Err(RunReason::from_conf()
                     .to_err()
-                    .with_detail("gflow conf not exists"))
+                    .with_detail("gx run conf not exists"))
                 .with(("conf", conf.clone()));
             }
             let loader = GxLoader::new();
@@ -86,7 +86,7 @@ impl GxlRunner {
         } else {
             Err(RunReason::from_conf()
                 .to_err()
-                .with_detail("gflow miss gxl file"))
+                .with_detail("gx run missing gxl file"))
         }
     }
 }

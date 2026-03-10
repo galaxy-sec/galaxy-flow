@@ -9,9 +9,10 @@
 
 ## 1. 核心概念
 
-Galaxy Flow 由两部分组成：
-- `gflow`：执行工作流（默认 `./_gal/work.gxl`）
-- `gprj`：项目管理与管理流执行（默认 `./_gal/adm.gxl`）
+Galaxy Flow 现在以 `gx` 作为统一 CLI 入口：
+- `gx run`：执行工作流（默认 `./_gal/work.gxl`）
+- `gx adm`：执行管理流（默认 `./_gal/adm.gxl`）
+- `gx init/update/doc/conf/check/self`：项目与工具链管理
 
 GXL 的核心结构：
 - `mod`：模块
@@ -23,8 +24,8 @@ GXL 的核心结构：
 ## 2. 目录与运行模型
 
 典型项目目录：
-- `./_gal/work.gxl`：工作流配置（给 `gflow`）
-- `./_gal/adm.gxl`：管理流配置（给 `gprj adm`）
+- `./_gal/work.gxl`：工作流配置（给 `gx run`）
+- `./_gal/adm.gxl`：管理流配置（给 `gx adm`）
 - `./_gal/mods/`：本地模块（可选）
 - `updates/{stable|alpha|beta}/manifest.json`：自更新清单
 
@@ -39,27 +40,27 @@ GXL 的核心结构：
 ### 3.1 初始化环境与项目
 
 ```bash
-gprj init env
-gprj init prj --tpl simple
+gx init env
+gx init prj --tpl simple
 ```
 
 ### 3.2 查看配置与运行
 
 ```bash
 # 查看工作流信息（不传 flow 时展示信息）
-gflow
+gx run
 
 # 运行指定 flow
-gflow conf
+gx run conf
 
 # 运行管理流
-gprj adm conf
+gx adm conf
 ```
 
 ### 3.3 更新模块
 
 ```bash
-gprj update mod
+gx update mod
 ```
 
 ## 4. GXL 写作最小模板
@@ -106,25 +107,25 @@ mod demo {
 
 ## 6. CLI 文档入口
 
-- `gflow`：`docs/guidle/cli/gflow.md`
-- `gprj`：`docs/guidle/cli/gprj.md`
+- `gx`：`docs/guidle/cli/gx.md`
+- 快速文档：`gx doc gx.cmd`、`gx doc gx.patch_file`
 
-## 7. 自更新工作流（gprj self）
+## 7. 自更新工作流（gx self）
 
 当前模型是“手动触发式”：
-- 检查更新：`gprj self check --channel <stable|alpha|beta>`
-- 执行更新：`gprj self update --channel <channel> --yes`
-- 回滚：`gprj self rollback --id <backup_id>`
+- 检查更新：`gx self check --channel <stable|alpha|beta>`
+- 执行更新：`gx self update --channel <channel> --yes`
+- 回滚：`gx self rollback --id <backup_id>`
 
 说明：
 - 下载包在临时目录，完成后清理
-- 最终替换当前安装目录中的 `gprj/gflow`
+- 最终替换当前安装目录中的 `gx`
 - 备份目录：`~/.galaxy/self_update/backups/<backup_id>/`
 
 ## 8. 推荐学习路径
 
-1. 先跑通 `gprj init` + `gflow conf`
+1. 先跑通 `gx init` + `gx run conf`
 2. 学会 `env + flow + gx.echo/gx.cmd`
 3. 加入模板与断言（`gx.tpl`、`gx.assert`）
 4. 引入 `gx.patch_file` 做配置变更自动化
-5. 使用 `gprj self` 管理版本升级与回滚
+5. 使用 `gx self` 管理版本升级与回滚
