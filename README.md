@@ -47,7 +47,7 @@ curl -fsSL https://github.com/galaxy-sec/get/raw/main/install.sh | bash
 
 ```bash
 # alpha channel
-curl -fsSL https://github.com/galaxy-sec/get/raw/main/install.sh | bash -s -- --channel alpha
+curl -fsSL https://github.com/galaxy-sec/get/raw/alpha/install.sh | bash -s -- --channel alpha
 
 # custom install dir
 curl -fsSL https://github.com/galaxy-sec/get/raw/main/install.sh | INSTALL_DIR=/usr/local/bin bash
