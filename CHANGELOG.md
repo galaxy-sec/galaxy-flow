@@ -5,6 +5,25 @@ All notable changes to the Galaxy Flow project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.13.0] - 2026-03-10
+
+### Added
+- **Unified `gx` CLI**: Added `gx` as the sole shipped command entrypoint, covering `run`, `adm`, `init`, `update`, `doc`, `conf`, `check`, and `self`.
+- **Compact aliases**: Added `grun` -> `gx run` and `gadm` -> `gx adm` alias-based entry support.
+- **CLI doc renderer**: Added `gx doc` topic indexing and terminal-friendly markdown rendering with `--markdown` raw output support.
+
+### Changed
+- **Project init assets**: Moved local init templates from `app/gprj/init` to `app/gx/init`.
+- **Release packaging**: Release workflow, installer, and self-update now package and verify only the `gx` binary.
+- **Workspace docs**: Updated README and guide docs to present `gx` as the default and only binary entrypoint.
+
+### Removed
+- **Legacy binaries**: Removed shipped `gflow` and `gprj` binaries from the workspace and release artifacts.
+- **Legacy CLI docs**: Removed dedicated `gflow` and `gprj` usage pages from the guide.
+
+### Fixed
+- **Local workspace bootstrap**: Changed the repository `_gal/work.gxl` extern path to use `./_gal/` instead of `${GXL_START_ROOT}`, avoiding parse failures when `GXL_START_ROOT` is unavailable.
+
 ## [v0.12.4] - 2026-03-05
 
 ### Added

@@ -5,6 +5,25 @@ Galaxy Flow项目所有重要变更将记录在此文件中。
 本格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/) 标准，
 本项目遵循 [语义化版本2.0.0](https://semver.org/lang/zh-CN/spec/v2.0.0.html) 规范。
 
+## [v0.13.0] - 2026-03-10
+
+### 新增
+- **统一 `gx` CLI**：新增 `gx` 作为唯一发布命令入口，统一承载 `run`、`adm`、`init`、`update`、`doc`、`conf`、`check`、`self`。
+- **短别名入口**：新增 `grun` -> `gx run` 与 `gadm` -> `gx adm` 的别名启动支持。
+- **命令内文档阅读**：新增 `gx doc` 主题索引与终端友好的 markdown 渲染，`--markdown` 可输出原始 markdown。
+
+### 变更
+- **项目初始化资源**：本地初始化模板目录从 `app/gprj/init` 迁移到 `app/gx/init`。
+- **发布链路**：release workflow、安装脚本、自更新流程改为只打包和校验 `gx` 二进制。
+- **文档入口**：README 与 guide 文档统一改为 `gx` 视角，不再以旧二进制作为主入口说明。
+
+### 移除
+- **旧命令二进制**：移除 `gflow` 与 `gprj` 的工作区二进制定义及发布产物。
+- **旧 CLI 文档页**：移除 guide 中独立的 `gflow` / `gprj` 使用文档。
+
+### 修复
+- **仓库自举解析**：将仓库 `_gal/work.gxl` 中的 extern 路径改为 `./_gal/`，避免 `GXL_START_ROOT` 缺失时触发解析失败。
+
 ## [v0.12.4] - 2026-03-05
 
 ### 新增
