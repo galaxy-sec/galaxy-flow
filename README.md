@@ -3,7 +3,7 @@
 Galaxy Flow 是一个面向流程编排的 DSL（GXL），当前以 `gx` 作为统一 CLI 入口：
 - `gx run`：执行工作流（默认读取 `./_gal/work.gxl`）
 - `gx adm`：执行管理流（默认读取 `./_gal/adm.gxl`）
-- `gx init/update/doc/conf/check/self`：项目与工具管理
+- `gx init/mod/doc/check/self`：项目与工具管理
 
 ## Current Status / 当前状态
 
@@ -79,8 +79,10 @@ RUSTC_WRAPPER='' cargo build --workspace
 
 ```bash
 gx init env
-gx init prj --tpl simple
+gx init project --tpl simple
 ```
+
+其中 `gx init env` 会初始化 `~/.galaxy/` 下的用户级运行配置，包括 `conf.toml`。
 
 ### Run Flows
 
@@ -107,9 +109,8 @@ gx <COMMAND>
 - `run`
 - `adm`
 - `init`
-- `update`
+- `mod`
 - `doc`
-- `conf`
 - `check`
 - `self`
 
@@ -119,7 +120,7 @@ gx <COMMAND>
 gx run [OPTIONS] [FLOWS]...
 ```
 
-常用参数：`-e/--env`、`-c/--conf`、`-d/--debug`、`--cmd-arg`、`--dryrun`、`--ai`、`--mod_up`
+常用参数：`-e/--env`、`-c/--conf`、`-d/--debug`、`--cmd-arg`、`--dryrun`、`--ai`
 
 ## Self Update (`gx self`)
 

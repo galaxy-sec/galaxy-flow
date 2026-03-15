@@ -15,18 +15,19 @@ gx <COMMAND>
 - `run`：执行工作流，默认配置 `./_gal/work.gxl`
 - `adm`：执行管理流，默认配置 `./_gal/adm.gxl`
 - `init`：初始化环境或项目
-- `update`：更新项目模块
+- `mod`：项目模块管理
 - `doc`：快速查看 GXL/CLI 文档主题
-- `conf`：初始化本地配置
 - `check`：检查当前运行环境
 - `self`：自更新（status/check/update/rollback）
+
+`gx init env` 会初始化用户级运行环境，包括 `~/.galaxy/conf.toml` 与网络访问控制配置。
 
 ## 常用示例
 
 ```bash
 # 初始化运行环境与项目
 gx init env
-gx init prj --tpl simple
+gx init project --tpl simple
 
 # 运行工作流
 gx run conf
@@ -40,7 +41,7 @@ gx doc gx.cmd
 gx doc --markdown gx.cmd
 
 # 更新模块
-gx update mod
+gx mod update
 ```
 
 ## 兼容入口

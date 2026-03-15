@@ -12,7 +12,7 @@
 Galaxy Flow 现在以 `gx` 作为统一 CLI 入口：
 - `gx run`：执行工作流（默认 `./_gal/work.gxl`）
 - `gx adm`：执行管理流（默认 `./_gal/adm.gxl`）
-- `gx init/update/doc/conf/check/self`：项目与工具链管理
+- `gx init/mod/doc/check/self`：项目与工具链管理
 
 GXL 的核心结构：
 - `mod`：模块
@@ -41,7 +41,7 @@ GXL 的核心结构：
 
 ```bash
 gx init env
-gx init prj --tpl simple
+gx init project --tpl simple
 ```
 
 ### 3.2 查看配置与运行
@@ -60,7 +60,7 @@ gx adm conf
 ### 3.3 更新模块
 
 ```bash
-gx update mod
+gx mod update
 ```
 
 ## 4. GXL 写作最小模板
