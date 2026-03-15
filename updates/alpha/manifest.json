@@ -1,21 +1,21 @@
 {
-  "version": "0.13.1-alpha",
+  "version": "0.13.2-alpha",
   "channel": "alpha",
-  "published_at": "2026-03-15T07:16:11Z",
-  "git_ref": "v0.13.1-alpha",
-  "git_commit": "8e66013247021891eae802fce61850716278a44c",
+  "published_at": "2026-03-15T07:54:00Z",
+  "git_ref": "v0.13.2-alpha",
+  "git_commit": "599534922aadcd69a01d789ea41409c5ee39a0eb",
   "assets": {
     "aarch64-apple-darwin": {
-      "url": "https://github.com/galaxy-sec/galaxy-flow/releases/download/v0.13.1-alpha/galaxy-flow-v0.13.1-alpha-aarch64-apple-darwin.tar.gz",
-      "sha256": "dc095d6f78a334b88b8300e473d3d6eda7a97d3fb6a7c4bad914361278ea1798"
+      "url": "https://github.com/galaxy-sec/galaxy-flow/releases/download/v0.13.2-alpha/galaxy-flow-v0.13.2-alpha-aarch64-apple-darwin.tar.gz",
+      "sha256": "818dda2abd8bc3da29faed46635474ce7a7891a0588be89f3ed29f22818db90d"
     },
     "x86_64-unknown-linux-gnu": {
-      "url": "https://github.com/galaxy-sec/galaxy-flow/releases/download/v0.13.1-alpha/galaxy-flow-v0.13.1-alpha-x86_64-unknown-linux-gnu.tar.gz",
-      "sha256": "815ae548edf59209ef103284061e24f3d633f7dd067b6057996fb9a557cce760"
+      "url": "https://github.com/galaxy-sec/galaxy-flow/releases/download/v0.13.2-alpha/galaxy-flow-v0.13.2-alpha-x86_64-unknown-linux-gnu.tar.gz",
+      "sha256": "e851a026c22a772fcc75f9db1ec4acaa5a5ed8a0c3b8a99a00b937e2c5cae25e"
     },
     "x86_64-unknown-linux-musl": {
-      "url": "https://github.com/galaxy-sec/galaxy-flow/releases/download/v0.13.1-alpha/galaxy-flow-v0.13.1-alpha-x86_64-unknown-linux-musl.tar.gz",
-      "sha256": "17389077e339466a98ff613e8e65e4661fb3959273346d420a76c1ef171847ac"
+      "url": "https://github.com/galaxy-sec/galaxy-flow/releases/download/v0.13.2-alpha/galaxy-flow-v0.13.2-alpha-x86_64-unknown-linux-musl.tar.gz",
+      "sha256": "a28e5014d920adb68990ef30b1a54e950bc692cfe2dca317ace9a36e7bdce5ba"
     }
   }
 }
