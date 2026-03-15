@@ -87,6 +87,39 @@ fn mod_update_loads_user_conf() {
 }
 
 #[test]
+fn mod_update_reports_progress_to_stderr_only() {
+    let temp_workdir = tempdir().expect("temp workdir should be created");
+    write_minimal_project(temp_workdir.path());
+
+    let output = Command::new(gx_bin())
+        .current_dir(temp_workdir.path())
+        .args(["mod", "update"])
+        .output()
+        .expect("gx mod update should run");
+
+    assert!(output.status.success(), "gx mod update should succeed");
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(
+        stdout.trim().is_empty(),
+        "gx mod update should keep stdout empty, got: {stdout}"
+    );
+    assert!(
+        stderr.contains("no git extern modules to update in ./_gal/work.gxl"),
+        "gx mod update should report work config summary to stderr, got: {stderr}"
+    );
+    assert!(
+        stderr.contains("no git extern modules to update in ./_gal/adm.gxl"),
+        "gx mod update should report adm config summary to stderr, got: {stderr}"
+    );
+    assert!(
+        stderr.contains("project modules updated: no git extern modules found"),
+        "gx mod update should report completion to stderr, got: {stderr}"
+    );
+}
+
+#[test]
 fn quiet_run_keeps_results_but_not_executor_explanations() {
     let output = Command::new(gx_bin())
         .current_dir(env!("CARGO_MANIFEST_DIR"))

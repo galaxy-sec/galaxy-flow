@@ -3,7 +3,7 @@ use std::path::Path;
 
 use clap::Parser;
 use orion_accessor::addr::GitRepository;
-use orion_error::{ErrorConv, ToStructError};
+use orion_error::{ErrorConv, ToStructError, UvsFrom};
 
 use crate::GxLoader;
 use crate::cmd::gx_cmd::{AdmCmd, DocArgs, GxCmd, InitCmd, ModCmd, RunCmd, SelfCmd};
@@ -15,6 +15,8 @@ use crate::execution::VarSpace;
 use crate::galaxy::Galaxy;
 use crate::help;
 use crate::infra::configure_run_logging;
+use crate::parser::abilities::addr::gal_extern_mod;
+use crate::parser::externs::{DslStatus, ExternParser};
 use crate::runner::GxlRunner;
 use crate::self_update::{CheckRequest, ReleaseChannel, SelfUpdateService, UpdateRequest};
 use crate::traits::Setter;
@@ -204,9 +206,28 @@ async fn do_mod_cmd(load: &mut GxLoader, mod_cmd: ModCmd) -> RunResult<()> {
             configure_cli_runtime(args.log.clone(), args.debug);
 
             let vars = VarSpace::sys_init().err_conv()?;
+            let confs = collect_mod_update_inputs()?;
+            let mut updated_mods = Vec::new();
 
-            for conf in collect_mod_update_inputs()? {
+            for conf in confs {
+                let conf_mods = collect_git_extern_mod_names(conf)?;
+                if conf_mods.is_empty() {
+                    eprintln!("no git extern modules to update in {conf}");
+                } else {
+                    eprintln!(
+                        "updating git extern modules from {conf}: {}",
+                        conf_mods.join(", ")
+                    );
+                    updated_mods.extend(conf_mods);
+                }
                 load.parse_file(conf, true, &vars).await?;
+            }
+            updated_mods.sort();
+            updated_mods.dedup();
+            if updated_mods.is_empty() {
+                eprintln!("project modules updated: no git extern modules found");
+            } else {
+                eprintln!("project modules updated: {}", updated_mods.join(", "));
             }
         }
     }
@@ -279,6 +300,38 @@ fn collect_mod_update_inputs() -> RunResult<Vec<&'static str>> {
     }
 
     Ok(inputs)
+}
+
+fn collect_git_extern_mod_names(conf: &str) -> RunResult<Vec<String>> {
+    let code = std::fs::read_to_string(conf)
+        .map_err(|e| RunReason::from_conf().to_err().with_detail(e.to_string()))?;
+    collect_git_extern_mod_names_from_code(code.as_str())
+}
+
+fn collect_git_extern_mod_names_from_code(code: &str) -> RunResult<Vec<String>> {
+    let mut input = code;
+    let mut mods = Vec::new();
+
+    loop {
+        let (chunk, status) = ExternParser::parse_code(&mut input)
+            .map_err(|e| RunReason::Gxl(format!("parse extern mod list failed: {e}")).to_err())?;
+        let _ = chunk;
+        match status {
+            DslStatus::Extern => {
+                let mod_ref = gal_extern_mod(&mut input)
+                    .map_err(|e| RunReason::Gxl(format!("parse extern mod ref failed: {e}")).to_err())?;
+                if let crate::components::gxl_extend::ModAddr::Git(_) = mod_ref.addr() {
+                    mods.extend(mod_ref.mods().iter().cloned());
+                }
+            }
+            DslStatus::End => break,
+            DslStatus::Code | DslStatus::Data => break,
+        }
+    }
+
+    mods.sort();
+    mods.dedup();
+    Ok(mods)
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -379,8 +432,8 @@ mod tests {
     use clap::Parser;
 
     use super::{
-        DEFAULT_ADM_CONF, DEFAULT_WORK_CONF, OutputMode, collect_mod_update_inputs,
-        normalized_argv, output_mode,
+        DEFAULT_ADM_CONF, DEFAULT_WORK_CONF, OutputMode, collect_git_extern_mod_names_from_code,
+        collect_mod_update_inputs, normalized_argv, output_mode,
     };
     use crate::cmd::gx_cmd::{AdmCmd, GxCmd, RunCmd, SelfCheckArgs, SelfCmd};
 
@@ -452,6 +505,23 @@ mod tests {
             expected.push(DEFAULT_ADM_CONF);
         }
         assert_eq!(inputs, expected);
+    }
+
+    #[test]
+    fn collect_git_extern_mod_names_from_code_keeps_only_git_mods() {
+        let code = r#"
+extern mod ver, git { git = "https://example.com/tooling.git", branch = "main" }
+extern mod local_only { path = "./_gal/mods" }
+extern mod cfm { git = "https://example.com/cfm.git", tag = "v1.0.0" }
+mod main {}
+"#;
+
+        let mods = collect_git_extern_mod_names_from_code(code)
+            .expect("git extern mods should be collected");
+        assert_eq!(
+            mods,
+            vec!["cfm".to_string(), "git".to_string(), "ver".to_string()]
+        );
     }
 
     #[test]
