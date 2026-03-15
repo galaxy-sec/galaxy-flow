@@ -57,17 +57,17 @@ impl GxlSpace {
 
     pub fn show(&self) -> ExecResult<()> {
         let menu = self.menu()?;
-        println!(
+        eprintln!(
             "{}",
             "---------------prj work menu-------------".cyan().bold()
         );
 
-        println!("{}", "envs:".yellow());
+        eprintln!("{}", "envs:".yellow());
         for choice in menu.envs() {
             show_item(choice);
         }
 
-        println!("\n{}", "flow:".yellow());
+        eprintln!("\n{}", "flow:".yellow());
         for choice in menu.flows() {
             show_item(choice);
         }
@@ -227,7 +227,9 @@ impl GxlSpace {
         sender: Option<Sender<ReadSignal>>,
     ) -> RunResult<TaskValue> {
         let flow_name = self.normalize_flow_name(flow_name);
-        println!("execute flow: {}", flow_name);
+        if !main_ctx.quiet() {
+            eprintln!("execute flow: {}", flow_name);
+        }
 
         let mut exec_sequ = ExecSequence::from("flow");
         let mut ctx = main_ctx.clone();
@@ -369,10 +371,10 @@ pub fn color_show<S: AsRef<str> + Display>(text: S, color: Option<&str>) {
         Some("black") => text.as_ref().black(),
         Some("white") => text.as_ref().white(),
         Some("purple") => text.as_ref().purple(),
-        _ => return println!("{text}"),
+        _ => return eprintln!("{text}"),
     };
 
-    println!("{colored_text}");
+    eprintln!("{colored_text}");
 }
 
 #[cfg(test)]

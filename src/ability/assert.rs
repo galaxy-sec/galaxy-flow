@@ -40,12 +40,16 @@ impl AsyncRunnableTrait for GxAssert {
 
         match value == expect {
             true if self.result => {
-                println!("assert true : {value}");
+                if !ctx.quiet() {
+                    eprintln!("assert true : {value}");
+                }
                 info!(target: ctx.path(), "value {value} match exprect");
                 Ok(TaskValue::from((vars_dict, ExecOut::Ignore)))
             }
             false if !self.result => {
-                println!("assert true : {value}");
+                if !ctx.quiet() {
+                    eprintln!("assert true : {value}");
+                }
                 info!(target: ctx.path(), "value {value} match exprect");
                 Ok(TaskValue::from((vars_dict, ExecOut::Ignore)))
             }
@@ -57,7 +61,9 @@ impl AsyncRunnableTrait for GxAssert {
                 if let Some(msg) = self.error.clone() {
                     err_msg = exp.eval(&msg)?;
                 }
-                println!("{err_msg}");
+                if !ctx.quiet() {
+                    eprintln!("{err_msg}");
+                }
                 Err(ExecError::from(ExecReason::Assert(format!(
                     "assert fail! [{}], expect: {},\n value {}",
                     self.result, expect, value

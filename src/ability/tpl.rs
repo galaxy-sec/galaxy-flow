@@ -217,7 +217,9 @@ impl GxTpl {
                 .owe_sys()
                 .with(&err_ctx)?;
         }
-        println!("render {:30} ---> {}", tpl.display(), dst.display());
+        if !ctx.quiet() {
+            eprintln!("render {:30} ---> {}", tpl.display(), dst.display());
+        }
 
         debug!(target: ctx.path(), "Successfully generated: {}", dst.display());
         err_ctx.mark_suc();

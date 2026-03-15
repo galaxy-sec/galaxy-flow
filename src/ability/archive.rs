@@ -43,7 +43,9 @@ impl AsyncRunnableTrait for GxTar {
         let src = PathBuf::from(ex.eval(&self.src)?);
         let dst = PathBuf::from(ex.eval(&self.file)?);
         info!(target: ctx.path(), "archive {}  -> {}", src.display(), dst.display());
-        println!("archive {}  -> {}", src.display(), dst.display());
+        if !ctx.quiet() {
+            eprintln!("archive {}  -> {}", src.display(), dst.display());
+        }
         if !src.exists() {
             return ExecReason::Args("src not exists".into())
                 .err_result()
@@ -70,7 +72,9 @@ impl AsyncRunnableTrait for GxUnTar {
         let src = PathBuf::from(ex.eval(&self.file)?);
         let out = PathBuf::from(ex.eval(&self.dst)?);
         info!(target: ctx.path(), "untar {}  -> {}", src.display(), out.display());
-        println!("untar {}  -> {}", src.display(), out.display());
+        if !ctx.quiet() {
+            eprintln!("untar {}  -> {}", src.display(), out.display());
+        }
         if !src.exists() {
             return ExecReason::Args("src not exists".into())
                 .err_result()

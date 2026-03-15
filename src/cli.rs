@@ -1,17 +1,15 @@
 use std::ffi::OsStr;
-use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use clap::Parser;
-use include_dir::{Dir, include_dir};
 use orion_accessor::addr::GitRepository;
 use orion_error::{ErrorConv, ToStructError};
 
 use crate::GxLoader;
-use crate::cmd::gx_cmd::{ConfCmd, DocArgs, GxCmd, InitCmd, SelfCmd, UpdateCmd};
+use crate::cmd::gx_cmd::{AdmCmd, DocArgs, GxCmd, InitCmd, ModCmd, RunCmd, SelfCmd};
 use crate::cmd::gxl_cmd::GFlowCmd;
-use crate::conf::{conf_init, conf_path, load_gxl_config};
-use crate::const_val::gxl_const::{CMD_ARG, CONFIG_FILE};
+use crate::conf::load_gxl_config;
+use crate::const_val::gxl_const::CMD_ARG;
 use crate::err::{RunReason, RunResult};
 use crate::execution::VarSpace;
 use crate::galaxy::Galaxy;
@@ -23,7 +21,8 @@ use crate::traits::Setter;
 use crate::util::diagnose::ai_diagnose;
 use crate::util::redirect::stop_redirect;
 
-const ASSETS_DIR: Dir = include_dir!("$CARGO_MANIFEST_DIR/app/gx/init");
+const DEFAULT_WORK_CONF: &str = "./_gal/work.gxl";
+const DEFAULT_ADM_CONF: &str = "./_gal/adm.gxl";
 
 pub async fn run_from_env() -> RunResult<()> {
     let args = normalized_argv(std::env::args());
@@ -60,16 +59,17 @@ pub async fn dispatch(cmd: GxCmd) -> RunResult<()> {
         return do_doc_cmd(args);
     }
 
-    println!("galaxy-flow : {}", env!("CARGO_PKG_VERSION"));
+    if matches!(output_mode(&cmd), OutputMode::Human) {
+        eprintln!("galaxy-flow : {}", env!("CARGO_PKG_VERSION"));
+    }
 
     let mut gx = GxLoader::new();
     match cmd {
-        GxCmd::Run(cmd) => do_run_cmd(cmd).await?,
-        GxCmd::Adm(cmd) => do_adm_cmd(cmd).await?,
+        GxCmd::Run(cmd) => do_run_cmd(cmd.cmd).await?,
+        GxCmd::Adm(cmd) => do_adm_cmd(cmd.cmd).await?,
         GxCmd::Init(prj_cmd) => do_prj_cmd(&mut gx, prj_cmd).await?,
-        GxCmd::Update(prj_cmd) => do_update_cmd(&mut gx, prj_cmd).await?,
+        GxCmd::Mod(mod_cmd) => do_mod_cmd(&mut gx, mod_cmd).await?,
         GxCmd::Doc(_args) => unreachable!("doc is handled before command dispatch"),
-        GxCmd::Conf(cmd) => do_conf_cmd(cmd).await?,
         GxCmd::Check => do_check_cmd()?,
         GxCmd::SelfUpdate(cmd) => do_self_cmd(cmd).await?,
     }
@@ -81,8 +81,7 @@ async fn do_run_cmd(mut cmd: GFlowCmd) -> RunResult<()> {
 
     let mut var_space = VarSpace::sys_init().err_conv()?;
 
-    configure_run_logging(cmd.log.clone(), cmd.debug);
-    load_gxl_config();
+    configure_cli_runtime(cmd.log.clone(), cmd.debug);
 
     let redirect = crate::model::task_report::task_rc_config::init_redirect_and_parent_task(
         cmd.flows.join(","),
@@ -92,12 +91,16 @@ async fn do_run_cmd(mut cmd: GFlowCmd) -> RunResult<()> {
     .err_conv()?;
 
     if cmd.conf.is_none() {
-        cmd.conf = Some("./_gal/work.gxl".to_string());
+        cmd.conf = Some(DEFAULT_WORK_CONF.to_string());
     }
     var_space.global_mut().set(CMD_ARG, cmd.cmd_args.join(" "));
 
     if cmd.list_cmd().is_empty() {
-        GxlRunner::info(cmd.conf.clone(), var_space).await?;
+        if !cmd.quiet {
+            GxlRunner::info(cmd.conf.clone(), var_space).await?;
+        }
+        let _ = stop_redirect(redirect);
+        return Ok(());
     } else {
         for cmd in cmd.list_cmd() {
             match GxlRunner::run(cmd.clone(), var_space.clone(), None).await {
@@ -121,15 +124,20 @@ async fn do_run_cmd(mut cmd: GFlowCmd) -> RunResult<()> {
 }
 
 async fn do_adm_cmd(mut cmd: GFlowCmd) -> RunResult<()> {
-    configure_run_logging(cmd.log.clone(), cmd.debug);
+    use std::process;
+
+    configure_cli_runtime(cmd.log.clone(), cmd.debug);
     let mut var_space = VarSpace::sys_init().err_conv()?;
     var_space.global_mut().set(CMD_ARG, cmd.cmd_args.join(" "));
 
     if cmd.conf.is_none() {
-        cmd.conf = Some("./_gal/adm.gxl".to_string());
+        cmd.conf = Some(DEFAULT_ADM_CONF.to_string());
     }
     if cmd.list_cmd().is_empty() {
-        GxlRunner::info(cmd.conf.clone(), var_space).await?;
+        if !cmd.quiet {
+            GxlRunner::info(cmd.conf.clone(), var_space).await?;
+        }
+        return Ok(());
     } else {
         for cmd in cmd.list_cmd() {
             match GxlRunner::run(cmd.clone(), var_space.clone(), None).await {
@@ -148,21 +156,7 @@ async fn do_adm_cmd(mut cmd: GFlowCmd) -> RunResult<()> {
             }
         }
     }
-    Ok(())
-}
-
-async fn do_conf_cmd(cmd: ConfCmd) -> RunResult<()> {
-    match cmd {
-        ConfCmd::Init(_init_args) => {
-            if conf_path().is_none() {
-                conf_init()?;
-                println!("init {CONFIG_FILE}  success!");
-            } else {
-                println!("{CONFIG_FILE} exists!");
-            }
-        }
-    }
-    Ok(())
+    process::exit(-1);
 }
 
 fn do_doc_cmd(args: DocArgs) -> RunResult<()> {
@@ -186,11 +180,8 @@ fn do_check_cmd() -> RunResult<()> {
 async fn do_prj_cmd(load: &mut GxLoader, cmd: InitCmd) -> RunResult<()> {
     match cmd {
         InitCmd::Env => Galaxy::env_init()?,
-        InitCmd::PrjWithLocal => {
-            init_local(None)?;
-        }
-        InitCmd::Prj(args) => {
-            configure_run_logging(args.log.clone(), args.debug);
+        InitCmd::Project(args) => {
+            configure_cli_runtime(args.log.clone(), args.debug);
 
             let addr = GitRepository::from(args.repo.as_str());
             let addr = if let Some(tag) = args.tag() {
@@ -200,29 +191,108 @@ async fn do_prj_cmd(load: &mut GxLoader, cmd: InitCmd) -> RunResult<()> {
             } else {
                 addr
             };
+            let _stdout_guard = StdoutToStderrGuard::new()?;
             load.init(addr, args.tpl.as_str()).await?;
         }
     }
     Ok(())
 }
 
-async fn do_update_cmd(load: &mut GxLoader, prj_cmd: UpdateCmd) -> RunResult<()> {
-    match prj_cmd {
-        UpdateCmd::Mod(args) => {
-            configure_run_logging(args.log.clone(), args.debug);
+async fn do_mod_cmd(load: &mut GxLoader, mod_cmd: ModCmd) -> RunResult<()> {
+    match mod_cmd {
+        ModCmd::Update(args) => {
+            configure_cli_runtime(args.log.clone(), args.debug);
 
             let vars = VarSpace::sys_init().err_conv()?;
 
-            if std::path::Path::new(args.conf_work.as_str()).exists() {
-                load.parse_file(args.conf_work.as_str(), true, &vars)
-                    .await?;
-            }
-            if std::path::Path::new(args.conf_adm.as_str()).exists() {
-                load.parse_file(args.conf_adm.as_str(), true, &vars).await?;
+            for conf in collect_mod_update_inputs()? {
+                load.parse_file(conf, true, &vars).await?;
             }
         }
     }
     Ok(())
+}
+
+fn configure_cli_runtime(log: Option<String>, debug: usize) {
+    configure_run_logging(log, debug);
+    load_gxl_config();
+}
+
+struct StdoutToStderrGuard {
+    #[cfg(unix)]
+    saved_stdout_fd: i32,
+}
+
+impl StdoutToStderrGuard {
+    fn new() -> RunResult<Self> {
+        #[cfg(unix)]
+        {
+            let saved_stdout_fd = unsafe { libc::dup(libc::STDOUT_FILENO) };
+            if saved_stdout_fd < 0 {
+                return Err(RunReason::Exec("dup stdout failed".into()).to_err());
+            }
+
+            if unsafe { libc::dup2(libc::STDERR_FILENO, libc::STDOUT_FILENO) } < 0 {
+                unsafe {
+                    libc::close(saved_stdout_fd);
+                }
+                return Err(RunReason::Exec("redirect stdout to stderr failed".into()).to_err());
+            }
+
+            Ok(Self { saved_stdout_fd })
+        }
+
+        #[cfg(not(unix))]
+        {
+            Ok(Self {})
+        }
+    }
+}
+
+impl Drop for StdoutToStderrGuard {
+    fn drop(&mut self) {
+        #[cfg(unix)]
+        unsafe {
+            libc::dup2(self.saved_stdout_fd, libc::STDOUT_FILENO);
+            libc::close(self.saved_stdout_fd);
+        }
+    }
+}
+
+fn collect_mod_update_inputs() -> RunResult<Vec<&'static str>> {
+    let mut inputs = Vec::new();
+
+    if std::path::Path::new(DEFAULT_WORK_CONF).exists() {
+        inputs.push(DEFAULT_WORK_CONF);
+    }
+    if std::path::Path::new(DEFAULT_ADM_CONF).exists() {
+        inputs.push(DEFAULT_ADM_CONF);
+    }
+
+    if inputs.is_empty() {
+        return Err(RunReason::Args("project config not found".into())
+            .to_err()
+            .with_detail(format!(
+                "expected at least one config file: {} or {}",
+                DEFAULT_WORK_CONF, DEFAULT_ADM_CONF
+            )));
+    }
+
+    Ok(inputs)
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum OutputMode {
+    Human,
+    Machine,
+}
+
+fn output_mode(cmd: &GxCmd) -> OutputMode {
+    match cmd {
+        GxCmd::Run(RunCmd { cmd }) | GxCmd::Adm(AdmCmd { cmd }) if cmd.quiet => OutputMode::Machine,
+        GxCmd::SelfUpdate(SelfCmd::Check(args)) if args.json => OutputMode::Machine,
+        _ => OutputMode::Human,
+    }
 }
 
 async fn do_self_cmd(cmd: SelfCmd) -> RunResult<()> {
@@ -301,33 +371,23 @@ fn parse_channel(input: &str) -> RunResult<ReleaseChannel> {
     })
 }
 
-fn init_local(path: Option<PathBuf>) -> RunResult<()> {
-    let src_path = match path {
-        Some(path) => path,
-        None => std::env::current_dir().expect("Failed to get current directory"),
-    };
-    write_dir_to_disk(&ASSETS_DIR, &src_path).expect("Failed to write directory to disk");
-    Ok(())
-}
-
-fn write_dir_to_disk(dir: &Dir, parent_path: &Path) -> std::io::Result<()> {
-    fs::create_dir_all(parent_path.join(dir.path()))?;
-
-    for file in dir.files() {
-        let file_path = parent_path.join(file.path());
-        fs::write(&file_path, file.contents())?;
-    }
-
-    for sub_dir in dir.dirs() {
-        write_dir_to_disk(sub_dir, parent_path)?;
-    }
-
-    Ok(())
-}
-
 #[cfg(test)]
 mod tests {
-    use super::normalized_argv;
+    use std::path::Path;
+    use std::sync::{Mutex, OnceLock};
+
+    use clap::Parser;
+
+    use super::{
+        DEFAULT_ADM_CONF, DEFAULT_WORK_CONF, OutputMode, collect_mod_update_inputs,
+        normalized_argv, output_mode,
+    };
+    use crate::cmd::gx_cmd::{AdmCmd, GxCmd, RunCmd, SelfCheckArgs, SelfCmd};
+
+    fn mod_update_config_lock() -> &'static Mutex<()> {
+        static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+        LOCK.get_or_init(|| Mutex::new(()))
+    }
 
     #[test]
     fn normalize_grun_to_run() {
@@ -339,5 +399,95 @@ mod tests {
     fn normalize_gadm_to_adm() {
         let args = normalized_argv(["gadm", "conf"]);
         assert_eq!(args, vec!["gadm", "adm", "conf"]);
+    }
+
+    #[test]
+    fn collect_mod_update_inputs_errors_when_no_config_exists() {
+        let _guard = mod_update_config_lock()
+            .lock()
+            .expect("mod update config lock should not be poisoned");
+        let work = Path::new(DEFAULT_WORK_CONF);
+        let adm = Path::new(DEFAULT_ADM_CONF);
+        let work_backup = work.exists().then(|| work.with_extension("gxl.bak-codex"));
+        let adm_backup = adm.exists().then(|| adm.with_extension("gxl.bak-codex"));
+
+        if let Some(path) = &work_backup {
+            std::fs::rename(work, path).expect("work config backup should succeed");
+        }
+        if let Some(path) = &adm_backup {
+            std::fs::rename(adm, path).expect("adm config backup should succeed");
+        }
+
+        let err = collect_mod_update_inputs().expect_err("missing configs should fail");
+        assert_eq!(
+            err.reason().to_string(),
+            "args error project config not found"
+        );
+        assert!(
+            err.detail()
+                .as_deref()
+                .unwrap_or_default()
+                .contains("expected at least one config file")
+        );
+
+        if let Some(path) = work_backup {
+            std::fs::rename(path, work).expect("work config restore should succeed");
+        }
+        if let Some(path) = adm_backup {
+            std::fs::rename(path, adm).expect("adm config restore should succeed");
+        }
+    }
+
+    #[test]
+    fn collect_mod_update_inputs_keeps_existing_configs() {
+        let _guard = mod_update_config_lock()
+            .lock()
+            .expect("mod update config lock should not be poisoned");
+        let inputs = collect_mod_update_inputs().expect("repo default configs should be used");
+        let mut expected = Vec::new();
+        if Path::new(DEFAULT_WORK_CONF).exists() {
+            expected.push(DEFAULT_WORK_CONF);
+        }
+        if Path::new(DEFAULT_ADM_CONF).exists() {
+            expected.push(DEFAULT_ADM_CONF);
+        }
+        assert_eq!(inputs, expected);
+    }
+
+    #[test]
+    fn output_mode_uses_machine_for_json_check() {
+        let cmd = GxCmd::SelfUpdate(SelfCmd::Check(SelfCheckArgs {
+            channel: "stable".to_string(),
+            json: true,
+        }));
+
+        assert_eq!(output_mode(&cmd), OutputMode::Machine);
+    }
+
+    #[test]
+    fn output_mode_uses_machine_for_quiet_run() {
+        let cmd = GxCmd::parse_from(["gx", "run", "--quiet"]);
+
+        assert_eq!(output_mode(&cmd), OutputMode::Machine);
+    }
+
+    #[test]
+    fn output_mode_uses_machine_for_quiet_adm() {
+        let cmd = GxCmd::parse_from(["gx", "adm", "--quiet"]);
+
+        assert_eq!(output_mode(&cmd), OutputMode::Machine);
+    }
+
+    #[test]
+    fn parse_run_and_adm_wrappers() {
+        match GxCmd::parse_from(["gx", "run", "conf"]) {
+            GxCmd::Run(RunCmd { cmd }) => assert_eq!(cmd.flows, vec!["conf".to_string()]),
+            other => panic!("unexpected command: {other:?}"),
+        }
+
+        match GxCmd::parse_from(["gx", "adm", "conf"]) {
+            GxCmd::Adm(AdmCmd { cmd }) => assert_eq!(cmd.flows, vec!["conf".to_string()]),
+            other => panic!("unexpected command: {other:?}"),
+        }
     }
 }

@@ -119,15 +119,7 @@ pub fn print(topic: Option<&str>, markdown: bool) -> RunResult<()> {
     match topic {
         Some(topic) => {
             let doc = resolve(topic)?;
-            println!("topic: {}", doc.key.bright_yellow().bold());
-            println!("source: {}", doc.source.dimmed());
-            println!();
-            let content = doc.content.trim();
-            if markdown {
-                println!("{content}");
-            } else {
-                println!("{}", render_markdown(content));
-            }
+            println!("{}", render_topic(doc, markdown));
         }
         None => {
             println!("{}", "Galaxy Flow doc topics".bold());
@@ -143,6 +135,20 @@ pub fn print(topic: Option<&str>, markdown: bool) -> RunResult<()> {
         }
     }
     Ok(())
+}
+
+fn render_topic(doc: &HelpTopic, markdown: bool) -> String {
+    let content = doc.content.trim();
+    if markdown {
+        return content.to_string();
+    }
+
+    format!(
+        "topic: {}\nsource: {}\n\n{}",
+        doc.key.bright_yellow().bold(),
+        doc.source.dimmed(),
+        render_markdown(content)
+    )
 }
 
 fn resolve(topic: &str) -> RunResult<&'static HelpTopic> {
@@ -368,7 +374,7 @@ fn find_double_marker(chars: &[char], start: usize, marker: char) -> Option<usiz
 
 #[cfg(test)]
 mod tests {
-    use super::{render_markdown, resolve, topic_keys};
+    use super::{render_markdown, render_topic, resolve, topic_keys};
 
     #[test]
     fn resolve_by_primary_key() {
@@ -407,5 +413,15 @@ mod tests {
         let rendered = render_markdown("- `gx.cmd`：执行命令");
         assert!(rendered.contains("gx.cmd"));
         assert!(rendered.contains("执行命令"));
+    }
+
+    #[test]
+    fn render_topic_markdown_is_pure_markdown() {
+        let topic = resolve("gx.cmd").expect("gx.cmd should resolve");
+        let rendered = render_topic(topic, true);
+
+        assert!(rendered.starts_with("# gx.cmd"));
+        assert!(!rendered.contains("topic:"));
+        assert!(!rendered.contains("source:"));
     }
 }

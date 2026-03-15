@@ -8,7 +8,7 @@ Galaxy Flow项目所有重要变更将记录在此文件中。
 ## [v0.13.0] - 2026-03-10
 
 ### 新增
-- **统一 `gx` CLI**：新增 `gx` 作为唯一发布命令入口，统一承载 `run`、`adm`、`init`、`update`、`doc`、`conf`、`check`、`self`。
+- **统一 `gx` CLI**：新增 `gx` 作为唯一发布命令入口，统一承载 `run`、`adm`、`init`、`mod`、`doc`、`check`、`self`。
 - **短别名入口**：新增 `grun` -> `gx run` 与 `gadm` -> `gx adm` 的别名启动支持。
 - **命令内文档阅读**：新增 `gx doc` 主题索引与终端友好的 markdown 渲染，`--markdown` 可输出原始 markdown。
 
@@ -16,13 +16,21 @@ Galaxy Flow项目所有重要变更将记录在此文件中。
 - **项目初始化资源**：本地初始化模板目录从 `app/gprj/init` 迁移到 `app/gx/init`。
 - **发布链路**：release workflow、安装脚本、自更新流程改为只打包和校验 `gx` 二进制。
 - **文档入口**：README 与 guide 文档统一改为 `gx` 视角，不再以旧二进制作为主入口说明。
+- **CLI 命令模型**：模块管理统一为 `gx mod update`；`gx run` 与 `gx adm` 拆成独立 clap 包装和独立 help；CLI 文案统一收敛为更明确的 `project` 语义。
+- **CLI 运行时初始化**：`gx init project` 改为走与其他命令一致的运行时初始化路径，统一覆盖日志初始化与 `~/.galaxy/conf.toml` 加载。
 
 ### 移除
 - **旧命令二进制**：移除 `gflow` 与 `gprj` 的工作区二进制定义及发布产物。
 - **旧 CLI 文档页**：移除 guide 中独立的 `gflow` / `gprj` 使用文档。
+- **旧版 gx 兼容入口**：移除已废弃的 `gx conf`、`gx init prj`、`gx init prj-with-local`、`gx update mod`、`--mod_up`、`--conf-work`、`--conf-adm` 等旧兼容语法与参数。
 
 ### 修复
 - **仓库自举解析**：将仓库 `_gal/work.gxl` 中的 extern 路径改为 `./_gal/`，避免 `GXL_START_ROOT` 缺失时触发解析失败。
+- **模块更新语义**：`gx mod update` 现在会稳定加载 `~/.galaxy/conf.toml`，并在 `./_gal/work.gxl` / `./_gal/adm.gxl` 都不存在时直接报错。
+- **CLI 退出行为**：`gx adm` 在所有 flow 都失败时现在返回非零退出码；`gx run` / `gx adm` 无显式 flow 时保留展示菜单能力并返回成功。
+- **输出契约**：进一步收紧 `gx` 的 stdout/stderr 规则，确保 markdown 文档输出可直接机读，说明性 CLI 文本统一走 `stderr`，`quiet` 模式不再把执行器/菜单说明泄漏到 `stdout`。
+- **初始化参数校验**：`gx init project` 现在将 `--branch` 与 `--tag` 设为互斥，并把 human-oriented 初始化提示统一输出到 `stderr`。
+- **Galaxy 环境初始化**：`gx init env` 在缺失时会一并创建默认的全局 `~/.galaxy/conf.toml`。
 
 ## [v0.12.4] - 2026-03-05
 

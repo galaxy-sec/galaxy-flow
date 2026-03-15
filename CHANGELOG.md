@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [v0.13.0] - 2026-03-10
 
 ### Added
-- **Unified `gx` CLI**: Added `gx` as the sole shipped command entrypoint, covering `run`, `adm`, `init`, `update`, `doc`, `conf`, `check`, and `self`.
+- **Unified `gx` CLI**: Added `gx` as the sole shipped command entrypoint, covering `run`, `adm`, `init`, `mod`, `doc`, `check`, and `self`.
 - **Compact aliases**: Added `grun` -> `gx run` and `gadm` -> `gx adm` alias-based entry support.
 - **CLI doc renderer**: Added `gx doc` topic indexing and terminal-friendly markdown rendering with `--markdown` raw output support.
 
@@ -16,13 +16,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Project init assets**: Moved local init templates from `app/gprj/init` to `app/gx/init`.
 - **Release packaging**: Release workflow, installer, and self-update now package and verify only the `gx` binary.
 - **Workspace docs**: Updated README and guide docs to present `gx` as the default and only binary entrypoint.
+- **CLI command model**: Renamed module management to `gx mod update`, split `gx run` and `gx adm` into dedicated clap wrappers with independent help text, and clarified `project`-oriented wording across the CLI.
+- **CLI runtime setup**: Unified `gx init project` with the same runtime initialization path used by other commands, including log setup and `~/.galaxy/conf.toml` loading.
 
 ### Removed
 - **Legacy binaries**: Removed shipped `gflow` and `gprj` binaries from the workspace and release artifacts.
 - **Legacy CLI docs**: Removed dedicated `gflow` and `gprj` usage pages from the guide.
+- **Legacy gx compatibility surface**: Removed deprecated `gx conf`, `gx init prj`, `gx init prj-with-local`, `gx update mod`, `--mod_up`, `--conf-work`, `--conf-adm`, and other obsolete compatibility flags.
 
 ### Fixed
 - **Local workspace bootstrap**: Changed the repository `_gal/work.gxl` extern path to use `./_gal/` instead of `${GXL_START_ROOT}`, avoiding parse failures when `GXL_START_ROOT` is unavailable.
+- **Module update semantics**: `gx mod update` now loads `~/.galaxy/conf.toml` consistently and fails fast when neither `./_gal/work.gxl` nor `./_gal/adm.gxl` exists.
+- **CLI exit behavior**: `gx adm` now returns non-zero when all flows fail, while `gx run` / `gx adm` without an explicit flow keep the menu behavior and return success.
+- **Output contract**: Tightened `gx` stdout/stderr behavior so markdown doc output stays machine-clean, explanatory CLI messages move to `stderr`, and quiet mode suppresses executor/menu chatter instead of leaking it to `stdout`.
+- **Init command validation**: `gx init project` now treats `--branch` and `--tag` as mutually exclusive and routes human-oriented init messages to `stderr`.
+- **Galaxy environment bootstrap**: `gx init env` now also creates the default global `~/.galaxy/conf.toml` when missing.
 
 ## [v0.12.4] - 2026-03-05
 

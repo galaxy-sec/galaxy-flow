@@ -19,7 +19,6 @@ fn test_gxl_cmd_default() {
     assert_eq!(cmd.debug, 0);
     assert!(!cmd.dryrun);
     assert!(!cmd.ai);
-    assert!(!cmd.mod_update);
     assert!(cmd.cmd_args.is_empty());
     assert!(cmd.conf.is_none());
     assert!(cmd.log.is_none());
@@ -44,7 +43,6 @@ fn test_gxl_cmd_with_args() {
         "-q",
         "--dryrun",
         "--ai",
-        "--mod_up",
         "flow1",
         "flow2",
     ])
@@ -57,9 +55,14 @@ fn test_gxl_cmd_with_args() {
     assert!(cmd.quiet);
     assert!(cmd.dryrun);
     assert!(cmd.ai);
-    assert!(cmd.mod_update);
     assert!(cmd.cmd_args.is_empty());
     assert_eq!(cmd.flows, vec!["flow1".to_string(), "flow2".to_string()]);
+}
+
+#[test]
+fn test_gxl_cmd_rejects_removed_mod_up_flag() {
+    let result = GFlowCmdCli::try_parse_from(["gxl", "--mod_up", "flow1"]);
+    assert!(result.is_err(), "removed --mod_up flag should not parse");
 }
 
 #[test]

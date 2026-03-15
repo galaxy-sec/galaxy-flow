@@ -124,7 +124,7 @@ impl GxLoader {
         let vender_path = format!("{}/tpl/{tpl}", local_git.position().display());
         let init_path = PathBuf::from("./_gal");
         if init_path.exists() {
-            println!("init dir exists! ({})", init_path.display());
+            eprintln!("init dir exists! ({})", init_path.display());
         } else {
             std::fs::create_dir(&init_path).owe_res()?;
             let accessor = build_accessor(&EnvDict::default());

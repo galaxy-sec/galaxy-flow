@@ -20,7 +20,6 @@ pub struct GxlCmd {
 
     pub dryrun: bool,
     pub ai: bool,
-    pub mod_update: bool,
 }
 
 impl GxlCmd {
@@ -49,7 +48,6 @@ impl Default for GxlCmd {
             cmd_args: Vec::new(),
             dryrun: false,
             ai: false,
-            mod_update: false,
         }
     }
 }
@@ -61,10 +59,6 @@ impl Default for GxlCmd {
 ///
 /// GxlCmd is the command line interface structure for Galaxy Flow, used to parse and process command line arguments.
 #[derive(Args, Debug, Clone, WithSetters, Setters)] // requires `derive` feature
-#[command(version, about = "Galaxy Flow - A powerful workflow automation tool", long_about = None)]
-#[command(
-    after_help = "Examples:\n  gxl -e dev -f ./config.gxl flow1 flow2\n  gxl -e prod --cmd-arg \"-x -y\" flow1\n  gxl -e test --dryrun flow1\n\n示例：\n  gxl -e dev -f ./config.gxl flow1 flow2\n  gxl -e prod --cmd-arg \"-x -y\" flow1\n  gxl -e test --dryrun flow1"
-)]
 #[getset(set_with = "pub")]
 pub struct GFlowCmd {
     /// 环境名称 / Environment name
@@ -79,10 +73,9 @@ pub struct GFlowCmd {
 
     /// 位置参数流程名称 / Positional flow names
     ///
-    /// 作为位置参数指定的流程名称列表，会与flows参数合并
+    /// 作为位置参数指定的流程名称列表
     ///
-    /// List of flow names specified as positional arguments, will be merged with the flows parameter
-    /// 示例/Example: gxl flow1 flow2
+    /// List of flow names specified as positional arguments
     #[arg()] // Positional arguments
     pub flows: Vec<String>,
 
@@ -98,12 +91,10 @@ pub struct GFlowCmd {
     /// 配置文件路径 / Configuration file path
     ///
     /// 指定GXL配置文件的路径
-    /// 默认工作配置: ./_gal/work.gxl
-    /// 默认管理配置: ./_gal/adm.gxl
+    /// 默认值由子命令决定
     ///
     /// Specify the path to the GXL configuration file
-    /// Default work config: ./_gal/work.gxl
-    /// Default admin config: ./_gal/adm.gxl
+    /// Default value depends on the subcommand
     /// 示例/Example: -c ./config.gxl
     #[arg(short = 'c', long = "conf")]
     pub conf: Option<String>,
@@ -157,35 +148,18 @@ pub struct GFlowCmd {
     /// 示例/Example: --ai
     #[arg(long = "ai", action = ArgAction::SetTrue, default_value = "false")]
     pub ai: bool,
-
-    /// 模块更新 / Module update
-    ///
-    /// 更新远程GXL模块
-    ///
-    /// Update remote GXL modules
-    /// 示例/Example: --mod-up
-    #[arg(long = "mod_up", action = ArgAction::SetTrue, default_value = "false")]
-    pub mod_update: bool,
 }
 
 impl GFlowCmd {
     /// 获取所有流程名称
     ///
-    /// 合并flows和flow_names字段，返回所有要执行的流程名称列表
-    /// 优先使用flows参数，如果为空则使用flow_names位置参数
-    /// 注意：flow_names字段已弃用，建议使用flows字段
+    /// 返回所有要执行的流程名称列表
     ///
     /// Get all flow names
     ///
-    /// Merge the flows and flow_names fields, return a list of all flow names to be executed
-    /// Priority is given to the flows parameter, if empty then use flow_names positional arguments
-    /// Note: The flow_names field is deprecated, it is recommended to use the flows field
+    /// Return a list of all flow names to be executed
     pub fn get_all_flows(&self) -> Vec<String> {
         if !self.flows.is_empty() {
-            self.flows.clone()
-        } else if !self.flows.is_empty() {
-            // 输出弃用警告 / Output deprecation warning
-            eprintln!("Warning: flow_names field is deprecated, please use flows field instead");
             self.flows.clone()
         } else {
             Vec::new()
@@ -213,26 +187,6 @@ impl GFlowCmd {
         }
     }
 
-    /// 验证命令行参数的有效性
-    ///
-    /// 检查命令行参数是否满足基本要求，包括：
-    /// 1. 必须指定配置文件
-    /// 2. 如果指定了cmd_args，必须同时指定flows或flow_names
-    ///
-    /// Validate the effectiveness of command line arguments
-    ///
-    /// Check if the command line arguments meet the basic requirements, including:
-    /// 1. Configuration file must be specified
-    /// 2. If cmd_args is specified, flows or flow_names must also be specified
-    pub fn validate(&self) -> Result<(), String> {
-        if self.conf.is_none() {
-            return Err("Configuration file is required".to_string());
-        }
-        if self.get_all_flows().is_empty() && !self.cmd_args.is_empty() {
-            return Err("Cannot specify cmd_args without flows".to_string());
-        }
-        Ok(())
-    }
     pub fn list_cmd(&self) -> Vec<GxlCmd> {
         let mut cmds = Vec::new();
         for flow in self.get_all_flows() {
@@ -246,7 +200,6 @@ impl GFlowCmd {
                 cmd_args: self.cmd_args.clone(),
                 dryrun: self.dryrun,
                 ai: self.ai,
-                mod_update: self.mod_update,
             })
         }
         cmds

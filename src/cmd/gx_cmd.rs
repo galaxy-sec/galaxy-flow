@@ -3,44 +3,63 @@ use derive_getters::Getters;
 
 use crate::cmd::gxl_cmd::GFlowCmd;
 
+#[derive(Debug, Args, Clone)]
+#[command(about = "run workflow flows from the default work config")]
+#[command(
+    after_help = "Examples:\n  gx run -e dev -c ./_gal/work.gxl conf\n  gx run -e prod --cmd-arg \"-x -y\" conf\n  gx run -e test --dryrun conf\n\n示例：\n  gx run -e dev -c ./_gal/work.gxl conf\n  gx run -e prod --cmd-arg \"-x -y\" conf\n  gx run -e test --dryrun conf"
+)]
+pub struct RunCmd {
+    #[command(flatten)]
+    pub cmd: GFlowCmd,
+}
+
+#[derive(Debug, Args, Clone)]
+#[command(about = "run admin flows from the default admin config")]
+#[command(
+    after_help = "Examples:\n  gx adm -e dev -c ./_gal/adm.gxl conf\n  gx adm -e prod --cmd-arg \"-x -y\" conf\n  gx adm -e test --dryrun conf\n\n示例：\n  gx adm -e dev -c ./_gal/adm.gxl conf\n  gx adm -e prod --cmd-arg \"-x -y\" conf\n  gx adm -e test --dryrun conf"
+)]
+pub struct AdmCmd {
+    #[command(flatten)]
+    pub cmd: GFlowCmd,
+}
+
 #[derive(Debug, Parser, Clone)]
 #[command(name = "gx")]
 #[command(version, about = "Galaxy Flow unified CLI")]
 #[command(disable_help_subcommand = true)]
 pub enum GxCmd {
-    Run(GFlowCmd),
-    Adm(GFlowCmd),
+    /// run workflow flows from the default work config
+    Run(RunCmd),
+    /// run admin flows from the default admin config
+    Adm(AdmCmd),
+    /// initialize local environment or project scaffolding
     #[command(subcommand)]
     Init(InitCmd),
+    /// manage project modules
     #[command(subcommand)]
-    Update(UpdateCmd),
+    Mod(ModCmd),
+    /// show built-in documentation topics
     #[command(name = "doc", alias = "docs")]
     Doc(DocArgs),
-    #[command(subcommand)]
-    Conf(ConfCmd),
+    /// print current runtime environment information
     Check,
+    /// manage gx self-update operations
     #[command(name = "self", subcommand)]
     SelfUpdate(SelfCmd),
 }
 
 #[derive(Debug, Subcommand, Clone)]
 pub enum InitCmd {
-    /// init galaxy env
+    /// init local Galaxy environment (~/.galaxy, conf.toml, net access control)
     Env,
-    /// init project with local mod
-    PrjWithLocal,
     /// init project with remote mod
-    Prj(InitArgs),
+    Project(InitArgs),
 }
 
 #[derive(Debug, Subcommand, Clone)]
-pub enum UpdateCmd {
-    Mod(PrjArgs),
-}
-
-#[derive(Debug, Subcommand, Clone)]
-pub enum ConfCmd {
-    Init(ConfInitArgs),
+pub enum ModCmd {
+    /// update project modules defined by local _gal configs
+    Update(PrjArgs),
 }
 
 #[derive(Debug, Args, Clone, Getters)]
@@ -92,10 +111,10 @@ pub struct InitArgs {
     #[arg(short, long, default_value = "simple")]
     pub(crate) tpl: String,
     /// branch or tag for rg-tpl repo
-    #[arg(short, long)]
+    #[arg(short, long, conflicts_with = "tag")]
     pub(crate) branch: Option<String>,
 
-    #[arg(short, long)]
+    #[arg(long, conflicts_with = "branch")]
     pub(crate) tag: Option<String>,
     /// debug level ; eg: -d 1
     #[arg(short = 'd', long = "debug", default_value = "0")]
@@ -105,14 +124,6 @@ pub struct InitArgs {
     pub repo: String,
     #[arg(long = "log")]
     pub log: Option<String>,
-    #[arg(short= 'p', long = "cmd_print" ,action = ArgAction::SetTrue, default_value = "false")]
-    pub cmd_print: bool,
-}
-
-#[derive(Debug, Args, Getters, Clone)]
-pub struct ConfInitArgs {
-    #[arg(short = 'r', long = "remote", default_value = "false")]
-    pub remote: bool,
 }
 
 #[derive(Debug, Args, Clone)]
@@ -120,22 +131,15 @@ pub struct PrjArgs {
     /// debug level ; eg: -d 1
     #[arg(short = 'd', long = "debug", default_value = "0")]
     pub(crate) debug: usize,
-    /// conf file ; eg: -f ./_gal/prj.gxl
-    #[arg(long, default_value = "./_gal/work.gxl")]
-    pub(crate) conf_work: String,
-    #[arg(long, default_value = "./_gal/adm.gxl")]
-    pub(crate) conf_adm: String,
     #[arg(long = "log")]
     pub log: Option<String>,
-    #[arg(short= 'q', long = "quiet" ,action = ArgAction::SetFalse , default_value = "true")]
-    pub cmd_print: bool,
 }
 
 #[cfg(test)]
 mod tests {
     use clap::Parser;
 
-    use super::GxCmd;
+    use super::{AdmCmd, GxCmd, InitCmd, ModCmd, RunCmd};
 
     #[test]
     fn parse_doc_topic() {
@@ -161,5 +165,82 @@ mod tests {
             }
             other => panic!("unexpected command: {other:?}"),
         }
+    }
+
+    #[test]
+    fn parse_mod_update() {
+        let cmd = GxCmd::try_parse_from(["gx", "mod", "update"]).expect("mod update should parse");
+
+        match cmd {
+            GxCmd::Mod(ModCmd::Update(_args)) => {}
+            other => panic!("unexpected command: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn parse_run_wrapper() {
+        let cmd = GxCmd::try_parse_from(["gx", "run", "conf"]).expect("run should parse");
+
+        match cmd {
+            GxCmd::Run(RunCmd { cmd }) => {
+                assert_eq!(cmd.flows, vec!["conf".to_string()]);
+            }
+            other => panic!("unexpected command: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn parse_adm_wrapper() {
+        let cmd = GxCmd::try_parse_from(["gx", "adm", "conf"]).expect("adm should parse");
+
+        match cmd {
+            GxCmd::Adm(AdmCmd { cmd }) => {
+                assert_eq!(cmd.flows, vec!["conf".to_string()]);
+            }
+            other => panic!("unexpected command: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn reject_removed_init_cmd_print_flag() {
+        let result = GxCmd::try_parse_from(["gx", "init", "project", "--cmd_print"]);
+        assert!(result.is_err(), "removed --cmd_print flag should not parse");
+    }
+
+    #[test]
+    fn reject_removed_mod_update_quiet_flag() {
+        let result = GxCmd::try_parse_from(["gx", "mod", "update", "--quiet"]);
+        assert!(result.is_err(), "removed --quiet flag should not parse");
+    }
+
+    #[test]
+    fn reject_removed_mod_update_conf_flags() {
+        let result = GxCmd::try_parse_from(["gx", "mod", "update", "--conf-work", "x"]);
+        assert!(result.is_err(), "removed --conf-work flag should not parse");
+
+        let result = GxCmd::try_parse_from(["gx", "mod", "update", "--conf-adm", "x"]);
+        assert!(result.is_err(), "removed --conf-adm flag should not parse");
+    }
+
+    #[test]
+    fn parse_init_project() {
+        let cmd =
+            GxCmd::try_parse_from(["gx", "init", "project"]).expect("init project should parse");
+
+        match cmd {
+            GxCmd::Init(InitCmd::Project(_args)) => {}
+            other => panic!("unexpected command: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn reject_init_project_branch_and_tag_together() {
+        let result = GxCmd::try_parse_from([
+            "gx", "init", "project", "--branch", "main", "--tag", "v1.0.0",
+        ]);
+        assert!(
+            result.is_err(),
+            "branch and tag should be mutually exclusive"
+        );
     }
 }

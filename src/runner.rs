@@ -49,7 +49,7 @@ impl GxlRunner {
             }
 
             let spc = loader
-                .parse_file(conf.as_str(), cmd.mod_update, &vars)
+                .parse_file(conf.as_str(), false, &vars)
                 .await?
                 .assemble()
                 .err_conv()?;

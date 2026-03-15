@@ -4,7 +4,8 @@ use orion_conf::YamlIO;
 use orion_error::{ErrorOwe, ToStructError, UvsFrom};
 
 use crate::{
-    const_val::gxl_const::NET_ACCESS_CTRL_FILE,
+    conf::{conf_init, conf_path},
+    const_val::gxl_const::{CONFIG_FILE, NET_ACCESS_CTRL_FILE},
     err::{RunReason, RunResult},
 };
 
@@ -31,11 +32,20 @@ impl Galaxy {
             std::fs::create_dir_all(&galaxy_dir).owe_res()?;
         }
 
+        if conf_path().is_none() {
+            conf_init()?;
+        } else {
+            eprintln!(
+                " {} exists! , global conf init ignore",
+                galaxy_dir.join(CONFIG_FILE).display()
+            );
+        }
+
         // 构建正确的 RedirectService demo 数据
 
         let net_ctrl_path = galaxy_dir.join(NET_ACCESS_CTRL_FILE);
         if net_ctrl_path.exists() {
-            println!(
+            eprintln!(
                 " {} exists! , net access ctrl init ignore",
                 net_ctrl_path.display()
             );
@@ -78,10 +88,12 @@ mod tests {
         let result = Galaxy::env_init();
         assert!(result.is_ok(), "Environment init should succeed");
         let conf_path = galaxy_dir.join(NET_ACCESS_CTRL_FILE);
+        let global_conf_path = galaxy_dir.join(CONFIG_FILE);
 
         // 验证目录和文件创建
         assert!(galaxy_dir.exists());
         assert!(conf_path.exists());
+        assert!(global_conf_path.exists());
 
         NetAccessCtrl::load_yaml(&conf_path).assert("redict");
         // 验证文件内容包含关键字段
