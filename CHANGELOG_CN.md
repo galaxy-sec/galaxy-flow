@@ -5,6 +5,18 @@ Galaxy Flow项目所有重要变更将记录在此文件中。
 本格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/) 标准，
 本项目遵循 [语义化版本2.0.0](https://semver.org/lang/zh-CN/spec/v2.0.0.html) 规范。
 
+## [v0.13.4] - 2026-03-15
+
+### 变更
+- **命令成功语义**：`gx.cmd`、`gx.shell`、`gx.read_cmd` 的 shell 选项字段由 `expect` 重命名为 `ok_codes`，明确表示“允许视为成功的退出码集合”。
+- **动作结果模型**：`Action` 的命令执行结果改为结构化输出 `exit_code`、`stdout`、`stderr`，不再把 stdout/stderr 混写到单一字段中，便于 machine output 消费。
+- **模块更新结果输出**：`gx mod update` 现在会按配置文件汇总 git extern modules，并输出最终的项目模块更新结果摘要。
+
+### 修复
+- **模块更新配置收集**：当 `./_gal/work.gxl` 与 `./_gal/adm.gxl` 同时存在时，`gx mod update` 现在会同时纳入两者，不再遗漏已有配置。
+- **CLI 输出契约**：`gx mod update` 的说明性结果摘要统一输出到 `stderr`，继续保持 `stdout` 不承载 human-oriented 说明文本。
+- **命令解析与测试覆盖**：补充 `ok_codes` 的解析与执行回归用例，并校验命令执行结果中的 `exit_code/stdout/stderr` 字段。
+
 ## [v0.13.0] - 2026-03-10
 
 ### 新增

@@ -8,7 +8,9 @@ pub struct Action {
     target: Option<String>,
     #[serde(serialize_with = "serialize_time_format")]
     begin: OffsetDateTime,
+    pub exit_code: Option<i32>,
     pub stdout: String,
+    pub stderr: String,
     result: std::result::Result<RunningTime, String>,
 }
 
@@ -43,6 +45,25 @@ impl Action {
         self.target = Some(target.into());
         self
     }
+
+    pub fn set_command_output<S1: Into<String>, S2: Into<String>>(
+        &mut self,
+        exit_code: i32,
+        stdout: S1,
+        stderr: S2,
+    ) {
+        self.exit_code = Some(exit_code);
+        self.stdout = stdout.into();
+        self.stderr = stderr.into();
+    }
+
+    pub fn set_stdout<S: Into<String>>(&mut self, stdout: S) {
+        self.stdout = stdout.into();
+    }
+
+    pub fn set_stderr<S: Into<String>>(&mut self, stderr: S) {
+        self.stderr = stderr.into();
+    }
 }
 
 impl From<String> for Action {
@@ -51,7 +72,9 @@ impl From<String> for Action {
             name,
             target: None,
             begin: OffsetDateTime::now_local().unwrap_or_else(|_| OffsetDateTime::now_utc()),
+            exit_code: None,
             stdout: String::new(),
+            stderr: String::new(),
             result: Err("unknow".into()),
         }
     }
@@ -62,7 +85,9 @@ impl From<&String> for Action {
             name: name.clone(),
             target: None,
             begin: OffsetDateTime::now_local().unwrap_or_else(|_| OffsetDateTime::now_utc()),
+            exit_code: None,
             stdout: String::new(),
+            stderr: String::new(),
             result: Err("unknow".into()),
         }
     }
@@ -74,7 +99,9 @@ impl From<&str> for Action {
             name: name.to_string(),
             target: None,
             begin: OffsetDateTime::now_local().unwrap_or_else(|_| OffsetDateTime::now_utc()),
+            exit_code: None,
             stdout: String::new(),
+            stderr: String::new(),
             result: Err("unknow".into()),
         }
     }

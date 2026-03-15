@@ -318,8 +318,9 @@ fn collect_git_extern_mod_names_from_code(code: &str) -> RunResult<Vec<String>> 
         let _ = chunk;
         match status {
             DslStatus::Extern => {
-                let mod_ref = gal_extern_mod(&mut input)
-                    .map_err(|e| RunReason::Gxl(format!("parse extern mod ref failed: {e}")).to_err())?;
+                let mod_ref = gal_extern_mod(&mut input).map_err(|e| {
+                    RunReason::Gxl(format!("parse extern mod ref failed: {e}")).to_err()
+                })?;
                 if let crate::components::gxl_extend::ModAddr::Git(_) = mod_ref.addr() {
                     mods.extend(mod_ref.mods().iter().cloned());
                 }

@@ -12,6 +12,7 @@ gx.shell(
   arg_file: "<json|yml|yaml|toml|ini>",
   out_var: "<var name>",
   err: "<err var>",
+  ok_codes: "0,2",
   log: "1|2|3",
   sudo: "true|false",
   silence: "true|false"

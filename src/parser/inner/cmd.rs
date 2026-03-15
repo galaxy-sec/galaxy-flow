@@ -10,17 +10,17 @@ pub fn gal_cmd(input: &mut &str) -> Result<GxCmd> {
     let mut builder = GxCmdDtoBuilder::default();
     gal_keyword_alt("gx.cmd", "rg.cmd", input)?;
     let props = action_call_args.parse_next(input)?;
-    let mut expect = ShellOption::default();
-    builder.expect(ShellOption::default());
+    let mut shell_opt = ShellOption::default();
+    builder.shell_opt(ShellOption::default());
     for one in props {
         let key = one.0.to_lowercase();
         if key == "default" || key == "cmd" {
             builder.cmd(one.1);
         } else {
-            shell_opt_setting(key, one.1, &mut expect);
+            shell_opt_setting(key, one.1, &mut shell_opt);
         }
     }
-    builder.expect(expect);
+    builder.shell_opt(shell_opt);
     if let Ok(dto) = builder.build() {
         Ok(GxCmd::dto_new(dto))
     } else {
@@ -31,7 +31,7 @@ pub fn gal_cmd(input: &mut &str) -> Result<GxCmd> {
 /// read ```cmd  ... ``` to GxCmd;
 pub fn gal_cmd_block(input: &mut &str) -> Result<GxCmd> {
     let mut builder = GxCmdDtoBuilder::default();
-    builder.expect(ShellOption::default());
+    builder.shell_opt(ShellOption::default());
     // 1. 匹配开始的 ```cmd
     gal_keyword("```cmd", input)?;
     // 2. 跳过可能的空白和换行
@@ -93,7 +93,7 @@ mod tests {
 
     #[test]
     fn cmd_test_simple() {
-        let expect = ShellOption::default();
+        let shell_opt = ShellOption::default();
         let mut data = r#"
              gx.cmd(
              cmd : "${PRJ_ROOT}/do.sh",
@@ -102,7 +102,7 @@ mod tests {
         //let (input, obj) = show_err(data, RgCmdParser::default().parse(ctx, data)).unwrap();
         let xpt = GxCmdDtoBuilder::default()
             .cmd("${PRJ_ROOT}/do.sh".into())
-            .expect(expect)
+            .shell_opt(shell_opt)
             .build()
             .unwrap();
         assert_eq!(data, "");
@@ -110,14 +110,14 @@ mod tests {
     }
     #[test]
     fn cmd_test_default() {
-        let expect = ShellOption::default();
+        let shell_opt = ShellOption::default();
         let mut data = r#"
              gx.cmd( "${PRJ_ROOT}/do.sh" ) ;"#;
         let obj = gal_cmd(&mut data).assert();
         //let (input, obj) = show_err(data, RgCmdParser::default().parse(ctx, data)).unwrap();
         let xpt = GxCmdDtoBuilder::default()
             .cmd("${PRJ_ROOT}/do.sh".into())
-            .expect(expect)
+            .shell_opt(shell_opt)
             .build()
             .unwrap();
         assert_eq!(data, "");
@@ -125,7 +125,7 @@ mod tests {
     }
     #[test]
     fn cmd_test_raw_string() {
-        let expect = ShellOption::default();
+        let shell_opt = ShellOption::default();
         let mut data = "
              gx.cmd(
                cmd  : r#\"git branch --show-current |  sed -E \"s/(feature|develop|ver-dev|release|master|issue)(\\/.*)?/_branch_\\1/g\" \"# ,
@@ -135,7 +135,7 @@ mod tests {
         let xpt = GxCmdDtoBuilder::default()
             .cmd( r#"git branch --show-current |  sed -E "s/(feature|develop|ver-dev|release|master|issue)(\/.*)?/_branch_\1/g" "#
                     .into())
-            .expect(expect)
+            .shell_opt(shell_opt)
             .build()
             .unwrap();
         assert_eq!(data, "");
@@ -144,7 +144,7 @@ mod tests {
 
     #[test]
     fn cmd_test2() {
-        let mut expect = ShellOption {
+        let mut shell_opt = ShellOption {
             log_lev: Some(log::Level::Info),
             ..Default::default()
         };
@@ -155,10 +155,10 @@ mod tests {
              log : "1",
              ) ;"#;
         let obj = gal_cmd(&mut data).assert();
-        expect.err = Some(String::from("you err"));
+        shell_opt.err = Some(String::from("you err"));
         let xpt = GxCmdDtoBuilder::default()
             .cmd("${PRJ_ROOT}/do.sh".into())
-            .expect(expect)
+            .shell_opt(shell_opt)
             .build()
             .unwrap();
         assert_eq!(data, "");
@@ -167,7 +167,7 @@ mod tests {
 
     #[test]
     fn cmd_test3() {
-        let mut expect = ShellOption {
+        let mut shell_opt = ShellOption {
             log_lev: Some(log::Level::Info),
             ..Default::default()
         };
@@ -178,10 +178,31 @@ mod tests {
              log : "1",
              ) ;"#;
         let obj = gal_cmd(&mut data).assert();
-        expect.err = Some(String::from("you err"));
+        shell_opt.err = Some(String::from("you err"));
         let xpt = GxCmdDtoBuilder::default()
             .cmd("${PRJ_ROOT}/do.sh".into())
-            .expect(expect)
+            .shell_opt(shell_opt)
+            .build()
+            .unwrap();
+        assert_eq!(data, "");
+        assert_eq!(obj, GxCmd::dto_new(xpt));
+    }
+
+    #[test]
+    fn cmd_test_ok_codes() {
+        let shell_opt = ShellOption {
+            ok_codes: vec![0, 2],
+            ..Default::default()
+        };
+        let mut data = r#"
+             gx.cmd(
+             cmd : "echo ok",
+             ok_codes : "0,2",
+             ) ;"#;
+        let obj = gal_cmd(&mut data).assert();
+        let xpt = GxCmdDtoBuilder::default()
+            .cmd("echo ok".into())
+            .shell_opt(shell_opt)
             .build()
             .unwrap();
         assert_eq!(data, "");

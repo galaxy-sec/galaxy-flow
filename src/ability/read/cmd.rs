@@ -9,7 +9,7 @@ use orion_error::{ToStructError, UvsFrom};
 pub struct CmdDTO {
     pub name: String,
     pub cmd: String,
-    pub expect: ShellOption,
+    pub shell_opt: ShellOption,
 }
 
 impl CmdDTO {
@@ -19,11 +19,11 @@ impl CmdDTO {
         let cmd = self.cmd.clone();
         let name = self.name.clone();
         let cmd = exp.eval(&cmd)?;
-        let (data, _) = gxl_sh!(
+        let (_exit_code, data, _) = gxl_sh!(
             LogicScope::Outer,
             ctx.path(),
             &cmd,
-            &self.expect,
+            &self.shell_opt,
             &exp,
             vars_dict.global()
         )?;
@@ -53,7 +53,7 @@ mod tests {
         let dto = CmdDTO {
             name: "RG".to_string(),
             cmd: "echo galaxy-1.0".to_string(),
-            ..Default::default()
+            shell_opt: ShellOption::default(),
         };
         let res = GxRead::from(ReadMode::from(dto));
         res.async_exec(context, def).await.unwrap();

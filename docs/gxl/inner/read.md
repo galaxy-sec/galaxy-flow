@@ -30,6 +30,7 @@ gx.read_cmd(
   name: "BRANCH",
   cmd: "git branch --show-current",
   err: "ERR_MSG",
+  ok_codes: "0,1",
   log: "1"
 );
 ```

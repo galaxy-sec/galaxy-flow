@@ -7,7 +7,7 @@ pub struct GxCmd {
 #[derive(Clone, Debug, Builder, PartialEq, Default)]
 pub struct GxCmdDto {
     pub cmd: String,
-    pub expect: ShellOption,
+    pub shell_opt: ShellOption,
 }
 impl GxCmdDto {
     pub fn update(&mut self, vars_dict: &VarSpace) -> ExecResult<()> {
@@ -46,30 +46,25 @@ impl GxCmd {
         let exp = EnvExpress::from_env_mix(vars_dict.global().clone());
         let exe_cmd = exp.eval(cmd)?;
 
-        let mut expect = self.dto.expect.clone();
-        expect.quiet = ctx.quiet();
+        let mut shell_opt = self.dto.shell_opt.clone();
+        shell_opt.quiet = ctx.quiet();
 
         let res = gxl_sh!(
             LogicScope::Outer,
             ctx.tag_path("cmd").as_str(),
             &exe_cmd,
-            &expect,
+            &shell_opt,
             &exp,
             vars_dict.global()
         );
         match res {
-            Ok((stdout, stderr)) => {
+            Ok((exit_code, stdout, stderr)) => {
                 let out = String::from_utf8(stdout).map_err(|e| ExecReason::Io(e.to_string()))?;
                 let err = String::from_utf8(stderr).map_err(|e| ExecReason::Io(e.to_string()))?;
-                action.stdout = out.clone();
-                if !action.stdout.is_empty() {
-                    action.stdout = format!("{out}\n{err}",);
-                } else {
-                    action.stdout = err;
-                }
+                action.set_command_output(exit_code, out, err);
             }
             Err(error) => {
-                action.stdout = error.to_string();
+                action.set_stderr(error.to_string());
                 return Err(error);
             }
         }
@@ -107,5 +102,28 @@ mod tests {
           ) ;
         let result = res.async_exec(context, def).await;
         assert!(result.is_err())
+    }
+
+    #[tokio::test]
+    async fn cmd_test_keeps_exit_code_stdout_and_stderr() {
+        let (context, def) = ability_env_init();
+        let dto = GxCmdDto {
+            cmd: "printf out && printf err 1>&2 && exit 2".into(),
+            shell_opt: ShellOption {
+                quiet: true,
+                ok_codes: vec![0, 2],
+                ..Default::default()
+            },
+        };
+        let result = GxCmd::dto_new(dto)
+            .async_exec(context, def)
+            .await
+            .assert("cmd success");
+        let ExecOut::Action(action) = result.rec else {
+            panic!("expected action output");
+        };
+        assert_eq!(action.exit_code, Some(2));
+        assert_eq!(action.stdout, "out");
+        assert_eq!(action.stderr, "err");
     }
 }

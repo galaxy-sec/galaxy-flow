@@ -5,6 +5,18 @@ All notable changes to the Galaxy Flow project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.13.4] - 2026-03-15
+
+### Changed
+- **Command success semantics**: Renamed the shell option field used by `gx.cmd`, `gx.shell`, and `gx.read_cmd` from `expect` to `ok_codes`, making it explicit that it represents the allowlist of successful exit codes.
+- **Action result model**: Switched command action results to structured `exit_code`, `stdout`, and `stderr` fields instead of merging stdout/stderr into a single output field.
+- **Module update result reporting**: `gx mod update` now summarizes git extern modules per config file and emits a final project-level update summary.
+
+### Fixed
+- **Module update config collection**: When both `./_gal/work.gxl` and `./_gal/adm.gxl` exist, `gx mod update` now keeps both inputs instead of dropping an existing config.
+- **CLI output contract**: Human-oriented `gx mod update` result summaries now go to `stderr`, keeping `stdout` free of explanatory text.
+- **Parser and regression coverage**: Added `ok_codes` parsing coverage and execution assertions for `exit_code/stdout/stderr` command results.
+
 ## [v0.13.0] - 2026-03-10
 
 ### Added

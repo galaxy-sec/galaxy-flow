@@ -2,6 +2,7 @@ use super::prelude::*;
 use orion_parse::symbol::symbol_comma;
 use winnow::combinator::separated;
 
+use crate::ability::parse_ok_codes;
 use crate::components::{GxlProps, gxl_var::*};
 use crate::expect::ShellOption;
 use crate::parser::abilities::define::gal_var_assign_obj;
@@ -49,29 +50,31 @@ pub fn act_param_define(input: &mut &str) -> Result<Vec<GxlFParam>> {
     Ok(args)
 }
 
-pub fn shell_opt_setting(key: String, value: String, expect: &mut ShellOption) {
+pub fn shell_opt_setting(key: String, value: String, shell_opt: &mut ShellOption) {
     if key == "suc" {
-        expect.suc = Some(value);
+        shell_opt.suc = Some(value);
+    } else if key == "ok_codes" {
+        shell_opt.ok_codes = parse_ok_codes(value.as_str());
     } else if key == "quiet" {
         if value.to_lowercase() == "true" {
-            expect.quiet = true;
+            shell_opt.quiet = true;
         } else if value.to_lowercase() == "true" {
-            expect.quiet = false;
+            shell_opt.quiet = false;
         }
     } else if key == "out" {
         if value.to_lowercase() == "true" {
-            expect.quiet = false;
+            shell_opt.quiet = false;
         } else if value.to_lowercase() == "true" {
-            expect.quiet = true;
+            shell_opt.quiet = true;
         }
     } else if key == "err" {
-        expect.err = Some(value);
+        shell_opt.err = Some(value);
     } else if key == "sudo" && value.to_lowercase() == "true" {
-        expect.sudo = true;
+        shell_opt.sudo = true;
     } else if key == "log" {
-        expect.log_lev = Some(parse_log((key.as_str(), value.as_str())));
+        shell_opt.log_lev = Some(parse_log((key.as_str(), value.as_str())));
     } else if key == "silence" && value.to_lowercase() == "true" {
-        expect.secrecy = true;
+        shell_opt.secrecy = true;
     }
 }
 

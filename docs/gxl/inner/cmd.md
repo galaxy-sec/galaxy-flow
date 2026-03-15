@@ -10,7 +10,8 @@
 gx.cmd(
   cmd: "<command>",
   err: "<err var>",
-  suc: "<success marker>",
+  suc: "<success message>",
+  ok_codes: "0,2",
   sudo: "true|false",
   log: "1|2|3",
   silence: "true|false",
@@ -38,4 +39,5 @@ ls -al
 ```gxl
 gx.cmd(cmd: "git branch --show-current");
 gx.cmd("echo ${HOME}");
+gx.cmd(cmd: "grep foo missing.txt", ok_codes: "0,1");
 ```

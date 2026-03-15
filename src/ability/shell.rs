@@ -13,7 +13,7 @@ pub struct GxShell {
     arg_file: Option<PathBuf>,
     out_var: Option<String>,
     shell: String,
-    expect: ShellOption,
+    shell_opt: ShellOption,
 }
 #[async_trait]
 impl AsyncRunnableTrait for GxShell {
@@ -40,9 +40,9 @@ impl GxShell {
         trace!(target:ctx.path(),"shell:{}", self.shell);
         let exp = EnvExpress::from_env_mix(vars_dict.global().clone());
         let ext_cmd = exp.eval(self.shell.as_str())?;
-        let mut expect = self.expect.clone();
+        let mut shell_opt = self.shell_opt.clone();
 
-        expect.quiet = ctx.quiet();
+        shell_opt.quiet = ctx.quiet();
         if let Some(arg_file) = &self.arg_file {
             let dict = match arg_file.extension() {
                 Some(ext) if ext == "json" => ValueDict::load_json(arg_file)
@@ -84,7 +84,7 @@ impl GxShell {
                 LogicScope::Outer,
                 ctx.tag_path("cmd").as_str(),
                 &ext_cmd,
-                &expect,
+                &shell_opt,
                 &exp,
                 vars_dict.global()
             );
@@ -100,25 +100,20 @@ impl GxShell {
                 LogicScope::Outer,
                 ctx.tag_path("cmd").as_str(),
                 &ext_cmd,
-                &expect,
+                &shell_opt,
                 &exp,
                 vars_dict.global()
             )
         };
 
         match res {
-            Ok((stdout, stderr)) => {
+            Ok((exit_code, stdout, stderr)) => {
                 let out = String::from_utf8(stdout).map_err(|e| ExecReason::Io(e.to_string()))?;
                 let err = String::from_utf8(stderr).map_err(|e| ExecReason::Io(e.to_string()))?;
-                action.stdout = out.clone();
-                if !action.stdout.is_empty() {
-                    action.stdout = format!("{out}\n{err}");
-                } else {
-                    action.stdout = err;
-                }
+                action.set_command_output(exit_code, out, err);
             }
             Err(error) => {
-                action.stdout = error.to_string();
+                action.set_stderr(error.to_string());
                 return Err(error);
             }
         }

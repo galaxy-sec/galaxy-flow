@@ -46,18 +46,18 @@ pub fn sudo_cmd(sudo: bool) -> String {
     }
 }
 
-pub fn parse_suc_code(suc: &str) -> Vec<i32> {
-    let expect: Vec<&str> = suc.split(',').collect();
-    let mut expect_vec = Vec::new();
-    for i in expect {
+pub fn parse_ok_codes(codes: &str) -> Vec<i32> {
+    let codes: Vec<&str> = codes.split(',').collect();
+    let mut parsed = Vec::new();
+    for i in codes {
         let i = i.trim();
         let mut val = 0;
         if !i.is_empty() {
             val = i.parse::<i32>().unwrap_or_else(|_| panic!("bad number{i}"));
         }
-        expect_vec.push(val);
+        parsed.push(val);
     }
-    expect_vec
+    parsed
 }
 
 pub use crate::ability::{

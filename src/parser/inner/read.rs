@@ -62,8 +62,8 @@ pub fn gal_read_cmd(input: &mut &str) -> Result<GxRead> {
     gal_keyword("gx.read_cmd", input)?;
     let props = action_call_args.parse_next(input)?;
     let mut builder = CmdDTOBuilder::default();
-    let mut sh_opt = ShellOption::default();
-    builder.expect(sh_opt.clone());
+    let mut shell_opt = ShellOption::default();
+    builder.shell_opt(shell_opt.clone());
     for one in props {
         let key = one.0.to_lowercase();
         if key == "name" {
@@ -71,10 +71,10 @@ pub fn gal_read_cmd(input: &mut &str) -> Result<GxRead> {
         } else if key == "cmd" {
             builder.cmd(one.1);
         } else {
-            shell_opt_setting(key, one.1, &mut sh_opt);
+            shell_opt_setting(key, one.1, &mut shell_opt);
         }
     }
-    builder.expect(sh_opt);
+    builder.shell_opt(shell_opt);
     match builder.build() {
         Ok(dto) => Ok(GxRead::from(ReadMode::from(dto))),
         Err(e) => {
@@ -100,7 +100,7 @@ mod tests {
     fn read_cmd_test1() {
         once_init_log();
         let dto = CmdDTO {
-            expect: ShellOption::default(),
+            shell_opt: ShellOption::default(),
             cmd: "echo galaxy-1.0".to_string(),
             name: "RG".to_string(),
         };
@@ -116,14 +116,14 @@ mod tests {
     #[test]
     fn read_cmd_test2() {
         let mut dto = CmdDTO {
-            expect: ShellOption::default(),
+            shell_opt: ShellOption::default(),
             ..Default::default()
         };
-        dto.expect.log_lev = Some(log::Level::Info);
+        dto.shell_opt.log_lev = Some(log::Level::Info);
 
         dto.cmd = "echo galaxy-1.0".to_string();
         dto.name = "RG".to_string();
-        dto.expect.err = Some("you err".into());
+        dto.shell_opt.err = Some("you err".into());
 
         let mut data = r#"
                  gx.read_cmd(
