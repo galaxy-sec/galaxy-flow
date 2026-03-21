@@ -112,15 +112,17 @@ mod demo {
 
 ## 7. 自更新工作流（gx self）
 
-当前模型是“手动触发式”：
+当前模型是”手动触发式”：
 - 检查更新：`gx self check --channel <stable|alpha|beta>`
 - 执行更新：`gx self update --channel <channel> --yes`
-- 回滚：`gx self rollback --id <backup_id>`
+- 回滚：`gx self rollback [--id <backup_id>]`
 
 说明：
 - 下载包在临时目录，完成后清理
 - 最终替换当前安装目录中的 `gx`
 - 备份目录：`~/.galaxy/self_update/backups/<backup_id>/`
+- Manifest 来源：`galaxy-sec/get` 仓库的 `updates/gx/{channel}/manifest.json`
+- 实现基于 `wp-self-update` 库
 
 ## 8. 推荐学习路径
 
