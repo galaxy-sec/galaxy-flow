@@ -11,7 +11,7 @@ use super::rollback;
 use super::storage::SelfUpdateStorage;
 
 const MANIFEST_BASE_URL: &str =
-    "https://raw.githubusercontent.com/galaxy-sec/gx-get/main/updates/gx";
+    "https://raw.githubusercontent.com/galaxy-sec/get/main/updates/gx";
 const PRODUCT_NAME: &str = "gx";
 
 #[derive(Clone, Debug, Default)]
