@@ -10,7 +10,7 @@ version.workspace = true
 getset = "0.1.6"
 chrono = "0.4.41"
 
-wildmatch = "~2.4"
+wildmatch = "2.6"
 derive_more = { workspace = true }
 contracts = "0.6"
 libc = "0.2.174"

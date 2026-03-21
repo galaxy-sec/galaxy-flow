@@ -131,15 +131,6 @@ impl SelfUpdateStorage {
         }
     }
 
-    pub fn create_backup_dir(&self, backup_id: &str) -> RunResult<PathBuf> {
-        let dir = self.backups_dir().join(backup_id);
-        fs::create_dir_all(&dir)
-            .owe_res()
-            .want("create self update backup dir")
-            .with(("path", dir.as_path()))?;
-        Ok(dir)
-    }
-
     pub fn list_backups_desc(&self) -> RunResult<Vec<String>> {
         let mut list = Vec::new();
         let backups = self.backups_dir();

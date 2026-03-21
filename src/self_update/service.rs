@@ -1,27 +1,17 @@
-use std::path::{Path, PathBuf};
-use std::process::Command;
+use std::path::PathBuf;
 
 use chrono::Utc;
-use serde::Serialize;
 
 use orion_error::{ErrorOwe, ErrorWith, ToStructError};
 
 use crate::err::{RunReason, RunResult};
 
-use super::client::SelfUpdateClient;
-use super::installer;
-use super::model::{
-    CheckResult, ManifestAsset, ReleaseChannel, SelfUpdateState, StatusResult, UpdateResult,
-};
+use super::model::{CheckResult, ReleaseChannel, SelfUpdateState, StatusResult, UpdateResult};
+use super::rollback;
 use super::storage::SelfUpdateStorage;
 
-const MANIFEST_BASE_URL_STABLE: &str =
-    "https://raw.githubusercontent.com/galaxy-sec/galaxy-flow/main/updates/stable";
-const MANIFEST_BASE_URL_ALPHA: &str =
-    "https://raw.githubusercontent.com/galaxy-sec/galaxy-flow/alpha/updates/alpha";
-const MANIFEST_BASE_URL_BETA: &str =
-    "https://raw.githubusercontent.com/galaxy-sec/galaxy-flow/beta/updates/beta";
-const SELF_UPDATE_BINARIES: &[&str] = &["gx"];
+const MANIFEST_BASE_URL: &str = "https://raw.githubusercontent.com/galaxy-sec/gx-get/main/updates/gx";
+const PRODUCT_NAME: &str = "gx";
 
 #[derive(Clone, Debug, Default)]
 pub struct CheckRequest {
@@ -40,19 +30,17 @@ pub struct UpdateRequest {
 #[derive(Clone, Debug)]
 pub struct SelfUpdateService {
     storage: SelfUpdateStorage,
-    client: SelfUpdateClient,
 }
 
 impl SelfUpdateService {
     pub fn new() -> RunResult<Self> {
         Ok(Self {
             storage: SelfUpdateStorage::new()?,
-            client: SelfUpdateClient::default(),
         })
     }
 
     pub fn status(&self) -> RunResult<StatusResult> {
-        let install_dir = installer::install_dir_from_current_exe()?;
+        let install_dir = resolve_install_dir()?;
         let mut state = self.storage.load_state()?;
         state.current_version = Some(env!("CARGO_PKG_VERSION").to_string());
         Ok(StatusResult {
@@ -66,40 +54,39 @@ impl SelfUpdateService {
         let _lock = self.storage.acquire_lock()?;
         let mut state = self.storage.load_state()?;
         let channel = req.channel;
-        let temp_dir = TempDirGuard::new("check")?;
-        let manifest_base_url = manifest_base_url(channel);
-        let manifest = self
-            .client
-            .fetch_manifest(manifest_base_url, channel, temp_dir.path())
-            .await
-            .inspect_err(|e| {
-                let _ = record_failure_state(
-                    &self.storage,
-                    &mut state,
-                    channel,
-                    None,
-                    "check_failed",
-                    &e.to_string(),
-                );
-            })?;
 
-        let current = env!("CARGO_PKG_VERSION").to_string();
-        let has_update =
-            installer::is_remote_newer(&current, &manifest.version).inspect_err(|e| {
-                let _ = record_failure_state(
-                    &self.storage,
-                    &mut state,
-                    channel,
-                    Some(manifest.version.clone()),
-                    "check_failed",
-                    &e.to_string(),
-                );
-            })?;
+        let wp_channel = wp_self_update::UpdateChannel::from(channel);
+        let wp_source = wp_self_update::SourceConfig {
+            channel: wp_channel,
+            kind: wp_self_update::SourceKind::Manifest {
+                updates_base_url: MANIFEST_BASE_URL.to_string(),
+                updates_root: None,
+            },
+        };
+
+        let wp_req = wp_self_update::CheckRequest {
+            product: PRODUCT_NAME.to_string(),
+            source: wp_source,
+            current_version: env!("CARGO_PKG_VERSION").to_string(),
+            branch: channel.as_str().to_string(),
+        };
+
+        let report = wp_self_update::check(wp_req).await.map_err(|e| {
+            let _ = record_failure_state(
+                &self.storage,
+                &mut state,
+                channel,
+                None,
+                "check_failed",
+                &e.to_string(),
+            );
+            convert_wp_error(e)
+        })?;
 
         state.last_checked_at = Some(now_text());
         state.last_channel = Some(channel);
-        state.last_remote_version = Some(manifest.version.clone());
-        state.last_result = Some(if has_update {
+        state.last_remote_version = Some(report.latest_version.clone());
+        state.last_result = Some(if report.update_available {
             "update_available".to_string()
         } else {
             "up_to_date".to_string()
@@ -109,9 +96,9 @@ impl SelfUpdateService {
 
         Ok(CheckResult {
             channel,
-            current_version: current,
-            remote_version: manifest.version,
-            has_update,
+            current_version: report.current_version,
+            remote_version: report.latest_version,
+            has_update: report.update_available,
         })
     }
 
@@ -121,24 +108,38 @@ impl SelfUpdateService {
         let channel = req.channel;
         let current = env!("CARGO_PKG_VERSION").to_string();
 
-        let temp_dir = TempDirGuard::new("update")?;
-        let manifest_base_url = manifest_base_url(channel);
+        let wp_channel = wp_self_update::UpdateChannel::from(channel);
+        let wp_source = wp_self_update::SourceConfig {
+            channel: wp_channel,
+            kind: wp_self_update::SourceKind::Manifest {
+                updates_base_url: MANIFEST_BASE_URL.to_string(),
+                updates_root: None,
+            },
+        };
 
-        let manifest = self
-            .client
-            .fetch_manifest(manifest_base_url, channel, temp_dir.path())
-            .await
-            .inspect_err(|e| {
-                let _ = record_failure_state(
-                    &self.storage,
-                    &mut state,
-                    channel,
-                    None,
-                    "update_failed",
-                    &e.to_string(),
-                );
-            })?;
-        let remote = manifest.version.clone();
+        // First check to get remote version
+        let check_req = wp_self_update::CheckRequest {
+            product: PRODUCT_NAME.to_string(),
+            source: wp_source.clone(),
+            current_version: current.clone(),
+            branch: channel.as_str().to_string(),
+        };
+
+        let check_report = wp_self_update::check(check_req).await.map_err(|e| {
+            let _ = record_failure_state(
+                &self.storage,
+                &mut state,
+                channel,
+                None,
+                "update_failed",
+                &e.to_string(),
+            );
+            convert_wp_error(e)
+        })?;
+
+        let remote = check_report.latest_version.clone();
+
+        // Validate to_version if specified
         if let Some(expect) = &req.to_version
             && expect.trim() != remote
         {
@@ -159,21 +160,8 @@ impl SelfUpdateService {
             return Err(err);
         }
 
-        let has_update = if req.force {
-            true
-        } else {
-            installer::is_remote_newer(&current, &remote).inspect_err(|e| {
-                let _ = record_failure_state(
-                    &self.storage,
-                    &mut state,
-                    channel,
-                    Some(remote.clone()),
-                    "update_failed",
-                    &e.to_string(),
-                );
-            })?
-        };
-        if !has_update {
+        // Check if update is needed
+        if !req.force && !check_report.update_available {
             state.last_checked_at = Some(now_text());
             state.last_channel = Some(channel);
             state.last_remote_version = Some(remote.clone());
@@ -188,6 +176,7 @@ impl SelfUpdateService {
                 updated: false,
             });
         }
+
         if req.dry_run {
             state.last_checked_at = Some(now_text());
             state.last_channel = Some(channel);
@@ -203,25 +192,21 @@ impl SelfUpdateService {
                 updated: false,
             });
         }
-        if !req.yes {
-            let err = RunReason::Args("confirmation required".into())
-                .to_err()
-                .want("confirm update apply")
-                .with(("channel", channel.as_str()))
-                .with(("remote", remote.as_str()))
-                .with_detail("rerun with --yes to apply update, or use --dry-run");
-            let _ = record_failure_state(
-                &self.storage,
-                &mut state,
-                channel,
-                Some(remote.clone()),
-                "update_skipped_need_confirm",
-                &err.to_string(),
-            );
-            return Err(err);
-        }
 
-        let target = installer::detect_target_triple().inspect_err(|e| {
+        // Perform update using wp-self-update
+        let install_dir = resolve_install_dir()?;
+        let wp_update_req = wp_self_update::UpdateRequest {
+            product: PRODUCT_NAME.to_string(),
+            target: wp_self_update::UpdateTarget::Bins(vec!["gx".to_string()]),
+            source: wp_source,
+            current_version: current.clone(),
+            install_dir: Some(install_dir.clone()),
+            yes: req.yes,
+            dry_run: false,
+            force: req.force,
+        };
+
+        let update_report = wp_self_update::update(wp_update_req).await.map_err(|e| {
             let _ = record_failure_state(
                 &self.storage,
                 &mut state,
@@ -230,114 +215,10 @@ impl SelfUpdateService {
                 "update_failed",
                 &e.to_string(),
             );
-        })?;
-        let asset = manifest
-            .assets
-            .get(&target)
-            .ok_or_else(|| {
-                RunReason::Exec("asset for target not found".into())
-                    .to_err()
-                    .want("select package asset for target")
-                    .with(("target", target.as_str()))
-                    .with_detail(format!("target={target}"))
-            })
-            .inspect_err(|e| {
-                let _ = record_failure_state(
-                    &self.storage,
-                    &mut state,
-                    channel,
-                    Some(remote.clone()),
-                    "update_failed",
-                    &e.to_string(),
-                );
-            })?;
-
-        let asset_file = temp_dir.path().join(format!("update-{target}.tar.gz"));
-        self.client
-            .download_to_path(&asset.url, &asset_file)
-            .await
-            .inspect_err(|e| {
-                let _ = record_failure_state(
-                    &self.storage,
-                    &mut state,
-                    channel,
-                    Some(remote.clone()),
-                    "update_failed",
-                    &e.to_string(),
-                );
-            })?;
-        installer::verify_sha256(&asset_file, &asset.sha256).inspect_err(|e| {
-            let _ = record_failure_state(
-                &self.storage,
-                &mut state,
-                channel,
-                Some(remote.clone()),
-                "update_failed",
-                &e.to_string(),
-            );
+            convert_wp_error(e)
         })?;
 
-        let unpack_dir = temp_dir.path().join("unpack");
-        installer::extract_tar_gz(&asset_file, &unpack_dir).inspect_err(|e| {
-            let _ = record_failure_state(
-                &self.storage,
-                &mut state,
-                channel,
-                Some(remote.clone()),
-                "update_failed",
-                &e.to_string(),
-            );
-        })?;
-        let new_gx =
-            installer::find_binary(&unpack_dir, bin_name("gx").as_str()).inspect_err(|e| {
-                let _ = record_failure_state(
-                    &self.storage,
-                    &mut state,
-                    channel,
-                    Some(remote.clone()),
-                    "update_failed",
-                    &e.to_string(),
-                );
-            })?;
-        let install_dir = installer::install_dir_from_current_exe().inspect_err(|e| {
-            let _ = record_failure_state(
-                &self.storage,
-                &mut state,
-                channel,
-                Some(remote.clone()),
-                "update_failed",
-                &e.to_string(),
-            );
-        })?;
         let backup_id = now_id();
-        let backup_dir = self
-            .storage
-            .create_backup_dir(&backup_id)
-            .inspect_err(|e| {
-                let _ = record_failure_state(
-                    &self.storage,
-                    &mut state,
-                    channel,
-                    Some(remote.clone()),
-                    "update_failed",
-                    &e.to_string(),
-                );
-            })?;
-
-        let install_res = installer::backup_and_replace(&install_dir, &backup_dir, &new_gx)
-            .and_then(|_| installer::health_check(&install_dir));
-
-        if let Err(e) = install_res {
-            let _ = installer::rollback(&install_dir, &backup_dir);
-            state.last_checked_at = Some(now_text());
-            state.last_channel = Some(channel);
-            state.last_remote_version = Some(remote.clone());
-            state.last_result = Some("update_failed_rollback".to_string());
-            state.last_error = Some(e.to_string());
-            self.storage.save_state(&state)?;
-            return Err(e);
-        }
-
         state.last_checked_at = Some(now_text());
         state.last_channel = Some(channel);
         state.last_remote_version = Some(remote.clone());
@@ -353,7 +234,7 @@ impl SelfUpdateService {
             from_version: current,
             to_version: remote,
             backup_id: Some(backup_id),
-            updated: true,
+            updated: update_report.updated,
         })
     }
 
@@ -368,16 +249,16 @@ impl SelfUpdateService {
             .clone()
             .unwrap_or_else(|| env!("CARGO_PKG_VERSION").to_string());
         let backup_dir = self.storage.backups_dir().join(&backup_id);
-        let install_dir = installer::install_dir_from_current_exe().inspect_err(|e| {
+        let install_dir = resolve_install_dir().inspect_err(|e| {
             let _ = record_rollback_failure_state(&self.storage, &mut state, &e.to_string());
         })?;
-        installer::rollback(&install_dir, &backup_dir).inspect_err(|e| {
+        rollback::rollback(&install_dir, &backup_dir).inspect_err(|e| {
             let _ = record_rollback_failure_state(&self.storage, &mut state, &e.to_string());
         })?;
-        installer::health_check(&install_dir).inspect_err(|e| {
+        rollback::health_check(&install_dir).inspect_err(|e| {
             let _ = record_rollback_failure_state(&self.storage, &mut state, &e.to_string());
         })?;
-        let restored_version = read_primary_installed_version(&install_dir);
+        let restored_version = read_installed_version(&install_dir);
         state.installed_at = Some(now_text());
         match restored_version {
             Ok(v) => {
@@ -394,7 +275,6 @@ impl SelfUpdateService {
                 })
             }
             Err(e) => {
-                // Rollback is already healthy; keep it successful but record parse warning.
                 state.last_result = Some("rollback_version_unknown".to_string());
                 state.last_error = Some(e.to_string());
                 self.storage.save_state(&state)?;
@@ -408,6 +288,17 @@ impl SelfUpdateService {
             }
         }
     }
+}
+
+fn resolve_install_dir() -> RunResult<PathBuf> {
+    let exe = std::env::current_exe()
+        .owe_sys()
+        .want("resolve current executable path")?;
+    exe.parent()
+        .map(PathBuf::from)
+        .ok_or_else(|| RunReason::Exec("cannot resolve install dir".into()).to_err())
+        .want("resolve install dir from current executable")
+        .with(("exe", exe.as_path()))
 }
 
 fn record_failure_state(
@@ -434,58 +325,6 @@ fn record_rollback_failure_state(
     state.last_result = Some("rollback_failed".to_string());
     state.last_error = Some(err.to_string());
     storage.save_state(state)
-}
-
-fn bin_name(base: &str) -> String {
-    if cfg!(windows) {
-        format!("{base}.exe")
-    } else {
-        base.to_string()
-    }
-}
-
-fn read_primary_installed_version(install_dir: &Path) -> RunResult<String> {
-    for bin in SELF_UPDATE_BINARIES {
-        let path = install_dir.join(bin_name(bin));
-        if path.exists() {
-            return read_installed_version(&path);
-        }
-    }
-    Err(RunReason::Exec("no installed binary found".into())
-        .to_err()
-        .with_detail(format!("install_dir={}", install_dir.display())))
-}
-
-fn temp_dir(prefix: &str) -> PathBuf {
-    let mut p = std::env::temp_dir();
-    p.push(format!("galaxy-self-update-{}-{}", prefix, now_id()));
-    p
-}
-
-struct TempDirGuard {
-    path: PathBuf,
-}
-
-impl TempDirGuard {
-    fn new(prefix: &str) -> RunResult<Self> {
-        let path = temp_dir(prefix);
-        std::fs::create_dir_all(&path)
-            .owe_res()
-            .want("create self update temp directory")
-            .with(("prefix", prefix))
-            .with(("path", path.as_path()))?;
-        Ok(Self { path })
-    }
-
-    fn path(&self) -> &Path {
-        &self.path
-    }
-}
-
-impl Drop for TempDirGuard {
-    fn drop(&mut self) {
-        let _ = std::fs::remove_dir_all(&self.path);
-    }
 }
 
 fn select_backup_id(backups: &[String], id: Option<&str>) -> RunResult<String> {
@@ -528,26 +367,23 @@ fn now_text() -> String {
     Utc::now().to_rfc3339()
 }
 
-fn manifest_base_url(channel: ReleaseChannel) -> &'static str {
-    match channel {
-        ReleaseChannel::Stable => MANIFEST_BASE_URL_STABLE,
-        ReleaseChannel::Alpha => MANIFEST_BASE_URL_ALPHA,
-        ReleaseChannel::Beta => MANIFEST_BASE_URL_BETA,
-    }
-}
-
-fn read_installed_version(bin: &std::path::Path) -> RunResult<String> {
-    let out = Command::new(bin)
+fn read_installed_version(install_dir: &std::path::Path) -> RunResult<String> {
+    let bin = if cfg!(windows) {
+        install_dir.join("gx.exe")
+    } else {
+        install_dir.join("gx")
+    };
+    let out = std::process::Command::new(&bin)
         .arg("--version")
         .output()
         .owe_res()
         .want("run installed binary version command")
-        .with(("bin", bin))?;
+        .with(("bin", &bin))?;
     if !out.status.success() {
         return Err(RunReason::Exec("version command failed".into())
             .to_err()
             .want("read installed binary version")
-            .with(("bin", bin))
+            .with(("bin", &bin))
             .with_detail(format!("{} --version exit={}", bin.display(), out.status)));
     }
     let text = format!(
@@ -559,7 +395,7 @@ fn read_installed_version(bin: &std::path::Path) -> RunResult<String> {
         RunReason::Exec("cannot parse version output".into())
             .to_err()
             .want("parse installed binary version output")
-            .with(("bin", bin))
+            .with(("bin", &bin))
             .with_detail(format!("bin={}", bin.display()))
     })
 }
@@ -572,52 +408,20 @@ fn parse_version_from_text(text: &str) -> Option<String> {
         if normalized.is_empty() {
             continue;
         }
-        if let Ok(v) = installer::normalize_version(normalized) {
+        if let Ok(v) = semver::Version::parse(normalized.trim_start_matches('v')) {
             return Some(v.to_string());
         }
     }
     None
 }
 
-#[allow(dead_code)]
-fn json_text<T: Serialize>(v: &T) -> RunResult<String> {
-    serde_json::to_string_pretty(v)
-        .owe_data()
-        .want("serialize json text")
-}
-
-#[allow(dead_code)]
-fn _asset_for_target<'a>(
-    assets: &'a std::collections::BTreeMap<String, ManifestAsset>,
-    target: &str,
-) -> RunResult<&'a ManifestAsset> {
-    assets
-        .get(target)
-        .ok_or_else(|| RunReason::Exec("asset not found".into()).to_err())
+fn convert_wp_error(e: impl std::fmt::Display) -> crate::err::RunError {
+    crate::err::RunReason::Exec(e.to_string()).to_err()
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{
-        ReleaseChannel, SELF_UPDATE_BINARIES, manifest_base_url, parse_version_from_text,
-        select_backup_id,
-    };
-
-    #[test]
-    fn manifest_base_url_matches_channel_branch() {
-        assert_eq!(
-            manifest_base_url(ReleaseChannel::Stable),
-            "https://raw.githubusercontent.com/galaxy-sec/galaxy-flow/main/updates/stable"
-        );
-        assert_eq!(
-            manifest_base_url(ReleaseChannel::Alpha),
-            "https://raw.githubusercontent.com/galaxy-sec/galaxy-flow/alpha/updates/alpha"
-        );
-        assert_eq!(
-            manifest_base_url(ReleaseChannel::Beta),
-            "https://raw.githubusercontent.com/galaxy-sec/galaxy-flow/beta/updates/beta"
-        );
-    }
+    use super::{is_valid_backup_id, select_backup_id};
 
     #[test]
     fn backup_id_requires_membership() {
@@ -634,16 +438,9 @@ mod tests {
     }
 
     #[test]
-    fn parse_version_from_output_text() {
-        assert_eq!(
-            parse_version_from_text("gx 0.12.4"),
-            Some("0.12.4".to_string())
-        );
-        assert_eq!(parse_version_from_text("version: unknown"), None);
-    }
-
-    #[test]
-    fn self_update_primary_binary_prefers_gx() {
-        assert_eq!(SELF_UPDATE_BINARIES.first().copied(), Some("gx"));
+    fn validate_backup_id() {
+        assert!(is_valid_backup_id("20260321123456"));
+        assert!(!is_valid_backup_id("2026032112345")); // too short
+        assert!(!is_valid_backup_id("20260321123456a")); // has letter
     }
 }

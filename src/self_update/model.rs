@@ -1,4 +1,3 @@
-use std::collections::BTreeMap;
 use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize};
@@ -31,6 +30,16 @@ impl ReleaseChannel {
     }
 }
 
+impl From<ReleaseChannel> for wp_self_update::UpdateChannel {
+    fn from(channel: ReleaseChannel) -> Self {
+        match channel {
+            ReleaseChannel::Stable => wp_self_update::UpdateChannel::Stable,
+            ReleaseChannel::Alpha => wp_self_update::UpdateChannel::Alpha,
+            ReleaseChannel::Beta => wp_self_update::UpdateChannel::Beta,
+        }
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Default)]
 pub struct SelfUpdateState {
     pub last_checked_at: Option<String>,
@@ -41,22 +50,6 @@ pub struct SelfUpdateState {
     pub current_version: Option<String>,
     pub installed_at: Option<String>,
     pub last_backup_id: Option<String>,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub struct ManifestAsset {
-    pub url: String,
-    pub sha256: String,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub struct SelfUpdateManifest {
-    pub version: String,
-    pub channel: ReleaseChannel,
-    pub published_at: String,
-    pub git_ref: Option<String>,
-    pub git_commit: Option<String>,
-    pub assets: BTreeMap<String, ManifestAsset>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
