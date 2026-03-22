@@ -107,17 +107,17 @@ pub struct SelfRollbackArgs {
 
 #[derive(Debug, Args, Getters, Clone)]
 pub struct InitArgs {
-    /// git repository URL. Default: https://github.com/galaxy-sec/prj-tpl.git
-    #[arg(long, default_value = "https://github.com/galaxy-sec/prj-tpl.git")]
-    pub(crate) repo: String,
+    /// git repository URL. Used with --path for remote init.
+    #[arg(long)]
+    pub(crate) repo: Option<String>,
     /// subdirectory path within the repository.
-    /// eg: --path rust
+    /// When used without --repo, uses default repo: https://github.com/galaxy-sec/prj-tpl.git
     #[arg(long)]
     pub(crate) path: Option<String>,
-    /// branch for git repository
+    /// branch for git repository (requires --repo or --path)
     #[arg(short, long, conflicts_with = "tag")]
     pub(crate) branch: Option<String>,
-    /// tag for git repository
+    /// tag for git repository (requires --repo or --path)
     #[arg(long, conflicts_with = "branch")]
     pub(crate) tag: Option<String>,
     /// debug level ; eg: -d 1
@@ -246,14 +246,15 @@ mod tests {
     }
 
     #[test]
-    fn parse_init_project_with_branch() {
-        // --branch now works with default repo
+    fn parse_init_project_with_branch_and_path() {
+        // --branch with --path uses default repo
         let cmd = GxCmd::try_parse_from([
-            "gx", "init", "project", "--branch", "main",
-        ]).expect("init project with branch should parse");
+            "gx", "init", "project", "--path", "rust", "--branch", "main",
+        ]).expect("init project with path and branch should parse");
         match cmd {
             GxCmd::Init(InitCmd::Project(args)) => {
-                assert_eq!(args.repo(), "https://github.com/galaxy-sec/prj-tpl.git");
+                assert_eq!(args.repo(), &None);
+                assert_eq!(args.path(), &Some("rust".to_string()));
                 assert_eq!(args.branch(), &Some("main".to_string()));
             }
             other => panic!("unexpected command: {other:?}"),
@@ -261,14 +262,14 @@ mod tests {
     }
 
     #[test]
-    fn parse_init_project_with_tag() {
-        // --tag now works with default repo
+    fn parse_init_project_with_tag_and_repo() {
+        // --tag with --repo
         let cmd = GxCmd::try_parse_from([
-            "gx", "init", "project", "--tag", "v1.0.0",
-        ]).expect("init project with tag should parse");
+            "gx", "init", "project", "--repo", "https://github.com/user/repo.git", "--tag", "v1.0.0",
+        ]).expect("init project with repo and tag should parse");
         match cmd {
             GxCmd::Init(InitCmd::Project(args)) => {
-                assert_eq!(args.repo(), "https://github.com/galaxy-sec/prj-tpl.git");
+                assert_eq!(args.repo(), &Some("https://github.com/user/repo.git".to_string()));
                 assert_eq!(args.tag(), &Some("v1.0.0".to_string()));
             }
             other => panic!("unexpected command: {other:?}"),

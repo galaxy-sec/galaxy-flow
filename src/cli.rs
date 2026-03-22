@@ -180,22 +180,38 @@ fn do_check_cmd() -> RunResult<()> {
 }
 
 async fn do_prj_cmd(load: &mut GxLoader, cmd: InitCmd) -> RunResult<()> {
+    const DEFAULT_REPO: &str = "https://github.com/galaxy-sec/prj-tpl.git";
+
     match cmd {
         InitCmd::Env => Galaxy::env_init()?,
         InitCmd::Project(args) => {
             configure_cli_runtime(args.log.clone(), args.debug);
-            let _stdout_guard = StdoutToStderrGuard::new()?;
 
-            let mut addr = GitRepository::from(args.repo());
-            if let Some(path) = args.path() {
-                addr = addr.with_path(path);
+            // Validate: --branch/--tag require --repo or --path
+            if (args.branch.is_some() || args.tag.is_some()) && args.repo.is_none() && args.path.is_none() {
+                return Err(RunReason::Args("--branch/--tag require --repo or --path".into())
+                    .to_err()
+                    .with_detail("use: gx init project --path rust --branch main"));
             }
-            if let Some(tag) = args.tag() {
-                addr = addr.with_tag(tag);
-            } else if let Some(branch) = args.branch() {
-                addr = addr.with_branch(branch);
+
+            if args.repo.is_some() || args.path.is_some() {
+                // Remote init: use specified repo or default
+                let _stdout_guard = StdoutToStderrGuard::new()?;
+                let repo = args.repo.as_deref().unwrap_or(DEFAULT_REPO);
+                let mut addr = GitRepository::from(repo);
+                if let Some(path) = args.path() {
+                    addr = addr.with_path(path);
+                }
+                if let Some(tag) = args.tag() {
+                    addr = addr.with_tag(tag);
+                } else if let Some(branch) = args.branch() {
+                    addr = addr.with_branch(branch);
+                }
+                load.init_from_git(addr).await?;
+            } else {
+                // Local init: no network required
+                Galaxy::project_init()?;
             }
-            load.init_from_git(addr).await?;
         }
     }
     Ok(())
@@ -567,23 +583,23 @@ mod main {}
     fn parse_init_project_with_repo() {
         use crate::cmd::gx_cmd::InitCmd;
 
-        // default repo
+        // no args = local init (repo is None)
         let cmd = GxCmd::try_parse_from(["gx", "init", "project"])
-            .expect("init project should parse with default repo");
+            .expect("init project should parse");
         match cmd {
             GxCmd::Init(InitCmd::Project(args)) => {
-                assert_eq!(args.repo(), "https://github.com/galaxy-sec/prj-tpl.git");
+                assert_eq!(args.repo(), &None);
                 assert_eq!(args.path(), &None);
             }
             other => panic!("unexpected command: {other:?}"),
         }
 
-        // --repo override
+        // --repo specified
         let cmd = GxCmd::try_parse_from(["gx", "init", "project", "--repo", "https://github.com/user/repo.git"])
             .expect("init project with repo should parse");
         match cmd {
             GxCmd::Init(InitCmd::Project(args)) => {
-                assert_eq!(args.repo(), "https://github.com/user/repo.git");
+                assert_eq!(args.repo(), &Some("https://github.com/user/repo.git".to_string()));
                 assert_eq!(args.path(), &None);
             }
             other => panic!("unexpected command: {other:?}"),
@@ -597,18 +613,18 @@ mod main {}
         ]).expect("init project with repo and path should parse");
         match cmd {
             GxCmd::Init(InitCmd::Project(args)) => {
-                assert_eq!(args.repo(), "https://github.com/user/repo.git");
+                assert_eq!(args.repo(), &Some("https://github.com/user/repo.git".to_string()));
                 assert_eq!(args.path(), &Some("rust".to_string()));
             }
             other => panic!("unexpected command: {other:?}"),
         }
 
-        // --path only (uses default repo)
+        // --path only (will use default repo at runtime)
         let cmd = GxCmd::try_parse_from(["gx", "init", "project", "--path", "rust"])
             .expect("init project with path should parse");
         match cmd {
             GxCmd::Init(InitCmd::Project(args)) => {
-                assert_eq!(args.repo(), "https://github.com/galaxy-sec/prj-tpl.git");
+                assert_eq!(args.repo(), &None);  // default repo is applied at runtime
                 assert_eq!(args.path(), &Some("rust".to_string()));
             }
             other => panic!("unexpected command: {other:?}"),

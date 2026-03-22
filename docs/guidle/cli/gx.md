@@ -26,19 +26,15 @@ gx <COMMAND>
 # 初始化运行环境（首次使用）
 gx init env
 
-# 初始化项目（从默认仓库）
+# 初始化项目（本地基础模板，无需网络）
 gx init project
 
-# 初始化项目（从默认仓库的子目录）
+# 初始化项目（从默认仓库子目录，需要网络）
 gx init project --path rust
 
 # 初始化项目（从指定仓库）
 gx init project --repo https://github.com/user/repo.git
 gx init project --repo https://github.com/user/repo.git --branch dev
-gx init project --repo https://github.com/user/repo.git --tag v1.0.0
-
-# 初始化项目（从指定仓库子目录）
-gx init project --repo https://github.com/user/repo.git --path subdir
 
 # 运行工作流
 gx run conf
@@ -58,11 +54,13 @@ gx mod update
 ## init project 详解
 
 ```bash
-# 从默认仓库初始化 (https://github.com/galaxy-sec/prj-tpl.git)
+# 本地初始化（离线、快速，创建基础 work.gxl 和 adm.gxl）
 gx init project
 
-# 从默认仓库指定子目录初始化
-gx init project --path <subdir>
+# 从默认仓库子目录初始化（需要网络）
+# 默认仓库: https://github.com/galaxy-sec/prj-tpl.git
+gx init project --path rust
+gx init project --path rust --branch main
 
 # 从指定仓库初始化
 gx init project --repo <git_url>
@@ -74,10 +72,15 @@ gx init project --repo <git_url> --path <subdir>
 ```
 
 参数说明：
-- `--repo`：git 仓库地址，默认 `https://github.com/galaxy-sec/prj-tpl.git`
-- `--path`：仓库内的子目录路径
-- `--branch`：指定分支（与 `--tag` 互斥）
-- `--tag`：指定标签（与 `--branch` 互斥）
+- `--repo`：git 仓库地址
+- `--path`：仓库内的子目录路径（使用默认仓库或指定仓库）
+- `--branch`：指定分支（需要 `--repo` 或 `--path`）
+- `--tag`：指定标签（需要 `--repo` 或 `--path`，与 `--branch` 互斥）
+
+行为说明：
+- 不带参数 → 本地初始化，创建基础配置文件
+- 带 `--path`（无 `--repo`）→ 从默认仓库的指定子目录初始化
+- 带 `--repo` → 从指定仓库初始化
 
 ## 兼容入口
 
