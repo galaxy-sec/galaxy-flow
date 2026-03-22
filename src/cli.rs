@@ -185,32 +185,25 @@ async fn do_prj_cmd(load: &mut GxLoader, cmd: InitCmd) -> RunResult<()> {
         InitCmd::Project(args) => {
             configure_cli_runtime(args.log.clone(), args.debug);
 
-            if let Some(tpl) = args.tpl() {
-                // --tpl specified: init from template (URL or local path)
+            if let Some(repo) = args.repo() {
+                // --repo specified: init from git repository
                 let _stdout_guard = StdoutToStderrGuard::new()?;
-                if tpl.starts_with("http://") || tpl.starts_with("https://") {
-                    // Git URL - parse repo and optional path suffix after .git
-                    let (repo_url, path_suffix) = parse_git_url_with_path(&tpl);
-                    let addr = GitRepository::from(repo_url);
-                    let addr = if let Some(path) = path_suffix {
-                        addr.with_path(path)
-                    } else {
-                        addr
-                    };
-                    let addr = if let Some(tag) = args.tag() {
-                        addr.with_tag(tag)
-                    } else if let Some(branch) = args.branch() {
-                        addr.with_branch(branch)
-                    } else {
-                        addr
-                    };
-                    load.init_from_git(addr).await?;
-                } else {
-                    // Local path
-                    load.init_from_local(tpl).await?;
+                let mut addr = GitRepository::from(repo);
+                if let Some(path) = args.path() {
+                    addr = addr.with_path(path);
                 }
+                if let Some(tag) = args.tag() {
+                    addr = addr.with_tag(tag);
+                } else if let Some(branch) = args.branch() {
+                    addr = addr.with_branch(branch);
+                }
+                load.init_from_git(addr).await?;
+            } else if let Some(path) = args.path() {
+                // Only --path specified: init from local path
+                let _stdout_guard = StdoutToStderrGuard::new()?;
+                load.init_from_local(path).await?;
             } else {
-                // No --tpl: local init only (create _gal directory)
+                // No --repo or --path: local init only (create _gal directory)
                 Galaxy::project_init()?;
             }
         }
@@ -443,26 +436,6 @@ fn parse_channel(input: &str) -> RunResult<ReleaseChannel> {
     })
 }
 
-/// Parse a git URL that may contain a path suffix after .git
-/// e.g., "https://github.com/user/repo.git/subdir" -> ("https://github.com/user/repo.git", Some("subdir"))
-fn parse_git_url_with_path(url: &str) -> (&str, Option<&str>) {
-    // Look for .git followed by / and extract the path suffix
-    if let Some(pos) = url.find(".git/") {
-        let repo_url = &url[..pos + 4]; // include .git
-        let path = &url[pos + 5..]; // skip .git/
-        if path.is_empty() {
-            (repo_url, None)
-        } else {
-            (repo_url, Some(path))
-        }
-    } else if url.ends_with(".git") {
-        (url, None)
-    } else {
-        // No .git suffix, return as-is
-        (url, None)
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use std::path::Path;
@@ -601,30 +574,43 @@ mod main {}
     }
 
     #[test]
-    fn test_parse_git_url_with_path() {
-        // URL with path suffix
-        let (repo, path) = super::parse_git_url_with_path("https://github.com/user/repo.git/subdir");
-        assert_eq!(repo, "https://github.com/user/repo.git");
-        assert_eq!(path, Some("subdir"));
+    fn parse_init_project_with_repo() {
+        use crate::cmd::gx_cmd::InitCmd;
 
-        // URL with nested path
-        let (repo, path) = super::parse_git_url_with_path("https://github.com/user/repo.git/a/b/c");
-        assert_eq!(repo, "https://github.com/user/repo.git");
-        assert_eq!(path, Some("a/b/c"));
+        // --repo only
+        let cmd = GxCmd::try_parse_from(["gx", "init", "project", "--repo", "https://github.com/user/repo.git"])
+            .expect("init project with repo should parse");
+        match cmd {
+            GxCmd::Init(InitCmd::Project(args)) => {
+                assert_eq!(args.repo(), &Some("https://github.com/user/repo.git".to_string()));
+                assert_eq!(args.path(), &None);
+            }
+            other => panic!("unexpected command: {other:?}"),
+        }
 
-        // URL without path suffix
-        let (repo, path) = super::parse_git_url_with_path("https://github.com/user/repo.git");
-        assert_eq!(repo, "https://github.com/user/repo.git");
-        assert_eq!(path, None);
+        // --repo with --path
+        let cmd = GxCmd::try_parse_from([
+            "gx", "init", "project",
+            "--repo", "https://github.com/user/repo.git",
+            "--path", "rust"
+        ]).expect("init project with repo and path should parse");
+        match cmd {
+            GxCmd::Init(InitCmd::Project(args)) => {
+                assert_eq!(args.repo(), &Some("https://github.com/user/repo.git".to_string()));
+                assert_eq!(args.path(), &Some("rust".to_string()));
+            }
+            other => panic!("unexpected command: {other:?}"),
+        }
 
-        // URL without .git suffix
-        let (repo, path) = super::parse_git_url_with_path("https://github.com/user/repo");
-        assert_eq!(repo, "https://github.com/user/repo");
-        assert_eq!(path, None);
-
-        // URL with .git/ (trailing slash, empty path)
-        let (repo, path) = super::parse_git_url_with_path("https://github.com/user/repo.git/");
-        assert_eq!(repo, "https://github.com/user/repo.git");
-        assert_eq!(path, None);
+        // --path only (local path)
+        let cmd = GxCmd::try_parse_from(["gx", "init", "project", "--path", "/local/template"])
+            .expect("init project with local path should parse");
+        match cmd {
+            GxCmd::Init(InitCmd::Project(args)) => {
+                assert_eq!(args.repo(), &None);
+                assert_eq!(args.path(), &Some("/local/template".to_string()));
+            }
+            other => panic!("unexpected command: {other:?}"),
+        }
     }
 }
