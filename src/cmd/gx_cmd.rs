@@ -114,11 +114,11 @@ pub struct InitArgs {
     /// eg: --path rust (for repo) or --path /local/template (for local)
     #[arg(long)]
     pub(crate) path: Option<String>,
-    /// branch for git repository
-    #[arg(short, long, conflicts_with = "tag")]
+    /// branch for git repository (requires --repo)
+    #[arg(short, long, conflicts_with = "tag", requires = "repo")]
     pub(crate) branch: Option<String>,
-    /// tag for git repository
-    #[arg(long, conflicts_with = "branch")]
+    /// tag for git repository (requires --repo)
+    #[arg(long, conflicts_with = "branch", requires = "repo")]
     pub(crate) tag: Option<String>,
     /// debug level ; eg: -d 1
     #[arg(short = 'd', long = "debug", default_value = "0")]
@@ -242,6 +242,28 @@ mod tests {
         assert!(
             result.is_err(),
             "branch and tag should be mutually exclusive"
+        );
+    }
+
+    #[test]
+    fn reject_init_project_branch_without_repo() {
+        let result = GxCmd::try_parse_from([
+            "gx", "init", "project", "--branch", "main",
+        ]);
+        assert!(
+            result.is_err(),
+            "branch requires --repo"
+        );
+    }
+
+    #[test]
+    fn reject_init_project_tag_without_repo() {
+        let result = GxCmd::try_parse_from([
+            "gx", "init", "project", "--tag", "v1.0.0",
+        ]);
+        assert!(
+            result.is_err(),
+            "tag requires --repo"
         );
     }
 }
