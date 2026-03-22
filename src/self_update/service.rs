@@ -10,8 +10,7 @@ use super::model::{CheckResult, ReleaseChannel, SelfUpdateState, StatusResult, U
 use super::rollback;
 use super::storage::SelfUpdateStorage;
 
-const MANIFEST_BASE_URL: &str =
-    "https://raw.githubusercontent.com/galaxy-sec/get/main/updates/gx";
+const MANIFEST_BASE_URL: &str = "https://raw.githubusercontent.com/galaxy-sec/get/main/updates/gx";
 const PRODUCT_NAME: &str = "gx";
 
 #[derive(Clone, Debug, Default)]

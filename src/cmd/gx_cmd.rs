@@ -250,7 +250,8 @@ mod tests {
         // --branch with --path uses default repo
         let cmd = GxCmd::try_parse_from([
             "gx", "init", "project", "--path", "rust", "--branch", "main",
-        ]).expect("init project with path and branch should parse");
+        ])
+        .expect("init project with path and branch should parse");
         match cmd {
             GxCmd::Init(InitCmd::Project(args)) => {
                 assert_eq!(args.repo(), &None);
@@ -265,11 +266,21 @@ mod tests {
     fn parse_init_project_with_tag_and_repo() {
         // --tag with --repo
         let cmd = GxCmd::try_parse_from([
-            "gx", "init", "project", "--repo", "https://github.com/user/repo.git", "--tag", "v1.0.0",
-        ]).expect("init project with repo and tag should parse");
+            "gx",
+            "init",
+            "project",
+            "--repo",
+            "https://github.com/user/repo.git",
+            "--tag",
+            "v1.0.0",
+        ])
+        .expect("init project with repo and tag should parse");
         match cmd {
             GxCmd::Init(InitCmd::Project(args)) => {
-                assert_eq!(args.repo(), &Some("https://github.com/user/repo.git".to_string()));
+                assert_eq!(
+                    args.repo(),
+                    &Some("https://github.com/user/repo.git".to_string())
+                );
                 assert_eq!(args.tag(), &Some("v1.0.0".to_string()));
             }
             other => panic!("unexpected command: {other:?}"),

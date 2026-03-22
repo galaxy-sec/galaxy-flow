@@ -188,10 +188,15 @@ async fn do_prj_cmd(load: &mut GxLoader, cmd: InitCmd) -> RunResult<()> {
             configure_cli_runtime(args.log.clone(), args.debug);
 
             // Validate: --branch/--tag require --repo or --path
-            if (args.branch.is_some() || args.tag.is_some()) && args.repo.is_none() && args.path.is_none() {
-                return Err(RunReason::Args("--branch/--tag require --repo or --path".into())
-                    .to_err()
-                    .with_detail("use: gx init project --path rust --branch main"));
+            if (args.branch.is_some() || args.tag.is_some())
+                && args.repo.is_none()
+                && args.path.is_none()
+            {
+                return Err(
+                    RunReason::Args("--branch/--tag require --repo or --path".into())
+                        .to_err()
+                        .with_detail("use: gx init project --path rust --branch main"),
+                );
             }
 
             if args.repo.is_some() || args.path.is_some() {
@@ -584,8 +589,8 @@ mod main {}
         use crate::cmd::gx_cmd::InitCmd;
 
         // no args = local init (repo is None)
-        let cmd = GxCmd::try_parse_from(["gx", "init", "project"])
-            .expect("init project should parse");
+        let cmd =
+            GxCmd::try_parse_from(["gx", "init", "project"]).expect("init project should parse");
         match cmd {
             GxCmd::Init(InitCmd::Project(args)) => {
                 assert_eq!(args.repo(), &None);
@@ -595,11 +600,20 @@ mod main {}
         }
 
         // --repo specified
-        let cmd = GxCmd::try_parse_from(["gx", "init", "project", "--repo", "https://github.com/user/repo.git"])
-            .expect("init project with repo should parse");
+        let cmd = GxCmd::try_parse_from([
+            "gx",
+            "init",
+            "project",
+            "--repo",
+            "https://github.com/user/repo.git",
+        ])
+        .expect("init project with repo should parse");
         match cmd {
             GxCmd::Init(InitCmd::Project(args)) => {
-                assert_eq!(args.repo(), &Some("https://github.com/user/repo.git".to_string()));
+                assert_eq!(
+                    args.repo(),
+                    &Some("https://github.com/user/repo.git".to_string())
+                );
                 assert_eq!(args.path(), &None);
             }
             other => panic!("unexpected command: {other:?}"),
@@ -607,13 +621,21 @@ mod main {}
 
         // --repo with --path
         let cmd = GxCmd::try_parse_from([
-            "gx", "init", "project",
-            "--repo", "https://github.com/user/repo.git",
-            "--path", "rust"
-        ]).expect("init project with repo and path should parse");
+            "gx",
+            "init",
+            "project",
+            "--repo",
+            "https://github.com/user/repo.git",
+            "--path",
+            "rust",
+        ])
+        .expect("init project with repo and path should parse");
         match cmd {
             GxCmd::Init(InitCmd::Project(args)) => {
-                assert_eq!(args.repo(), &Some("https://github.com/user/repo.git".to_string()));
+                assert_eq!(
+                    args.repo(),
+                    &Some("https://github.com/user/repo.git".to_string())
+                );
                 assert_eq!(args.path(), &Some("rust".to_string()));
             }
             other => panic!("unexpected command: {other:?}"),
@@ -624,7 +646,7 @@ mod main {}
             .expect("init project with path should parse");
         match cmd {
             GxCmd::Init(InitCmd::Project(args)) => {
-                assert_eq!(args.repo(), &None);  // default repo is applied at runtime
+                assert_eq!(args.repo(), &None); // default repo is applied at runtime
                 assert_eq!(args.path(), &Some("rust".to_string()));
             }
             other => panic!("unexpected command: {other:?}"),
