@@ -1,0 +1,9 @@
+mod main {
+  env default {
+    ROOT = "./";
+  }
+
+  flow conf {
+    gx.echo(value: "admin flow");
+  }
+}

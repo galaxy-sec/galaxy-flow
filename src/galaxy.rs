@@ -9,6 +9,9 @@ use crate::{
     err::{RunReason, RunResult},
 };
 
+const WORK_TEMPLATE: &str = include_str!("templates/work.gxl");
+const ADM_TEMPLATE: &str = include_str!("templates/adm.gxl");
+
 pub struct Galaxy {}
 
 impl Galaxy {
@@ -75,34 +78,14 @@ impl Galaxy {
 
         std::fs::create_dir_all(gal_dir).owe_res()?;
 
-        // Create basic work.gxl
+        // Create basic work.gxl from template
         let work_gxl = gal_dir.join("work.gxl");
-        let work_content = r#"mod main {
-  env default {
-    ROOT = "./";
-  }
-
-  flow conf {
-    gx.echo(value: "hello galaxy flow");
-  }
-}
-"#;
-        std::fs::write(&work_gxl, work_content).owe_res()?;
+        std::fs::write(&work_gxl, WORK_TEMPLATE).owe_res()?;
         eprintln!("created: {}", work_gxl.display());
 
-        // Create basic adm.gxl
+        // Create basic adm.gxl from template
         let adm_gxl = gal_dir.join("adm.gxl");
-        let adm_content = r#"mod main {
-  env default {
-    ROOT = "./";
-  }
-
-  flow conf {
-    gx.echo(value: "admin flow");
-  }
-}
-"#;
-        std::fs::write(&adm_gxl, adm_content).owe_res()?;
+        std::fs::write(&adm_gxl, ADM_TEMPLATE).owe_res()?;
         eprintln!("created: {}", adm_gxl.display());
 
         eprintln!("project initialized in ./_gal/");
