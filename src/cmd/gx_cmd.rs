@@ -52,7 +52,7 @@ pub enum GxCmd {
 pub enum InitCmd {
     /// init local Galaxy environment (~/.galaxy, conf.toml, net access control)
     Env,
-    /// init project with remote mod
+    /// init project (local by default, use --path or --repo for remote)
     Project(InitArgs),
 }
 
