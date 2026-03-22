@@ -9,13 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - **Init project CLI redesign**: Replaced `--tpl` with separate `--repo` and `--path` options for clearer semantics.
-  - `--repo`: git repository URL
-  - `--path`: subdirectory within repo, or local template path
-  - `--branch` / `--tag`: now require `--repo` (enforced by clap)
-- **Init from git subdirectory**: `--repo <url> --path <subdir>` clones the repo and extracts only the specified subdirectory.
+  - `--repo`: git repository URL (default: `https://github.com/galaxy-sec/prj-tpl.git`)
+  - `--path`: subdirectory within repo
+  - `--branch` / `--tag`: optional, work with default repo
+- **Default repo**: `gx init project` now uses `https://github.com/galaxy-sec/prj-tpl.git` by default.
+  - `gx init project` → init from default repo
+  - `gx init project --path rust` → init from default repo's `rust` subdir
+  - `gx init project --repo <url>` → init from custom repo
 
 ### Fixed
-- **Parameter validation**: `--branch` and `--tag` now require `--repo`; attempting to use them alone returns a clear clap error.
 - **Directory cleanup**: If copy to `_gal` fails, the empty `_gal` directory is now cleaned up instead of being left behind.
 
 ## [v0.13.4] - 2026-03-15

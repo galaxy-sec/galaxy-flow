@@ -26,19 +26,19 @@ gx <COMMAND>
 # 初始化运行环境（首次使用）
 gx init env
 
-# 初始化项目（本地，不依赖远程模板）
+# 初始化项目（从默认仓库）
 gx init project
 
-# 初始化项目（从 git 仓库）
+# 初始化项目（从默认仓库的子目录）
+gx init project --path rust
+
+# 初始化项目（从指定仓库）
 gx init project --repo https://github.com/user/repo.git
 gx init project --repo https://github.com/user/repo.git --branch dev
 gx init project --repo https://github.com/user/repo.git --tag v1.0.0
 
-# 初始化项目（从 git 仓库子目录）
-gx init project --repo https://github.com/user/repo.git --path rust
-
-# 初始化项目（从本地路径）
-gx init project --path /path/to/template
+# 初始化项目（从指定仓库子目录）
+gx init project --repo https://github.com/user/repo.git --path subdir
 
 # 运行工作流
 gx run conf
@@ -58,32 +58,26 @@ gx mod update
 ## init project 详解
 
 ```bash
-# 本地初始化（推荐，无需远程依赖）
+# 从默认仓库初始化 (https://github.com/galaxy-sec/prj-tpl.git)
 gx init project
 
-# 从 git 仓库初始化
+# 从默认仓库指定子目录初始化
+gx init project --path <subdir>
+
+# 从指定仓库初始化
 gx init project --repo <git_url>
 gx init project --repo <git_url> --branch <branch>
 gx init project --repo <git_url> --tag <tag>
 
-# 从 git 仓库子目录初始化
+# 从指定仓库子目录初始化
 gx init project --repo <git_url> --path <subdir>
-
-# 从本地路径初始化
-gx init project --path <local_path>
 ```
 
 参数说明：
-- `--repo`：git 仓库地址
-- `--path`：仓库内的子目录路径，或本地模板路径
+- `--repo`：git 仓库地址，默认 `https://github.com/galaxy-sec/prj-tpl.git`
+- `--path`：仓库内的子目录路径
 - `--branch`：指定分支（与 `--tag` 互斥）
 - `--tag`：指定标签（与 `--branch` 互斥）
-
-行为说明：
-- 不带任何参数时，执行本地初始化，创建基本的 `./_gal/work.gxl` 和 `./_gal/adm.gxl` 文件
-- 只带 `--repo` 时，克隆整个仓库到 `./_gal/`
-- 带 `--repo` 和 `--path` 时，克隆仓库后只提取指定子目录
-- 只带 `--path` 时，从本地路径复制到 `./_gal/`
 
 ## 兼容入口
 
