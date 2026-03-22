@@ -20,14 +20,19 @@ gx <COMMAND>
 - `check`：检查当前运行环境
 - `self`：自更新（status/check/update/rollback）
 
-`gx init env` 会初始化用户级运行环境，包括 `~/.galaxy/conf.toml` 与网络访问控制配置。
-
 ## 常用示例
 
 ```bash
-# 初始化运行环境与项目
+# 初始化运行环境（首次使用）
 gx init env
+
+# 初始化项目（本地，不依赖远程模板）
+gx init project
+
+# 初始化项目（使用远程模板）
 gx init project --tpl simple
+gx init project --tpl simple --repo https://your-tpl-repo.git
+gx init project --tpl simple --branch dev
 
 # 运行工作流
 gx run conf
@@ -43,6 +48,23 @@ gx doc --markdown gx.cmd
 # 更新模块
 gx mod update
 ```
+
+## init project 详解
+
+```bash
+# 本地初始化（推荐，无需远程依赖）
+gx init project
+
+# 使用远程模板初始化
+gx init project --tpl <template_name>
+gx init project --tpl <template_name> --repo <git_repo_url>
+gx init project --tpl <template_name> --branch <branch_name>
+gx init project --tpl <template_name> --tag <tag_name>
+```
+
+说明：
+- 不带 `--tpl` 参数时，执行本地初始化，创建基本的 `./_gal/work.gxl` 和 `./_gal/adm.gxl` 文件
+- 带 `--tpl` 参数时，从指定的 git 仓库拉取模板（默认 `https://gal-tpl.git`）
 
 ## 兼容入口
 

@@ -78,11 +78,20 @@ RUSTC_WRAPPER='' cargo build --workspace
 ### Initialize Project
 
 ```bash
+# 初始化运行环境（首次使用）
 gx init env
+
+# 初始化项目（本地，不依赖远程模板）
+gx init project
+
+# 初始化项目（使用远程模板）
 gx init project --tpl simple
+gx init project --tpl simple --repo https://your-tpl-repo.git
 ```
 
 其中 `gx init env` 会初始化 `~/.galaxy/` 下的用户级运行配置，包括 `conf.toml`。
+
+`gx init project` 不带 `--tpl` 时，执行本地初始化，创建基本的 `./_gal/work.gxl` 和 `./_gal/adm.gxl` 文件。
 
 ### Run Flows
 

@@ -40,9 +40,19 @@ GXL 的核心结构：
 ### 3.1 初始化环境与项目
 
 ```bash
+# 初始化运行环境（首次使用）
 gx init env
+
+# 初始化项目（本地，不依赖远程模板）
+gx init project
+
+# 初始化项目（使用远程模板）
 gx init project --tpl simple
 ```
+
+说明：
+- `gx init project` 不带 `--tpl` 时，执行本地初始化，创建基本的 `./_gal/` 目录结构
+- `gx init project --tpl xxx` 时，从 git 仓库拉取模板
 
 ### 3.2 查看配置与运行
 

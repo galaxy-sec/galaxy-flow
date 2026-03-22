@@ -107,10 +107,10 @@ pub struct SelfRollbackArgs {
 
 #[derive(Debug, Args, Getters, Clone)]
 pub struct InitArgs {
-    /// chose init tpl from rg-tpl repo. eg: --tpl open_pages
-    #[arg(short, long, default_value = "simple")]
-    pub(crate) tpl: String,
-    /// branch or tag for rg-tpl repo
+    /// chose init tpl from tpl repo. eg: --tpl simple
+    #[arg(short, long)]
+    pub(crate) tpl: Option<String>,
+    /// branch or tag for tpl repo
     #[arg(short, long, conflicts_with = "tag")]
     pub(crate) branch: Option<String>,
 
@@ -120,8 +120,8 @@ pub struct InitArgs {
     #[arg(short = 'd', long = "debug", default_value = "0")]
     pub(crate) debug: usize,
 
-    #[arg(long = "repo", default_value = "https://gal-tpl.git")]
-    pub repo: String,
+    #[arg(long = "repo")]
+    pub repo: Option<String>,
     #[arg(long = "log")]
     pub log: Option<String>,
 }

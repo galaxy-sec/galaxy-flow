@@ -58,6 +58,56 @@ impl Galaxy {
 
         Ok(())
     }
+
+    /// 初始化项目目录（本地初始化，不依赖远程模板）
+    ///
+    /// 创建：
+    /// - `./_gal/` 目录
+    /// - `./_gal/work.gxl` 基本工作流配置
+    /// - `./_gal/adm.gxl` 基本管理流配置
+    pub fn project_init() -> RunResult<()> {
+        let gal_dir = std::path::Path::new("./_gal");
+
+        if gal_dir.exists() {
+            eprintln!("{} already exists, skipping init", gal_dir.display());
+            return Ok(());
+        }
+
+        std::fs::create_dir_all(gal_dir).owe_res()?;
+
+        // Create basic work.gxl
+        let work_gxl = gal_dir.join("work.gxl");
+        let work_content = r#"mod main {
+  env default {
+    ROOT = "./";
+  }
+
+  flow conf {
+    gx.echo(value: "hello galaxy flow");
+  }
+}
+"#;
+        std::fs::write(&work_gxl, work_content).owe_res()?;
+        eprintln!("created: {}", work_gxl.display());
+
+        // Create basic adm.gxl
+        let adm_gxl = gal_dir.join("adm.gxl");
+        let adm_content = r#"mod main {
+  env default {
+    ROOT = "./";
+  }
+
+  flow conf {
+    gx.echo(value: "admin flow");
+  }
+}
+"#;
+        std::fs::write(&adm_gxl, adm_content).owe_res()?;
+        eprintln!("created: {}", adm_gxl.display());
+
+        eprintln!("project initialized in ./_gal/");
+        Ok(())
+    }
 }
 
 #[cfg(test)]
