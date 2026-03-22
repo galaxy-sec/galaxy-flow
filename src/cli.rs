@@ -189,8 +189,14 @@ async fn do_prj_cmd(load: &mut GxLoader, cmd: InitCmd) -> RunResult<()> {
                 // --tpl specified: init from template (URL or local path)
                 let _stdout_guard = StdoutToStderrGuard::new()?;
                 if tpl.starts_with("http://") || tpl.starts_with("https://") {
-                    // Git URL
-                    let addr = GitRepository::from(tpl);
+                    // Git URL - parse repo and optional path suffix after .git
+                    let (repo_url, path_suffix) = parse_git_url_with_path(&tpl);
+                    let addr = GitRepository::from(repo_url);
+                    let addr = if let Some(path) = path_suffix {
+                        addr.with_path(path)
+                    } else {
+                        addr
+                    };
                     let addr = if let Some(tag) = args.tag() {
                         addr.with_tag(tag)
                     } else if let Some(branch) = args.branch() {
@@ -437,6 +443,26 @@ fn parse_channel(input: &str) -> RunResult<ReleaseChannel> {
     })
 }
 
+/// Parse a git URL that may contain a path suffix after .git
+/// e.g., "https://github.com/user/repo.git/subdir" -> ("https://github.com/user/repo.git", Some("subdir"))
+fn parse_git_url_with_path(url: &str) -> (&str, Option<&str>) {
+    // Look for .git followed by / and extract the path suffix
+    if let Some(pos) = url.find(".git/") {
+        let repo_url = &url[..pos + 4]; // include .git
+        let path = &url[pos + 5..]; // skip .git/
+        if path.is_empty() {
+            (repo_url, None)
+        } else {
+            (repo_url, Some(path))
+        }
+    } else if url.ends_with(".git") {
+        (url, None)
+    } else {
+        // No .git suffix, return as-is
+        (url, None)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use std::path::Path;
@@ -572,5 +598,33 @@ mod main {}
             GxCmd::Adm(AdmCmd { cmd }) => assert_eq!(cmd.flows, vec!["conf".to_string()]),
             other => panic!("unexpected command: {other:?}"),
         }
+    }
+
+    #[test]
+    fn test_parse_git_url_with_path() {
+        // URL with path suffix
+        let (repo, path) = super::parse_git_url_with_path("https://github.com/user/repo.git/subdir");
+        assert_eq!(repo, "https://github.com/user/repo.git");
+        assert_eq!(path, Some("subdir"));
+
+        // URL with nested path
+        let (repo, path) = super::parse_git_url_with_path("https://github.com/user/repo.git/a/b/c");
+        assert_eq!(repo, "https://github.com/user/repo.git");
+        assert_eq!(path, Some("a/b/c"));
+
+        // URL without path suffix
+        let (repo, path) = super::parse_git_url_with_path("https://github.com/user/repo.git");
+        assert_eq!(repo, "https://github.com/user/repo.git");
+        assert_eq!(path, None);
+
+        // URL without .git suffix
+        let (repo, path) = super::parse_git_url_with_path("https://github.com/user/repo");
+        assert_eq!(repo, "https://github.com/user/repo");
+        assert_eq!(path, None);
+
+        // URL with .git/ (trailing slash, empty path)
+        let (repo, path) = super::parse_git_url_with_path("https://github.com/user/repo.git/");
+        assert_eq!(repo, "https://github.com/user/repo.git");
+        assert_eq!(path, None);
     }
 }
