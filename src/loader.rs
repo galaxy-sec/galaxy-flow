@@ -27,6 +27,7 @@ use orion_error::ErrorConv;
 use orion_error::ErrorOwe;
 use orion_error::ErrorOweBase;
 use orion_error::ErrorWith;
+use orion_error::ToStructError;
 use orion_error::WithContext;
 use orion_variate::vars::EnvDict;
 use orion_variate::vars::ValueDict;
@@ -118,25 +119,55 @@ impl GxLoader {
         Ok(gxl_space)
     }
 
-    pub async fn init(&self, addr: GitRepository, tpl: &str) -> RunResult<()> {
+    pub async fn init_from_git(&self, addr: GitRepository) -> RunResult<()> {
         let up_options = DownloadOptions::new(UpdateScope::RemoteCache, ValueDict::default());
         let local_git = ExternGit::pull(addr, &up_options).await.owe_res()?;
-        let vender_path = format!("{}/tpl/{tpl}", local_git.position().display());
+        let src_path = local_git.position();
         let init_path = PathBuf::from("./_gal");
         if init_path.exists() {
-            eprintln!("init dir exists! ({})", init_path.display());
-        } else {
-            std::fs::create_dir(&init_path).owe_res()?;
-            let accessor = build_accessor(&EnvDict::default());
-            accessor
-                .download_to_local(
-                    &Address::from(LocalPath::from(vender_path.as_str())),
-                    &init_path,
-                    &up_options,
-                )
-                .await
-                .owe_res()?;
+            return Err(RunReason::Args("_gal already exists".into())
+                .to_err()
+                .with_detail(format!("path: {}", init_path.display())));
         }
+        std::fs::create_dir(&init_path).owe_res()?;
+        let accessor = build_accessor(&EnvDict::default());
+        accessor
+            .download_to_local(
+                &Address::from(LocalPath::from(src_path.to_string_lossy().as_ref())),
+                &init_path,
+                &up_options,
+            )
+            .await
+            .owe_res()?;
+        eprintln!("project initialized from git to ./_gal/");
+        Ok(())
+    }
+
+    pub async fn init_from_local(&self, src: &str) -> RunResult<()> {
+        let src_path = PathBuf::from(src);
+        if !src_path.exists() {
+            return Err(RunReason::Args("template path not found".into())
+                .to_err()
+                .with_detail(format!("path: {}", src_path.display())));
+        }
+        let init_path = PathBuf::from("./_gal");
+        if init_path.exists() {
+            return Err(RunReason::Args("_gal already exists".into())
+                .to_err()
+                .with_detail(format!("path: {}", init_path.display())));
+        }
+        std::fs::create_dir(&init_path).owe_res()?;
+        let up_options = DownloadOptions::new(UpdateScope::None, ValueDict::default());
+        let accessor = build_accessor(&EnvDict::default());
+        accessor
+            .download_to_local(
+                &Address::from(LocalPath::from(src)),
+                &init_path,
+                &up_options,
+            )
+            .await
+            .owe_res()?;
+        eprintln!("project initialized from {} to ./_gal/", src);
         Ok(())
     }
 }

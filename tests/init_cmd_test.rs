@@ -22,5 +22,5 @@ async fn init_test() {
     let _work_path = WorkDir::change(&path);
     let addr =
         GitRepository::from("https://github.com/galaxy-sec/gal-init.git").with_branch("main");
-    loader.init(addr, "example").await.assert("init");
+    loader.init_from_git(addr).await.assert("init");
 }

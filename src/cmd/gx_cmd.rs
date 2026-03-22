@@ -107,10 +107,10 @@ pub struct SelfRollbackArgs {
 
 #[derive(Debug, Args, Getters, Clone)]
 pub struct InitArgs {
-    /// chose init tpl from tpl repo. eg: --tpl simple
+    /// template source: git URL or local path. eg: --tpl https://github.com/user/repo
     #[arg(short, long)]
     pub(crate) tpl: Option<String>,
-    /// branch or tag for tpl repo
+    /// branch for git template
     #[arg(short, long, conflicts_with = "tag")]
     pub(crate) branch: Option<String>,
 
@@ -119,9 +119,6 @@ pub struct InitArgs {
     /// debug level ; eg: -d 1
     #[arg(short = 'd', long = "debug", default_value = "0")]
     pub(crate) debug: usize,
-
-    #[arg(long = "repo")]
-    pub repo: Option<String>,
     #[arg(long = "log")]
     pub log: Option<String>,
 }

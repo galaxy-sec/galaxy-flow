@@ -186,18 +186,23 @@ async fn do_prj_cmd(load: &mut GxLoader, cmd: InitCmd) -> RunResult<()> {
             configure_cli_runtime(args.log.clone(), args.debug);
 
             if let Some(tpl) = args.tpl() {
-                // --tpl specified: init from remote template
-                let repo = args.repo.clone().unwrap_or_else(|| "https://gal-tpl.git".to_string());
-                let addr = GitRepository::from(repo.as_str());
-                let addr = if let Some(tag) = args.tag() {
-                    addr.with_tag(tag)
-                } else if let Some(branch) = args.branch() {
-                    addr.with_branch(branch)
-                } else {
-                    addr
-                };
+                // --tpl specified: init from template (URL or local path)
                 let _stdout_guard = StdoutToStderrGuard::new()?;
-                load.init(addr, tpl).await?;
+                if tpl.starts_with("http://") || tpl.starts_with("https://") {
+                    // Git URL
+                    let addr = GitRepository::from(tpl);
+                    let addr = if let Some(tag) = args.tag() {
+                        addr.with_tag(tag)
+                    } else if let Some(branch) = args.branch() {
+                        addr.with_branch(branch)
+                    } else {
+                        addr
+                    };
+                    load.init_from_git(addr).await?;
+                } else {
+                    // Local path
+                    load.init_from_local(tpl).await?;
+                }
             } else {
                 // No --tpl: local init only (create _gal directory)
                 Galaxy::project_init()?;
