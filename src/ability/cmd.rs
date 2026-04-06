@@ -76,9 +76,10 @@ impl GxCmd {
 #[cfg(test)]
 mod tests {
     use orion_error::TestAssertWithMsg;
+    use std::path::PathBuf;
 
     use super::*;
-    use crate::{ability::*, traits::Setter};
+    use crate::{ability::*, traits::Setter, util::path::WorkDirWithLock};
 
     #[tokio::test]
     async fn cmd_test() {
@@ -106,6 +107,8 @@ mod tests {
 
     #[tokio::test]
     async fn cmd_test_keeps_exit_code_stdout_and_stderr() {
+        let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        let _workdir = WorkDirWithLock::change(&manifest_dir).expect("set manifest dir");
         let (context, def) = ability_env_init();
         let dto = GxCmdDto {
             cmd: "printf out && printf err 1>&2 && exit 2".into(),

@@ -130,17 +130,26 @@ mod tests {
     use crate::{
         ability::*,
         traits::{Getter, Setter},
-        util::OptionFrom,
+        util::{OptionFrom, path::WorkDirWithLock},
     };
+    use std::path::{Path, PathBuf};
+
+    fn shell_quote(value: &Path) -> String {
+        format!("'{}'", value.to_string_lossy().replace('\'', "'\\''"))
+    }
 
     #[tokio::test]
     async fn shell_args_json() {
+        let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        let _workdir = WorkDirWithLock::change(&manifest_dir).expect("set manifest dir");
         let (context, mut def) = ability_env_init();
         def.global_mut()
             .set("CONF_ROOT", "${GXL_PRJ_ROOT}/tests/material");
-        let res = GxShell::new("./tests/material/gx_shell/demo.sh sys app")
+        let demo_sh = manifest_dir.join("tests/material/gx_shell/demo.sh");
+        let env_args = manifest_dir.join("tests/material/gx_shell/env_args.json");
+        let res = GxShell::new(format!("{} sys app", shell_quote(&demo_sh)))
             .with_out_var("OUT_FILE".to_opt())
-            .with_arg_file("./tests/material/gx_shell/env_args.json".to_opt());
+            .with_arg_file(env_args.to_string_lossy().into_owned().to_opt());
 
         let TaskValue { vars, .. } = res.async_exec(context, def).await.assert("dryrun");
         assert_eq!(
@@ -151,12 +160,16 @@ mod tests {
 
     #[tokio::test]
     async fn shell_args_yml() {
+        let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        let _workdir = WorkDirWithLock::change(&manifest_dir).expect("set manifest dir");
         let (context, mut def) = ability_env_init();
         def.global_mut()
             .set("CONF_ROOT", "${GXL_PRJ_ROOT}/tests/material");
-        let res = GxShell::new("./tests/material/gx_shell/demo.sh sys app")
+        let demo_sh = manifest_dir.join("tests/material/gx_shell/demo.sh");
+        let env_args = manifest_dir.join("tests/material/gx_shell/env_args.yml");
+        let res = GxShell::new(format!("{} sys app", shell_quote(&demo_sh)))
             .with_out_var("OUT_FILE".to_opt())
-            .with_arg_file("./tests/material/gx_shell/env_args.yml".to_opt());
+            .with_arg_file(env_args.to_string_lossy().into_owned().to_opt());
 
         let TaskValue { vars, .. } = res.async_exec(context, def).await.assert("dryrun");
         assert_eq!(

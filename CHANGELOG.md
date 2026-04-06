@@ -5,6 +5,14 @@ All notable changes to the Galaxy Flow project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.13.9] - 2026-04-07
+
+### Fixed
+- **Init project subdir flattening**: `gx init project --path <subdir>` now places the selected template contents directly under `./_gal/` instead of leaving an extra nested directory such as `./_gal/rust/`.
+- **Init target safety guard**: Added an internal boundary check so project init cleanup only reorganizes paths that were downloaded inside `./_gal/`, preventing accidental moves or deletions outside the init target.
+- **CLI and shell test isolation**: Hardened loader, command, shell, and activity tests against shared working-directory pollution by pinning them to the workspace root and using stable absolute script/config paths where needed.
+- **Module update config test isolation**: Reworked the `gx mod update` user-config regression test to run in a temporary project workspace so it no longer hits repository-local git extern modules or stalls on remote update paths.
+
 ## [v0.13.8] - 2026-04-06
 
 ### Changed

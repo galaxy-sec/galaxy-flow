@@ -124,6 +124,8 @@ impl DependTrait<&GxlSpace> for Activity {
 
 #[cfg(test)]
 mod tests {
+    use std::path::Path;
+
     use orion_error::TestAssert;
     use orion_sec::sec::{SecFrom, SecValueType};
 
@@ -137,17 +139,22 @@ mod tests {
 
     use super::*;
 
+    fn shell_quote(value: &Path) -> String {
+        format!("'{}'", value.to_string_lossy().replace('\'', "'\\''"))
+    }
+
     #[tokio::test]
     async fn test_exec_cmd_basic_success() {
         ability_env_init();
+        let manifest_dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        let echo_sh = manifest_dir.join("src/model/components/gxl_act/echo.sh");
+        let echo2_sh = manifest_dir.join("src/model/components/gxl_act/echo2.sh");
 
         // Create activity meta
-        let meta = ActivityMeta::build("test_activity").with_params(vec![
-            GxlFParam::new("executer").with_default_value(
-                SecValueType::nor_from("./src/model/components/gxl_act/echo.sh".to_string())
-                    .to_opt(),
-            ),
-        ]);
+        let meta = ActivityMeta::build("test_activity")
+            .with_params(vec![GxlFParam::new("executer").with_default_value(
+                SecValueType::nor_from(shell_quote(&echo_sh)).to_opt(),
+            )]);
         let activity = Activity::new(meta);
 
         // Create context
@@ -160,7 +167,7 @@ mod tests {
         activity.exec_cmd(ctx.clone(), vars.clone(), &args).assert();
         args.insert(
             "executer".to_string(),
-            GxlAParam::from_val("executer", "./src/model/components/gxl_act/echo2.sh"),
+            GxlAParam::from_val("executer", shell_quote(&echo2_sh).as_str()),
         );
 
         activity.exec_cmd(ctx, vars, &args).assert();

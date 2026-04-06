@@ -67,13 +67,15 @@ fn adm_returns_non_zero_when_all_flows_fail() {
 #[test]
 fn mod_update_loads_user_conf() {
     let temp_home = tempdir().expect("temp home should be created");
+    let temp_workdir = tempdir().expect("temp workdir should be created");
     let galaxy_dir = temp_home.path().join(".galaxy");
     std::fs::create_dir_all(&galaxy_dir).expect(".galaxy dir should be created");
     std::fs::write(galaxy_dir.join("conf.toml"), "not = [valid")
         .expect("invalid conf should be written");
+    write_minimal_project(temp_workdir.path());
 
     let output = Command::new(gx_bin())
-        .current_dir(env!("CARGO_MANIFEST_DIR"))
+        .current_dir(temp_workdir.path())
         .env("HOME", temp_home.path())
         .args(["mod", "update", "-d", "2"])
         .output()

@@ -144,7 +144,8 @@ impl GxLoader {
             .await;
 
         match result {
-            Ok(_) => {
+            Ok(downloaded) => {
+                finalize_init_target(&init_path, downloaded.position())?;
                 eprintln!("project initialized from git to ./_gal/");
                 Ok(())
             }
@@ -185,7 +186,8 @@ impl GxLoader {
             .await;
 
         match result {
-            Ok(_) => {
+            Ok(downloaded) => {
+                finalize_init_target(&init_path, downloaded.position())?;
                 eprintln!("project initialized from {} to ./_gal/", src);
                 Ok(())
             }
@@ -196,6 +198,41 @@ impl GxLoader {
             }
         }
     }
+}
+
+fn finalize_init_target(init_path: &Path, downloaded_path: &Path) -> RunResult<()> {
+    if downloaded_path == init_path {
+        return Ok(());
+    }
+
+    let init_canonical = std::fs::canonicalize(init_path).owe_res()?;
+    let downloaded_canonical = std::fs::canonicalize(downloaded_path).owe_res()?;
+    if !downloaded_canonical.starts_with(&init_canonical) {
+        return Err(RunReason::Exec(
+            "copy to _gal failed: downloaded path escaped init dir".into(),
+        )
+        .to_err()
+        .with_detail(format!(
+            "init: {}, downloaded: {}",
+            init_canonical.display(),
+            downloaded_canonical.display()
+        )));
+    }
+
+    if downloaded_path.is_file() {
+        let name = downloaded_path
+            .file_name()
+            .ok_or_else(|| RunReason::Exec("copy to _gal failed: bad file name".into()).to_err())?;
+        std::fs::rename(downloaded_path, init_path.join(name)).owe_res()?;
+        return Ok(());
+    }
+
+    for entry in std::fs::read_dir(downloaded_path).owe_res()? {
+        let entry = entry.owe_res()?;
+        std::fs::rename(entry.path(), init_path.join(entry.file_name())).owe_res()?;
+    }
+    std::fs::remove_dir_all(downloaded_path).owe_res()?;
+    Ok(())
 }
 
 pub fn err_code_prompt(code: &str) -> String {
@@ -209,18 +246,28 @@ pub fn err_code_prompt(code: &str) -> String {
 #[cfg(test)]
 mod tests {
 
-    use crate::{cmd::GxlCmd, execution::VarSpace, infra::once_init_log, types::AnyResult};
+    use crate::{
+        cmd::GxlCmd, execution::VarSpace, infra::once_init_log, types::AnyResult,
+        util::path::WorkDirWithLock,
+    };
 
     use super::GxLoader;
+    use std::path::PathBuf;
+    use tempfile::tempdir;
 
     #[tokio::test]
     async fn test_parse_file() -> AnyResult<()> {
         //log_init(&LogConf::alpha()).assert();
         once_init_log();
         let loader = GxLoader::default();
-        let conf = "./_gal/work.gxl";
+        let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        let _workdir = WorkDirWithLock::change(&manifest_dir)?;
+        let conf = manifest_dir.join("_gal/work.gxl");
         let vars = VarSpace::sys_init()?;
-        let spc = loader.parse_file(conf, false, &vars).await?.assemble()?;
+        let spc = loader
+            .parse_file(conf.to_string_lossy().as_ref(), false, &vars)
+            .await?
+            .assemble()?;
         info!("test begin");
         spc.show()?;
         println!("mods:{}", spc.len());
@@ -233,6 +280,56 @@ mod tests {
             None,
         )
         .await?;
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn init_from_local_flattens_template_directory() -> AnyResult<()> {
+        once_init_log();
+
+        let loader = GxLoader::default();
+        let temp_workdir = tempdir()?;
+        let template_root = tempdir()?;
+        let rust_tpl = template_root.path().join("rust");
+        std::fs::create_dir_all(&rust_tpl)?;
+        std::fs::write(rust_tpl.join("work.gxl"), "mod base {}")?;
+        std::fs::write(rust_tpl.join("adm.gxl"), "mod base {}")?;
+        std::fs::write(
+            rust_tpl.join("project.toml"),
+            "[project]\nname = \"demo\"\n",
+        )?;
+
+        let _workdir = WorkDirWithLock::change(temp_workdir.path())?;
+        loader
+            .init_from_local(rust_tpl.to_string_lossy().as_ref())
+            .await?;
+
+        assert!(temp_workdir.path().join("_gal/work.gxl").exists());
+        assert!(temp_workdir.path().join("_gal/adm.gxl").exists());
+        assert!(temp_workdir.path().join("_gal/project.toml").exists());
+        assert!(!temp_workdir.path().join("_gal/rust").exists());
+        Ok(())
+    }
+
+    #[test]
+    fn finalize_init_target_rejects_paths_outside_gal_dir() -> AnyResult<()> {
+        let temp_workdir = tempdir()?;
+        let _workdir = WorkDirWithLock::change(temp_workdir.path())?;
+        let init_path = temp_workdir.path().join("_gal");
+        let external_path = temp_workdir.path().join("rust");
+
+        std::fs::create_dir_all(&init_path)?;
+        std::fs::create_dir_all(&external_path)?;
+        std::fs::write(external_path.join("work.gxl"), "mod base {}")?;
+
+        let err = super::finalize_init_target(&init_path, &external_path)
+            .expect_err("external downloaded path should be rejected");
+        let err_text = format!("{err:?}");
+
+        assert!(err_text.contains("downloaded path escaped init dir"));
+        assert!(external_path.exists());
+        assert!(external_path.join("work.gxl").exists());
+        assert!(!init_path.join("work.gxl").exists());
         Ok(())
     }
 }
