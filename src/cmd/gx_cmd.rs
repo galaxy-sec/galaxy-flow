@@ -111,7 +111,7 @@ pub struct InitArgs {
     #[arg(long)]
     pub(crate) repo: Option<String>,
     /// subdirectory path within the repository.
-    /// When used without --repo, uses default repo: https://github.com/galaxy-sec/prj-tpl.git
+    /// When used without --repo, uses default repo: https://github.com/galaxio-labs/prj-tpl.git
     #[arg(long)]
     pub(crate) path: Option<String>,
     /// branch for git repository (requires --repo or --path)

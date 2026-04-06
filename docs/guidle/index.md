@@ -131,7 +131,7 @@ mod demo {
 - 下载包在临时目录，完成后清理
 - 最终替换当前安装目录中的 `gx`
 - 备份目录：`~/.galaxy/self_update/backups/<backup_id>/`
-- Manifest 来源：`galaxy-sec/get` 仓库的 `updates/gx/{channel}/manifest.json`
+- Manifest 来源：`galaxio-labs/get` 仓库的 `updates/gx/{channel}/manifest.json`
 - 实现基于 `wp-self-update` 库
 
 ## 8. 推荐学习路径

@@ -2,7 +2,7 @@
 # GXL 文件语法
 
 ## GXL 语法定义
-GXL（Galaxy Flow Language）是一种为 DevSecOps 自动化工作流设计的领域特定语言。根据代码库中的信息，GXL 的语法定义主要在 galaxy-sec/galaxy-flow 仓库的解析器模块中实现。
+GXL（Galaxy Flow Language）是一种为 DevSecOps 自动化工作流设计的领域特定语言。根据代码库中的信息，GXL 的语法定义主要在 galaxio-labs/galaxy-flow 仓库的解析器模块中实现。
 
 ### GXL 语法结构
 GXL 语言遵循模块化、层次化的结构，主要由以下核心组件组成：

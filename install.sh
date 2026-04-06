@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-REPO_OWNER="galaxy-sec"
+REPO_OWNER="galaxio-labs"
 REPO_NAME="galaxy-flow"
 
 DEFAULT_CHANNEL="stable"

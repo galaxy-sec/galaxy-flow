@@ -1,7 +1,7 @@
 
 [package]
 
-version = "0.13.7" # @gxl:set(version)
+version = "0.13.8" # @gxl:set(version)
 authors = ["wukong<sec-wukong@outlook.com>"]
 edition = "2024"
 name = "galaxy_flow"
@@ -22,12 +22,12 @@ winnow = "0.7.11"
 orion-error = "0.6"
 orion_conf = { version = "0.5", features = ["yaml", "toml", "json", "ini"] }
 #orion-error = { path = "../orion-error" }
-#orion-error = { git = "https://github.com/galaxy-sec/orion-error.git", tag = "v0.4.0" }
-#orion_conf = { git = "https://github.com/galaxy-sec/orion-common.git", tag = "v0.3.0" }
+#orion-error = { git = "https://github.com/galaxio-labs/orion-error.git", tag = "v0.4.0" }
+#orion_conf = { git = "https://github.com/galaxio-labs/orion-common.git", tag = "v0.3.0" }
 orion-sec=  "0.4"
-#orion-ai= { git = "https://github.com/galaxy-sec/orion-ai.git", tag = "v0.2.1" }
+#orion-ai= { git = "https://github.com/galaxio-labs/orion-ai.git", tag = "v0.2.1" }
 #orion-ai= { path = "../orion-ai"  }
-#orion-ai= { git = "https://github.com/galaxy-sec/orion-ai.git", branch = "main" }
+#orion-ai= { git = "https://github.com/galaxio-labs/orion-ai.git", branch = "main" }
 orion-infra = "0.5"
 orion-variate =  "0.11"
 orion-accessor = "0.6"

@@ -7,7 +7,7 @@
 
 `gx self` 提供自更新能力，支持检查、升级、回滚操作。
 
-**实现方案**：基于 `wp-self-update` 库（v0.1.7），manifest 存储在独立的 `galaxy-sec/get` 仓库。
+**实现方案**：基于 `wp-self-update` 库（v0.1.7），manifest 存储在独立的 `galaxio-labs/get` 仓库。
 
 ## 2. CLI 命令
 
@@ -47,11 +47,11 @@ gx self rollback [--id <backup_id>]
 
 ## 5. Manifest 规范
 
-Manifest 存储在 `galaxy-sec/get` 仓库，由 CI 自动生成。
+Manifest 存储在 `galaxio-labs/get` 仓库，由 CI 自动生成。
 
 URL 格式：
 ```
-https://raw.githubusercontent.com/galaxy-sec/get/main/updates/gx/{channel}/manifest.json
+https://raw.githubusercontent.com/galaxio-labs/get/main/updates/gx/{channel}/manifest.json
 ```
 
 Manifest 结构：
@@ -64,7 +64,7 @@ Manifest 结构：
   "git_commit": "abcdef...",
   "assets": {
     "aarch64-apple-darwin": {
-      "url": "https://github.com/galaxy-sec/galaxy-flow/releases/download/v0.13.5/galaxy-flow-v0.13.5-aarch64-apple-darwin.tar.gz",
+      "url": "https://github.com/galaxio-labs/galaxy-flow/releases/download/v0.13.5/galaxy-flow-v0.13.5-aarch64-apple-darwin.tar.gz",
       "sha256": "..."
     },
     "x86_64-unknown-linux-gnu": { ... },
@@ -102,9 +102,9 @@ Release workflow (`.github/workflows/release.yml`) 包含 `update-gx-get-manifes
 2. 拉取 release 元数据
 3. 计算 sha256
 4. 生成 manifest.json
-5. 推送到 `galaxy-sec/get` 仓库的 `updates/gx/{channel}/` 目录
+5. 推送到 `galaxio-labs/get` 仓库的 `updates/gx/{channel}/` 目录
 
-需要配置 GitHub Secret：`GX_GET_TOKEN`（有 `galaxy-sec/get` 仓库写入权限的 PAT）。
+需要配置 GitHub Secret：`GX_GET_TOKEN`（有 `galaxio-labs/get` 仓库写入权限的 PAT）。
 
 ## 9. 代码结构
 

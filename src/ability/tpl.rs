@@ -283,7 +283,7 @@ mod tests {
         let conf_tpl = GxTpl::new(tpl.clone(), dst.clone());
         context.append("RG");
         def.global_mut().set(gxl_const::PRJ_ROOT, "/home/galaxy");
-        def.global_mut().set("DOMAIN", "www.galaxy-sec.org");
+        def.global_mut().set("DOMAIN", "www.galaxio-labs.org");
         def.global_mut().set("SOCK_FILE", "galaxy.socket");
         conf_tpl.async_exec(context.clone(), def).await.unwrap();
 

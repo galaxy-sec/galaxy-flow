@@ -11,6 +11,6 @@ Notes:
 - Local/manual testing can still use placeholders, but update install will fail until real checksums are written.
 - Keep `assets` keys aligned with runtime target triples.
 - `manifest_base_url` is channel-specific by branch:
-  - stable: `https://raw.githubusercontent.com/galaxy-sec/galaxy-flow/main/updates/stable`
-  - alpha: `https://raw.githubusercontent.com/galaxy-sec/galaxy-flow/alpha/updates/alpha`
-  - beta: `https://raw.githubusercontent.com/galaxy-sec/galaxy-flow/beta/updates/beta`
+  - stable: `https://raw.githubusercontent.com/galaxio-labs/galaxy-flow/main/updates/stable`
+  - alpha: `https://raw.githubusercontent.com/galaxio-labs/galaxy-flow/alpha/updates/alpha`
+  - beta: `https://raw.githubusercontent.com/galaxio-labs/galaxy-flow/beta/updates/beta`

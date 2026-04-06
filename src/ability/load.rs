@@ -188,7 +188,7 @@ mod tests {
         let download = GxDownLoadBuilder::default()
             .local_file(file_path.clone())
             .remote_url(
-                "https://raw.githubusercontent.com/galaxy-sec/galaxy-flow/main/README.md"
+                "https://raw.githubusercontent.com/galaxio-labs/galaxy-flow/main/README.md"
                     .to_string(),
             )
             .build()
@@ -222,7 +222,7 @@ mod tests {
         let download = GxDownLoadBuilder::default()
             .local_file(dir_path.clone()) // 传入目录路径
             .remote_url(
-                "https://raw.githubusercontent.com/galaxy-sec/galaxy-flow/main/README.md"
+                "https://raw.githubusercontent.com/galaxio-labs/galaxy-flow/main/README.md"
                     .to_string(),
             )
             .build()
@@ -254,7 +254,7 @@ mod tests {
         // 构建包含查询参数的URL下载配置
         let download = GxDownLoadBuilder::default()
             .local_file(file_path.to_str().unwrap().to_string()) // 使用具体文件路径
-            .remote_url("https://raw.githubusercontent.com/galaxy-sec/galaxy-flow/main/README.md?param=value&test=123".to_string()) // 包含查询参数
+            .remote_url("https://raw.githubusercontent.com/galaxio-labs/galaxy-flow/main/README.md?param=value&test=123".to_string()) // 包含查询参数
             .build()
             .unwrap();
 

@@ -5,6 +5,20 @@ All notable changes to the Galaxy Flow project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.13.8] - 2026-04-06
+
+### Changed
+- **Repository ownership alignment**: Updated project, release, manifest, and installer endpoints from the legacy `galaxy-sec` organization to `galaxio-labs`.
+- **Init project defaults**: Updated `gx init project` default template repository and related CLI help text to use `https://github.com/galaxio-labs/prj-tpl.git`.
+- **Self-update sources**: Switched self-update manifest and install script defaults to the new `galaxio-labs` repository paths.
+
+### Documentation
+- **README and guides**: Refreshed README, CLI guide, syntax notes, self-update design docs, and updates documentation to match the current repository ownership and release endpoints.
+- **Release metadata**: Synchronized version metadata and manifest template references for `0.13.8`.
+
+### Fixed
+- **Examples and tests**: Updated embedded example, template, and test repository URLs so init flows, parser examples, and template loading no longer point at retired `galaxy-sec` paths.
+
 ## [v0.13.5] - 2026-03-23
 
 ### Changed
@@ -12,7 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `gx init project` → local init (offline, creates basic work.gxl and adm.gxl)
   - `gx init project --path rust` → remote init from default repo's subdir
   - `gx init project --repo <url>` → remote init from custom repo
-- **Default repo**: `https://github.com/galaxy-sec/prj-tpl.git` is used when `--path` is specified without `--repo`.
+- **Default repo**: `https://github.com/galaxio-labs/prj-tpl.git` is used when `--path` is specified without `--repo`.
 - **Parameter validation**: `--branch` and `--tag` now require `--repo` or `--path`.
 
 ### Fixed

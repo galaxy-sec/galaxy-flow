@@ -1,4 +1,4 @@
-# URL="git@galaxy-sec.org:free/gxl-lab.git" ;
+# URL="git@galaxio-labs.org:free/gxl-lab.git" ;
 # REPO="gxl-lab" ;
 URL=$1 ;
 REPO=$2 ;

@@ -180,7 +180,7 @@ fn do_check_cmd() -> RunResult<()> {
 }
 
 async fn do_prj_cmd(load: &mut GxLoader, cmd: InitCmd) -> RunResult<()> {
-    const DEFAULT_REPO: &str = "https://github.com/galaxy-sec/prj-tpl.git";
+    const DEFAULT_REPO: &str = "https://github.com/galaxio-labs/prj-tpl.git";
 
     match cmd {
         InitCmd::Env => Galaxy::env_init()?,

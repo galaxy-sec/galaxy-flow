@@ -1,9 +1,13 @@
 # Galaxy Flow
 
-Galaxy Flow 是一个面向流程编排的 DSL（GXL），当前以 `gx` 作为统一 CLI 入口：
+Galaxy Flow 是基于 GXL 的开源自动化工作流引擎，提供自动化编排与执行底座，当前以 `gx` 作为统一 CLI 入口：
 - `gx run`：执行工作流（默认读取 `./_gal/work.gxl`）
 - `gx adm`：执行管理流（默认读取 `./_gal/adm.gxl`）
 - `gx init/mod/doc/check/self`：项目与工具管理
+
+在整体产品分工中：
+- `galaxy-flow` 负责流程定义与执行
+- `galaxy-ops` 负责运维能力的组织、配置与交付
 
 ## Current Status / 当前状态
 
@@ -147,7 +151,7 @@ gx self rollback [--id <backup_id>]
 - 备份与状态目录：
   - `~/.galaxy/self_update/state.json`
   - `~/.galaxy/self_update/backups/<backup_id>/`
-- Manifest 来源：`https://raw.githubusercontent.com/galaxy-sec/get/main/updates/gx/{channel}/manifest.json`
+- Manifest 来源：`https://raw.githubusercontent.com/galaxio-labs/get/main/updates/gx/{channel}/manifest.json`
 
 ## `gx.patch_file` Notes
 
@@ -161,10 +165,10 @@ gx self rollback [--id <backup_id>]
 - GXL 语法：`docs/gxl/syntax.md`
 - 内置能力：`docs/gxl/inner/index.md`
 - 结构文档（对齐代码）：`docs/structure/project-structure-actual.md`
-- GitHub Pages: https://galaxy-sec.github.io/gxl-docs/
-- DeepWiki: https://deepwiki.com/galaxy-sec/galaxy-flow
+- GitHub Pages: https://galaxio-labs.github.io/gxl-docs/
+- DeepWiki: https://deepwiki.com/galaxio-labs/galaxy-flow
 
 ## Release
 
 GitHub Releases:
-- https://github.com/galaxy-sec/galaxy-flow/releases
+- https://github.com/galaxio-labs/galaxy-flow/releases

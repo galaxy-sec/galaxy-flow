@@ -58,7 +58,7 @@ gx mod update
 gx init project
 
 # 从默认仓库子目录初始化（需要网络）
-# 默认仓库: https://github.com/galaxy-sec/prj-tpl.git
+# 默认仓库: https://github.com/galaxio-labs/prj-tpl.git
 gx init project --path rust
 gx init project --path rust --branch main
 
