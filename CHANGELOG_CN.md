@@ -5,6 +5,33 @@ Galaxy Flow项目所有重要变更将记录在此文件中。
 本格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/) 标准，
 本项目遵循 [语义化版本2.0.0](https://semver.org/lang/zh-CN/spec/v2.0.0.html) 规范。
 
+## [v0.13.8] - 2026-04-06
+
+### 变更
+- **仓库归属对齐**：将项目、发布、manifest、安装脚本中的地址从历史的 `galaxy-sec` 统一切换到 `galaxio-labs`。
+- **项目初始化默认仓库**：将 `gx init project` 的默认模板仓库及相关 CLI 帮助文本更新为 `https://github.com/galaxio-labs/prj-tpl.git`。
+- **自更新来源切换**：将自更新 manifest 和安装脚本的默认来源切换为新的 `galaxio-labs` 仓库路径。
+
+### 文档
+- **README 与指南同步**：更新 README、CLI 指南、语法说明、自更新设计文档和 updates 文档，使其与当前仓库归属和发布地址保持一致。
+- **发布元数据同步**：同步 `0.13.8` 的版本元数据与 manifest 模板引用。
+
+### 修复
+- **示例与测试地址**：更新内置示例、模板和测试中的仓库地址，避免初始化流程、解析示例和模板加载继续指向已停用的 `galaxy-sec` 路径。
+
+## [v0.13.5] - 2026-03-23
+
+### 变更
+- **项目初始化 CLI 重构**：将 `--tpl` 替换为拆分后的 `--repo` 与 `--path` 参数。
+  - `gx init project`：本地初始化（离线生成基础 `work.gxl` 和 `adm.gxl`）
+  - `gx init project --path rust`：从默认仓库的子目录远程初始化
+  - `gx init project --repo <url>`：从自定义仓库远程初始化
+- **默认仓库**：当只提供 `--path` 而未指定 `--repo` 时，默认使用 `https://github.com/galaxio-labs/prj-tpl.git`。
+- **参数校验**：`--branch` 与 `--tag` 现在要求与 `--repo` 或 `--path` 一起使用。
+
+### 修复
+- **目录清理**：当内容复制到 `_gal` 失败时，现在会自动清理已创建的空目录。
+
 ## [v0.13.4] - 2026-03-15
 
 ### 变更
