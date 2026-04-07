@@ -1,0 +1,11 @@
+extern mod cfm { git = "https://github.com/galaxy-operators/cfm-gxl.git", branch = "${GXL_CHANNEL:develop}" }
+mod  envs {
+  env default {
+     ROOT= "./";
+  }
+}
+mod main {
+  flow conf {
+    gx.echo(value: "admin flow");
+  }
+}

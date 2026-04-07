@@ -1,4 +1,3 @@
-extern mod os { path= "../../_gal/mods"; }
 mod base_env {
     env _common {
       gx.vars {
@@ -25,7 +24,7 @@ mod envs : base_env {
 mod main   {
   conf = "${ENV_ROOT}/conf" ;
   flow conf  {
-    os.path ( dst : "${MAIN_CONF}/used", keep : "true" );
+    gx.cmd (  "mkdir -p ${MAIN_CONF}/used");
     gx.tpl (
         tpl : "${MAIN_CONF}/tpls/"  ,
         dst : "${MAIN_CONF}/used/" ,

@@ -1,6 +1,7 @@
-use crate::{const_val::gxl_const, error::AssembleReason, ExecReason, ExecResult};
+use crate::{ExecReason, ExecResult, const_val::gxl_const, error::AssembleReason};
 use orion_error::{ErrorCode, StructError, UvsReason};
 
+use orion_sec::SecReason;
 use serde::Serialize;
 use thiserror::Error;
 
@@ -12,6 +13,8 @@ pub enum RunReason {
     Exec(String),
     #[error("args error {0}")]
     Args(String),
+    #[error("{0}")]
+    Sec(SecReason),
     #[error("{0}")]
     Uvs(UvsReason),
 }
@@ -28,6 +31,7 @@ impl ErrorCode for RunReason {
             RunReason::Exec(_) => 540,
             RunReason::Args(_) => 550,
             RunReason::Uvs(uvs_reason) => uvs_reason.error_code(),
+            RunReason::Sec(_) => 560,
         }
     }
 }
@@ -60,70 +64,76 @@ pub type GxlResult<T> = std::result::Result<T, GxlError>;
 pub type NER = ExecResult<()>;
 
 pub fn report_gxl_error(e: RunError) {
-    println!("Galaxy Flow Parse Error (Code: {})", e.error_code());
-    println!("--------------------------");
+    eprintln!("Galaxy Flow Parse Error (Code: {})", e.error_code());
+    eprintln!("--------------------------");
     if let Some(target) = e.target() {
-        println!("[TARGET]:\n{target}\n",);
+        eprintln!("[TARGET]:\n{target}\n",);
     }
-    println!("[REASON]:");
+    eprintln!("[REASON]:");
     match e.reason() {
         RunReason::Uvs(uvs_reason) => match uvs_reason {
-            UvsReason::LogicError(e) => {
-                println!("LOGIC ERROR: {e}\n",);
+            UvsReason::LogicError => {
+                eprintln!("LOGIC ERROR\n",);
             }
-            UvsReason::BusinessError(e) => {
-                println!("BIZ ERROR: {e}\n",);
+            UvsReason::BusinessError => {
+                eprintln!("BIZ ERROR\n",);
             }
-            UvsReason::DataError(e, _) => {
-                println!("DATA ERROR: {e}\n",);
+            UvsReason::DataError => {
+                eprintln!("DATA ERROR\n",);
             }
-            UvsReason::SystemError(e) => {
-                println!("SYS ERROR: {e}\n",);
+            UvsReason::SystemError => {
+                eprintln!("SYS ERROR\n",);
             }
-            UvsReason::ResourceError(e) => {
-                println!("RES ERROR: {e}\n",);
+            UvsReason::ResourceError => {
+                eprintln!("RES ERROR\n",);
+            }
+            UvsReason::NetworkError => {
+                eprintln!("NET ERROR\n",);
+            }
+            UvsReason::TimeoutError => {
+                eprintln!("TIMEOUT\n",);
             }
             UvsReason::ConfigError(e) => {
-                println!("CONF ERROR: {e}\n",);
+                eprintln!("CONF ERROR: {e}\n",);
             }
-            UvsReason::ValidationError(e) => {
-                println!("ERROR: {e}\n");
+            UvsReason::PermissionError => {
+                eprintln!("PERMISSION ERROR\n",);
             }
-            UvsReason::NotFoundError(e) => {
-                println!("ERROR: {e}\n");
+            UvsReason::ValidationError => {
+                eprintln!("VALIDATION ERROR\n",);
             }
-            UvsReason::PermissionError(e) => {
-                println!("ERROR: {e}\n");
+            UvsReason::ExternalError => {
+                eprintln!("EXTERNAL ERROR\n",);
             }
-            UvsReason::NetworkError(e) => {
-                println!("ERROR: {e}\n");
+            UvsReason::NotFoundError => {
+                eprintln!("NOT FOUND\n",);
             }
-            UvsReason::TimeoutError(e) => {
-                println!("ERROR: {e}\n");
-            }
-            UvsReason::ExternalError(e) => {
-                println!("ERROR: {e}\n");
+            other => {
+                eprintln!("ERROR: {other}\n",);
             }
         },
         RunReason::Gxl(e) => {
-            println!("{}{e}\n", gxl_const::ERROR_PREFIX);
+            eprintln!("{}{e}\n", gxl_const::ERROR_PREFIX);
         }
         RunReason::Exec(e) => {
-            println!("EXEC ERROR: {e}\n",);
+            eprintln!("EXEC ERROR: {e}\n",);
         }
         RunReason::Args(e) => {
-            println!("ARGS ERROR: {e}\n",);
+            eprintln!("ARGS ERROR: {e}\n",);
+        }
+        RunReason::Sec(e) => {
+            eprintln!("Sec ERROR: {e}\n",);
         }
     }
     if let Some(pos) = e.position() {
-        println!("\n[POSITION]:\n{pos}",);
+        eprintln!("\n[POSITION]:\n{pos}",);
     }
     if let Some(detail) = e.detail() {
-        println!("\n[DETAIL]:\n{detail}",);
+        eprintln!("\n[DETAIL]:\n{detail}",);
     }
-    println!("\n[CONTEXT]:\n");
-    for x in e.context() {
-        println!("{x}")
+    eprintln!("\n[CONTEXT]:\n");
+    for x in e.context().iter() {
+        eprintln!("{x}")
     }
 }
 

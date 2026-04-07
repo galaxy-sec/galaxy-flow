@@ -27,7 +27,7 @@ impl GxlType {
     }
 }
 
-#[derive(Clone, From)]
+#[derive(Clone, From, PartialEq, Debug)]
 pub enum GxlMeta {
     Prop(PropMeta),
     Env(EnvMeta),

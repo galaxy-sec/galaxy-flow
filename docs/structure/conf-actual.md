@@ -1,39 +1,24 @@
-# conf 模块实际结构文档
+# conf 模块实际结构
 
-## 模块概述
+## 模块定位
 
-conf 模块负责配置管理，基于实际代码结构包含以下子模块：
+`src/conf` 负责 `.gxlprj` 配置的定位、初始化和加载。
 
-## 实际模块结构
+## 实际文件结构
 
-```
+```text
 src/conf/
-├── mod.rs           # 模块入口
-├── gxlconf.rs       # GXL配置定义
-├── mod_test.rs      # 配置测试
-└── oprator.rs       # 配置操作
+├── mod.rs
+├── gxlconf.rs
+├── oprator.rs
+└── mod_test.rs
 ```
 
-## 实际子模块说明
+## 对外导出（`src/conf/mod.rs`）
 
-- **gxlconf**: GXL配置文件结构和解析
-- **oprator**: 配置操作和处理的工具函数
-- **mod_test**: 配置模块的单元测试
+- 模块：`gxlconf, oprator`
+- 函数：`conf_init, conf_path, load_gxl_config`
 
-## 实际依赖关系
+## 说明
 
-```mermaid
-graph LR
-    conf --> model
-    conf --> util
-    conf --> err
-```
-
-## 使用示例
-
-```rust
-use crate::conf::gxlconf::GxlConf;
-
-// 实际使用方式
-let config = GxlConf::load_from_file("config.toml")?;
-```
+- `mod_test.rs` 由 `mod.rs` 内部引用，仅用于测试。

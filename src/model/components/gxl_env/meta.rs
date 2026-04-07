@@ -1,14 +1,14 @@
+use crate::friendly::MultiNew2;
 use crate::{
     annotation::ComUsage,
     components::gxl_mod::meta::ModMeta,
     meta::{GxlType, MetaInfo},
 };
-use orion_common::friendly::MultiNew2;
 use std::fmt::Debug;
 
 use super::anno::EnvAnnotation;
 
-#[derive(Clone, Getters, Default)]
+#[derive(Clone, Getters, Default, PartialEq)]
 pub struct EnvMeta {
     class: GxlType,
     name: String,

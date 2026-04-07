@@ -2,10 +2,10 @@ use async_trait::async_trait;
 use derive_more::From;
 
 use crate::{
+    ExecReason,
     ability::prelude::{AsyncRunnableTrait, ComponentMeta, TaskResult, VarSpace},
     context::ExecContext,
     meta::GxlMeta,
-    ExecReason,
 };
 
 use super::{cmd::CmdDTO, file::FileDTO, stdin::StdinDTO};
@@ -41,7 +41,7 @@ impl GxRead {
             ReadMode::CMD(o) => o.execute(ctx, dict),
             ReadMode::FILE(o) => o.execute(ctx, dict),
             ReadMode::STDIN(o) => o.execute(ctx, dict),
-            _ => Err(ExecReason::Exp(String::from("not implementation")).into()),
+            _ => Err(ExecReason::Gxl(String::from("not implementation")).into()),
         }
     }
 }

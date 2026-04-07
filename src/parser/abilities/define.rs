@@ -3,13 +3,11 @@ use orion_parse::{
     define::{gal_raw_str, take_bool, take_float, take_number, take_string, take_var_ref_name},
     symbol::{symbol_assign, symbol_colon, wn_desc},
 };
+use orion_sec::sec::{SecFrom, SecValueObj, SecValueType, SecValueVec};
+use orion_variate::vars::UpperKey;
 use winnow::{combinator::separated, token::literal};
 
-use crate::{
-    primitive::GxlObject,
-    sec::{SecFrom, SecValueObj, SecValueType, SecValueVec},
-    var::UniString,
-};
+use crate::primitive::GxlObject;
 pub fn gal_gxl_object(data: &mut &str) -> Result<GxlObject> {
     alt((
         take_var_ref_name.map(GxlObject::VarRef),
@@ -96,7 +94,7 @@ pub fn take_value_map(data: &mut &str) -> Result<SecValueObj> {
     literal("}").parse_next(data)?;
     let mut obj = SecValueObj::new();
     items.into_iter().for_each(|(k, v)| {
-        obj.insert(UniString::from(k), v);
+        obj.insert(UpperKey::from(k), v);
     });
     Ok(obj)
 }
@@ -106,14 +104,13 @@ mod tests {
 
     use orion_error::TestAssert;
 
-    use crate::{parser::inner::run_gxl, sec::ToUniCase};
+    use crate::parser::inner::run_gxl;
 
     use super::*;
 
     #[test]
     fn test_assign() {
-        let mut data =
-            "data= r#\"{\"branchs\" : [{ \"name\": \"develop\" }, { \"name\" : \"release/1\"}]}\"#;";
+        let mut data = "data= r#\"{\"branchs\" : [{ \"name\": \"develop\" }, { \"name\" : \"release/1\"}]}\"#;";
         let (key, val) = run_gxl(gal_var_assign_obj, &mut data).assert();
         assert_eq!(key, "data".to_string());
         assert_eq!(
@@ -133,7 +130,7 @@ mod tests {
         let mut input = "{ key: \"value\" }";
         let obj = take_value_map(&mut input).assert();
         assert_eq!(
-            obj.get(&"key".to_unicase()).assert(),
+            obj.get(&UpperKey::from("key")).assert(),
             &SecValueType::nor_from("value".to_string())
         );
 
@@ -141,24 +138,24 @@ mod tests {
         let mut input = "{ a: 1, b: \"two\", c: true,d: 1.1 }";
         let obj = take_value_map(&mut input)?;
         assert_eq!(
-            obj.get(&"a".to_unicase()).unwrap(),
+            obj.get(&UpperKey::from("a")).unwrap(),
             &SecValueType::nor_from(1)
         );
         assert_eq!(
-            obj.get(&"b".to_unicase()).unwrap(),
+            obj.get(&UpperKey::from("b")).unwrap(),
             &SecValueType::nor_from("two".to_string())
         );
         assert_eq!(
-            obj.get(&"c".to_unicase()).unwrap(),
+            obj.get(&UpperKey::from("c")).unwrap(),
             &SecValueType::nor_from(true)
         );
 
         // 测试嵌套对象
         let mut input = "{ outer: { inner: 42 } }";
         let obj = take_value_map(&mut input).assert();
-        if let SecValueType::Obj(inner) = obj.get(&"outer".to_unicase()).assert() {
+        if let SecValueType::Obj(inner) = obj.get(&UpperKey::from("outer")).assert() {
             assert_eq!(
-                inner.get(&"inner".to_unicase()).unwrap(),
+                inner.get(&UpperKey::from("inner")).unwrap(),
                 &SecValueType::nor_from(42)
             );
         } else {
@@ -178,7 +175,6 @@ mod tests {
     #[test]
     fn test_take_value_vec() -> Result<()> {
         use super::*;
-        use crate::sec::SecValueType;
 
         // 测试空列表
         let mut input = "[]";

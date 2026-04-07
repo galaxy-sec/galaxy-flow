@@ -1,0 +1,46 @@
+providers:
+  DeepSeek:
+    enabled: true
+    api_key: ${SEC_DEEPSEEK_API_KEY}
+    base_url: https://api.deepseek.com/v1
+    timeout: 30
+    model_aliases: null
+    priority: 2
+  Glm:
+    enabled: true
+    api_key: ${SEC_GLM_API_KEY}
+    base_url: https://open.bigmodel.cn/api/paas/v4
+    timeout: 30
+    model_aliases: null
+    priority: 3
+  OpenAi:
+    enabled: true
+    api_key: ${SEC_OPENAI_API_KEY}
+    base_url: https://api.openai.com/v1
+    timeout: 30
+    model_aliases: null
+    priority: 1
+  Kimi:
+    enabled: true
+    api_key: ${SEC_KIMI_API_KEY}
+    base_url: https://api.moonshot.cn/v1
+    timeout: 30
+    model_aliases: null
+    priority: 4
+routing:
+  simple: gpt-4o-mini
+  complex: gpt-4o
+  free: deepseek-chat
+limits:
+  review_budget: 2000
+  analysis_budget: 4000
+thread:
+  enabled: false
+  storage_path: ./threads
+  filename_template: thread-YYYY-MM-DD.md
+  min_summary_length: 200
+  max_summary_length: 250
+  summary_keywords:
+    - to sum up
+  inform_ai: false
+  inform_message: 【Thread记录已启用】本次对话正在被记录，请确保回答内容适合记录和分析。

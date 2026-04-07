@@ -22,11 +22,14 @@ jobs:
       matrix:
         target:
           - x86_64-unknown-linux-gnu
+          - x86_64-unknown-linux-musl
           - aarch64-apple-darwin
         rustup_toolchain: [stable]
         include:
           - os: ubuntu-22.04
             target: x86_64-unknown-linux-gnu
+          - os: ubuntu-22.04
+            target: x86_64-unknown-linux-musl
           - os: macos-14
             target: aarch64-apple-darwin
     steps:
@@ -38,17 +41,49 @@ jobs:
         with:
           toolchain: ${{ matrix.rustup_toolchain }}
 
+      - name: Install cross-compilation tools
+        if: matrix.target == 'x86_64-unknown-linux-musl'
+        uses: taiki-e/setup-cross-toolchain-action@v1
+        with:
+          target: ${{ matrix.target }}
+
+      - name: Install musl target
+        if: matrix.target == 'x86_64-unknown-linux-musl'
+        run: rustup target add ${{ matrix.target }}
+
+      - name: Configure static linking environment
+        if: matrix.target == 'x86_64-unknown-linux-musl'
+        run: |
+          echo "RUSTFLAGS=-C target-feature=+crt-static" >> $GITHUB_ENV
+          echo "PKG_CONFIG_ALL_STATIC=1" >> $GITHUB_ENV
+          echo "OPENSSL_STATIC=1" >> $GITHUB_ENV
+          echo "LIBZ_SYS_STATIC=1" >> $GITHUB_ENV
+
       - name: Cargo build
         run: cargo build --release --target ${{ matrix.target }}
 
       - name: Show version
-        run: ./target/${{ matrix.target }}/release/gflow --version
+        run: ./target/${{ matrix.target }}/release/gx --version
+
+      - name: Verify musl static linking
+        if: matrix.target == 'x86_64-unknown-linux-musl'
+        run: |
+          echo "Verifying musl static linking..."
+          echo "Debug info: Testing binary with ldd..."
+          ldd_result=$(ldd ./target/${{ matrix.target }}/release/gx 2>&1)
+          echo "ldd output: $ldd_result"
+          if echo "$ldd_result" | grep -q "statically linked"; then
+            echo "✓ musl binary verified as statically linked"
+          else
+            echo "✗ musl binary shows dynamic dependencies:"
+            echo "$ldd_result"
+            exit 1
+          fi
 
       - name: Archive (UNIX)
         run: |
           mkdir -p artifacts
-          cp -av target/${{ matrix.target }}/release/gflow artifacts/
-          cp -av target/${{ matrix.target }}/release/gprj artifacts/
+          cp -av target/${{ matrix.target }}/release/gx artifacts/
           tar -czf ${{ github.event.repository.name }}-${{ github.ref_name }}-${{ matrix.target }}.tar.gz  artifacts
         if: ${{ ! startsWith(matrix.os, 'windows') }}
 
@@ -72,6 +107,9 @@ jobs:
       contents: write
 
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - name: Ensure artifacts dir exists
         run: mkdir -p artifacts
 
@@ -80,6 +118,21 @@ jobs:
         with:
           path: artifacts
           merge-multiple: true
+
+      - name: Resolve channel
+        id: channel
+        run: |
+          set -euo pipefail
+          tag="${GITHUB_REF_NAME}"
+          version="${tag#v}"
+          channel="stable"
+          if [[ "$version" == *"-alpha"* || "$version" == *"alpha-"* ]]; then
+            channel="alpha"
+          elif [[ "$version" == *"-beta"* || "$version" == *"beta-"* || "$version" == *"-pre"* || "$version" == *"pre-"* ]]; then
+            channel="beta"
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "channel=$channel" >> "$GITHUB_OUTPUT"
 
       - name: Release
         uses: softprops/action-gh-release@c062e08bd532815e2082a85e87e3ef29c3e6d191
@@ -97,6 +150,150 @@ jobs:
             ```shell
             gh attestation verify --owner ${{ github.repository_owner }} <my-artifact>
             ```
+
+            ## Installation
+
+            ```bash
+            # Check for updates
+            gx self check --channel ${{ steps.channel.outputs.channel }}
+
+            # Update to this version
+            gx self update --channel ${{ steps.channel.outputs.channel }} --yes
+            ```
           token: ${{ secrets.GITHUB_TOKEN }}
-          prerelease: ${{ contains(github.ref, '-pre') }}
+          prerelease: ${{ steps.channel.outputs.channel != 'stable' || contains(github.ref_name, '-pre') }}
           files: artifacts/*
+
+  update-gx-get-manifest:
+    needs: [Release]
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: read
+    concurrency:
+      group: gx-get-updates
+      cancel-in-progress: false
+    steps:
+      - name: Determine channel
+        id: meta
+        run: |
+          set -euo pipefail
+          TAG="${GITHUB_REF_NAME}"
+          VERSION="${TAG#v}"
+          if [[ "$VERSION" == *"-alpha"* || "$VERSION" == *"alpha-"* ]]; then
+            CHANNEL="alpha"
+          elif [[ "$VERSION" == *"-beta"* || "$VERSION" == *"beta-"* || "$VERSION" == *"-pre"* || "$VERSION" == *"pre-"* ]]; then
+            CHANNEL="beta"
+          else
+            CHANNEL="stable"
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "channel=$CHANNEL" >> "$GITHUB_OUTPUT"
+
+      - name: Ensure GX_GET_TOKEN exists
+        env:
+          GX_GET_TOKEN: ${{ secrets.GX_GET_TOKEN }}
+        run: |
+          if [[ -z "${GX_GET_TOKEN}" ]]; then
+            echo "missing required secret: GX_GET_TOKEN"
+            exit 1
+          fi
+
+      - name: Fetch release metadata
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${{ steps.meta.outputs.tag }}" > /tmp/release.json
+
+      - name: Build assets map
+        run: |
+          set -euo pipefail
+          jq -c '
+            [ .assets[]
+              | select(.name | test("^galaxy-flow-v[^/]+-(aarch64-apple-darwin|x86_64-unknown-linux-gnu|x86_64-unknown-linux-musl)\\.tar\\.gz$"))
+              | {
+                  key: (.name | capture("-(?<target>aarch64-apple-darwin|x86_64-unknown-linux-gnu|x86_64-unknown-linux-musl)\\.tar\\.gz$").target),
+                  value: {
+                    url: .browser_download_url,
+                    sha256: ((.digest // "") | sub("^sha256:"; "") | ascii_downcase)
+                  }
+                }
+            ] | from_entries
+          ' /tmp/release.json > /tmp/assets.json
+
+      - name: Checkout gx-get
+        uses: actions/checkout@v4
+        with:
+          repository: galaxy-sec/get
+          token: ${{ secrets.GX_GET_TOKEN }}
+          path: gx-get
+
+      - name: Update manifest and history
+        run: |
+          set -euo pipefail
+          TAG="${{ steps.meta.outputs.tag }}"
+          VERSION="${{ steps.meta.outputs.version }}"
+          CHANNEL="${{ steps.meta.outputs.channel }}"
+          PUBLISHED_AT="$(jq -r '.published_at // empty' /tmp/release.json)"
+          if [[ -z "$PUBLISHED_AT" ]]; then
+            PUBLISHED_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          fi
+
+          cd gx-get
+          MANIFEST="updates/gx/${CHANNEL}/manifest.json"
+          HISTORY="updates/gx/${CHANNEL}/versions/${TAG}.json"
+          mkdir -p "$(dirname "$MANIFEST")" "$(dirname "$HISTORY")"
+
+          # Read assets and compute sha256 if not provided by GitHub
+          ASSETS_FILE="/tmp/assets.json"
+
+          # If sha256 is empty, download and compute
+          if jq -e 'to_entries | all(.value.sha256 != "")' "$ASSETS_FILE" >/dev/null; then
+            echo "All assets have sha256 from release metadata"
+          else
+            echo "Computing sha256 for assets..."
+            NEW_ASSETS='{}'
+            for entry in $(jq -c 'to_entries[]' "$ASSETS_FILE"); do
+              target=$(echo "$entry" | jq -r '.key')
+              url=$(echo "$entry" | jq -r '.value.url')
+              sha256=$(curl -sL "$url" | sha256sum | awk '{print $1}')
+              NEW_ASSETS="$(echo "$NEW_ASSETS" | jq -c --arg target "$target" --arg url "$url" --arg sha "$sha256" '. + {($target): {url: $url, sha256: $sha}}')"
+            done
+            echo "$NEW_ASSETS" > "$ASSETS_FILE"
+          fi
+
+          jq -n \
+            --arg version "$VERSION" \
+            --arg channel "$CHANNEL" \
+            --arg published_at "$PUBLISHED_AT" \
+            --arg git_ref "$TAG" \
+            --arg git_commit "${GITHUB_SHA}" \
+            --slurpfile assets "$ASSETS_FILE" \
+            '{
+              version: $version,
+              channel: $channel,
+              published_at: $published_at,
+              git_ref: $git_ref,
+              git_commit: $git_commit,
+              assets: $assets[0]
+            }' > "$MANIFEST"
+
+          cp "$MANIFEST" "$HISTORY"
+
+          echo "Generated manifest:"
+          cat "$MANIFEST"
+
+      - name: Commit and push to gx-get
+        run: |
+          set -euo pipefail
+          cd gx-get
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add updates
+          if git diff --cached --quiet; then
+            echo "no manifest changes"
+            exit 0
+          fi
+          git commit -m "chore(updates): gx ${{ steps.meta.outputs.tag }} (${{ steps.meta.outputs.channel }})"
+          git push

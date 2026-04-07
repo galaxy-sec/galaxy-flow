@@ -1,109 +1,66 @@
-# model 模块实际结构文档
+# model 模块实际结构
 
-## 模块概述
+## 模块定位
 
-model 模块定义了GXL语言的核心数据模型和组件结构，基于实际代码结构包含以下子模块：
+`src/model` 定义 GXL 的核心数据结构、执行模型和任务报告模型。
 
-## 实际模块结构
+## 实际文件结构
 
-```
+```text
 src/model/
-├── mod.rs           # 模块入口
-├── annotation.rs    # 注解定义
-├── components/      # 组件定义目录
-│   ├── mod.rs       # 组件入口
-│   ├── gxl_act.rs   # 动作组件
-│   ├── gxl_block.rs # 代码块组件
-│   ├── gxl_cond.rs  # 条件组件
-│   ├── gxl_env.rs   # 环境组件
-│   ├── gxl_extend.rs # 扩展组件
-│   ├── gxl_flow.rs  # 流程组件
-│   ├── gxl_fun.rs   # 函数组件
-│   ├── gxl_intercept.rs # 拦截器组件
-│   ├── gxl_loop.rs  # 循环组件
-│   ├── gxl_mod.rs   # 模块组件
-│   ├── gxl_prop.rs  # 属性组件
-│   ├── gxl_spc.rs   # 特殊组件
-│   ├── gxl_utls.rs  # 工具组件
-│   ├── gxl_var.rs   # 变量组件
-│   └── prelude.rs   # 组件预导入
-├── context.rs       # 上下文定义
-├── data.rs          # 数据结构
-├── error.rs         # 错误定义
-├── execution/       # 执行模型目录
-│   ├── mod.rs       # 执行模型入口
-│   ├── action.rs    # 动作执行
-│   ├── dict.rs      # 字典处理
-│   ├── global.rs    # 全局状态
-│   ├── hold.rs      # 保持状态
-│   ├── job.rs       # 作业定义
-│   ├── mod.rs       # 执行模块
-│   ├── runnable.rs  # 可运行接口
-│   ├── sequence.rs  # 序列执行
-│   ├── task.rs      # 任务定义
-│   ├── trans.rs     # 事务处理
-│   └── unit.rs      # 单元执行
-├── expect.rs        # 期望定义
-├── meta.rs          # 元数据
-├── primitive.rs     # 原始类型
-├── sec.rs           # 安全相关
-├── task_report/     # 任务报告目录
-│   ├── mod.rs       # 报告入口
-│   ├── main_task.rs # 主任务报告
-│   ├── task_notification.rs # 任务通知
-│   ├── task_rc_config.rs # 任务配置
-│   └── task_result_report.rs # 结果报告
-├── traits.rs        # 特质定义
-└── var.rs           # 变量定义
+├── mod.rs
+├── annotation.rs
+├── context.rs
+├── data.rs
+├── error.rs
+├── expect.rs
+├── meta.rs
+├── primitive.rs
+├── traits.rs
+├── var.rs
+├── components/
+│   ├── mod.rs
+│   ├── prelude.rs
+│   ├── gxl_block.rs
+│   ├── gxl_cond.rs
+│   ├── gxl_extend.rs
+│   ├── gxl_intercept.rs
+│   ├── gxl_loop.rs
+│   ├── gxl_prop.rs
+│   ├── gxl_spc.rs
+│   ├── gxl_utls.rs
+│   ├── gxl_var.rs
+│   ├── gxl_act/{mod,meta,activity}.rs
+│   ├── gxl_env/{mod,meta,anno,env}.rs
+│   ├── gxl_flow/{mod,meta,anno,flow,runner}.rs
+│   ├── gxl_fun/{mod,meta,fun}.rs
+│   └── gxl_mod/{mod,meta,anno,body}.rs
+├── execution/
+│   ├── mod.rs
+│   ├── action.rs
+│   ├── dict.rs
+│   ├── global.rs
+│   ├── hold.rs
+│   ├── job.rs
+│   ├── runnable.rs
+│   ├── sequence.rs
+│   ├── task.rs
+│   ├── trans.rs
+│   └── unit.rs
+└── task_report/
+    ├── mod.rs
+    ├── main_task.rs
+    ├── task_notification.rs
+    ├── task_rc_config.rs
+    └── task_result_report.rs
 ```
 
-## 核心数据模型
+## 对外导出（`src/model/mod.rs`）
 
-### 1. 原始类型 (primitive.rs)
-定义GXL语言的基础数据类型
+- 模块：`annotation, components, context, data, error, execution, expect, meta, primitive, task_report, traits, var`
+- 类型：`ExecError, ExecReason, ExecResult`
 
-### 2. 变量系统 (var.rs)
-变量定义和管理
+## 说明
 
-### 3. 上下文系统 (context.rs)
-执行上下文和环境管理
-
-### 4. 数据结构 (data.rs)
-复杂数据结构定义
-
-### 5. 注解系统 (annotation.rs)
-GXL注解定义和处理
-
-### 6. 组件系统 (components/)
-GXL语言的各种组件定义
-
-### 7. 执行模型 (execution/)
-任务、作业、事务等执行相关模型
-
-### 8. 任务报告 (task_report/)
-任务执行结果和报告系统
-
-## 实际依赖关系
-
-```mermaid
-graph LR
-    model --> util
-    model --> err
-    model --> types
-```
-
-## 使用示例
-
-```rust
-use crate::model::primitive::Primitive;
-use crate::model::var::Var;
-use crate::model::components::gxl_flow::GxlFlow;
-
-// 实际使用方式
-let var = Var::new("name", Primitive::String("value".to_string()));
-let flow = GxlFlow::new("main");
-```
-
-## 注意事项
-
-本文档基于实际代码结构，所有列出的文件和目录都在源码中存在。model模块是项目最复杂的模块，包含了GXL语言的完整对象模型。
+- `components/gxl_intercept.rs` 文件存在，但在 `components/mod.rs` 中当前未导出。
+- 模块中不存在 `sec.rs`。

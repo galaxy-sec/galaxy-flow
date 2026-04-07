@@ -10,6 +10,7 @@ use std::sync::mpsc::Sender;
 use crate::ability::archive::GxTar;
 use crate::ability::archive::GxUnTar;
 use crate::ability::delegate::ActCall;
+use crate::ability::patch::GxPatchFile;
 use crate::ability::prelude::TaskValue;
 use crate::ability::shell::GxShell;
 use crate::ability::{
@@ -38,6 +39,7 @@ pub enum BlockAction {
     UnTar(GxUnTar),
     DownLoad(GxDownLoad),
     UpLoad(GxUpLoad),
+    PatchFile(GxPatchFile),
 }
 
 #[derive(Clone, Getters, Default)]
@@ -85,6 +87,7 @@ impl AsyncRunnableWithSenderTrait for BlockAction {
             BlockAction::Read(o) => o.async_exec(ctx, dct).await,
             BlockAction::UpLoad(o) => o.async_exec(ctx, dct).await,
             BlockAction::DownLoad(o) => o.async_exec(ctx, dct).await,
+            BlockAction::PatchFile(o) => o.async_exec(ctx, dct).await,
         }
     }
 }
@@ -131,7 +134,6 @@ impl DependTrait<&GxlSpace> for BlockNode {
                 BlockAction::Loop(v) => BlockAction::Loop(v.clone()),
                 BlockAction::Read(v) => BlockAction::Read(v.clone()),
                 BlockAction::Echo(v) => BlockAction::Echo(v.clone()),
-                //BlockAction::Vault(v) => BlockAction::Vault(v.clone()),
                 BlockAction::Assert(v) => BlockAction::Assert(v.clone()),
                 BlockAction::Version(v) => BlockAction::Version(v.clone()),
                 BlockAction::Command(v) => BlockAction::Command(v.clone()),
@@ -140,6 +142,7 @@ impl DependTrait<&GxlSpace> for BlockNode {
                 BlockAction::Call(v) => BlockAction::Call(Box::new(v.assemble(mod_name, src)?)),
                 BlockAction::DownLoad(v) => BlockAction::DownLoad(v.clone()),
                 BlockAction::UpLoad(v) => BlockAction::UpLoad(v.clone()),
+                BlockAction::PatchFile(v) => BlockAction::PatchFile(v.clone()),
             };
             ins.append(item);
         }
@@ -173,16 +176,13 @@ impl AppendAble<Vec<BlockAction>> for BlockNode {
 #[cfg(test)]
 mod tests {
 
-    use orion_common::friendly::New2;
+    use crate::{cmd::GxlCmd, friendly::New2};
+    use orion_sec::sec::{NoSecConv, SecFrom, SecValueObj, SecValueType, SecValueVec};
+    use orion_variate::vars::UpperKey;
 
     //test RgBlock append
     use super::*;
-    use crate::{
-        model::components::gxl_block::BlockNode,
-        sec::{NoSecConv, SecFrom, ToUniCase},
-        traits::Getter,
-        var::VarDict,
-    };
+    use crate::{model::components::gxl_block::BlockNode, traits::Getter, var::VarDict};
     #[test]
     fn test_append() {
         let mut block = BlockNode::new();
@@ -196,7 +196,7 @@ mod tests {
         let mut block = BlockNode::new();
         let prop = GxlVar::new("test", "hello");
         block.append(prop);
-        let ctx = ExecContext::new(Some(false), false);
+        let ctx = ExecContext::new(GxlCmd::default());
         let def = VarSpace::default();
         let res = block.async_exec(ctx, def, None).await;
         assert!(res.is_ok());
@@ -204,16 +204,19 @@ mod tests {
 
     #[test]
     fn test_props_export_with_complex_data() {
-        use crate::{
-            primitive::GxlObject,
-            sec::{SecValueObj, SecValueType, SecValueVec},
-        };
+        use crate::primitive::GxlObject;
         use orion_variate::vars::ValueType;
 
         // 创建测试数据
         let mut sys_a = SecValueObj::new();
-        sys_a.insert("mod1".to_unicase(), SecValueType::nor_from("A".to_string()));
-        sys_a.insert("mod2".to_unicase(), SecValueType::nor_from("B".to_string()));
+        sys_a.insert(
+            UpperKey::from("mod1"),
+            SecValueType::nor_from("A".to_string()),
+        );
+        sys_a.insert(
+            UpperKey::from("mod2"),
+            SecValueType::nor_from("B".to_string()),
+        );
 
         let sys_b = SecValueVec::from(vec![
             SecValueType::nor_from("C".to_string()),
@@ -240,7 +243,7 @@ mod tests {
         ));
 
         // 创建执行上下文
-        let ctx = ExecContext::new(Some(false), false);
+        let ctx = ExecContext::new(GxlCmd::default());
         let mut var_dict = VarDict::default();
 
         // 导出 props

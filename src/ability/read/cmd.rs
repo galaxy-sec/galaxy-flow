@@ -2,13 +2,14 @@ use crate::ability::prelude::*;
 use crate::components::GxlProps;
 use crate::expect::{LogicScope, ShellOption};
 
-use orion_common::friendly::New2;
+use crate::friendly::New2;
+use orion_error::{ToStructError, UvsFrom};
 
 #[derive(Clone, Debug, PartialEq, Default, Builder)]
 pub struct CmdDTO {
     pub name: String,
     pub cmd: String,
-    pub expect: ShellOption,
+    pub shell_opt: ShellOption,
 }
 
 impl CmdDTO {
@@ -18,16 +19,19 @@ impl CmdDTO {
         let cmd = self.cmd.clone();
         let name = self.name.clone();
         let cmd = exp.eval(&cmd)?;
-        let (data, _) = gxl_sh!(
+        let (_exit_code, data, _) = gxl_sh!(
             LogicScope::Outer,
             ctx.path(),
             &cmd,
-            &self.expect,
+            &self.shell_opt,
             &exp,
             vars_dict.global()
         )?;
-        let data_str =
-            String::from_utf8(data).map_err(|msg| ExecReason::Exp(format!("bad result {msg}")))?;
+        let data_str = String::from_utf8(data).map_err(|msg| {
+            ExecReason::from_data()
+                .to_err()
+                .with_detail(format!("bad result {msg}"))
+        })?;
         let mut vars = GxlProps::new("cmd");
         vars.append(GxlVar::new(name, data_str.trim().to_string()));
         vars.export_props(ctx, vars_dict.global_mut(), "")?;
@@ -49,7 +53,7 @@ mod tests {
         let dto = CmdDTO {
             name: "RG".to_string(),
             cmd: "echo galaxy-1.0".to_string(),
-            ..Default::default()
+            shell_opt: ShellOption::default(),
         };
         let res = GxRead::from(ReadMode::from(dto));
         res.async_exec(context, def).await.unwrap();

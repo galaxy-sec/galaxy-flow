@@ -40,12 +40,11 @@ impl CommentParser {
                     if opt(newline).parse_next(input)?.is_some() {
                         out += "\n";
                     }
-                    continue;
                 }
 
                 DslStatus::Comment => {
                     multispace0.parse_next(input)?;
-                    let is_end: Result<&str> = r#"*/"#.parse_next(input);
+                    let is_end: Result<&str> = r"*/".parse_next(input);
                     if is_end.is_ok() {
                         status = DslStatus::Code;
                         continue;

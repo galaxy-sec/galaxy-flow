@@ -10,10 +10,10 @@ mod envs  {
     PRJ_ROOT    = ".";
   }
   env _dev {
-    BASE_DOMAIN = "dev.galaxy-sec.org" ;
+    BASE_DOMAIN = "dev.galaxio-labs.org" ;
   }
   env _demo {
-    BASE_DOMAIN = "demo.galaxy-sec.org" ;
+    BASE_DOMAIN = "demo.galaxio-labs.org" ;
   }
   env base {
     PYLON   = "/data/x/framework/pylon-ng/";

@@ -2,8 +2,8 @@ use std::path::PathBuf;
 
 use crate::ability::prelude::*;
 use getset::{Getters, Setters, WithSetters};
+use orion_accessor::archive::{compress, decompress};
 use orion_error::ToStructError;
-use orion_variate::archive::{compress, decompress};
 
 #[derive(Clone, Default, Debug, PartialEq, Getters, Setters, WithSetters, Builder)]
 #[getset(get = "pub", set = "pub", get_mut, set_with)]
@@ -43,7 +43,9 @@ impl AsyncRunnableTrait for GxTar {
         let src = PathBuf::from(ex.eval(&self.src)?);
         let dst = PathBuf::from(ex.eval(&self.file)?);
         info!(target: ctx.path(), "archive {}  -> {}", src.display(), dst.display());
-        println!("archive {}  -> {}", src.display(), dst.display());
+        if !ctx.quiet() {
+            eprintln!("archive {}  -> {}", src.display(), dst.display());
+        }
         if !src.exists() {
             return ExecReason::Args("src not exists".into())
                 .err_result()
@@ -70,7 +72,9 @@ impl AsyncRunnableTrait for GxUnTar {
         let src = PathBuf::from(ex.eval(&self.file)?);
         let out = PathBuf::from(ex.eval(&self.dst)?);
         info!(target: ctx.path(), "untar {}  -> {}", src.display(), out.display());
-        println!("untar {}  -> {}", src.display(), out.display());
+        if !ctx.quiet() {
+            eprintln!("untar {}  -> {}", src.display(), out.display());
+        }
         if !src.exists() {
             return ExecReason::Args("src not exists".into())
                 .err_result()
@@ -150,7 +154,7 @@ mod tests {
 
         // 验证压缩文件内容
         let extract_dir = temp_dir.path().join("extract");
-        orion_variate::archive::decompress(&archive_path, &extract_dir).unwrap();
+        orion_accessor::archive::decompress(&archive_path, &extract_dir).unwrap();
 
         assert!(extract_dir.join("test.txt").exists());
         assert!(extract_dir.join("subdir").join("nested.txt").exists());

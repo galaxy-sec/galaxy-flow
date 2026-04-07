@@ -1,0 +1,102 @@
+// 多轮对话示例
+// 展示GxAIFun的max_rounds配置和失败重试机制
+
+mod ai_multi_round_examples {
+
+    // 示例1：基础重试机制（默认3轮）
+    flow basic_git_retry {
+        // 尝试执行Git提交，如果失败会自动重试最多3次
+        gx.ai_fun(
+            role: "developer",
+            task: "将所有修改的文件添加到Git并提交",
+            tools: ["git-add", "git-commit"],
+            max_rounds: 3
+        );
+    }
+
+    // 示例2：扩展重试次数
+    flow extended_git_workflow {
+        // 执行完整的Git工作流，允许更多重试机会
+        gx.ai_fun(
+            role: "developer",
+            task: "执行完整的Git工作流：检查状态、添加文件、提交并推送",
+            tools: ["git-status", "git-add", "git-commit", "git-push"],
+            max_rounds: 5
+        );
+    }
+
+    // 示例3：单次执行（无重试）
+    flow single_round_execution {
+        // 只执行一次，无论成功或失败都不重试
+        gx.ai_fun(
+            role: "developer",
+            task: "检查当前Git状态",
+            tools: ["git-status"],
+            max_rounds: 1
+        );
+    }
+
+    // 示例4：多步骤工作流（利用VarSpace中的结果）
+    flow multi_step_workflow {
+        // 第一步：检查Git状态
+        gx.ai_fun(
+            role: "developer",
+            task: "检查当前Git仓库状态",
+            tools: ["git-status"],
+            max_rounds: 2
+        );
+
+        // 第二步：基于状态结果执行提交
+        // 这里可以访问第一步的结果：ai_tools_git-status_result_1
+        gx.ai_fun(
+            role: "developer",
+            task: "根据Git状态结果，添加所有修改的文件并提交",
+            tools: ["git-add", "git-commit"],
+            max_rounds: 3
+        );
+
+        // 第三步：推送到远程仓库
+        gx.ai_fun(
+            role: "developer",
+            task: "将提交推送到远程仓库",
+            tools: ["git-push"],
+            max_rounds: 2
+        );
+    }
+
+    // 示例5：复杂工作流（错误恢复）
+    flow complex_error_recovery {
+        // 尝试执行复杂的工作流，包含多种可能的错误情况
+        gx.ai_fun(
+            role: "developer",
+            task: "执行代码质量检查和提交工作流：
+                   1. 运行代码格式检查
+                   2. 运行测试套件
+                   3. 添加所有文件
+                   4. 提交更改
+                   如果任何步骤失败，请自动重试或寻找替代方案",
+            tools: ["git-status", "git-add", "git-commit", "rustfmt", "cargo-test"],
+            max_rounds: 4
+        );
+    }
+
+    // 示例6：条件执行工作流
+    flow conditional_execution {
+        // 第一步：检查是否有未提交的更改
+        gx.ai_fun(
+            role: "developer",
+            task: "检查当前Git仓库是否有未提交的更改",
+            tools: ["git-status"],
+            max_rounds: 1
+        );
+
+        // 第二步：根据检查结果决定是否提交
+        // 可以通过VarSpace访问：ai_tools_git-status_result_1
+        gx.ai_fun(
+            role: "developer",
+            task: "如果上一步检查到有未提交的更改，请添加文件并提交。如果没有更改，请说明情况。",
+            tools: ["git-add", "git-commit"],
+            max_rounds: 2
+        );
+    }
+}

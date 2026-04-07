@@ -11,8 +11,8 @@ pub fn gal_shell(input: &mut &str) -> Result<GxShell> {
     let mut shell = GxShell::default();
     gal_keyword("gx.shell", input)?;
     let props = action_call_args.parse_next(input)?;
-    let mut expect = ShellOption::default();
-    shell.set_expect(ShellOption::default());
+    let mut shell_opt = ShellOption::default();
+    shell.set_shell_opt(ShellOption::default());
     for one in props {
         let key = one.0.to_lowercase();
         if key == "default" || key == "shell" {
@@ -22,10 +22,10 @@ pub fn gal_shell(input: &mut &str) -> Result<GxShell> {
         } else if key == "out_var" {
             shell.set_out_var(one.1.to_opt());
         } else {
-            shell_opt_setting(key, one.1, &mut expect);
+            shell_opt_setting(key, one.1, &mut shell_opt);
         }
     }
-    shell.set_expect(expect);
+    shell.set_shell_opt(shell_opt);
     if !shell.shell().is_empty() {
         Ok(shell)
     } else {
@@ -60,7 +60,7 @@ mod tests {
 
     #[test]
     fn cmd_test2() {
-        let mut expect = ShellOption {
+        let shell_opt = ShellOption {
             log_lev: Some(log::Level::Info),
             ..Default::default()
         };
@@ -71,10 +71,10 @@ mod tests {
              out_var: "OUT_NAME",
              ) ;"#;
         let obj = gal_shell(&mut data).assert();
-        expect.err = Some(String::from("you err"));
         assert_eq!(data, "");
         assert_eq!(obj.shell(), "do.sh");
         assert_eq!(obj.arg_file(), &"arg.json".to_opt());
         assert_eq!(obj.out_var(), &"OUT_NAME".to_opt());
+        assert_eq!(obj.shell_opt(), &shell_opt);
     }
 }

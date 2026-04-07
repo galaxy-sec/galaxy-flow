@@ -1,7 +1,7 @@
 use serde::Serialize;
 
-use crate::util::redirect::platform::StdoutRedirect;
 use crate::ExecReason;
+use crate::util::redirect::platform::StdoutRedirect;
 use std::fs::File;
 use std::path::PathBuf;
 use std::sync::OnceLock;
@@ -9,14 +9,14 @@ use std::time::SystemTime;
 
 #[cfg(any(target_os = "linux", target_os = "macos"))]
 pub mod platform {
-    use libc::{close, dup, dup2, pipe, read, write, STDOUT_FILENO};
+    use libc::{STDOUT_FILENO, close, dup, dup2, pipe, read, write};
     use std::fs::File;
     use std::io::Write;
 
     use std::path::Path;
     use std::sync::{
-        atomic::{AtomicBool, Ordering},
         Arc,
+        atomic::{AtomicBool, Ordering},
     };
     use std::thread;
     use std::time::Duration;
@@ -174,7 +174,7 @@ mod platform {
         ioapiset::ReadFile,
         memoryapi::WriteFile,
         processthreadsapi::GetCurrentProcess,
-        winbase::{CreatePipe, GetStdHandle, SetStdHandle, STD_OUTPUT_HANDLE},
+        winbase::{CreatePipe, GetStdHandle, STD_OUTPUT_HANDLE, SetStdHandle},
         winnt::{DUPLICATE_SAME_ACCESS, HANDLE},
     };
 

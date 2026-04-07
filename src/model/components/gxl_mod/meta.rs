@@ -1,7 +1,7 @@
 use core::str;
 use std::fmt::Debug;
 
-use orion_common::friendly::MultiNew2;
+use crate::friendly::MultiNew2;
 
 use crate::meta::{GxlType, MetaInfo};
 

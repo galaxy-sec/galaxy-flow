@@ -62,7 +62,9 @@ mod tests {
 
     #[test]
     fn test_defined_in_env_vars() {
-        std::env::set_var("ENV_VAR", "value");
+        unsafe {
+            std::env::set_var("ENV_VAR", "value");
+        }
 
         let fn_defined = FnDefined::new("ENV_VAR");
         let result = fn_defined

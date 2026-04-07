@@ -4,10 +4,10 @@ use crate::components::gxl_spc::GxlSpace;
 
 use super::prelude::*;
 use winnow::{
+    Parser, Result,
     ascii::multispace0,
     combinator::{alt, fail, opt},
     error::ContextError,
-    Parser, Result,
 };
 
 use super::stc_mod::gal_stc_mod;

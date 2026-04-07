@@ -1,0 +1,32 @@
+mod envs {
+    env default {}
+}
+
+mod main {
+    flow test_specific_tools {
+        gx.ai_fun(
+            role: "developer",
+            enable_function_calling: "true",
+            tools: ["git-status"],
+            task: "请只使用 git_status 工具检查当前状态"
+        );
+    }
+
+    flow test_multiple_tools {
+        gx.ai_fun(
+            role: "developer",
+            enable_function_calling: "true",
+            tools: ["git-status", "git-add"],
+            task: "请先检查 Git 状态，然后添加 README.md 文件"
+        );
+    }
+
+    flow test_empty_tools {
+        gx.ai_fun(
+            role: "developer",
+            enable_function_calling: "true",
+            tools: [],
+            task: "请使用所有可用工具检查 Git 状态并创建提交"
+        );
+    }
+}

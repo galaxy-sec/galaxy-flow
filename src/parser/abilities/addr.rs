@@ -12,9 +12,9 @@ use crate::{
 
 use super::prelude::*;
 
-//{ git = "git@galaxy-sec.org:/gxl-lab.git", tag = "0.1.0" };
-//{ git = "git@galaxy-sec.org:/gxl-lab.git", branch = "main" };
-//{ git = "https://galaxy-sec.org/gxl-lab.git", branch = "main" };
+//{ git = "git@galaxio-labs.org:/gxl-lab.git", tag = "0.1.0" };
+//{ git = "git@galaxio-labs.org:/gxl-lab.git", branch = "main" };
+//{ git = "https://galaxio-labs.org/gxl-lab.git", branch = "main" };
 pub fn parse_git_addr(input: &mut &str) -> Result<ModAddr> {
     let mut git = ModGitAddr::default();
     let props = object_props.parse_next(input)?;
@@ -106,20 +106,20 @@ mod tests {
     #[test]
     fn test_parse_git_addr() {
         // 测试 Git 仓库模式
-        let mut input = r#"{ git = "git@galaxy-sec.org:/gxl-lab.git"; channel = "0.1.0"; }"#;
+        let mut input = r#"{ git = "git@galaxio-labs.org:/gxl-lab.git"; channel = "0.1.0"; }"#;
         let result = parse_git_addr(&mut input).assert();
         match result {
             ModAddr::Git(addr) => {
-                assert_eq!(addr.remote(), "git@galaxy-sec.org:/gxl-lab.git");
+                assert_eq!(addr.remote(), "git@galaxio-labs.org:/gxl-lab.git");
                 assert_eq!(addr.branch(), &"0.1.0".to_opt());
             }
             _ => panic!("Expected Git address"),
         }
-        let mut input = r#"{ git = "git@galaxy-sec.org:/gxl-lab.git", tag = "0.1.0" }"#;
+        let mut input = r#"{ git = "git@galaxio-labs.org:/gxl-lab.git", tag = "0.1.0" }"#;
         let result = parse_git_addr(&mut input).unwrap();
         match result {
             ModAddr::Git(addr) => {
-                assert_eq!(addr.remote(), "git@galaxy-sec.org:/gxl-lab.git");
+                assert_eq!(addr.remote(), "git@galaxio-labs.org:/gxl-lab.git");
                 assert_eq!(addr.tag(), &"0.1.0".to_opt());
             }
             _ => panic!("Expected Git address"),
@@ -158,12 +158,11 @@ mod tests {
     }
     #[test]
     fn test_gal_extern_mod_git() {
-        let mut input =
-            r#"extern mod os { git = "git@galaxy-sec.org:free/gxl-lab.git"; channel = "0.1.0"; }"#;
+        let mut input = r#"extern mod os { git = "git@galaxio-labs.org:free/gxl-lab.git"; channel = "0.1.0"; }"#;
         let result = gal_extern_mod(&mut input).assert();
         match result.addr() {
             ModAddr::Git(addr) => {
-                assert_eq!(addr.remote(), "git@galaxy-sec.org:free/gxl-lab.git");
+                assert_eq!(addr.remote(), "git@galaxio-labs.org:free/gxl-lab.git");
                 assert_eq!(addr.branch(), &"0.1.0".to_opt());
             }
             _ => panic!("Expected Git address"),
@@ -171,11 +170,11 @@ mod tests {
         assert_eq!(result.mods(), &vec!["os"]);
 
         let mut input =
-            r#"extern mod os { git = "git@galaxy-sec.org:free/gxl-lab.git", tag = "0.1.0" }"#;
+            r#"extern mod os { git = "git@galaxio-labs.org:free/gxl-lab.git", tag = "0.1.0" }"#;
         let result = gal_extern_mod(&mut input).unwrap();
         match result.addr() {
             ModAddr::Git(addr) => {
-                assert_eq!(addr.remote(), "git@galaxy-sec.org:free/gxl-lab.git");
+                assert_eq!(addr.remote(), "git@galaxio-labs.org:free/gxl-lab.git");
                 assert_eq!(addr.tag(), &"0.1.0".to_opt());
             }
             _ => panic!("Expected Git address"),
@@ -204,21 +203,21 @@ mod tests {
 
     #[test]
     fn test_git() {
-        let mut data = "git@galaxy-sec.org:free/gxl-lab.git";
+        let mut data = "git@galaxio-labs.org:free/gxl-lab.git";
         let (host, name) = gal_git_path(&mut data).assert();
-        assert_eq!(host, "galaxy-sec.org");
+        assert_eq!(host, "galaxio-labs.org");
         assert_eq!(name, "gxl-lab");
 
-        let mut data = "https://galaxy-sec.org/free/gxl-lab.git";
+        let mut data = "https://galaxio-labs.org/free/gxl-lab.git";
         let (host, name) = gal_git_path(&mut data).assert();
-        assert_eq!(host, "galaxy-sec.org");
+        assert_eq!(host, "galaxio-labs.org");
         assert_eq!(name, "gxl-lab");
 
-        let mut data = "git@galaxy-sec.org:free/x/gxl-lab";
+        let mut data = "git@galaxio-labs.org:free/x/gxl-lab";
         let (host, name) = gal_git_path(&mut data).assert();
-        assert_eq!(host, "galaxy-sec.org");
+        assert_eq!(host, "galaxio-labs.org");
         assert_eq!(name, "gxl-lab");
 
-        //https://galaxy-sec.org/free/gxl-lab.git
+        //https://galaxio-labs.org/free/gxl-lab.git
     }
 }

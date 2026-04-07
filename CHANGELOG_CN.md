@@ -5,6 +5,110 @@ Galaxy Flow项目所有重要变更将记录在此文件中。
 本格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/) 标准，
 本项目遵循 [语义化版本2.0.0](https://semver.org/lang/zh-CN/spec/v2.0.0.html) 规范。
 
+## [v0.13.10] - 2026-04-07
+
+### 变更
+- **自更新通道默认值**：`gx self check` 与 `gx self update` 的 `--channel` 现在默认取 `stable`，对应主分支发布通道，日常使用不再需要每次显式传参。
+- **自更新检查输出**：重做 `gx self check` 的终端输出，改为更清晰的状态报告，明确展示 channel、current、remote 以及版本关系；当存在新版本时会直接给出建议的升级命令。
+
+### 修复
+- **远程项目子目录初始化来源**：修复 `gx init project --path <subdir>` 的远程初始化逻辑，确保真正把远程仓库中指定子目录的内容复制到 `./_gal/`，不再因为中间缓存检出路径而落入错误模板内容。
+- **初始化失败清理**：远程项目初始化在创建 `./_gal/` 后如果失败，现在会清理整个目标目录，而不再只尝试删除空目录。
+
+## [v0.13.9] - 2026-04-07
+
+### 修复
+- **项目初始化子目录扁平化**：`gx init project --path <subdir>` 现在会把选中模板目录的内容直接落到 `./_gal/` 下，不再残留诸如 `./_gal/rust/` 的多余目录层级。
+- **初始化目标边界保护**：为项目初始化补充内部路径边界校验，只允许整理 `./_gal/` 内部的下载结果，避免误移动或误删除初始化目录之外的内容。
+- **CLI 与 shell 测试隔离**：对 loader、cmd、shell、activity 相关测试补充工作目录固定与稳定路径处理，避免并行测试下因共享 `cwd` 污染导致的随机失败。
+- **模块更新配置测试隔离**：将 `gx mod update` 的用户配置回归测试改为在临时项目目录中运行，不再误触仓库内 git extern 模块更新，也避免远程路径导致的慢测试告警。
+
+## [v0.13.8] - 2026-04-06
+
+### 变更
+- **仓库归属对齐**：将项目、发布、manifest、安装脚本中的地址从历史的 `galaxy-sec` 统一切换到 `galaxio-labs`。
+- **项目初始化默认仓库**：将 `gx init project` 的默认模板仓库及相关 CLI 帮助文本更新为 `https://github.com/galaxio-labs/prj-tpl.git`。
+- **自更新来源切换**：将自更新 manifest 和安装脚本的默认来源切换为新的 `galaxio-labs` 仓库路径。
+
+### 文档
+- **README 与指南同步**：更新 README、CLI 指南、语法说明、自更新设计文档和 updates 文档，使其与当前仓库归属和发布地址保持一致。
+- **发布元数据同步**：同步 `0.13.8` 的版本元数据与 manifest 模板引用。
+
+### 修复
+- **示例与测试地址**：更新内置示例、模板和测试中的仓库地址，避免初始化流程、解析示例和模板加载继续指向已停用的 `galaxy-sec` 路径。
+
+## [v0.13.5] - 2026-03-23
+
+### 变更
+- **项目初始化 CLI 重构**：将 `--tpl` 替换为拆分后的 `--repo` 与 `--path` 参数。
+  - `gx init project`：本地初始化（离线生成基础 `work.gxl` 和 `adm.gxl`）
+  - `gx init project --path rust`：从默认仓库的子目录远程初始化
+  - `gx init project --repo <url>`：从自定义仓库远程初始化
+- **默认仓库**：当只提供 `--path` 而未指定 `--repo` 时，默认使用 `https://github.com/galaxio-labs/prj-tpl.git`。
+- **参数校验**：`--branch` 与 `--tag` 现在要求与 `--repo` 或 `--path` 一起使用。
+
+### 修复
+- **目录清理**：当内容复制到 `_gal` 失败时，现在会自动清理已创建的空目录。
+
+## [v0.13.4] - 2026-03-15
+
+### 变更
+- **命令成功语义**：`gx.cmd`、`gx.shell`、`gx.read_cmd` 的 shell 选项字段由 `expect` 重命名为 `ok_codes`，明确表示“允许视为成功的退出码集合”。
+- **动作结果模型**：`Action` 的命令执行结果改为结构化输出 `exit_code`、`stdout`、`stderr`，不再把 stdout/stderr 混写到单一字段中，便于 machine output 消费。
+- **模块更新结果输出**：`gx mod update` 现在会按配置文件汇总 git extern modules，并输出最终的项目模块更新结果摘要。
+
+### 修复
+- **模块更新配置收集**：当 `./_gal/work.gxl` 与 `./_gal/adm.gxl` 同时存在时，`gx mod update` 现在会同时纳入两者，不再遗漏已有配置。
+- **CLI 输出契约**：`gx mod update` 的说明性结果摘要统一输出到 `stderr`，继续保持 `stdout` 不承载 human-oriented 说明文本。
+- **命令解析与测试覆盖**：补充 `ok_codes` 的解析与执行回归用例，并校验命令执行结果中的 `exit_code/stdout/stderr` 字段。
+
+## [v0.13.0] - 2026-03-10
+
+### 新增
+- **统一 `gx` CLI**：新增 `gx` 作为唯一发布命令入口，统一承载 `run`、`adm`、`init`、`mod`、`doc`、`check`、`self`。
+- **短别名入口**：新增 `grun` -> `gx run` 与 `gadm` -> `gx adm` 的别名启动支持。
+- **命令内文档阅读**：新增 `gx doc` 主题索引与终端友好的 markdown 渲染，`--markdown` 可输出原始 markdown。
+
+### 变更
+- **项目初始化资源**：本地初始化模板目录从 `app/gprj/init` 迁移到 `app/gx/init`。
+- **发布链路**：release workflow、安装脚本、自更新流程改为只打包和校验 `gx` 二进制。
+- **文档入口**：README 与 guide 文档统一改为 `gx` 视角，不再以旧二进制作为主入口说明。
+- **CLI 命令模型**：模块管理统一为 `gx mod update`；`gx run` 与 `gx adm` 拆成独立 clap 包装和独立 help；CLI 文案统一收敛为更明确的 `project` 语义。
+- **CLI 运行时初始化**：`gx init project` 改为走与其他命令一致的运行时初始化路径，统一覆盖日志初始化与 `~/.galaxy/conf.toml` 加载。
+
+### 移除
+- **旧命令二进制**：移除 `gflow` 与 `gprj` 的工作区二进制定义及发布产物。
+- **旧 CLI 文档页**：移除 guide 中独立的 `gflow` / `gprj` 使用文档。
+- **旧版 gx 兼容入口**：移除已废弃的 `gx conf`、`gx init prj`、`gx init prj-with-local`、`gx update mod`、`--mod_up`、`--conf-work`、`--conf-adm` 等旧兼容语法与参数。
+
+### 修复
+- **仓库自举解析**：将仓库 `_gal/work.gxl` 中的 extern 路径改为 `./_gal/`，避免 `GXL_START_ROOT` 缺失时触发解析失败。
+- **模块更新语义**：`gx mod update` 现在会稳定加载 `~/.galaxy/conf.toml`，并在 `./_gal/work.gxl` / `./_gal/adm.gxl` 都不存在时直接报错。
+- **CLI 退出行为**：`gx adm` 在所有 flow 都失败时现在返回非零退出码；`gx run` / `gx adm` 无显式 flow 时保留展示菜单能力并返回成功。
+- **输出契约**：进一步收紧 `gx` 的 stdout/stderr 规则，确保 markdown 文档输出可直接机读，说明性 CLI 文本统一走 `stderr`，`quiet` 模式不再把执行器/菜单说明泄漏到 `stdout`。
+- **初始化参数校验**：`gx init project` 现在将 `--branch` 与 `--tag` 设为互斥，并把 human-oriented 初始化提示统一输出到 `stderr`。
+- **Galaxy 环境初始化**：`gx init env` 在缺失时会一并创建默认的全局 `~/.galaxy/conf.toml`。
+
+## [v0.12.4] - 2026-03-05
+
+### 新增
+- **自更新命令集**：新增 `gx self status/check/update/rollback/auto`。
+- **自更新核心模块**：新增 `src/self_update/*`，覆盖策略/状态存储、manifest 下载、sha256 校验、安装回滚与健康检查。
+- **仓库内更新清单**：新增 `updates/stable/manifest.json`、`updates/alpha/manifest.json`、`updates/beta/manifest.json` 及 `updates/README.md`。
+
+### 变更
+- **发布通道**：统一为 `stable|alpha|beta`（不再兼容 `pre`）。
+- **默认清单源**：`manifest_base_url` 默认指向当前仓库 `updates/` 的 raw 地址。
+- **版本更新流程**：`_gal/adm.gxl` 改为使用 `gx.patch_file` + marker 进行版本号 patch。
+
+### 修复
+- **更新语义**：`--dry-run` 不再依赖 `--yes`。
+- **状态落盘**：补全 update 后半流程失败时的状态记录。
+- **锁安全**：增加 stale lock 回收与 PID 存活检查。
+- **回滚安全**：加强 `rollback --id` 校验，阻断路径穿越。
+- **安装安全**：包内二进制查找要求唯一命中并忽略符号链接。
+- **临时目录**：自更新临时目录改为自动清理。
+
 ## [0.10.1] - 2025-08-09
 
 ### 新增

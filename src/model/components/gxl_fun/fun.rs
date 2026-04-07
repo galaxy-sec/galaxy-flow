@@ -7,17 +7,17 @@ use crate::execution::runnable::{AsyncRunnableArgsTrait, AsyncRunnableWithSender
 use crate::execution::task::Task;
 use crate::primitive::GxlAParams;
 use crate::task_report::task_notification::TaskNotice;
-use crate::task_report::task_rc_config::{build_task_url, report_enable, TaskUrlType};
+use crate::task_report::task_rc_config::{TaskUrlType, build_task_url, report_enable};
 use crate::task_report::task_result_report::TaskReport;
 use crate::traits::DependTrait;
 
 use crate::components::gxl_block::BlockNode;
 use crate::util::http_handle::send_http_request;
-use crate::util::redirect::{init_redirect_file, read_log_content, seek_log_file_end, ReadSignal};
+use crate::util::redirect::{ReadSignal, init_redirect_file, read_log_content, seek_log_file_end};
 use contracts::requires;
 use derive_getters::Getters;
 use orion_infra::auto_exit_log;
-use std::sync::{mpsc, Arc, Mutex};
+use std::sync::{Arc, Mutex, mpsc};
 
 use super::meta::FunMeta;
 
@@ -241,10 +241,10 @@ impl GxlFun {
         shared_output: &Arc<Mutex<String>>,
         start_pos: Arc<Mutex<u64>>,
     ) -> Result<(), ExecReason> {
-        if let Ok(output) = shared_output.lock() {
-            if !output.is_empty() {
-                task.stdout = output.clone();
-            }
+        if let Ok(output) = shared_output.lock()
+            && !output.is_empty()
+        {
+            task.stdout = output.clone();
         }
 
         let log_path = init_redirect_file()?;

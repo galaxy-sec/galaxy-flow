@@ -1,9 +1,10 @@
 use crate::ability::prelude::{GxlVar, TaskValue};
+use crate::components::GxlProps;
+use crate::components::gxl_env::meta::EnvMeta;
 use crate::components::gxl_mod::meta::ModMeta;
 use crate::components::gxl_prop::Vec2Mapable;
 use crate::components::gxl_spc::GxlSpace;
 use crate::components::gxl_utls::mod_obj_name;
-use crate::components::GxlProps;
 use crate::data::{AnnDto, FunDto};
 use crate::model::components::prelude::*;
 
@@ -15,8 +16,6 @@ use std::collections::VecDeque;
 use std::sync::Arc;
 
 use std::io::Write;
-
-use super::meta::EnvMeta;
 
 #[derive(Clone, Getters, Debug, Default)]
 pub struct GxlEnv {
@@ -159,7 +158,7 @@ impl AsyncRunnableTrait for GxlEnv {
         let env_name = self.meta.name();
         ctx.append(env_name);
 
-        debug!(target: ctx.path(),"env {} setting", env_name );
+        debug!(target: ctx.path(),"env {env_name} setting" );
         self.export_props(ctx.clone(), def.global_mut(), "ENV")?;
         for item in &self.items {
             let TaskValue { vars, .. } = item.async_exec(ctx.clone(), def).await?;
@@ -218,11 +217,11 @@ impl AppendAble<EnvItem> for GxlEnv {
 mod tests {
 
     use super::*;
-    use orion_common::friendly::New2;
+    use crate::friendly::New2;
     use orion_error::TestAssert;
 
     use crate::{
-        components::{gxl_spc::GxlSpace, gxl_var::GxlVar, GxlEnv},
+        components::{GxlEnv, gxl_spc::GxlSpace, gxl_var::GxlVar},
         infra::once_init_log,
         model::components::GxlMod,
         traits::{DependTrait, PropsTrait},

@@ -1,6 +1,7 @@
 use super::{gxl_flow::meta::FlowMeta, prelude::*};
 use crate::{
     ability::prelude::TaskValue,
+    cmd::GxlCmd,
     execution::{
         sequence::{ExecSequence, SequAppender, SequLoader},
         unit::{RunUnitGuard, RunUnitLable},
@@ -56,17 +57,17 @@ impl GxlSpace {
 
     pub fn show(&self) -> ExecResult<()> {
         let menu = self.menu()?;
-        println!(
+        eprintln!(
             "{}",
             "---------------prj work menu-------------".cyan().bold()
         );
 
-        println!("{}", "envs:".yellow());
+        eprintln!("{}", "envs:".yellow());
         for choice in menu.envs() {
             show_item(choice);
         }
 
-        println!("\n{}", "flow:".yellow());
+        eprintln!("\n{}", "flow:".yellow());
         for choice in menu.flows() {
             show_item(choice);
         }
@@ -171,7 +172,7 @@ fn parse_obj_path(obj_path: &str) -> ExecResult<(&str, &str)> {
 
     match (parts.next(), parts.next()) {
         (Some(mod_name), Some(item_name)) => Ok((mod_name, item_name)),
-        _ => Err(ExecReason::InvalidPath(obj_path.to_string()).into()),
+        _ => Err(ExecReason::Gxl(obj_path.to_string()).into()),
     }
 }
 
@@ -195,34 +196,25 @@ impl ExecOptions {
 
 impl GxlSpace {
     #[requires(self.assembled)]
-    pub async fn exec<VS: Into<Vec<String>>>(
+    pub async fn exec(
         &self,
-        envs_name: VS,
-        flows_name: VS,
-        out: Option<bool>,
-        dryrun: bool,
+        cmd: GxlCmd,
         var_space: VarSpace,
         sender: Option<Sender<ReadSignal>>,
-    ) -> RunResult<()> {
+    ) -> RunResult<TaskValue> {
         info!(
             target: "execution",
-            "Starting execution stack with output: {:?}", out
+            "Starting execution stack with output: {:?}", cmd.quiet,
         );
-
-        let envs: Vec<String> = envs_name.into();
-        let flow_names: Vec<String> = flows_name.into();
-
-        warn!(target : "exec","Executing with envs: {:?}, flows: {:?}", envs, flow_names);
+        let envs: Vec<String> = cmd.get_env_list();
+        warn!(target : "exec","Executing with envs: {}, flow:{}", envs.join(",") , cmd.flows() );
         warn!(target : "exec","inherted vars :\n{}", var_space.inherited());
         info!(target : "exec","inherted vars :\n{}", var_space.global());
 
-        let main_ctx = ExecContext::new(out, dryrun);
-        for flow_name in flow_names {
-            self.execute_flow(&main_ctx, &var_space, &envs, &flow_name, sender.clone())
-                .await?;
-        }
-
-        Ok(())
+        let main_ctx = ExecContext::new(cmd.clone());
+        let flow = cmd.flows();
+        self.execute_flow(&main_ctx, &var_space, &envs, flow, sender.clone())
+            .await
     }
 
     #[requires(self.assembled)]
@@ -233,9 +225,11 @@ impl GxlSpace {
         envs: &[String],
         flow_name: &str,
         sender: Option<Sender<ReadSignal>>,
-    ) -> RunResult<()> {
+    ) -> RunResult<TaskValue> {
         let flow_name = self.normalize_flow_name(flow_name);
-        println!("execute flow: {}", flow_name);
+        if !main_ctx.quiet() {
+            eprintln!("execute flow: {}", flow_name);
+        }
 
         let mut exec_sequ = ExecSequence::from("flow");
         let mut ctx = main_ctx.clone();
@@ -253,14 +247,11 @@ impl GxlSpace {
             .await
             .err_conv()
         {
-            Ok(TaskValue { rec, .. }) => {
-                task_local_report(rec);
-                Ok(())
+            Ok(task) => {
+                task_local_report(task.rec().clone());
+                Ok(task)
             }
-            Err(do_err) => {
-                //todo report;
-                Err(do_err)
-            }
+            Err(do_err) => Err(do_err),
         }
     }
 
@@ -308,10 +299,10 @@ impl GxlSpace {
         guard: &RunUnitGuard,
         sequ: &mut impl SequAppender,
     ) -> ExecResult<()> {
-        if let Some(mod_meta) = meta.host() {
-            if let Some(mox) = self.mods.get(mod_meta.name()) {
-                return self.mod_load_flow(mox, meta.name(), guard, sequ);
-            }
+        if let Some(mod_meta) = meta.host()
+            && let Some(mox) = self.mods.get(mod_meta.name())
+        {
+            return self.mod_load_flow(mox, meta.name(), guard, sequ);
         }
         Err(ExecError::from(ExecReason::Miss(meta.long_name())))
     }
@@ -380,22 +371,22 @@ pub fn color_show<S: AsRef<str> + Display>(text: S, color: Option<&str>) {
         Some("black") => text.as_ref().black(),
         Some("white") => text.as_ref().white(),
         Some("purple") => text.as_ref().purple(),
-        _ => return println!("{text}"),
+        _ => return eprintln!("{text}"),
     };
 
-    println!("{colored_text}");
+    eprintln!("{colored_text}");
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::friendly::New2;
     use crate::{
         ability::prelude::GxlVar,
-        components::{gxl_mod::meta::ModMeta, GxlEnv, GxlFlow, GxlMod, GxlProps},
+        components::{GxlEnv, GxlFlow, GxlMod, GxlProps, gxl_mod::meta::ModMeta},
         execution::exec_init_env,
         types::AnyResult,
     };
-    use orion_common::friendly::New2;
     use orion_error::TestAssert;
 
     #[tokio::test]
