@@ -18,10 +18,13 @@ use crate::infra::configure_run_logging;
 use crate::parser::abilities::addr::gal_extern_mod;
 use crate::parser::externs::{DslStatus, ExternParser};
 use crate::runner::GxlRunner;
-use crate::self_update::{CheckRequest, ReleaseChannel, SelfUpdateService, UpdateRequest};
+use crate::self_update::{
+    CheckRequest, CheckResult, ReleaseChannel, SelfUpdateService, UpdateRequest,
+};
 use crate::traits::Setter;
 use crate::util::diagnose::ai_diagnose;
 use crate::util::redirect::stop_redirect;
+use wp_self_update::{VersionRelation, compare_versions_str, relation_message};
 
 const DEFAULT_WORK_CONF: &str = "./_gal/work.gxl";
 const DEFAULT_ADM_CONF: &str = "./_gal/adm.gxl";
@@ -404,10 +407,7 @@ async fn do_self_cmd(cmd: SelfCmd) -> RunResult<()> {
                     .map_err(|e| RunReason::Exec(e.to_string()).to_err())?
                 );
             } else {
-                println!("channel={}", out.channel.as_str());
-                println!("current={}", out.current_version);
-                println!("remote={}", out.remote_version);
-                println!("has_update={}", out.has_update);
+                print_self_check_report(&out)?;
             }
         }
         SelfCmd::Update(args) => {
@@ -447,6 +447,95 @@ fn parse_channel(input: &str) -> RunResult<ReleaseChannel> {
     })
 }
 
+fn print_self_check_report(out: &CheckResult) -> RunResult<()> {
+    print!("{}", format_self_check_report(out, should_use_color())?);
+    Ok(())
+}
+
+fn format_self_check_report(out: &CheckResult, use_color: bool) -> RunResult<String> {
+    let relation =
+        compare_versions_str(&out.current_version, &out.remote_version).map_err(|e| {
+            RunReason::Exec("compare self-update versions failed".into())
+                .to_err()
+                .with_detail(format!(
+                    "current={}, remote={}, error={}",
+                    out.current_version, out.remote_version, e
+                ))
+        })?;
+
+    let mut lines = vec![
+        "Self-check result".to_string(),
+        format!(
+            "  Channel  : {}",
+            render_self_update_channel(out.channel.as_str(), use_color)
+        ),
+        format!("  Current  : {}", out.current_version),
+        format!(
+            "  Remote   : {}",
+            render_remote_version(&out.remote_version, relation, use_color)
+        ),
+        format!(
+            "  Status   : {}",
+            render_relation_message(relation, use_color)
+        ),
+    ];
+
+    if relation == VersionRelation::UpdateAvailable {
+        lines.push(format!(
+            "  Action   : gx self update --channel {} --yes",
+            out.channel.as_str()
+        ));
+    }
+
+    Ok(format!("{}\n", lines.join("\n")))
+}
+
+fn render_self_update_channel(channel: &str, use_color: bool) -> String {
+    if !use_color {
+        return channel.to_string();
+    }
+
+    let code = match channel {
+        "stable" => "32",
+        "beta" => "33",
+        "alpha" => "35",
+        _ => return channel.to_string(),
+    };
+    format!("\x1b[{}m{}\x1b[0m", code, channel)
+}
+
+fn render_remote_version(version: &str, relation: VersionRelation, use_color: bool) -> String {
+    if !use_color {
+        return version.to_string();
+    }
+
+    match relation {
+        VersionRelation::UpdateAvailable => format!("\x1b[1;92m{}\x1b[0m", version),
+        VersionRelation::AheadOfChannel => format!("\x1b[90m{}\x1b[0m", version),
+        VersionRelation::UpToDate => version.to_string(),
+    }
+}
+
+fn render_relation_message(relation: VersionRelation, use_color: bool) -> String {
+    let message = relation_message(relation);
+    if !use_color {
+        return message.to_string();
+    }
+
+    match relation {
+        VersionRelation::UpdateAvailable => format!("\x1b[1;92m{}\x1b[0m", message),
+        VersionRelation::AheadOfChannel => format!("\x1b[90m{}\x1b[0m", message),
+        VersionRelation::UpToDate => format!("\x1b[32m{}\x1b[0m", message),
+    }
+}
+
+fn should_use_color() -> bool {
+    match std::env::var("TERM") {
+        Ok(term) => term != "dumb",
+        Err(_) => true,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use std::path::Path;
@@ -456,9 +545,10 @@ mod tests {
 
     use super::{
         DEFAULT_ADM_CONF, DEFAULT_WORK_CONF, OutputMode, collect_git_extern_mod_names_from_code,
-        collect_mod_update_inputs, normalized_argv, output_mode,
+        collect_mod_update_inputs, format_self_check_report, normalized_argv, output_mode,
     };
     use crate::cmd::gx_cmd::{AdmCmd, GxCmd, RunCmd, SelfCheckArgs, SelfCmd};
+    use crate::self_update::{CheckResult, ReleaseChannel};
 
     fn mod_update_config_lock() -> &'static Mutex<()> {
         static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
@@ -651,5 +741,55 @@ mod main {}
             }
             other => panic!("unexpected command: {other:?}"),
         }
+    }
+
+    #[test]
+    fn format_self_check_report_shows_update_action() {
+        let report = CheckResult {
+            channel: ReleaseChannel::Alpha,
+            current_version: "0.13.9".to_string(),
+            remote_version: "0.13.10-alpha.1".to_string(),
+            has_update: true,
+        };
+
+        let rendered = format_self_check_report(&report, false).expect("report should render");
+
+        assert!(rendered.contains("Self-check result"));
+        assert!(rendered.contains("Channel  : alpha"));
+        assert!(rendered.contains("Status   : update available"));
+        assert!(rendered.contains("Action   : gx self update --channel alpha --yes"));
+    }
+
+    #[test]
+    fn format_self_check_report_marks_ahead_of_channel() {
+        let report = CheckResult {
+            channel: ReleaseChannel::Alpha,
+            current_version: "0.13.10".to_string(),
+            remote_version: "0.13.9-alpha".to_string(),
+            has_update: false,
+        };
+
+        let rendered = format_self_check_report(&report, false).expect("report should render");
+
+        assert!(rendered.contains("Current  : 0.13.10"));
+        assert!(rendered.contains("Remote   : 0.13.9-alpha"));
+        assert!(rendered.contains("Status   : ahead of channel manifest"));
+        assert!(!rendered.contains("Action   :"));
+    }
+
+    #[test]
+    fn format_self_check_report_marks_up_to_date() {
+        let report = CheckResult {
+            channel: ReleaseChannel::Stable,
+            current_version: "0.13.10".to_string(),
+            remote_version: "0.13.10".to_string(),
+            has_update: false,
+        };
+
+        let rendered = format_self_check_report(&report, false).expect("report should render");
+
+        assert!(rendered.contains("Channel  : stable"));
+        assert!(rendered.contains("Status   : up-to-date"));
+        assert!(!rendered.contains("Action   :"));
     }
 }

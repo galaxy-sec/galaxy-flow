@@ -79,7 +79,7 @@ pub enum SelfCmd {
 
 #[derive(Debug, Args, Clone, Getters)]
 pub struct SelfCheckArgs {
-    #[arg(long)]
+    #[arg(long, default_value = "stable")]
     pub channel: String,
     #[arg(long, action = ArgAction::SetTrue, default_value = "false")]
     pub json: bool,
@@ -87,7 +87,7 @@ pub struct SelfCheckArgs {
 
 #[derive(Debug, Args, Clone, Getters)]
 pub struct SelfUpdateArgs {
-    #[arg(long)]
+    #[arg(long, default_value = "stable")]
     pub channel: String,
     #[arg(long = "to")]
     pub to_version: Option<String>,
@@ -140,7 +140,7 @@ pub struct PrjArgs {
 mod tests {
     use clap::Parser;
 
-    use super::{AdmCmd, GxCmd, InitCmd, ModCmd, RunCmd};
+    use super::{AdmCmd, GxCmd, InitCmd, ModCmd, RunCmd, SelfCmd};
 
     #[test]
     fn parse_doc_topic() {
@@ -230,6 +230,36 @@ mod tests {
 
         match cmd {
             GxCmd::Init(InitCmd::Project(_args)) => {}
+            other => panic!("unexpected command: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn parse_self_check_defaults_channel_to_stable() {
+        let cmd = GxCmd::try_parse_from(["gx", "self", "check"]).expect("self check should parse");
+
+        match cmd {
+            GxCmd::SelfUpdate(SelfCmd::Check(args)) => {
+                assert_eq!(args.channel, "stable");
+                assert!(!args.json);
+            }
+            other => panic!("unexpected command: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn parse_self_update_defaults_channel_to_stable() {
+        let cmd =
+            GxCmd::try_parse_from(["gx", "self", "update"]).expect("self update should parse");
+
+        match cmd {
+            GxCmd::SelfUpdate(SelfCmd::Update(args)) => {
+                assert_eq!(args.channel, "stable");
+                assert_eq!(args.to_version, None);
+                assert!(!args.yes);
+                assert!(!args.dry_run);
+                assert!(!args.force);
+            }
             other => panic!("unexpected command: {other:?}"),
         }
     }

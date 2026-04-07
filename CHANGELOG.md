@@ -5,6 +5,16 @@ All notable changes to the Galaxy Flow project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.13.10] - 2026-04-07
+
+### Changed
+- **Self-update channel defaults**: `gx self check` and `gx self update` now default `--channel` to `stable`, matching the main-branch release channel without requiring the flag to be passed every time.
+- **Self-check human output**: Reworked `gx self check` terminal output into a status report that highlights channel, current version, remote version, and semver relation, and suggests the update command when a newer version is available.
+
+### Fixed
+- **Remote project subdir init source**: Corrected `gx init project --path <subdir>` remote initialization so it copies the selected remote subdirectory contents into `./_gal/` instead of resolving against an intermediate cached checkout and ending up with mismatched template contents.
+- **Init failure cleanup**: When remote project initialization fails after creating `./_gal/`, the command now removes the whole temporary target directory instead of only trying to delete an empty folder.
+
 ## [v0.13.9] - 2026-04-07
 
 ### Fixed

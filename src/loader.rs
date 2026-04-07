@@ -1,7 +1,6 @@
 use crate::components::gxl_spc::GxlSpace;
 use crate::execution::VarSpace;
 use crate::parser::abilities::ignore_comment;
-use crate::parser::externs::ExternGit;
 use crate::parser::externs::ExternParser;
 use crate::parser::stc_spc::WinnowErrorEx;
 use crate::parser::stc_spc::gal_stc_spc;
@@ -128,19 +127,12 @@ impl GxLoader {
         }
 
         let up_options = DownloadOptions::new(UpdateScope::RemoteCache, ValueDict::default());
-        let local_git = ExternGit::pull(addr.clone(), &up_options).await.owe_res()?;
-        let src_path = local_git.position();
-
-        // Create _gal only after git pull succeeds
+        // Create _gal only after source validation
         std::fs::create_dir(&init_path).owe_res()?;
 
         let accessor = build_accessor(&EnvDict::default());
         let result = accessor
-            .download_to_local(
-                &Address::from(LocalPath::from(src_path.to_string_lossy().as_ref())),
-                &init_path,
-                &up_options,
-            )
+            .download_to_local(&Address::from(addr), &init_path, &up_options)
             .await;
 
         match result {
@@ -150,8 +142,7 @@ impl GxLoader {
                 Ok(())
             }
             Err(e) => {
-                // Clean up empty _gal directory on failure
-                let _ = std::fs::remove_dir(&init_path);
+                let _ = std::fs::remove_dir_all(&init_path);
                 Err(RunReason::Exec(format!("copy to _gal failed: {}", e)).to_err())
             }
         }
@@ -192,8 +183,7 @@ impl GxLoader {
                 Ok(())
             }
             Err(e) => {
-                // Clean up empty _gal directory on failure
-                let _ = std::fs::remove_dir(&init_path);
+                let _ = std::fs::remove_dir_all(&init_path);
                 Err(RunReason::Exec(format!("copy to _gal failed: {}", e)).to_err())
             }
         }
