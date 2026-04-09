@@ -8,7 +8,7 @@ use crate::{
 use std::{fmt::Debug, sync::Arc};
 
 use super::anno::{DryrunAnno, FlowAnnotation, TransAnno};
-#[derive(Clone, Getters, Default)]
+#[derive(Clone, Getters, Default, PartialEq, Debug)]
 pub struct FlowMeta {
     class: GxlType,
     name: String,
@@ -22,15 +22,6 @@ pub struct FlowMeta {
     dryrun_meta: Option<Arc<FlowMeta>>,
 }
 pub type FlowMetaHold = Arc<FlowMeta>;
-
-impl Debug for FlowMeta {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("FlowMeta")
-            .field("class", &self.class)
-            .field("name", &self.name)
-            .finish()
-    }
-}
 
 const UNKNOW: String = String::new();
 impl MetaInfo for FlowMeta {

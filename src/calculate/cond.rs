@@ -33,10 +33,10 @@ where
             self.true_block.cond_exec(ctx, def).await
         } else {
             for cond in &self.elseif_blocks {
-                if let Ok(task_value) = cond.cond.cond_exec(ctx.clone(), def.clone()).await {
-                    if task_value.rec() != &ExecOut::Ignore {
-                        return Ok(task_value);
-                    }
+                if let Ok(task_value) = cond.cond.cond_exec(ctx.clone(), def.clone()).await
+                    && task_value.rec() != &ExecOut::Ignore
+                {
+                    return Ok(task_value);
                 }
             }
             if let Some(false_cond) = self.false_block.as_ref() {
@@ -77,15 +77,16 @@ where
 
 #[cfg(test)]
 mod tests {
+    use orion_sec::sec::{SecFrom, SecValueType};
+
     use super::{CondExec, IFExpress, StuBlock};
     use crate::ability::prelude::{TaskResult, TaskValue, VarSpace};
-    use crate::calculate::express::ExpressEnum;
     use crate::calculate::CmpExpress;
+    use crate::calculate::express::ExpressEnum;
     use crate::components::gxl_cond::TGxlCond;
     use crate::context::ExecContext;
     use crate::execution::runnable::ExecOut;
     use crate::primitive::GxlObject;
-    use crate::sec::{SecFrom, SecValueType};
     use crate::traits::Setter;
 
     // 创建一个简单的测试块实现 CondExec trait

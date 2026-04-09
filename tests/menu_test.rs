@@ -1,9 +1,9 @@
 extern crate galaxy_flow;
+use galaxy_flow::GxLoader;
 use galaxy_flow::execution::VarSpace;
 use galaxy_flow::infra::once_init_log;
 use galaxy_flow::menu::*;
 use galaxy_flow::traits::ExecLoadTrait;
-use galaxy_flow::GxLoader;
 use orion_error::TestAssert;
 
 #[tokio::test]

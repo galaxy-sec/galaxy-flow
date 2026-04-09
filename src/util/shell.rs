@@ -16,7 +16,7 @@ pub fn os_sh(
     opt: &ShellOption,
     exp: &EnvExpress,
     env: &VarDict,
-) -> ExecResult<(Vec<u8>, Vec<u8>)> {
+) -> ExecResult<(i32, Vec<u8>, Vec<u8>)> {
     let sec_cmd = exp.sec_eval(cmd)?;
     //let ee = EnvExpress::from_env();
     if !opt.secrecy {
@@ -41,24 +41,15 @@ pub fn os_sh(
     match output {
         Err(e) => Err(ExecReason::OsCmd(fail_msg, 254, e.to_string()).into()),
         Ok(out) => {
-            let mut is_ok = false;
             if let Some(code) = out.status.code() {
                 let err_desp = "err msg from utf8 failed";
                 let out_msg = String::from_utf8(out.stdout.clone())
                     .map_err(|_| ExecReason::OsCmd(sec_cmd.clone(), 253, err_desp.to_string()))?;
                 let err_msg = String::from_utf8(out.stderr.clone())
                     .map_err(|_| ExecReason::OsCmd(sec_cmd.clone(), code, err_desp.to_string()))?;
-                if code == 0 {
-                    if let Some(ref suc_msg) = opt.suc {
-                        println!("{suc_msg}");
-                    }
-                    is_ok = true;
-                } else {
-                    for allow in &opt.expect {
-                        if code == *allow {
-                            is_ok = true;
-                        }
-                    }
+                let is_ok = opt.ok_codes.contains(&code);
+                if is_ok && let Some(ref suc_msg) = opt.suc {
+                    println!("{suc_msg}");
                 }
 
                 let log_level = opt.log_lev.unwrap_or(log::Level::Debug);
@@ -78,7 +69,7 @@ pub fn os_sh(
                     }
                 }
                 return if is_ok {
-                    Ok((out.stdout, out.stderr))
+                    Ok((code, out.stdout, out.stderr))
                 } else {
                     Err(ExecReason::OsCmd(fail_msg, code, err_msg).into())
                 };
@@ -131,7 +122,8 @@ mod tests {
             ..Default::default()
         };
         let cmd = "echo ${SEC_KEY}".to_string();
-        let (stdout, _stderr) = os_sh(LogicScope::Outer, "gx.sh", &cmd, &opt, &exp, &dict).unwrap();
+        let (_exit_code, stdout, _stderr) =
+            os_sh(LogicScope::Outer, "gx.sh", &cmd, &opt, &exp, &dict).unwrap();
         assert_eq!(stdout, b"galaxy\n");
     }
 }

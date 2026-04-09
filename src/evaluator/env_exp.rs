@@ -1,9 +1,9 @@
 use crate::{
-    sec::{NoSecConv, SecFrom, SecValueType},
+    ExecReason, ExecResult,
     traits::{Getter, Setter},
     var::VarDict,
-    ExecReason, ExecResult,
 };
+use orion_sec::sec::{NoSecConv, SecFrom, SecValueType};
 use regex::{Captures, Regex};
 use std::env;
 #[allow(unused_imports)]
@@ -124,7 +124,7 @@ impl VarParser<&str> for EnvExpress {
     fn eval(&self, content: &str) -> ExecResult<String> {
         let target = self.safe_eval(content);
         if target.contains("__NO") {
-            return Err(ExecReason::NoVal(target).into());
+            return Err(ExecReason::Miss(target).into());
         }
         Ok(target)
     }
@@ -145,7 +145,7 @@ impl VarParser<&str> for EnvExpress {
         }
         // 如果替换后的字符串中包含"__NO"，则返回错误
         if target.contains("__NO") {
-            return Err(ExecReason::NoVal(target).into());
+            return Err(ExecReason::Miss(target).into());
         }
         // 返回替换后的字符串
         Ok(target)
@@ -173,8 +173,6 @@ mod tests {
     }
     #[test]
     pub fn array_variables() {
-        use crate::sec::SecValueType;
-
         // 准备测试数据：包含数组的变量
         let mut data = VarDict::default();
         data.set(
@@ -215,7 +213,7 @@ mod tests {
         );
         assert_eq!(
             ex.eval("${HOME2}"),
-            Err(ExecReason::NoVal("__NO[HOME2]__".to_string()).into())
+            Err(ExecReason::Miss("__NO[HOME2]__".to_string()).into())
         );
         assert_eq!(ex.eval("HOME2").unwrap(), String::from("HOME2"));
 

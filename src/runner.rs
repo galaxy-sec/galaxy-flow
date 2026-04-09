@@ -1,95 +1,92 @@
 use crate::{
-    err::{RunError, RunResult},
-    execution::VarSpace,
-    infra::DfxArgsGetter,
-    util::redirect::ReadSignal,
     GxLoader,
+    ability::prelude::TaskValue,
+    cmd::GxlCmd,
+    err::{RunReason, RunResult},
+    execution::VarSpace,
+    util::redirect::ReadSignal,
 };
-use clap::ArgAction;
-use orion_error::{ErrorConv, ErrorWith, StructError, UvsConfFrom};
+use orion_error::{ErrorConv, ErrorWith, ToStructError, UvsFrom};
 use std::{path::Path, sync::mpsc::Sender};
 
+/// Galaxy Flow 运行器
+///
+/// GxlRunner负责执行GxlCmd命令，加载配置文件并运行指定的流程。
+///
+/// Galaxy Flow Runner
+///
+/// GxlRunner is responsible for executing GxlCmd commands, loading configuration files, and running specified flows.
 pub struct GxlRunner {}
 impl GxlRunner {
+    /// 执行Galaxy Flow命令
+    ///
+    /// 此方法执行以下步骤：
+    /// 1. 验证命令参数
+    /// 2. 加载配置文件
+    /// 3. 解析流程名称
+    /// 4. 执行指定的流程
+    ///
+    /// Execute Galaxy Flow command
+    ///
+    /// This method performs the following steps:
+    /// 1. Validate command parameters
+    /// 2. Load configuration file
+    /// 3. Parse flow names
+    /// 4. Execute specified flows
     pub async fn run(
         cmd: GxlCmd,
         vars: VarSpace,
         sender: Option<Sender<ReadSignal>>,
-    ) -> RunResult<()> {
+    ) -> RunResult<TaskValue> {
         let loader = GxLoader::new();
-        if let Some(conf) = cmd.conf {
+        if let Some(ref conf) = cmd.conf {
+            // 检查配置文件是否存在 / Check if configuration file exists
             if !Path::new(conf.as_str()).exists() {
-                return Err(StructError::from_conf("gflow conf not exists".to_string()))
-                    .with(("conf", conf));
+                return Err(RunReason::from_conf()
+                    .to_err()
+                    .with_detail("gx run conf not exists"))
+                .with(("conf", conf.clone()));
             }
 
             let spc = loader
-                .parse_file(conf.as_str(), cmd.mod_update, &vars)
+                .parse_file(conf.as_str(), false, &vars)
                 .await?
                 .assemble()
                 .err_conv()?;
-            if cmd.flow.is_empty() {
+
+            if cmd.flows.is_empty() {
                 spc.show().err_conv()?;
-                return Ok(());
             } else {
-                let envs: Vec<String> = cmd.env.split(',').map(String::from).collect();
-                let flws: Vec<String> = if cmd.flow.len() == 1 {
-                    cmd.flow[0].split(',').map(String::from).collect()
-                } else {
-                    cmd.flow.clone()
-                    //cmd.flow.iter().collect()
-                };
-                spc.exec(envs, flws, cmd.quiet, cmd.dryrun, vars, sender)
-                    .await?;
-                println!("\ngod job!");
+                // 解析环境列表 / Parse environment list
+                return spc.exec(cmd, vars, sender).await;
             }
+        }
+        Err(RunReason::from_conf()
+            .to_err()
+            .with_detail("gx run exec fail!"))
+    }
+    pub async fn info(conf: Option<String>, vars: VarSpace) -> RunResult<()> {
+        if let Some(ref conf) = conf {
+            // 检查配置文件是否存在 / Check if configuration file exists
+            if !Path::new(conf.as_str()).exists() {
+                return Err(RunReason::from_conf()
+                    .to_err()
+                    .with_detail("gx run conf not exists"))
+                .with(("conf", conf.clone()));
+            }
+            let loader = GxLoader::new();
+
+            let spc = loader
+                .parse_file(conf.as_str(), false, &vars)
+                .await?
+                .assemble()
+                .err_conv()?;
+            spc.show().err_conv()?;
             Ok(())
         } else {
-            Err(RunError::from_conf("gflow conf is empty".to_string()))
+            Err(RunReason::from_conf()
+                .to_err()
+                .with_detail("gx run missing gxl file"))
         }
-    }
-}
-use clap::Parser;
-
-#[derive(Parser, Debug)] // requires `derive` feature
-#[command(version, about, long_about = None)]
-pub struct GxlCmd {
-    /// env name ; eg: -e dev
-    #[arg(short = 'e', long = "env", default_value = "default")]
-    pub env: String,
-    /// flow name ; eg: conf,test,package
-    pub flow: Vec<String>,
-    /// debug level ; eg: -d 1
-    #[arg(short = 'd', long = "debug", default_value = "0")]
-    pub debug: usize,
-    /// conf file ;  default is  work(./_rg/work.gxl) adm (./_rg/adm.gxl)
-    #[arg(short = 'f', long = "conf")]
-    pub conf: Option<String>,
-    /// config log ; eg: --log  cmd=debug,parse=info
-    #[arg(long = "log")]
-    pub log: Option<String>,
-    #[arg(short = 'q', long = "quiet")]
-    pub quiet: Option<bool>,
-    #[arg( allow_hyphen_values = true,  // 关键设置：允许值以 - 开头
-        last = true,                 // 关键设置：捕获所有剩余参数
-        value_name = "cmd_args",
-        default_value = ""
-    )]
-    pub cmd_arg: String,
-    /// run at dryrun mode
-    #[arg(long = "dryrun", action = ArgAction::SetTrue, default_value = "false")]
-    pub dryrun: bool,
-
-    ///update remote gxl mod
-    #[arg(long = "mod_up", action = ArgAction::SetTrue, default_value = "false")]
-    pub mod_update: bool,
-}
-impl DfxArgsGetter for GxlCmd {
-    fn debug_level(&self) -> usize {
-        self.debug
-    }
-
-    fn log_setting(&self) -> Option<String> {
-        self.log.clone()
     }
 }

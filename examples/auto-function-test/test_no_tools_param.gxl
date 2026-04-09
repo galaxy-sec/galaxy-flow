@@ -1,0 +1,20 @@
+mod envs {
+    env default {}
+}
+
+mod main {
+    flow test_basic {
+        gx.ai_fun(
+            role: "developer",
+            enable_function_calling: "true",
+            task: "请检查当前 Git 状态"
+        );
+    }
+
+    flow test_no_functions {
+        gx.ai_fun(
+            role: "assistant",
+            task: "请回答：1+1=?"
+        );
+    }
+}

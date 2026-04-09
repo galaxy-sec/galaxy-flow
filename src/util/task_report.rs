@@ -1,12 +1,12 @@
 use std::{
-    fs::{create_dir_all, File},
+    fs::{File, create_dir_all},
     path::Path,
 };
 
 use anyhow::Context;
 use orion_infra::path::ensure_path;
-//use orion_common::conf::ensure_directory_exists;
-use time::{format_description, OffsetDateTime};
+//use crate::friconf::ensure_directory_exists;
+use time::{OffsetDateTime, format_description};
 
 use crate::ability::prelude::ExecOut;
 
@@ -19,11 +19,9 @@ pub fn task_local_report(out: ExecOut) {
     let path = Path::new(dir_path);
 
     // report目录不存在则创建
-    if !path.exists() {
-        if let Err(e) = create_dir_all(path) {
-            println!("Failed to create directory '{dir_path}': {e}",);
-            return;
-        }
+    if let Err(e) = create_dir_all(path) {
+        println!("Failed to create directory '{dir_path}': {e}",);
+        return;
     }
 
     let file_name = format!("{dir_path}/task_{now}.yaml",);

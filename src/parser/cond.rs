@@ -3,8 +3,8 @@ use super::inner::funs::gal_defined;
 use super::prelude::*;
 use orion_parse::define::take_var_ref_name;
 use orion_parse::symbol::{
-    symbol_bracket_beg, symbol_bracket_end, symbol_cmp, symbol_logic_and, symbol_logic_not,
-    symbol_logic_or, LogicSymbol,
+    LogicSymbol, symbol_bracket_beg, symbol_bracket_end, symbol_cmp, symbol_logic_and,
+    symbol_logic_not, symbol_logic_or,
 };
 use winnow::combinator::repeat;
 
@@ -132,6 +132,7 @@ pub fn gal_cond(input: &mut &str) -> Result<GxlCond> {
 mod tests {
 
     use orion_error::TestAssert;
+    use orion_sec::sec::{SecFrom, SecValueType};
 
     use crate::{
         calculate::Evaluation,
@@ -142,7 +143,6 @@ mod tests {
             inner::run_gxl,
             stc_blk::gal_block,
         },
-        sec::{SecFrom, SecValueType},
         traits::Setter,
     };
 
@@ -150,6 +150,7 @@ mod tests {
     fn test_exp() {
         let mut dict = VarSpace::default();
         dict.global_mut().set("val", SecValueType::nor_from(1));
+        dict.global_mut().set("val_1", SecValueType::nor_from(1));
         dict.global_mut().set("val2", SecValueType::nor_from(2));
         dict.global_mut().set("val_f", SecValueType::nor_from(1.14));
         dict.global_mut()
@@ -163,6 +164,10 @@ mod tests {
         assert!(!exp.decide(ExecContext::default(), &dict).assert());
 
         let mut data = r#" ${val} == 1"#;
+        let exp = run_gxl(gal_exp, &mut data).assert();
+        assert!(exp.decide(ExecContext::default(), &dict).assert());
+
+        let mut data = r#" ${val} == ${val_1}"#;
         let exp = run_gxl(gal_exp, &mut data).assert();
         assert!(exp.decide(ExecContext::default(), &dict).assert());
 

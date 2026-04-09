@@ -26,7 +26,7 @@ pub struct ShellOption {
     pub err: Option<String>,
     pub suc: Option<String>,
     pub secrecy: bool,
-    pub expect: Vec<i32>,
+    pub ok_codes: Vec<i32>,
     pub log_lev: Option<log::Level>,
 }
 impl Default for ShellOption {
@@ -44,7 +44,7 @@ impl ShellOption {
             err: None,
             suc: None,
             secrecy: false,
-            expect: vec![0],
+            ok_codes: vec![0],
             log_lev: Some(log::Level::Info),
         }
     }
@@ -56,7 +56,7 @@ impl ShellOption {
             err: None,
             suc: None,
             secrecy: false,
-            expect: vec![0],
+            ok_codes: vec![0],
             log_lev: Some(log::Level::Info),
         }
     }

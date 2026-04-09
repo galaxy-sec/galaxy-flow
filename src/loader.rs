@@ -1,10 +1,9 @@
 use crate::components::gxl_spc::GxlSpace;
 use crate::execution::VarSpace;
 use crate::parser::abilities::ignore_comment;
-use crate::parser::externs::ExternGit;
 use crate::parser::externs::ExternParser;
-use crate::parser::stc_spc::gal_stc_spc;
 use crate::parser::stc_spc::WinnowErrorEx;
+use crate::parser::stc_spc::gal_stc_spc;
 use crate::util::accessor::build_accessor;
 
 use std::fs;
@@ -16,16 +15,19 @@ use crate::err::*;
 
 use crate::ability::version::Version;
 use once_cell::sync::OnceCell;
+use orion_accessor::addr::Address;
+use orion_accessor::addr::GitRepository;
+use orion_accessor::addr::LocalPath;
+use orion_accessor::types::ResourceDownloader;
+use orion_accessor::update::DownloadOptions;
+use orion_accessor::update::UpdateScope;
+use orion_error::ContextRecord;
 use orion_error::ErrorConv;
 use orion_error::ErrorOwe;
+use orion_error::ErrorOweBase;
 use orion_error::ErrorWith;
+use orion_error::ToStructError;
 use orion_error::WithContext;
-use orion_variate::addr::Address;
-use orion_variate::addr::GitRepository;
-use orion_variate::addr::LocalPath;
-use orion_variate::types::ResourceDownloader;
-use orion_variate::update::DownloadOptions;
-use orion_variate::update::UpdateScope;
 use orion_variate::vars::EnvDict;
 use orion_variate::vars::ValueDict;
 
@@ -61,7 +63,7 @@ impl GxLoader {
     ) -> RunResult<GxlSpace> {
         info!(target:"parse", "parse file: {conf}" );
         let mut wc = WithContext::want("parse gxl file");
-        wc.with("conf", conf);
+        wc.record("conf", conf);
         let code = read_to_string(conf).owe_conf().with(&wc)?;
         let file_path = Path::new(conf);
         let file_exist_path = file_path.parent();
@@ -116,27 +118,111 @@ impl GxLoader {
         Ok(gxl_space)
     }
 
-    pub async fn init(&self, addr: GitRepository, tpl: &str) -> RunResult<()> {
-        let up_options = DownloadOptions::new(UpdateScope::RemoteCache, ValueDict::default());
-        let local_git = ExternGit::pull(addr, &up_options).await.owe_res()?;
-        let vender_path = format!("{}/tpl/{tpl}", local_git.position().display());
+    pub async fn init_from_git(&self, addr: GitRepository) -> RunResult<()> {
         let init_path = PathBuf::from("./_gal");
         if init_path.exists() {
-            println!("init dir exists! ({})", init_path.display());
-        } else {
-            std::fs::create_dir(&init_path).owe_res()?;
-            let accessor = build_accessor(&EnvDict::default());
-            accessor
-                .download_to_local(
-                    &Address::from(LocalPath::from(vender_path.as_str())),
-                    &init_path,
-                    &up_options,
-                )
-                .await
-                .owe_res()?;
+            return Err(RunReason::Args("_gal already exists".into())
+                .to_err()
+                .with_detail(format!("path: {}", init_path.display())));
         }
-        Ok(())
+
+        let up_options = DownloadOptions::new(UpdateScope::RemoteCache, ValueDict::default());
+        // Create _gal only after source validation
+        std::fs::create_dir(&init_path).owe_res()?;
+
+        let accessor = build_accessor(&EnvDict::default());
+        let result = accessor
+            .download_to_local(&Address::from(addr), &init_path, &up_options)
+            .await;
+
+        match result {
+            Ok(downloaded) => {
+                finalize_init_target(&init_path, downloaded.position())?;
+                eprintln!("project initialized from git to ./_gal/");
+                Ok(())
+            }
+            Err(e) => {
+                let _ = std::fs::remove_dir_all(&init_path);
+                Err(RunReason::Exec(format!("copy to _gal failed: {}", e)).to_err())
+            }
+        }
     }
+
+    pub async fn init_from_local(&self, src: &str) -> RunResult<()> {
+        let src_path = PathBuf::from(src);
+        if !src_path.exists() {
+            return Err(RunReason::Args("template path not found".into())
+                .to_err()
+                .with_detail(format!("path: {}", src_path.display())));
+        }
+
+        let init_path = PathBuf::from("./_gal");
+        if init_path.exists() {
+            return Err(RunReason::Args("_gal already exists".into())
+                .to_err()
+                .with_detail(format!("path: {}", init_path.display())));
+        }
+
+        // Create _gal only after source validation
+        std::fs::create_dir(&init_path).owe_res()?;
+
+        let up_options = DownloadOptions::new(UpdateScope::None, ValueDict::default());
+        let accessor = build_accessor(&EnvDict::default());
+        let result = accessor
+            .download_to_local(
+                &Address::from(LocalPath::from(src)),
+                &init_path,
+                &up_options,
+            )
+            .await;
+
+        match result {
+            Ok(downloaded) => {
+                finalize_init_target(&init_path, downloaded.position())?;
+                eprintln!("project initialized from {} to ./_gal/", src);
+                Ok(())
+            }
+            Err(e) => {
+                let _ = std::fs::remove_dir_all(&init_path);
+                Err(RunReason::Exec(format!("copy to _gal failed: {}", e)).to_err())
+            }
+        }
+    }
+}
+
+fn finalize_init_target(init_path: &Path, downloaded_path: &Path) -> RunResult<()> {
+    if downloaded_path == init_path {
+        return Ok(());
+    }
+
+    let init_canonical = std::fs::canonicalize(init_path).owe_res()?;
+    let downloaded_canonical = std::fs::canonicalize(downloaded_path).owe_res()?;
+    if !downloaded_canonical.starts_with(&init_canonical) {
+        return Err(RunReason::Exec(
+            "copy to _gal failed: downloaded path escaped init dir".into(),
+        )
+        .to_err()
+        .with_detail(format!(
+            "init: {}, downloaded: {}",
+            init_canonical.display(),
+            downloaded_canonical.display()
+        )));
+    }
+
+    if downloaded_path.is_file() {
+        let name = downloaded_path
+            .file_name()
+            .ok_or_else(|| RunReason::Exec("copy to _gal failed: bad file name".into()).to_err())?;
+        std::fs::rename(downloaded_path, init_path.join(name)).owe_res()?;
+        return Ok(());
+    }
+
+    for entry in std::fs::read_dir(downloaded_path).owe_res()? {
+        let entry = entry.owe_res()?;
+        std::fs::rename(entry.path(), init_path.join(entry.file_name())).owe_res()?;
+    }
+    std::fs::remove_dir_all(downloaded_path).owe_res()?;
+    Ok(())
 }
 
 pub fn err_code_prompt(code: &str) -> String {
@@ -150,31 +236,90 @@ pub fn err_code_prompt(code: &str) -> String {
 #[cfg(test)]
 mod tests {
 
-    use crate::{execution::VarSpace, infra::once_init_log, types::AnyResult};
+    use crate::{
+        cmd::GxlCmd, execution::VarSpace, infra::once_init_log, types::AnyResult,
+        util::path::WorkDirWithLock,
+    };
 
     use super::GxLoader;
+    use std::path::PathBuf;
+    use tempfile::tempdir;
 
     #[tokio::test]
     async fn test_parse_file() -> AnyResult<()> {
         //log_init(&LogConf::alpha()).assert();
         once_init_log();
         let loader = GxLoader::default();
-        let conf = "./_gal/work.gxl";
+        let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        let _workdir = WorkDirWithLock::change(&manifest_dir)?;
+        let conf = manifest_dir.join("_gal/work.gxl");
         let vars = VarSpace::sys_init()?;
-        let spc = loader.parse_file(conf, false, &vars).await?.assemble()?;
+        let spc = loader
+            .parse_file(conf.to_string_lossy().as_ref(), false, &vars)
+            .await?
+            .assemble()?;
         info!("test begin");
         spc.show()?;
         println!("mods:{}", spc.len());
         assert!(spc.len() > 1);
         spc.exec(
-            ["default".into()].to_vec(),
-            ["conf".into()].to_vec(),
-            Some(true),
-            false,
+            GxlCmd::default()
+                .with_env("default".into())
+                .with_flows("conf".into()),
             VarSpace::sys_init()?,
             None,
         )
         .await?;
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn init_from_local_flattens_template_directory() -> AnyResult<()> {
+        once_init_log();
+
+        let loader = GxLoader::default();
+        let temp_workdir = tempdir()?;
+        let template_root = tempdir()?;
+        let rust_tpl = template_root.path().join("rust");
+        std::fs::create_dir_all(&rust_tpl)?;
+        std::fs::write(rust_tpl.join("work.gxl"), "mod base {}")?;
+        std::fs::write(rust_tpl.join("adm.gxl"), "mod base {}")?;
+        std::fs::write(
+            rust_tpl.join("project.toml"),
+            "[project]\nname = \"demo\"\n",
+        )?;
+
+        let _workdir = WorkDirWithLock::change(temp_workdir.path())?;
+        loader
+            .init_from_local(rust_tpl.to_string_lossy().as_ref())
+            .await?;
+
+        assert!(temp_workdir.path().join("_gal/work.gxl").exists());
+        assert!(temp_workdir.path().join("_gal/adm.gxl").exists());
+        assert!(temp_workdir.path().join("_gal/project.toml").exists());
+        assert!(!temp_workdir.path().join("_gal/rust").exists());
+        Ok(())
+    }
+
+    #[test]
+    fn finalize_init_target_rejects_paths_outside_gal_dir() -> AnyResult<()> {
+        let temp_workdir = tempdir()?;
+        let _workdir = WorkDirWithLock::change(temp_workdir.path())?;
+        let init_path = temp_workdir.path().join("_gal");
+        let external_path = temp_workdir.path().join("rust");
+
+        std::fs::create_dir_all(&init_path)?;
+        std::fs::create_dir_all(&external_path)?;
+        std::fs::write(external_path.join("work.gxl"), "mod base {}")?;
+
+        let err = super::finalize_init_target(&init_path, &external_path)
+            .expect_err("external downloaded path should be rejected");
+        let err_text = format!("{err:?}");
+
+        assert!(err_text.contains("downloaded path escaped init dir"));
+        assert!(external_path.exists());
+        assert!(external_path.join("work.gxl").exists());
+        assert!(!init_path.join("work.gxl").exists());
         Ok(())
     }
 }

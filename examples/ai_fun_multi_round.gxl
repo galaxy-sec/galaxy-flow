@@ -1,0 +1,83 @@
+// 多轮对话示例
+// 演示GxAIFun的max_rounds参数和失败重试机制
+
+mod ai_multi_round_examples {
+    // 示例1: 基础多轮重试（默认3次）
+    flow git_basic_retry {
+        gx.ai_fun(
+            role: "developer",
+            task: "检查Git状态并尝试提交所有修改的文件",
+            tools: ["git-status", "git-add", "git-commit"],
+            max_rounds: 3
+        );
+    }
+
+    // 示例2: 扩展重试次数（5次）
+    flow git_extended_retry {
+        gx.ai_fun(
+            role: "developer",
+            task: "执行完整的Git工作流：检查状态、添加文件、提交并推送到远程仓库",
+            tools: ["git-status", "git-add", "git-commit", "git-push"],
+            max_rounds: 5
+        );
+    }
+
+    // 示例3: 禁用重试（单次执行）
+    flow git_no_retry {
+        gx.ai_fun(
+            role: "developer",
+            task: "简单检查Git状态，不进行重试",
+            tools: ["git-status"],
+            max_rounds: 1
+        );
+    }
+
+    // 示例4: 复杂工作流，展示VarSpace使用
+    flow complex_git_workflow {
+        // 第一步：检查状态并存储结果
+        gx.ai_fun(
+            role: "developer",
+            task: "检查Git仓库状态，如果有修改的文件需要添加到暂存区",
+            tools: ["git-status"],
+            max_rounds: 3
+        );
+
+        // 第二步：基于之前结果执行提交
+        gx.ai_fun(
+            role: "developer",
+            task: "基于之前的Git状态结果，添加所有修改的文件并提交",
+            tools: ["git-add", "git-commit"],
+            max_rounds: 3
+        );
+
+        // 第三步：推送到远程仓库
+        gx.ai_fun(
+            role: "developer",
+            task: "将提交推送到远程仓库",
+            tools: ["git-push"],
+            max_rounds: 3
+        );
+    }
+
+    // 示例5: 智能任务执行
+    flow smart_task_execution {
+        gx.ai_fun(
+            role: "developer",
+            task: "智能执行代码质量检查和修复：1. 运行代码检查工具 2. 如果发现问题，尝试自动修复 3. 修复后再次检查",
+            tools: ["cargo-check", "cargo-clippy", "cargo-fix"],
+            max_rounds: 4
+        );
+    }
+}
+
+// VarSpace变量使用说明：
+// 每个工具调用的结果都会存储到以下变量中：
+// - ai_tools_<tool_name>_result_<round> : 成功结果
+// - ai_tools_<tool_name>_error_<round>  : 失败信息
+// - ai_tools_<tool_name>_status_<round> : 执行状态 (success/failed)
+// - ai_tools_<tool_name>_timestamp_<round> : 执行时间戳
+//
+// 示例变量名：
+// - ai_tools_git-status_result_1 : 第一轮git-status的成功结果
+// - ai_tools_git-commit_error_2  : 第二轮git-commit的失败信息
+// - ai_tools_git-push_status_3   : 第三轮git-push的执行状态

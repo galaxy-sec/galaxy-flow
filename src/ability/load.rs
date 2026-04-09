@@ -3,12 +3,12 @@ use std::{
     str::FromStr,
 };
 
-use orion_error::ToStructError;
-use orion_variate::{
+use orion_accessor::{
     addr::{Address, HttpResource},
     types::{ResourceDownloader, ResourceUploader},
     update::{DownloadOptions, HttpMethod, UploadOptions},
 };
+use orion_error::{ErrorOweBase, ToStructError};
 
 use crate::{ability::prelude::*, util::accessor::build_accessor};
 
@@ -100,23 +100,26 @@ impl AsyncRunnableTrait for GxDownLoad {
 
         let accessor = build_accessor(&vars_dict.global().clone().into());
         // 确保父目录存在
-        if let Some(true) = local_file_path.parent().map(|x| x.exists()) {
-            accessor
-                .download_to_local(
-                    &Address::from(addr),
-                    &final_download_path,
-                    &DownloadOptions::default(),
-                )
-                .await
-                .owe_res()
-                .with(&final_download_path)?;
-            action.finish();
-            Ok(TaskValue::from((vars_dict, ExecOut::Action(action))))
-        } else {
-            return ExecReason::Miss("parent path not exists".into())
-                .err_result()
-                .want("gx.download")
-                .with(&local_file_path);
+        match local_file_path.parent() {
+            Some(parent) if parent.exists() => {
+                accessor
+                    .download_to_local(
+                        &Address::from(addr),
+                        &final_download_path,
+                        &DownloadOptions::default(),
+                    )
+                    .await
+                    .owe_res()
+                    .with(&final_download_path)?;
+                action.finish();
+                Ok(TaskValue::from((vars_dict, ExecOut::Action(action))))
+            }
+            _ => {
+                return ExecReason::Miss("parent path not exists".into())
+                    .err_result()
+                    .want("gx.download")
+                    .with(&local_file_path);
+            }
         }
     }
 }
@@ -165,22 +168,29 @@ impl ComponentMeta for GxDownLoad {
 
 #[cfg(test)]
 mod tests {
+    #[cfg(feature = "network_test")]
     use orion_error::TestAssertWithMsg;
+    #[cfg(feature = "network_test")]
     use orion_infra::path::ensure_path;
 
     use crate::util::path::WorkDir;
 
     use super::*;
 
+    #[cfg(feature = "network_test")]
     #[tokio::test]
     async fn test_gx_download_parent_exists() {
-        let temp_path = PathBuf::from("./temp/download");
+        let temp_dir = tempfile::tempdir().expect("temp dir");
+        let temp_path = temp_dir.path().join("download");
         ensure_path(&temp_path).assert("path");
         let file_path = temp_path.join("README").to_str().unwrap().to_string();
 
         let download = GxDownLoadBuilder::default()
             .local_file(file_path.clone())
-            .remote_url("https://mirrors.aliyun.com/postgresql/README".to_string())
+            .remote_url(
+                "https://raw.githubusercontent.com/galaxio-labs/galaxy-flow/main/README.md"
+                    .to_string(),
+            )
             .build()
             .unwrap();
 
@@ -190,12 +200,18 @@ mod tests {
             .async_exec(ctx, vars_dict)
             .await
             .assert("exec fail");
+        let content = std::fs::read_to_string(file_path).expect("read downloaded file");
+        assert!(
+            !content.is_empty(),
+            "downloaded content should not be empty"
+        );
     }
 
     /// 测试下载文件到已存在目录的功能
     ///
     /// 注意：当前实现中，传入目录路径时实际上会直接下载到该目录路径，
     /// 而不是提取文件名。这个测试验证当前的实际行为。
+    #[cfg(feature = "network_test")]
     #[tokio::test]
     async fn test_gx_download_to_directory() {
         // 创建临时目录用于测试
@@ -205,7 +221,10 @@ mod tests {
         // 构建下载配置：传入目录路径
         let download = GxDownLoadBuilder::default()
             .local_file(dir_path.clone()) // 传入目录路径
-            .remote_url("https://httpbin.org/json".to_string())
+            .remote_url(
+                "https://raw.githubusercontent.com/galaxio-labs/galaxy-flow/main/README.md"
+                    .to_string(),
+            )
             .build()
             .unwrap();
 
@@ -216,8 +235,8 @@ mod tests {
         assert!(result.is_ok());
 
         // 验证文件是否下载成功
-        // 当前实现会直接下载到目录路径本身
-        let downloaded_path = temp_dir.path();
+        // 当前实现会在目录中按URL文件名创建文件
+        let downloaded_path = temp_dir.path().join("README.md");
         assert!(downloaded_path.exists(), "下载应该成功完成");
     }
 
@@ -225,6 +244,7 @@ mod tests {
     ///
     /// 注意：当前实现中，文件名提取功能在 get_final_path 中实现，
     /// 但实际下载使用的是原始路径。这个测试验证当前的实际行为。
+    #[cfg(feature = "network_test")]
     #[tokio::test]
     async fn test_gx_download_url_with_query_params() {
         // 创建临时目录和具体文件路径
@@ -234,7 +254,7 @@ mod tests {
         // 构建包含查询参数的URL下载配置
         let download = GxDownLoadBuilder::default()
             .local_file(file_path.to_str().unwrap().to_string()) // 使用具体文件路径
-            .remote_url("https://httpbin.org/json?param=value&test=123".to_string()) // 包含查询参数
+            .remote_url("https://raw.githubusercontent.com/galaxio-labs/galaxy-flow/main/README.md?param=value&test=123".to_string()) // 包含查询参数
             .build()
             .unwrap();
 

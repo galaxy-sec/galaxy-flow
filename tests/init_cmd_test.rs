@@ -3,12 +3,12 @@ extern crate shells;
 
 use std::path::PathBuf;
 
+use galaxy_flow::GxLoader;
 use galaxy_flow::infra::once_init_log;
 use galaxy_flow::util::path::WorkDir;
-use galaxy_flow::GxLoader;
+use orion_accessor::addr::GitRepository;
 use orion_error::TestAssertWithMsg;
 use orion_infra::path::ensure_path;
-use orion_variate::addr::GitRepository;
 
 // use shells;
 #[ignore]
@@ -21,6 +21,6 @@ async fn init_test() {
     ensure_path(&path).assert("path");
     let _work_path = WorkDir::change(&path);
     let addr =
-        GitRepository::from("https://github.com/galaxy-sec/gal-init.git").with_branch("main");
-    loader.init(addr, "example").await.assert("init");
+        GitRepository::from("https://github.com/galaxio-labs/gal-init.git").with_branch("main");
+    loader.init_from_git(addr).await.assert("init");
 }

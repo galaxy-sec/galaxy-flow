@@ -1,76 +1,46 @@
-# ability 模块实际结构文档
+# ability 模块实际结构
 
-## 模块概述
+## 模块定位
 
-ability 模块是 galaxy-flow 的核心功能模块，提供 GXL 语言的基础操作能力。基于实际代码结构，包含以下子模块：
+`src/ability` 提供 GXL 执行时可调用的能力实现（命令、模板、读取、下载、补丁等）。
 
-## 实际模块结构
+## 实际文件结构
 
-```
+```text
 src/ability/
-├── mod.rs           # 模块入口和初始化
-├── archive.rs       # 归档操作能力
-├── artifact.rs      # 构建产物处理能力
-├── assert.rs        # 断言验证能力
-├── cmd.rs           # 命令执行能力
-├── delegate.rs      # 委托执行能力
-├── echo.rs          # 输出显示能力
-├── gxl.rs           # GXL 核心能力
-├── load.rs          # 模块加载能力
-├── prelude.rs       # 能力预导入
-├── read/
-│   ├── mod.rs       # 读取能力模块入口
-│   ├── cmd.rs       # 命令读取
-│   ├── file.rs      # 文件读取
-│   ├── integra.rs   # 集成读取
-│   └── stdin.rs     # 标准输入读取
-├── shell.rs         # Shell 执行能力
-├── tpl.rs           # 模板处理能力
-└── version.rs       # 版本管理能力
+├── mod.rs
+├── archive.rs
+├── assert.rs
+├── cmd.rs
+├── delegate.rs
+├── echo.rs
+├── gxl.rs
+├── load.rs
+├── shell.rs
+├── tpl.rs
+├── version.rs
+├── ai/
+│   ├── mod.rs
+│   └── tool.rs
+├── patch/
+│   ├── mod.rs
+│   ├── controller.rs
+│   ├── model.rs
+│   └── view.rs
+└── read/
+    ├── mod.rs
+    ├── cmd.rs
+    ├── file.rs
+    ├── integra.rs
+    └── stdin.rs
 ```
 
-## 实际子模块说明
+## 对外导出（`src/ability/mod.rs`）
 
-### 核心能力模块
-- **archive**: 处理文件压缩和解压
-- **artifact**: 管理构建产物
-- **assert**: 断言验证功能
-- **cmd**: 执行系统命令
-- **delegate**: 委托其他模块执行
-- **echo**: 控制台输出
-- **gxl**: GXL语言核心功能
-- **load**: 动态加载模块
-- **shell**: Shell命令执行
-- **tpl**: 模板渲染
-- **version**: 版本信息管理
+- 模块：`ai, archive, assert, cmd, delegate, echo, gxl, load, patch, prelude, read, tpl, shell, version`
+- 常用类型重导出：`GxAssert, GxCmd, GxEcho, GxRead, GxTpl, GxlVersion, GxRun, GxDownLoad, GxUpLoad`
 
-### 读取能力子模块
-- **read/cmd**: 从命令读取数据
-- **read/file**: 从文件读取数据
-- **read/integra**: 集成多种读取方式
-- **read/stdin**: 从标准输入读取
+## 说明
 
-## 实际依赖关系
-
-```mermaid
-graph LR
-    ability --> model
-    ability --> util
-    ability --> err
-    ability --> const_val
-```
-
-## 使用示例
-
-```rust
-use crate::ability::echo::EchoAbility;
-use crate::ability::assert::AssertAbility;
-
-// 实际使用方式
-let echo = EchoAbility::new();
-let assert = AssertAbility::new();
-```
-
-## 注意事项
-
-本文档基于实际代码结构编写，所有列出的模块和文件都在源码中存在。不包含任何虚构或过度设计的内容。
+- `ability::ai` 当前仅导出 `tool` 子模块；目录中历史文件（如 `ai_call.rs`）未在 `ai/mod.rs` 导出。
+- `ability::patch` 为 `gx.patch_file` 等补丁能力的 MVC 组织。

@@ -1,0 +1,12 @@
+mod envs  {
+   env _common   {
+    root      = ".";
+    prj_key   = "you-proj" ;
+   }
+   env default    : envs._common ;
+}
+mod main {
+  flow conf {
+    gx.echo(value: "hello galaxy flow");
+  }
+}

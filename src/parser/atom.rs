@@ -3,11 +3,11 @@ use orion_parse::{
     symbol::wn_desc,
 };
 use winnow::{
+    Parser, Result,
     ascii::multispace0,
     combinator::delimited,
     error::{ContextError, StrContext},
     token::{literal, take_while},
-    Parser, Result,
 };
 
 pub fn take_host(input: &mut &str) -> Result<String> {

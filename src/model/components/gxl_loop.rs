@@ -1,12 +1,12 @@
 use std::sync::mpsc::Sender;
 
-use orion_error::ToStructError;
+use orion_error::{ToStructError, UvsFrom};
+use orion_sec::sec::SecValueType;
 
 use super::prelude::*;
 use crate::{
     ability::prelude::TaskValue,
     execution::{runnable::AsyncRunnableWithSenderTrait, task::Task},
-    sec::SecValueType,
     traits::Setter,
     util::redirect::ReadSignal,
 };
@@ -69,11 +69,9 @@ impl AsyncRunnableWithSenderTrait for GxlLoop {
                     }
                 }
                 _ => {
-                    return ExecReason::Bug(format!(
-                        "loop only support obj,list {}",
-                        self.var_name()
-                    ))
-                    .err_result()
+                    return Err(ExecReason::from_logic()
+                        .to_err()
+                        .with_detail(format!("loop only support obj,list {}", self.var_name())));
                 }
             }
             return Ok(TaskValue::from((cur_dict, ExecOut::Task(task))));
@@ -86,13 +84,12 @@ impl AsyncRunnableWithSenderTrait for GxlLoop {
 mod tests {
     use super::*;
     use crate::{
-        ability::GxEcho,
-        components::gxl_block::BlockAction,
-        model::components::gxl_block::BlockNode,
-        sec::{SecFrom, SecValueObj, ToUniCase},
-        traits::Getter,
+        ability::GxEcho, components::gxl_block::BlockAction,
+        model::components::gxl_block::BlockNode, traits::Getter,
     };
     use orion_error::TestAssertWithMsg;
+    use orion_sec::sec::{SecFrom, SecValueObj};
+    use orion_variate::vars::UpperKey;
     use rstest::*;
 
     #[fixture]
@@ -114,11 +111,11 @@ mod tests {
         let obj1 = {
             let mut n = SecValueObj::default();
             n.insert(
-                "key1".to_unicase(),
+                UpperKey::from("key1"),
                 SecValueType::nor_from("value1".to_string()),
             );
             n.insert(
-                "key2".to_unicase(),
+                UpperKey::from("key2"),
                 SecValueType::nor_from("value2".to_string()),
             );
             n
@@ -126,11 +123,11 @@ mod tests {
         let obj2 = {
             let mut n = SecValueObj::default();
             n.insert(
-                "key1".to_unicase(),
+                UpperKey::from("key1"),
                 SecValueType::nor_from("value3".to_string()),
             );
             n.insert(
-                "key2".to_unicase(),
+                UpperKey::from("key2"),
                 SecValueType::nor_from("value4".to_string()),
             );
             n
@@ -138,8 +135,8 @@ mod tests {
         // 准备测试数据
         let named_dict = {
             let mut n = SecValueObj::default();
-            n.insert("key1".to_unicase(), SecValueType::from(obj1));
-            n.insert("key2".to_unicase(), SecValueType::from(obj2));
+            n.insert(UpperKey::from("key1"), SecValueType::from(obj1));
+            n.insert(UpperKey::from("key2"), SecValueType::from(obj2));
             n
         };
 
@@ -219,7 +216,7 @@ mod tests {
         let named_dict = {
             let mut n = SecValueObj::default();
             n.insert(
-                "key1".to_unicase(),
+                UpperKey::from("key1"),
                 SecValueType::nor_from("value1".to_string()),
             );
             n

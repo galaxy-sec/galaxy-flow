@@ -1,39 +1,18 @@
-# evaluator 模块实际结构文档
+# evaluator 模块实际结构
 
-## 模块概述
+## 模块定位
 
-evaluator 模块负责执行解析后的GXL代码，基于实际代码结构包含以下子模块：
+`src/evaluator` 当前只承载环境表达式渲染能力，不是独立的流程执行器目录。
 
-## 实际模块结构
+## 实际文件结构
 
-```
+```text
 src/evaluator/
-├── mod.rs           # 模块入口
-└── runner.rs        # 执行器实现
+├── mod.rs
+└── env_exp.rs
 ```
 
-## 实际子模块说明
+## 对外导出（`src/evaluator/mod.rs`）
 
-- **runner**: GXL代码执行器，负责执行解析后的模型对象
-
-## 实际依赖关系
-
-```mermaid
-graph LR
-    evaluator --> model
-    evaluator --> parser
-    evaluator --> ability
-    evaluator --> util
-    evaluator --> err
-```
-
-## 使用示例
-
-```rust
-use crate::evaluator::runner::Runner;
-use crate::model::gxl_mod::GxlMod;
-
-// 实际使用方式
-let runner = Runner::new();
-let result = runner.execute_module(&module)?;
-```
+- `EnvExpress`
+- `VarParser`

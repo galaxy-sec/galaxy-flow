@@ -21,9 +21,8 @@ extern crate handlebars;
 extern crate serde_json;
 #[macro_use]
 extern crate lazy_static;
-extern crate http_types;
 
-extern crate ini;
+//extern crate ini;
 extern crate url;
 
 //#[macro_use]
@@ -35,19 +34,23 @@ pub mod err;
 pub mod model;
 pub mod ability;
 pub mod calculate;
+pub mod cli;
+pub mod cmd;
 pub mod conf;
 pub mod const_val;
 pub mod debug;
 mod evaluator;
+pub mod friendly;
 mod loader;
 pub mod menu;
 pub mod parser;
 #[macro_use]
 pub mod util;
-
 pub mod galaxy;
+pub mod help;
 pub mod infra;
 pub mod runner;
+pub mod self_update;
 pub mod types;
-pub use crate::loader::{get_parse_code, GxLoader};
+pub use crate::loader::{GxLoader, get_parse_code};
 pub use model::*;

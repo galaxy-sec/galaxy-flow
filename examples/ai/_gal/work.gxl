@@ -1,0 +1,17 @@
+mod envs {
+    env default {}
+}
+mod main   {
+  flow ai_test{
+    gx.ai_chat("请回答：1+1=?");
+  }
+
+  flow ci_msg {
+    gx.cmd("git diff > code_diff.txt");
+    gx.ai_chat( role: "developer","Generate git commit message", prompt_file : "./code_diff.txt");
+  }
+  flow dev_ai {
+        gx.ai_regist(flow :"ci_msg", desc: "gen git commit message");
+        gx.ai_task( task: "生成代码提交说明", role : "developer" ) ;
+  }
+}

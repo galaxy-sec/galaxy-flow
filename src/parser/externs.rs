@@ -1,16 +1,19 @@
 use super::prelude::*;
+use crate::ExecReason;
+use crate::ExecResult;
 use crate::components::gxl_extend::ModAddr;
 use crate::evaluator::EnvExpress;
 use crate::execution::VarSpace;
 use crate::parser::abilities::addr::gal_extern_mod;
 use crate::parser::abilities::addr::gal_git_path;
-use crate::ExecResult;
+use orion_accessor::addr::GitRepository;
+use orion_accessor::types::UpdateUnit;
+use orion_accessor::update::DownloadOptions;
+use orion_error::ContextRecord;
 use orion_error::ErrorOwe;
+use orion_error::ErrorOweBase;
 use orion_error::ErrorWith;
 use orion_error::WithContext;
-use orion_variate::addr::GitRepository;
-use orion_variate::types::UpdateUnit;
-use orion_variate::update::DownloadOptions;
 use orion_variate::vars::EnvDict;
 use orion_variate::vars::EnvEvalable;
 use std::fs::read_to_string;
@@ -50,9 +53,9 @@ impl ExternLocal {
         let ee = EnvExpress::from_env();
         let gxl_full_path = format!("{}/{}.gxl", self.path.display(), name);
         let gxl_full_path = crate::evaluator::VarParser::eval(&ee, &gxl_full_path)?;
-        ctx.with("gxl", gxl_full_path.as_str());
+        ctx.record("gxl", gxl_full_path.as_str());
         let code = read_to_string(gxl_full_path.as_str())
-            .owe_rule()
+            .owe(ExecReason::Gxl("read mod file fail!".to_string()))
             .with(&ctx)?;
         Ok(code)
     }
@@ -106,13 +109,14 @@ impl ExternParser {
         let extern_mods = gal_extern_mod
             .context(wn_desc("<extern-mod>"))
             .parse_next(cur)
-            .owe_rule()?;
+            .owe(ExecReason::Gxl("parse extern mod fail!".to_string()))?;
         let exp = EnvExpress::from_env_mix(vars_space.global().clone());
         let local = match extern_mods.addr() {
             ModAddr::Git(git_addr) => {
                 let git_url = exp.eval(git_addr.remote())?;
                 let cl_git_url = git_url.clone();
-                let (_host, repo_name) = gal_git_path(&mut git_url.as_str()).owe_rule()?;
+                let (_host, repo_name) = gal_git_path(&mut git_url.as_str())
+                    .owe(ExecReason::Gxl("parse git repo fail!".to_string()))?;
 
                 debug!("git url: {cl_git_url}");
                 debug!("git repo : {repo_name}",);
@@ -200,14 +204,14 @@ mod tests {
         let up_opt = DownloadOptions::for_test();
         let parser = ExternParser::new();
         let vars = VarSpace::sys_init().assert();
-        let mut data = r#"extern mod ssh { path = "./_gal/mods";}"#;
+        let mut data = r#"extern mod ssh { path = "./examples/moduse/mods";}"#;
         let (codes, _have_ext) = parser
             .extern_parse(&up_opt, &mut data, &vars, None)
             .await
             .assert();
 
-        let mut expect = read_to_string("./_gal/mods/ssh.gxl").unwrap();
-        expect = expect.replace("@PATH", "./_gal/mods");
+        let mut expect = read_to_string("./examples/moduse/mods/ssh.gxl").unwrap();
+        expect = expect.replace("@PATH", "./examples/moduse/mods");
         assert_eq!(codes, expect);
     }
     #[tokio::test]
@@ -215,13 +219,13 @@ mod tests {
         let vars = VarSpace::sys_init().assert();
         let dw_opt = DownloadOptions::for_test();
         let parser = ExternParser::new();
-        let mut data = r#"extern mod os,ssh { path = "./_gal/mods";}"#;
+        let mut data = r#"extern mod os,ssh { path = "./examples/moduse/mods";}"#;
         let (codes, _have_ext) = parser
             .extern_parse(&dw_opt, &mut data, &vars, None)
             .await
             .assert();
-        let mut expect = read_to_string("./_gal/tests/_all.gxl").assert();
-        expect = expect.replace("@PATH", "./_gal/mods");
+        let mut expect = read_to_string("./examples/moduse/expect/_all.gxl").unwrap();
+        expect = expect.replace("@PATH", "./examples/moduse/mods");
         println!("{codes}",);
         assert_eq!(codes, expect);
     }
