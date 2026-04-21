@@ -210,6 +210,27 @@ mod tests {
     }
 
     #[test]
+    fn cmd_test_stream() {
+        let shell_opt = ShellOption {
+            stream: true,
+            ..Default::default()
+        };
+        let mut data = r#"
+             gx.cmd(
+             cmd : "echo ok",
+             stream : "true",
+             ) ;"#;
+        let obj = gal_cmd(&mut data).assert();
+        let xpt = GxCmdDtoBuilder::default()
+            .cmd("echo ok".into())
+            .shell_opt(shell_opt)
+            .build()
+            .unwrap();
+        assert_eq!(data, "");
+        assert_eq!(obj, GxCmd::dto_new(xpt));
+    }
+
+    #[test]
     fn cmd_block_1() {
         let mut data = r#"```cmd echo ${HOME};```"#;
         let obj = run_gxl(gal_cmd_block, &mut data).assert();

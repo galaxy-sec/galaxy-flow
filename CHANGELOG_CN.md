@@ -5,6 +5,17 @@ Galaxy Flow项目所有重要变更将记录在此文件中。
 本格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/) 标准，
 本项目遵循 [语义化版本2.0.0](https://semver.org/lang/zh-CN/spec/v2.0.0.html) 规范。
 
+## [v0.13.11] - 2026-04-21
+
+### 新增
+- **Shell 实时输出能力**：为 `gx.cmd`、`gx.shell`、`gx.read_cmd` 共用的 shell 选项新增 `stream: "true"`，长时间命令执行时可将 stdout/stderr 实时转发到当前会话，同时继续保留命令结果中的输出内容与退出码。
+
+### 文档
+- **GXL shell 文档同步**：更新 `docs/gxl` 下的 command、shell、read、syntax、help 与示例文档，补充 `stream` 模式说明、ansible 场景示例，以及实时输出时 stdout/stderr 交错顺序的说明。
+
+### 修复
+- **长时间命令可观测性**：`gx.cmd` 在命令确实持续产生输出时，不再要等命令结束后才统一打印，避免 ansible 等长任务执行过程中出现“像卡住了一样”的体验。
+
 ## [v0.13.10] - 2026-04-07
 
 ### 变更

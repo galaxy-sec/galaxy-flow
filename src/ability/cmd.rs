@@ -129,4 +129,30 @@ mod tests {
         assert_eq!(action.stdout, "out");
         assert_eq!(action.stderr, "err");
     }
+
+    #[tokio::test]
+    async fn cmd_test_stream_keeps_exit_code_stdout_and_stderr() {
+        let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        let _workdir = WorkDirWithLock::change(&manifest_dir).expect("set manifest dir");
+        let (context, def) = ability_env_init();
+        let dto = GxCmdDto {
+            cmd: "printf out && printf err 1>&2 && exit 2".into(),
+            shell_opt: ShellOption {
+                stream: true,
+                quiet: true,
+                ok_codes: vec![0, 2],
+                ..Default::default()
+            },
+        };
+        let result = GxCmd::dto_new(dto)
+            .async_exec(context, def)
+            .await
+            .assert("cmd success");
+        let ExecOut::Action(action) = result.rec else {
+            panic!("expected action output");
+        };
+        assert_eq!(action.exit_code, Some(2));
+        assert_eq!(action.stdout, "out");
+        assert_eq!(action.stderr, "err");
+    }
 }

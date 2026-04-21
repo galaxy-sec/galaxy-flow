@@ -5,6 +5,17 @@ All notable changes to the Galaxy Flow project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.13.11] - 2026-04-21
+
+### Added
+- **Streaming shell output**: Added `stream: "true"` support to the shared shell option model used by `gx.cmd`, `gx.shell`, and `gx.read_cmd`, allowing long-running commands to forward stdout/stderr to the current session in real time while still preserving captured output and exit codes in command results.
+
+### Documentation
+- **GXL shell docs refresh**: Updated `docs/gxl` command, shell, read, syntax, help, and example pages to document the new streaming mode, including ansible-oriented examples and notes about stdout/stderr interleaving during live output.
+
+### Fixed
+- **Long-running command visibility**: `gx.cmd` no longer appears stalled during quiet long-running operations that do produce output; streamed execution now surfaces output immediately instead of waiting for the command to finish before printing buffered content.
+
 ## [v0.13.10] - 2026-04-07
 
 ### Changed

@@ -105,6 +105,7 @@ gx.echo("hello");              // 等价，匿名参数映射到 default
 - 调用参数分隔符是 `,`。
 - 命名参数使用 `:`，如 `name: "v"`。
 - 很多能力支持 `default`（匿名首参数）写法。
+- `gx.cmd`、`gx.shell`、`gx.read_cmd` 支持 `stream: "true"`，用于长时间命令的实时输出。
 
 ## 5. 条件表达式
 
