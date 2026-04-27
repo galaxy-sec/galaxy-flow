@@ -5,6 +5,18 @@ All notable changes to the Galaxy Flow project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.13.12] - 2026-04-27
+
+### Changed
+- **Dependency upgrades**: Bumped orion-error to 0.7, orion_conf to 0.6, orion-sec to 0.5, orion-infra to 0.6, orion-variate to 0.12, and orion-accessor to 0.7.
+
+- **orion-error v0.7 API migration**: Refactored error-handling calls across the entire codebase to match the new v0.7 API surface:
+  - `WithContext::want()` renamed to `WithContext::doing()`, and `.with()` renamed to `.with_context()` for contextual error chaining.
+  - Trait imports reorganized: `ErrorOwe`, `ErrorOweBase` moved to `orion_error::compat_traits`; `ToStructError`, `ContextRecord` moved to `orion_error::traits_ext`.
+  - `OperationContext::want()` → `OperationContext::doing()` and `.with()` → `.with_context()` in ability modules (tpl, archive, load, version).
+  - Added `DomainReason` trait implementations for `RunReason` and `GxlReason` custom error enums.
+  - Test utilities migrated: `TestAssertWithMsg` → `orion_error::testcase::TestAssertWithMsg`, and added `TestAssert` usage in unit tests.
+
 ## [v0.13.11] - 2026-04-21
 
 ### Added
