@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use crate::ability::prelude::*;
 use getset::{Getters, Setters, WithSetters};
 use orion_accessor::archive::{compress, decompress};
-use orion_error::ToStructError;
+use orion_error::traits_ext::ToStructError;
 
 #[derive(Clone, Default, Debug, PartialEq, Getters, Setters, WithSetters, Builder)]
 #[getset(get = "pub", set = "pub", get_mut, set_with)]
@@ -49,12 +49,14 @@ impl AsyncRunnableTrait for GxTar {
         if !src.exists() {
             return ExecReason::Args("src not exists".into())
                 .err_result()
-                .with(&src);
+                .with_context(&src);
         }
         if dst.exists() {
-            std::fs::remove_file(&dst).owe_res().with(&dst)?;
+            std::fs::remove_file(&dst)
+                .owe(UvsReason::resource_error().into())
+                .with_context(&dst)?;
         }
-        compress(src, dst).owe_res()?;
+        compress(src, dst).owe(UvsReason::resource_error().into())?;
         Ok(TaskValue::from((vars_dict, ExecOut::Ignore)))
     }
 }
@@ -78,7 +80,7 @@ impl AsyncRunnableTrait for GxUnTar {
         if !src.exists() {
             return ExecReason::Args("src not exists".into())
                 .err_result()
-                .with(&src);
+                .with_context(&src);
         }
         if out.exists() {
             // 如果目标是一个非空目录，先尝试删除它
@@ -97,14 +99,16 @@ impl AsyncRunnableTrait for GxUnTar {
                         }
                         Ok(())
                     })
-                    .owe_res()
-                    .with(&out)?;
+                    .owe(UvsReason::resource_error().into())
+                    .with_context(&out)?;
             } else {
                 // 如果目标是一个文件，直接删除
-                std::fs::remove_file(&out).owe_res().with(&out)?;
+                std::fs::remove_file(&out)
+                    .owe(UvsReason::resource_error().into())
+                    .with_context(&out)?;
             }
         }
-        decompress(src, out).owe_res()?;
+        decompress(src, out).owe(UvsReason::resource_error().into())?;
         Ok(TaskValue::from((vars_dict, ExecOut::Ignore)))
     }
 }

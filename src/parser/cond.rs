@@ -131,7 +131,7 @@ pub fn gal_cond(input: &mut &str) -> Result<GxlCond> {
 #[cfg(test)]
 mod tests {
 
-    use orion_error::TestAssert;
+    use orion_error::testcase::TestAssert;
     use orion_sec::sec::{SecFrom, SecValueType};
 
     use crate::{

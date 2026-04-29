@@ -44,7 +44,7 @@ pub fn gal_tpl(input: &mut &str) -> Result<GxTpl> {
 #[cfg(test)]
 mod tests {
 
-    use orion_error::TestAssert;
+    use orion_error::testcase::TestAssert;
 
     use crate::{ability::TplDTO, parser::inner::common::run_gxl};
 

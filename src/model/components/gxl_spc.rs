@@ -387,7 +387,7 @@ mod tests {
         execution::exec_init_env,
         types::AnyResult,
     };
-    use orion_error::TestAssert;
+    use orion_error::testcase::TestAssert;
 
     #[tokio::test]
     async fn execute_forward() -> AnyResult<()> {
@@ -421,8 +421,12 @@ mod tests {
         let mut flow = ExecSequence::from("test");
         let work_space = code_space.assemble().assert();
 
-        work_space.load_env(ctx.clone(), &mut flow, "env.env1")?;
-        work_space.load_flow(ctx.clone(), &mut flow, "main.flow1")?;
+        work_space
+            .load_env(ctx.clone(), &mut flow, "env.env1")
+            .assert();
+        work_space
+            .load_flow(ctx.clone(), &mut flow, "main.flow1")
+            .assert();
 
         let task_v = flow
             .test_execute(ctx, def, &work_space, None)

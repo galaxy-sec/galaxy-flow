@@ -10,8 +10,9 @@ pub use crate::model::expect::ShellOption;
 pub use crate::traits::PropsTrait;
 pub use crate::{ExecError, ExecReason};
 pub use crate::{ExecResult, gxl_sh};
-pub use orion_error::ErrorOwe;
 pub use orion_error::ErrorWith;
+pub use orion_error::UvsReason;
+pub use orion_error::compat_traits::ErrorOweBase;
 
 pub use crate::execution::VarSpace;
 pub use crate::execution::runnable::ComponentMeta;

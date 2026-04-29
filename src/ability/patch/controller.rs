@@ -1,7 +1,7 @@
 use std::fs;
 use std::path::PathBuf;
 
-use orion_error::ToStructError;
+use orion_error::traits_ext::ToStructError;
 
 use crate::ability::prelude::*;
 
@@ -417,10 +417,12 @@ impl AsyncRunnableTrait for GxPatchFile {
         if !file_path.exists() {
             return ExecReason::Miss("patch_file target not found".into())
                 .err_result()
-                .with(&file_path);
+                .with_context(&file_path);
         }
 
-        let src = fs::read_to_string(&file_path).owe_res().with(&file_path)?;
+        let src = fs::read_to_string(&file_path)
+            .owe(UvsReason::resource_error().into())
+            .with_context(&file_path)?;
 
         let applied = apply_patch_text(
             *self.action(),
@@ -435,12 +437,12 @@ impl AsyncRunnableTrait for GxPatchFile {
             if *self.backup() {
                 let backup_path = PathBuf::from(format!("{}.bak", file_path.display()));
                 fs::write(&backup_path, src.as_str())
-                    .owe_res()
-                    .with(&backup_path)?;
+                    .owe(UvsReason::resource_error().into())
+                    .with_context(&backup_path)?;
             }
             fs::write(&file_path, applied.output.as_str())
-                .owe_res()
-                .with(&file_path)?;
+                .owe(UvsReason::resource_error().into())
+                .with_context(&file_path)?;
         }
 
         let view = PatchView {

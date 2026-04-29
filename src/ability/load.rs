@@ -8,7 +8,8 @@ use orion_accessor::{
     types::{ResourceDownloader, ResourceUploader},
     update::{DownloadOptions, HttpMethod, UploadOptions},
 };
-use orion_error::{ErrorOweBase, ToStructError};
+use orion_error::compat_traits::ErrorOweBase;
+use orion_error::traits_ext::ToStructError;
 
 use crate::{ability::prelude::*, util::accessor::build_accessor};
 
@@ -61,14 +62,14 @@ impl AsyncRunnableTrait for GxUpLoad {
                     &(UploadOptions::with_method(http_method)),
                 )
                 .await
-                .owe_res()?;
+                .owe(UvsReason::resource_error().into())?;
             action.finish();
             Ok(TaskValue::from((vars_dict, ExecOut::Action(action))))
         } else {
             return ExecReason::Miss("local_file".into())
                 .err_result()
-                .want("gx.upload")
-                .with(&local_file_path);
+                .doing("gx.upload")
+                .with_context(&local_file_path);
         }
     }
 }
@@ -109,16 +110,16 @@ impl AsyncRunnableTrait for GxDownLoad {
                         &DownloadOptions::default(),
                     )
                     .await
-                    .owe_res()
-                    .with(&final_download_path)?;
+                    .owe(UvsReason::resource_error().into())
+                    .with_context(&final_download_path)?;
                 action.finish();
                 Ok(TaskValue::from((vars_dict, ExecOut::Action(action))))
             }
             _ => {
                 return ExecReason::Miss("parent path not exists".into())
                     .err_result()
-                    .want("gx.download")
-                    .with(&local_file_path);
+                    .doing("gx.download")
+                    .with_context(&local_file_path);
             }
         }
     }
@@ -169,7 +170,7 @@ impl ComponentMeta for GxDownLoad {
 #[cfg(test)]
 mod tests {
     #[cfg(feature = "network_test")]
-    use orion_error::TestAssertWithMsg;
+    use orion_error::testcase::TestAssertWithMsg;
     #[cfg(feature = "network_test")]
     use orion_infra::path::ensure_path;
 

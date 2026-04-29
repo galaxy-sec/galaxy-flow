@@ -25,7 +25,7 @@ pub fn gal_ai_chat(input: &mut &str) -> Result<GxAIChat> {
 #[cfg(test)]
 mod tests {
 
-    use orion_error::TestAssert;
+    use orion_error::testcase::TestAssert;
 
     use super::*;
 

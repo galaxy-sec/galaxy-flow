@@ -130,7 +130,7 @@ pub fn ignore_comment(input: &mut &str) -> Result<String> {
 #[cfg(test)]
 mod tests {
 
-    use orion_error::TestAssert;
+    use orion_error::testcase::TestAssert;
 
     use crate::parser::inner::run_gxl;
 

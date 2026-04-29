@@ -6,7 +6,8 @@ use crate::{
     execution::VarSpace,
     util::redirect::ReadSignal,
 };
-use orion_error::{ErrorConv, ErrorWith, ToStructError, UvsFrom};
+use orion_error::traits_ext::ToStructError;
+use orion_error::{ErrorConv, ErrorWith, UvsFrom};
 use std::{path::Path, sync::mpsc::Sender};
 
 /// Galaxy Flow 运行器
@@ -45,7 +46,7 @@ impl GxlRunner {
                 return Err(RunReason::from_conf()
                     .to_err()
                     .with_detail("gx run conf not exists"))
-                .with(("conf", conf.clone()));
+                .with_context(("conf", conf.clone()));
             }
 
             let spc = loader
@@ -72,7 +73,7 @@ impl GxlRunner {
                 return Err(RunReason::from_conf()
                     .to_err()
                     .with_detail("gx run conf not exists"))
-                .with(("conf", conf.clone()));
+                .with_context(("conf", conf.clone()));
             }
             let loader = GxLoader::new();
 

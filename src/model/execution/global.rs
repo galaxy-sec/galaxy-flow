@@ -3,7 +3,9 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use orion_error::{ErrorOwe, ErrorWith};
+use orion_error::ErrorWith;
+use orion_error::UvsReason;
+use orion_error::compat_traits::ErrorOweBase;
 
 use crate::{ExecResult, traits::Setter, var::VarDict};
 
@@ -12,7 +14,9 @@ use crate::const_val::gxl_const;
 pub fn setup_start_vars(vars_dict: &mut VarDict) -> ExecResult<()> {
     vars_dict.set(gxl_const::OS_SYS, format_os_sys().as_str());
 
-    let start_root = current_dir().owe_sys().want("get current dir")?;
+    let start_root = current_dir()
+        .owe(UvsReason::system_error().into())
+        .doing("get current dir")?;
     vars_dict.set(gxl_const::START_ROOT, start_root.display().to_string());
     let prj_root_opt = find_project_define();
     let prj_root = prj_root_opt.clone().unwrap_or(PathBuf::from("UNDEFIN"));
@@ -24,7 +28,9 @@ pub fn setup_start_vars(vars_dict: &mut VarDict) -> ExecResult<()> {
 }
 
 pub fn setup_gxlrun_vars(vars_dict: &mut VarDict) -> ExecResult<()> {
-    let start_root = current_dir().owe_sys().want("get current dir")?;
+    let start_root = current_dir()
+        .owe(UvsReason::system_error().into())
+        .doing("get current dir")?;
     vars_dict.set(gxl_const::CUR_DIR, start_root.display().to_string());
     Ok(())
 }
@@ -56,7 +62,7 @@ pub fn load_secfile(vars_dict: &mut VarDict) -> ExecResult<()> {
     let default = sec_value_default_path();
     let path = env_path.unwrap_or(default);
     if path.exists() {
-        let dict = ValueDict::from_conf(&path).owe_logic()?;
+        let dict = ValueDict::from_conf(&path).owe(UvsReason::logic_error().into())?;
         info!(target: "exec","  load {}", path.display());
         for (k, v) in dict.iter() {
             vars_dict.set(format!("SEC_{}", k.to_uppercase()), {
@@ -77,9 +83,9 @@ pub fn load_secfile(vars_dict: &mut VarDict) -> ExecResult<()> {
         default.insert("example_key1", ValueType::from("value"));
         let dot_path = galaxy_dot_path();
         if !dot_path.exists() {
-            std::fs::create_dir_all(dot_path).owe_res()?;
+            std::fs::create_dir_all(dot_path).owe(UvsReason::resource_error().into())?;
         }
-        default.save_conf(&path).owe_res()?;
+        default.save_conf(&path).owe(UvsReason::resource_error().into())?;
     }
     Ok(())
 }

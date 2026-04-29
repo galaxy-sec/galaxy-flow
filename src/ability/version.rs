@@ -1,4 +1,6 @@
-use orion_error::{ErrorOweBase, ToStructError, UvsFrom};
+use orion_error::UvsFrom;
+use orion_error::compat_traits::ErrorOweBase;
+use orion_error::traits_ext::ToStructError;
 
 use crate::ability::prelude::*;
 
@@ -119,16 +121,18 @@ impl AsyncRunnableTrait for GxlVersion {
         let file_path = exp.eval(&self.file)?;
         debug!(target: ctx.path(),"version file:{file_path}");
         let data = fs::read_to_string(file_path.as_str())
-            .owe_biz()
-            .with(format!("version file ({file_path}) "))?;
+            .owe(UvsReason::business_error().into())
+            .with_context(format!("version file ({file_path}) "))?;
         match take_version(&mut data.as_str()) {
             Ok((a, b, c, d)) => {
                 let mut ver = Version::new(a, b, c, d);
                 ver.auto(&self.verinc);
                 dict.global_mut()
                     .set(&self.export.to_uppercase(), format!("{}", &ver));
-                let mut file = File::create(file_path.as_str()).owe_res()?;
-                file.write_all(ver.to_string().as_bytes()).owe_res()?;
+                let mut file =
+                    File::create(file_path.as_str()).owe(UvsReason::resource_error().into())?;
+                file.write_all(ver.to_string().as_bytes())
+                    .owe(UvsReason::resource_error().into())?;
                 Ok(TaskValue::from((dict, ExecOut::Ignore)))
             }
             Err(_) => Err(ExecReason::from_conf()
@@ -165,6 +169,7 @@ mod tests {
     use fs::File;
 
     use crate::types::AnyResult;
+    use orion_error::testcase::TestAssert;
 
     use super::*;
     use std::io::Write;
@@ -203,7 +208,7 @@ mod tests {
         ];
 
         for (input, expected) in versions {
-            let parsed = parse_version(input)?;
+            let parsed = parse_version(input).assert();
             assert_eq!(parsed, expected);
         }
         Ok(())

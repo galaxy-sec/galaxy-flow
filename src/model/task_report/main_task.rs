@@ -57,7 +57,7 @@ pub fn get_task_parent_id() -> Option<String> {
 
 #[cfg(test)]
 mod tests {
-    use orion_error::TestAssert;
+    use orion_error::testcase::TestAssert;
 
     use super::*;
     use std::env;

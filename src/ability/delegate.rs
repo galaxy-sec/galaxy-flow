@@ -1,6 +1,6 @@
 use derive_more::From;
 use getset::{Getters, WithSetters};
-use orion_error::ToStructError;
+use orion_error::traits_ext::ToStructError;
 use orion_infra::auto_exit_log;
 
 use crate::ability::prelude::*;

@@ -59,7 +59,7 @@ mod tests {
     use crate::infra::once_init_log;
 
     use super::*;
-    use orion_error::TestAssert;
+    use orion_error::testcase::TestAssert;
 
     #[test]
     fn parse_gx_download() {

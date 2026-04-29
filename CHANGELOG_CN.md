@@ -5,7 +5,7 @@ Galaxy Flow项目所有重要变更将记录在此文件中。
 本格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/) 标准，
 本项目遵循 [语义化版本2.0.0](https://semver.org/lang/zh-CN/spec/v2.0.0.html) 规范。
 
-## [v0.13.12] - 2026-04-27
+## [v0.13.12] - 2026-04-29
 
 ### 变更
 - **依赖升级**: orion-error 升级至 0.7, orion_conf 至 0.6, orion-sec 至 0.5, orion-infra 至 0.6, orion-variate 至 0.12, orion-accessor 至 0.7。
@@ -16,6 +16,8 @@ Galaxy Flow项目所有重要变更将记录在此文件中。
   - `OperationContext::want()` → `doing()` 及 `.with()` → `.with_context()`（tpl、archive、load、version 等能力模块）。
   - 自定义错误枚举 `RunReason` 与 `GxlReason` 新增 `DomainReason` trait 实现。
   - 测试工具迁移：`TestAssertWithMsg` → `orion_error::testcase::TestAssertWithMsg`，单元测试中新增 `TestAssert` 使用。
+  - 全面清理已废弃的 `ErrorOwe` 用法，替换为 `ErrorOweBase` + `UvsReason`，消除 80+ 弃用警告。
+  - 用 `.owe(UvsReason::*.into())` 替代分类简写方法 `.owe_*()`，错误分类显式化。
 
 ## [v0.13.11] - 2026-04-21
 

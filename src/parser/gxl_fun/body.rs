@@ -32,7 +32,7 @@ pub fn gal_stc_fun(input: &mut &str) -> Result<GxlFun> {
 
 #[cfg(test)]
 mod tests {
-    use orion_error::TestAssert;
+    use orion_error::testcase::TestAssert;
 
     use crate::{
         parser::{gxl_fun::body::gal_stc_fun, inner::run_gxl},

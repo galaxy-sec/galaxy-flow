@@ -3,7 +3,8 @@ use orion_accessor::addr::GitRepository;
 use orion_accessor::types::ResourceDownloader;
 use orion_accessor::types::UpdateUnit;
 use orion_accessor::update::DownloadOptions;
-use orion_error::ErrorOwe;
+use orion_error::UvsReason;
+use orion_error::compat_traits::ErrorOweBase;
 use orion_variate::vars::EnvDict;
 
 use crate::ExecResult;
@@ -45,7 +46,7 @@ impl GitTools {
                 options,
             )
             .await
-            .owe_res()
+            .owe(UvsReason::resource_error().into())
     }
     pub fn vendor_path(&self, repo: &str, tag: &str) -> String {
         format!("{}/{repo}-{tag}/mods", self.vendor_root())

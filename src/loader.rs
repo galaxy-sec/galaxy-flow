@@ -21,13 +21,12 @@ use orion_accessor::addr::LocalPath;
 use orion_accessor::types::ResourceDownloader;
 use orion_accessor::update::DownloadOptions;
 use orion_accessor::update::UpdateScope;
-use orion_error::ContextRecord;
 use orion_error::ErrorConv;
-use orion_error::ErrorOwe;
-use orion_error::ErrorOweBase;
 use orion_error::ErrorWith;
-use orion_error::ToStructError;
-use orion_error::WithContext;
+use orion_error::UvsReason;
+use orion_error::compat_traits::ErrorOweBase;
+use orion_error::runtime::WithContext;
+use orion_error::traits_ext::{ContextRecord, ToStructError};
 use orion_variate::vars::EnvDict;
 use orion_variate::vars::ValueDict;
 
@@ -62,9 +61,11 @@ impl GxLoader {
         vars_space: &VarSpace,
     ) -> RunResult<GxlSpace> {
         info!(target:"parse", "parse file: {conf}" );
-        let mut wc = WithContext::want("parse gxl file");
+        let mut wc = WithContext::doing("parse gxl file");
         wc.record("conf", conf);
-        let code = read_to_string(conf).owe_conf().with(&wc)?;
+        let code = read_to_string(conf)
+            .owe(UvsReason::core_conf().into())
+            .with_context(&wc)?;
         let file_path = Path::new(conf);
         let file_exist_path = file_path.parent();
         self.parse_code(&code, update, vars_space, file_exist_path)
@@ -96,25 +97,25 @@ impl GxLoader {
                     file_exist_path,
                 )
                 .await
-                .with(("code", err_code_prompt(target_code_str)))
+                .with_context(("code", err_code_prompt(target_code_str)))
                 .err_conv()?;
 
             target_code_str = code.as_str();
             target_code = ignore_comment(&mut target_code_str)
                 .owe(RunReason::Gxl("comment parse".into()))
-                .with(err_code_prompt(target_code_str))?;
+                .with_context(err_code_prompt(target_code_str))?;
             if !have {
                 break;
             }
         }
         info!(target: "parse","code len: {}", target_code.len());
-        fs::write("./.run.gxl", target_code.as_str()).owe_res()?;
+        fs::write("./.run.gxl", target_code.as_str()).owe(UvsReason::resource_error().into())?;
         let mut code = target_code.as_str();
         let gxl_space = gal_stc_spc(&mut code)
             .map_err(WinnowErrorEx::from)
             .owe(RunReason::Gxl("gxl error!".into()))
             .position(err_code_prompt(code))
-            .want("parse ./.run.gxl file")?;
+            .doing("parse ./.run.gxl file")?;
         Ok(gxl_space)
     }
 
@@ -128,7 +129,7 @@ impl GxLoader {
 
         let up_options = DownloadOptions::new(UpdateScope::RemoteCache, ValueDict::default());
         // Create _gal only after source validation
-        std::fs::create_dir(&init_path).owe_res()?;
+        std::fs::create_dir(&init_path).owe(UvsReason::resource_error().into())?;
 
         let accessor = build_accessor(&EnvDict::default());
         let result = accessor
@@ -164,7 +165,7 @@ impl GxLoader {
         }
 
         // Create _gal only after source validation
-        std::fs::create_dir(&init_path).owe_res()?;
+        std::fs::create_dir(&init_path).owe(UvsReason::resource_error().into())?;
 
         let up_options = DownloadOptions::new(UpdateScope::None, ValueDict::default());
         let accessor = build_accessor(&EnvDict::default());
@@ -195,8 +196,10 @@ fn finalize_init_target(init_path: &Path, downloaded_path: &Path) -> RunResult<(
         return Ok(());
     }
 
-    let init_canonical = std::fs::canonicalize(init_path).owe_res()?;
-    let downloaded_canonical = std::fs::canonicalize(downloaded_path).owe_res()?;
+    let init_canonical =
+        std::fs::canonicalize(init_path).owe(UvsReason::resource_error().into())?;
+    let downloaded_canonical =
+        std::fs::canonicalize(downloaded_path).owe(UvsReason::resource_error().into())?;
     if !downloaded_canonical.starts_with(&init_canonical) {
         return Err(RunReason::Exec(
             "copy to _gal failed: downloaded path escaped init dir".into(),
@@ -213,15 +216,17 @@ fn finalize_init_target(init_path: &Path, downloaded_path: &Path) -> RunResult<(
         let name = downloaded_path
             .file_name()
             .ok_or_else(|| RunReason::Exec("copy to _gal failed: bad file name".into()).to_err())?;
-        std::fs::rename(downloaded_path, init_path.join(name)).owe_res()?;
+        std::fs::rename(downloaded_path, init_path.join(name))
+            .owe(UvsReason::resource_error().into())?;
         return Ok(());
     }
 
-    for entry in std::fs::read_dir(downloaded_path).owe_res()? {
-        let entry = entry.owe_res()?;
-        std::fs::rename(entry.path(), init_path.join(entry.file_name())).owe_res()?;
+    for entry in std::fs::read_dir(downloaded_path).owe(UvsReason::resource_error().into())? {
+        let entry = entry.owe(UvsReason::resource_error().into())?;
+        std::fs::rename(entry.path(), init_path.join(entry.file_name()))
+            .owe(UvsReason::resource_error().into())?;
     }
-    std::fs::remove_dir_all(downloaded_path).owe_res()?;
+    std::fs::remove_dir_all(downloaded_path).owe(UvsReason::resource_error().into())?;
     Ok(())
 }
 
@@ -240,6 +245,7 @@ mod tests {
         cmd::GxlCmd, execution::VarSpace, infra::once_init_log, types::AnyResult,
         util::path::WorkDirWithLock,
     };
+    use orion_error::testcase::TestAssert;
 
     use super::GxLoader;
     use std::path::PathBuf;
@@ -253,23 +259,26 @@ mod tests {
         let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
         let _workdir = WorkDirWithLock::change(&manifest_dir)?;
         let conf = manifest_dir.join("_gal/work.gxl");
-        let vars = VarSpace::sys_init()?;
+        let vars = VarSpace::sys_init().assert();
         let spc = loader
             .parse_file(conf.to_string_lossy().as_ref(), false, &vars)
-            .await?
-            .assemble()?;
+            .await
+            .assert()
+            .assemble()
+            .assert();
         info!("test begin");
-        spc.show()?;
+        spc.show().assert();
         println!("mods:{}", spc.len());
         assert!(spc.len() > 1);
         spc.exec(
             GxlCmd::default()
                 .with_env("default".into())
                 .with_flows("conf".into()),
-            VarSpace::sys_init()?,
+            VarSpace::sys_init().assert(),
             None,
         )
-        .await?;
+        .await
+        .assert();
         Ok(())
     }
 
@@ -292,7 +301,8 @@ mod tests {
         let _workdir = WorkDirWithLock::change(temp_workdir.path())?;
         loader
             .init_from_local(rust_tpl.to_string_lossy().as_ref())
-            .await?;
+            .await
+            .assert();
 
         assert!(temp_workdir.path().join("_gal/work.gxl").exists());
         assert!(temp_workdir.path().join("_gal/adm.gxl").exists());

@@ -5,7 +5,8 @@ use std::path::PathBuf;
 use crate::ability::{ai::AI_CONTENT, prelude::*};
 use crate::model::traits::Setter;
 use getset::{Getters, MutGetters, Setters};
-use orion_error::{ToStructError, UvsFrom};
+use orion_error::UvsFrom;
+use orion_error::traits_ext::ToStructError;
 use orion_sec::sec::{SecFrom, SecValueType};
 use orion_variate::EnvDict;
 
@@ -75,7 +76,7 @@ impl AiChatExecutor {
             //.with_tools(self.tools.clone())
             .build()
             .err_conv()
-            .want("create ai exec unit")?;
+            .doing("create ai exec unit")?;
 
         // 执行AI请求
         let response = exec_unit.execute(message).await.err_conv()?;
@@ -105,7 +106,7 @@ impl AsyncRunnableTrait for AiChatExecutor {
 mod tests {
 
     use orion_ai::GlobalFunctionRegistry;
-    use orion_error::TestAssert;
+    use orion_error::testcase::TestAssert;
 
     use crate::{ability::ai::AI_CONTENT, infra::once_init_log};
 

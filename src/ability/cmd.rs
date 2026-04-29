@@ -75,7 +75,7 @@ impl GxCmd {
 
 #[cfg(test)]
 mod tests {
-    use orion_error::TestAssertWithMsg;
+    use orion_error::testcase::TestAssertWithMsg;
     use std::path::PathBuf;
 
     use super::*;

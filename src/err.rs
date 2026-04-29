@@ -1,5 +1,5 @@
 use crate::{ExecReason, ExecResult, const_val::gxl_const, error::AssembleReason};
-use orion_error::{ErrorCode, StructError, UvsReason};
+use orion_error::{DomainReason, ErrorCode, StructError, UvsReason};
 
 use orion_sec::SecReason;
 use serde::Serialize;
@@ -18,6 +18,8 @@ pub enum RunReason {
     #[error("{0}")]
     Uvs(UvsReason),
 }
+
+impl DomainReason for RunReason {}
 impl From<UvsReason> for RunReason {
     fn from(value: UvsReason) -> Self {
         Self::Uvs(value)
@@ -53,6 +55,8 @@ pub enum GxlReason {
     Uvs(UvsReason),
 }
 
+impl DomainReason for GxlReason {}
+
 impl From<UvsReason> for GxlReason {
     fn from(value: UvsReason) -> Self {
         Self::Uvs(value)
@@ -64,7 +68,7 @@ pub type GxlResult<T> = std::result::Result<T, GxlError>;
 pub type NER = ExecResult<()>;
 
 pub fn report_gxl_error(e: RunError) {
-    eprintln!("Galaxy Flow Parse Error (Code: {})", e.error_code());
+    eprintln!("Galaxy Flow Parse Error");
     eprintln!("--------------------------");
     if let Some(target) = e.target() {
         eprintln!("[TARGET]:\n{target}\n",);
@@ -132,7 +136,7 @@ pub fn report_gxl_error(e: RunError) {
         eprintln!("\n[DETAIL]:\n{detail}",);
     }
     eprintln!("\n[CONTEXT]:\n");
-    for x in e.context().iter() {
+    for x in e.contexts().iter() {
         eprintln!("{x}")
     }
 }

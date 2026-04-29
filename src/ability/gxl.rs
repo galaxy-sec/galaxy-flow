@@ -51,8 +51,8 @@ impl AsyncRunnableWithSenderTrait for GxRun {
 
         let run_path = PathBuf::from(exp.eval(&self.run_path)?);
         let _g = WorkDir::change(run_path.clone())
-            .owe_res()
-            .with(&run_path)?;
+            .owe(UvsReason::resource_error().into())
+            .with_context(&run_path)?;
         do_gxl_run(cmd, &vars_dict, self.env_isolate, sender).await?;
         action.finish();
         Ok(TaskValue::from((vars_dict, ExecOut::Action(action))))

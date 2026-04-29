@@ -9,11 +9,11 @@ use crate::parser::abilities::addr::gal_git_path;
 use orion_accessor::addr::GitRepository;
 use orion_accessor::types::UpdateUnit;
 use orion_accessor::update::DownloadOptions;
-use orion_error::ContextRecord;
-use orion_error::ErrorOwe;
-use orion_error::ErrorOweBase;
 use orion_error::ErrorWith;
-use orion_error::WithContext;
+use orion_error::UvsReason;
+use orion_error::compat_traits::ErrorOweBase;
+use orion_error::runtime::WithContext;
+use orion_error::traits_ext::ContextRecord;
 use orion_variate::vars::EnvDict;
 use orion_variate::vars::EnvEvalable;
 use std::fs::read_to_string;
@@ -49,14 +49,14 @@ impl ExternGit {
 
 impl ExternLocal {
     pub fn fetch_code(&self, name: &str) -> ExecResult<String> {
-        let mut ctx = WithContext::want("load code");
+        let mut ctx = WithContext::doing("load code");
         let ee = EnvExpress::from_env();
         let gxl_full_path = format!("{}/{}.gxl", self.path.display(), name);
         let gxl_full_path = crate::evaluator::VarParser::eval(&ee, &gxl_full_path)?;
         ctx.record("gxl", gxl_full_path.as_str());
         let code = read_to_string(gxl_full_path.as_str())
             .owe(ExecReason::Gxl("read mod file fail!".to_string()))
-            .with(&ctx)?;
+            .with_context(&ctx)?;
         Ok(code)
     }
 }
@@ -171,7 +171,8 @@ impl ExternParser {
             }
             match status {
                 DslStatus::Code => {
-                    let (code, cur_status) = Self::parse_code(input).owe_data()?;
+                    let (code, cur_status) =
+                        Self::parse_code(input).owe(UvsReason::data_error().into())?;
                     out += code.as_str();
                     status = cur_status;
                     continue;
@@ -194,7 +195,7 @@ impl ExternParser {
 #[cfg(test)]
 mod tests {
 
-    use orion_error::TestAssert;
+    use orion_error::testcase::TestAssert;
 
     use crate::GxLoader;
 

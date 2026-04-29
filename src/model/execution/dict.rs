@@ -1,5 +1,6 @@
 use derive_more::From;
-use orion_error::{ErrorConv, ToStructError};
+use orion_error::traits_ext::ToStructError;
+use orion_sec::SecReason;
 use orion_sec::load_secfile;
 use orion_sec::sec::{SecFrom, SecString, SecValueType, ValueGetter};
 use orion_variate::vars::EnvDict;
@@ -29,7 +30,21 @@ impl From<&VarSpace> for EnvDict {
 impl VarSpace {
     pub fn sys_init() -> ExecResult<VarSpace> {
         let mut var_space = VarSpace::default();
-        let sec_dict = load_secfile().err_conv()?;
+        let sec_dict = load_secfile().map_err(|e| {
+            let detail = e.to_string();
+            match e.reason() {
+                orion_sec::OrionSecReason::Sec(sec_reason) => {
+                    { ExecReason::Sec(clone_sec_reason(sec_reason)) }
+                        .to_err()
+                        .with_detail(detail)
+                }
+                orion_sec::OrionSecReason::Uvs(uvs_reason) => {
+                    ExecReason::from(map_legacy_uvs_reason(uvs_reason))
+                        .to_err()
+                        .with_detail(detail)
+                }
+            }
+        })?;
         //let sec_dict = load_secfile()?;
         var_space.inherited = VarDict::from(sec_dict);
         //load_secfile(&mut var_space.inherited)?;
@@ -110,6 +125,37 @@ impl VarSpace {
             }
         }
         Ok(cur_vars)
+    }
+}
+
+fn clone_sec_reason(value: &SecReason) -> SecReason {
+    match value {
+        SecReason::SensitiveMsg(v) => SecReason::SensitiveMsg(v.clone()),
+        SecReason::NoPermission(v) => SecReason::NoPermission(v.clone()),
+        SecReason::Deception(v) => SecReason::Deception(v.clone()),
+        SecReason::UnAuthenticated(v) => SecReason::UnAuthenticated(v.clone()),
+    }
+}
+
+fn map_legacy_uvs_reason(value: &impl std::fmt::Debug) -> orion_error::UvsReason {
+    let debug = format!("{value:?}");
+    match debug.as_str() {
+        "ValidationError" => orion_error::UvsReason::ValidationError,
+        "BusinessError" => orion_error::UvsReason::BusinessError,
+        "RunRuleError" => orion_error::UvsReason::RunRuleError,
+        "NotFoundError" => orion_error::UvsReason::NotFoundError,
+        "PermissionError" => orion_error::UvsReason::PermissionError,
+        "DataError" => orion_error::UvsReason::DataError,
+        "SystemError" => orion_error::UvsReason::SystemError,
+        "NetworkError" => orion_error::UvsReason::NetworkError,
+        "ResourceError" => orion_error::UvsReason::ResourceError,
+        "TimeoutError" => orion_error::UvsReason::TimeoutError,
+        "ExternalError" => orion_error::UvsReason::ExternalError,
+        "LogicError" => orion_error::UvsReason::LogicError,
+        "ConfigError(Core)" => orion_error::UvsReason::core_conf(),
+        "ConfigError(Feature)" => orion_error::UvsReason::feature_conf(),
+        "ConfigError(Dynamic)" => orion_error::UvsReason::dynamic_conf(),
+        _ => orion_error::UvsReason::SystemError,
     }
 }
 #[derive(Debug, Clone, Default, PartialEq, From)]

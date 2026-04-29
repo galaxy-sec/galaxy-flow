@@ -3,7 +3,8 @@ use std::path::Path;
 
 use clap::Parser;
 use orion_accessor::addr::GitRepository;
-use orion_error::{ErrorConv, ToStructError, UvsFrom};
+use orion_error::traits_ext::ToStructError;
+use orion_error::{ErrorConv, UvsFrom};
 
 use crate::GxLoader;
 use crate::cmd::gx_cmd::{AdmCmd, DocArgs, GxCmd, InitCmd, ModCmd, RunCmd, SelfCmd};

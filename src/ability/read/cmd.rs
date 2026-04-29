@@ -3,7 +3,8 @@ use crate::components::GxlProps;
 use crate::expect::{LogicScope, ShellOption};
 
 use crate::friendly::New2;
-use orion_error::{ToStructError, UvsFrom};
+use orion_error::UvsFrom;
+use orion_error::traits_ext::ToStructError;
 
 #[derive(Clone, Debug, PartialEq, Default, Builder)]
 pub struct CmdDTO {

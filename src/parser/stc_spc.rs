@@ -75,7 +75,7 @@ pub fn gal_stc_spc(input: &mut &str) -> Result<GxlSpace> {
 #[cfg(test)]
 mod tests {
 
-    use orion_error::TestAssert;
+    use orion_error::testcase::TestAssert;
 
     use crate::parser::inner::run_gxl;
 
