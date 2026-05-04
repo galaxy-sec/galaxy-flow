@@ -295,13 +295,11 @@ impl GxlFlow {
                 match flag {
                     ReadSignal::Start(end) => {
                         let start = {
-                            let guard = start_pos_clone
-                                .lock()
-                                .map_err(|e| {
-                                    ExecReason::system_error()
-                                        .to_err()
-                                        .with_detail(format!("lock task log start position: {e}"))
-                                })?;
+                            let guard = start_pos_clone.lock().map_err(|e| {
+                                ExecReason::system_error()
+                                    .to_err()
+                                    .with_detail(format!("lock task log start position: {e}"))
+                            })?;
                             *guard
                         };
                         let buf = read_log_content(&log_file, start, end).await?;
@@ -324,13 +322,11 @@ impl GxlFlow {
                         send_http_request(task_result.clone(), &url).await;
                     }
                     ReadSignal::End(cur_start) => {
-                        let mut guard = start_pos_clone
-                            .lock()
-                            .map_err(|e| {
-                                ExecReason::system_error()
-                                    .to_err()
-                                    .with_detail(format!("lock task log start position: {e}"))
-                            })?;
+                        let mut guard = start_pos_clone.lock().map_err(|e| {
+                            ExecReason::system_error()
+                                .to_err()
+                                .with_detail(format!("lock task log start position: {e}"))
+                        })?;
                         *guard = cur_start;
                     }
                 }
@@ -403,13 +399,11 @@ impl GxlFlow {
 
         let log_path = init_redirect_file()?;
         let end_pos = seek_log_file_end(&log_path)?;
-        let start = *start_pos
-            .lock()
-            .map_err(|e| {
-                ExecReason::system_error()
-                    .to_err()
-                    .with_detail(format!("lock task log start position: {e}"))
-            })?;
+        let start = *start_pos.lock().map_err(|e| {
+            ExecReason::system_error()
+                .to_err()
+                .with_detail(format!("lock task log start position: {e}"))
+        })?;
         let content = read_log_content(&log_path, start, end_pos).await?;
         task.stdout.push_str(&content);
 

@@ -1,8 +1,8 @@
 use home::home_dir;
 use orion_accessor::addr::access_ctrl::{Rule, Unit, serv::NetAccessCtrl};
 use orion_conf::YamlIO;
+use orion_error::conversion::{SourceErr, ToStructError};
 use orion_error::reason::UnifiedReason as UvsReason;
-use orion_error::conversion::{ToStructError, SourceErr};
 
 use crate::{
     conf::{conf_init, conf_path},
@@ -33,7 +33,8 @@ impl Galaxy {
 
         // 创建目录
         if !galaxy_dir.exists() {
-            std::fs::create_dir_all(&galaxy_dir).source_err(UvsReason::resource_error().into(), "source error")?;
+            std::fs::create_dir_all(&galaxy_dir)
+                .source_err(UvsReason::resource_error().into(), "source error")?;
         }
 
         if conf_path().is_none() {
@@ -79,16 +80,19 @@ impl Galaxy {
             return Ok(());
         }
 
-        std::fs::create_dir_all(gal_dir).source_err(UvsReason::resource_error().into(), "source error")?;
+        std::fs::create_dir_all(gal_dir)
+            .source_err(UvsReason::resource_error().into(), "source error")?;
 
         // Create basic work.gxl from template
         let work_gxl = gal_dir.join("work.gxl");
-        std::fs::write(&work_gxl, WORK_TEMPLATE).source_err(UvsReason::resource_error().into(), "source error")?;
+        std::fs::write(&work_gxl, WORK_TEMPLATE)
+            .source_err(UvsReason::resource_error().into(), "source error")?;
         eprintln!("created: {}", work_gxl.display());
 
         // Create basic adm.gxl from template
         let adm_gxl = gal_dir.join("adm.gxl");
-        std::fs::write(&adm_gxl, ADM_TEMPLATE).source_err(UvsReason::resource_error().into(), "source error")?;
+        std::fs::write(&adm_gxl, ADM_TEMPLATE)
+            .source_err(UvsReason::resource_error().into(), "source error")?;
         eprintln!("created: {}", adm_gxl.display());
 
         eprintln!("project initialized in ./_gal/");

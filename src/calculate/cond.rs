@@ -1,12 +1,12 @@
 use async_trait::async_trait;
 
 use super::express::ExpressEnum;
+use crate::ExecReason;
 use crate::ability::prelude::{TaskResult, TaskValue, VarSpace};
 use crate::calculate::traits::Evaluation;
 use crate::components::gxl_cond::TGxlCond;
 use crate::context::ExecContext;
 use crate::execution::runnable::ExecOut;
-use crate::ExecReason;
 use orion_error::conversion::ToStructError;
 use std::sync::Arc;
 #[async_trait]
@@ -29,10 +29,11 @@ where
     T: CondExec + std::marker::Sync,
 {
     async fn cond_exec(&self, ctx: ExecContext, def: VarSpace) -> TaskResult {
-        let x = self
-            .express
-            .decide(ctx.clone(), &def)
-            .map_err(|err| ExecReason::logic_error().to_err().with_detail(err.to_string()))?;
+        let x = self.express.decide(ctx.clone(), &def).map_err(|err| {
+            ExecReason::logic_error()
+                .to_err()
+                .with_detail(err.to_string())
+        })?;
         if x {
             self.true_block.cond_exec(ctx, def).await
         } else {

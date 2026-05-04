@@ -26,8 +26,8 @@ impl CmdDTO {
             &exp,
             vars_dict.global()
         )?;
-        let data_str =
-            String::from_utf8(data).source_raw_err(ExecReason::from_data(), "bad command result")?;
+        let data_str = String::from_utf8(data)
+            .source_raw_err(ExecReason::from_data(), "bad command result")?;
         let mut vars = GxlProps::new("cmd");
         vars.append(GxlVar::new(name, data_str.trim().to_string()));
         vars.export_props(ctx, vars_dict.global_mut(), "")?;

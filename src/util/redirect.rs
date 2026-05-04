@@ -292,8 +292,10 @@ pub fn init_redirect_file() -> Result<PathBuf, ExecError> {
         .source_raw_err(ExecReason::Io, "获取系统时间失败")?
         .as_secs() as i64;
     let log_file = std::env::temp_dir().join(format!("galaxy_templog_{sys_time}.log"));
-    File::create(&log_file)
-        .source_err(ExecReason::Io, format!("创建临时日志文件: {}", log_file.display()))?;
+    File::create(&log_file).source_err(
+        ExecReason::Io,
+        format!("创建临时日志文件: {}", log_file.display()),
+    )?;
     Ok(LOG_PATH.get_or_init(|| log_file).clone())
 }
 
@@ -306,10 +308,14 @@ pub fn stop_redirect(redirect: Option<StdoutRedirect>) -> Result<(), ExecError> 
 
 /// 封装日志文件操作：定位到文件末尾并返回位置
 pub fn seek_log_file_end(log_file: &Path) -> Result<u64, ExecError> {
-    let mut file = File::open(log_file)
-        .source_err(ExecReason::Io, format!("open log file: {}", log_file.display()))?;
-    file.seek(SeekFrom::End(0))
-        .source_err(ExecReason::Io, format!("seek log file: {}", log_file.display()))
+    let mut file = File::open(log_file).source_err(
+        ExecReason::Io,
+        format!("open log file: {}", log_file.display()),
+    )?;
+    file.seek(SeekFrom::End(0)).source_err(
+        ExecReason::Io,
+        format!("seek log file: {}", log_file.display()),
+    )
 }
 
 /// 封装日志内容读取
@@ -318,14 +324,20 @@ pub async fn read_log_content(
     start_pos: u64,
     end_pos: u64,
 ) -> Result<String, ExecError> {
-    let mut file = File::open(log_file)
-        .source_err(ExecReason::Io, format!("open log file: {}", log_file.display()))?;
-    file.seek(SeekFrom::Start(start_pos))
-        .source_err(ExecReason::Io, format!("seek log file: {}", log_file.display()))?;
+    let mut file = File::open(log_file).source_err(
+        ExecReason::Io,
+        format!("open log file: {}", log_file.display()),
+    )?;
+    file.seek(SeekFrom::Start(start_pos)).source_err(
+        ExecReason::Io,
+        format!("seek log file: {}", log_file.display()),
+    )?;
 
     let mut buffer = vec![0; (end_pos - start_pos) as usize];
-    file.read_exact(&mut buffer)
-        .source_err(ExecReason::Io, format!("read log file: {}", log_file.display()))?;
+    file.read_exact(&mut buffer).source_err(
+        ExecReason::Io,
+        format!("read log file: {}", log_file.display()),
+    )?;
 
     Ok(String::from_utf8_lossy(&buffer).into_owned())
 }

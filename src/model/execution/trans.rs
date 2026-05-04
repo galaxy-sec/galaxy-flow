@@ -71,7 +71,7 @@ mod tests {
         util::redirect::ReadSignal,
     };
     use async_trait::async_trait;
-        use std::sync::{Arc, Mutex, mpsc::Sender};
+    use std::sync::{Arc, Mutex, mpsc::Sender};
 
     // Mock runnable task for testing
     #[derive(Clone)]

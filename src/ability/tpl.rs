@@ -201,8 +201,10 @@ impl GxTpl {
             .source_err(UvsReason::data_error().into(), "source error")
             .with_context(&err_ctx)?;
 
-        let mut dst_file = File::create(dst)
-            .source_err(ExecReason::Io, format!("create output file: {}", dst.display()))?;
+        let mut dst_file = File::create(dst).source_err(
+            ExecReason::Io,
+            format!("create output file: {}", dst.display()),
+        )?;
 
         handlebars
             .render_template_to_write(&template, data, &mut dst_file)
