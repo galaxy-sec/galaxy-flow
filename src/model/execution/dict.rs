@@ -1,5 +1,6 @@
 use derive_more::From;
-use orion_error::traits_ext::ToStructError;
+use orion_error::conversion::ToStructError;
+use orion_error::reason::UnifiedReason as UvsReason;
 use orion_sec::SecReason;
 use orion_sec::load_secfile;
 use orion_sec::sec::{SecFrom, SecString, SecValueType, ValueGetter};
@@ -38,7 +39,7 @@ impl VarSpace {
                         .to_err()
                         .with_detail(detail)
                 }
-                orion_sec::OrionSecReason::Uvs(uvs_reason) => {
+                orion_sec::OrionSecReason::General(uvs_reason) => {
                     ExecReason::from(map_legacy_uvs_reason(uvs_reason))
                         .to_err()
                         .with_detail(detail)
@@ -137,25 +138,25 @@ fn clone_sec_reason(value: &SecReason) -> SecReason {
     }
 }
 
-fn map_legacy_uvs_reason(value: &impl std::fmt::Debug) -> orion_error::UvsReason {
+fn map_legacy_uvs_reason(value: &impl std::fmt::Debug) -> UvsReason {
     let debug = format!("{value:?}");
     match debug.as_str() {
-        "ValidationError" => orion_error::UvsReason::ValidationError,
-        "BusinessError" => orion_error::UvsReason::BusinessError,
-        "RunRuleError" => orion_error::UvsReason::RunRuleError,
-        "NotFoundError" => orion_error::UvsReason::NotFoundError,
-        "PermissionError" => orion_error::UvsReason::PermissionError,
-        "DataError" => orion_error::UvsReason::DataError,
-        "SystemError" => orion_error::UvsReason::SystemError,
-        "NetworkError" => orion_error::UvsReason::NetworkError,
-        "ResourceError" => orion_error::UvsReason::ResourceError,
-        "TimeoutError" => orion_error::UvsReason::TimeoutError,
-        "ExternalError" => orion_error::UvsReason::ExternalError,
-        "LogicError" => orion_error::UvsReason::LogicError,
-        "ConfigError(Core)" => orion_error::UvsReason::core_conf(),
-        "ConfigError(Feature)" => orion_error::UvsReason::feature_conf(),
-        "ConfigError(Dynamic)" => orion_error::UvsReason::dynamic_conf(),
-        _ => orion_error::UvsReason::SystemError,
+        "ValidationError" => UvsReason::ValidationError,
+        "BusinessError" => UvsReason::BusinessError,
+        "RunRuleError" => UvsReason::RunRuleError,
+        "NotFoundError" => UvsReason::NotFoundError,
+        "PermissionError" => UvsReason::PermissionError,
+        "DataError" => UvsReason::DataError,
+        "SystemError" => UvsReason::SystemError,
+        "NetworkError" => UvsReason::NetworkError,
+        "ResourceError" => UvsReason::ResourceError,
+        "TimeoutError" => UvsReason::TimeoutError,
+        "ExternalError" => UvsReason::ExternalError,
+        "LogicError" => UvsReason::LogicError,
+        "ConfigError(Core)" => UvsReason::core_conf(),
+        "ConfigError(Feature)" => UvsReason::feature_conf(),
+        "ConfigError(Dynamic)" => UvsReason::dynamic_conf(),
+        _ => UvsReason::SystemError,
     }
 }
 #[derive(Debug, Clone, Default, PartialEq, From)]

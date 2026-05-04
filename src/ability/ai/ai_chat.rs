@@ -1,12 +1,11 @@
 use orion_ai::{AiConfig, AiExecUnitBuilder};
-use orion_error::ErrorConv;
+use orion_error::conversion::ConvErr;
 use std::path::PathBuf;
 
 use crate::ability::{ai::AI_CONTENT, prelude::*};
 use crate::model::traits::Setter;
 use getset::{Getters, MutGetters, Setters};
-use orion_error::UvsFrom;
-use orion_error::traits_ext::ToStructError;
+use orion_error::conversion::ToStructError;
 use orion_sec::sec::{SecFrom, SecValueType};
 use orion_variate::EnvDict;
 
@@ -106,7 +105,7 @@ impl AsyncRunnableTrait for AiChatExecutor {
 mod tests {
 
     use orion_ai::GlobalFunctionRegistry;
-    use orion_error::testcase::TestAssert;
+    use orion_error::dev::testing::TestAssert;
 
     use crate::{ability::ai::AI_CONTENT, infra::once_init_log};
 

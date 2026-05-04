@@ -8,8 +8,7 @@ use orion_accessor::{
     types::{ResourceDownloader, ResourceUploader},
     update::{DownloadOptions, HttpMethod, UploadOptions},
 };
-use orion_error::compat_traits::ErrorOweBase;
-use orion_error::traits_ext::ToStructError;
+use orion_error::conversion::{ToStructError, SourceErr, SourceRawErr};
 
 use crate::{ability::prelude::*, util::accessor::build_accessor};
 
@@ -51,7 +50,7 @@ impl AsyncRunnableTrait for GxUpLoad {
         let local_file_path = PathBuf::from(&local_file);
         let method = ex.eval(self.method())?;
         let http_method = HttpMethod::from_str(method.as_str())
-            .owe(ExecReason::Args(format!("bad method:{method}")))?;
+            .source_raw_err(ExecReason::Args(format!("bad method:{method}")), "parse http method")?;
 
         if local_file_path.exists() {
             let accessor = build_accessor(&vars_dict.global().clone().into());
@@ -62,7 +61,7 @@ impl AsyncRunnableTrait for GxUpLoad {
                     &(UploadOptions::with_method(http_method)),
                 )
                 .await
-                .owe(UvsReason::resource_error().into())?;
+                .source_err(UvsReason::resource_error().into(), "source error")?;
             action.finish();
             Ok(TaskValue::from((vars_dict, ExecOut::Action(action))))
         } else {
@@ -110,7 +109,7 @@ impl AsyncRunnableTrait for GxDownLoad {
                         &DownloadOptions::default(),
                     )
                     .await
-                    .owe(UvsReason::resource_error().into())
+                    .source_err(UvsReason::resource_error().into(), "source error")
                     .with_context(&final_download_path)?;
                 action.finish();
                 Ok(TaskValue::from((vars_dict, ExecOut::Action(action))))
@@ -170,7 +169,7 @@ impl ComponentMeta for GxDownLoad {
 #[cfg(test)]
 mod tests {
     #[cfg(feature = "network_test")]
-    use orion_error::testcase::TestAssertWithMsg;
+    use orion_error::dev::testing::TestAssertWithMsg;
     #[cfg(feature = "network_test")]
     use orion_infra::path::ensure_path;
 

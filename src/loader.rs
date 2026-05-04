@@ -21,12 +21,11 @@ use orion_accessor::addr::LocalPath;
 use orion_accessor::types::ResourceDownloader;
 use orion_accessor::update::DownloadOptions;
 use orion_accessor::update::UpdateScope;
-use orion_error::ErrorConv;
-use orion_error::ErrorWith;
-use orion_error::UvsReason;
-use orion_error::compat_traits::ErrorOweBase;
+use orion_error::conversion::{ConvErr, SourceErr};
+use orion_error::conversion::ErrorWith;
+use orion_error::reason::UnifiedReason as UvsReason;
 use orion_error::runtime::WithContext;
-use orion_error::traits_ext::{ContextRecord, ToStructError};
+use orion_error::conversion::ToStructError;
 use orion_variate::vars::EnvDict;
 use orion_variate::vars::ValueDict;
 
@@ -64,7 +63,7 @@ impl GxLoader {
         let mut wc = WithContext::doing("parse gxl file");
         wc.record("conf", conf);
         let code = read_to_string(conf)
-            .owe(UvsReason::core_conf().into())
+            .source_err(UvsReason::core_conf().into(), "source error")
             .with_context(&wc)?;
         let file_path = Path::new(conf);
         let file_exist_path = file_path.parent();
@@ -98,24 +97,32 @@ impl GxLoader {
                 )
                 .await
                 .with_context(("code", err_code_prompt(target_code_str)))
-                .err_conv()?;
+                .conv_err()?;
 
             target_code_str = code.as_str();
-            target_code = ignore_comment(&mut target_code_str)
-                .owe(RunReason::Gxl("comment parse".into()))
-                .with_context(err_code_prompt(target_code_str))?;
+            target_code = ignore_comment(&mut target_code_str).map_err(|err| {
+                RunReason::Gxl("comment parse".into())
+                    .to_err()
+                    .with_detail(err.to_string())
+                    .with_context(err_code_prompt(target_code_str))
+            })?;
             if !have {
                 break;
             }
         }
         info!(target: "parse","code len: {}", target_code.len());
-        fs::write("./.run.gxl", target_code.as_str()).owe(UvsReason::resource_error().into())?;
+        fs::write("./.run.gxl", target_code.as_str())
+            .source_err(UvsReason::resource_error().into(), "source error")?;
         let mut code = target_code.as_str();
         let gxl_space = gal_stc_spc(&mut code)
             .map_err(WinnowErrorEx::from)
-            .owe(RunReason::Gxl("gxl error!".into()))
-            .position(err_code_prompt(code))
-            .doing("parse ./.run.gxl file")?;
+            .map_err(|err| {
+                RunReason::Gxl("gxl error!".into())
+                    .to_err()
+                    .with_detail(err.to_string())
+                    .position(err_code_prompt(code))
+                    .doing("parse ./.run.gxl file")
+            })?;
         Ok(gxl_space)
     }
 
@@ -129,7 +136,7 @@ impl GxLoader {
 
         let up_options = DownloadOptions::new(UpdateScope::RemoteCache, ValueDict::default());
         // Create _gal only after source validation
-        std::fs::create_dir(&init_path).owe(UvsReason::resource_error().into())?;
+        std::fs::create_dir(&init_path).source_err(UvsReason::resource_error().into(), "source error")?;
 
         let accessor = build_accessor(&EnvDict::default());
         let result = accessor
@@ -165,7 +172,7 @@ impl GxLoader {
         }
 
         // Create _gal only after source validation
-        std::fs::create_dir(&init_path).owe(UvsReason::resource_error().into())?;
+        std::fs::create_dir(&init_path).source_err(UvsReason::resource_error().into(), "source error")?;
 
         let up_options = DownloadOptions::new(UpdateScope::None, ValueDict::default());
         let accessor = build_accessor(&EnvDict::default());
@@ -197,9 +204,9 @@ fn finalize_init_target(init_path: &Path, downloaded_path: &Path) -> RunResult<(
     }
 
     let init_canonical =
-        std::fs::canonicalize(init_path).owe(UvsReason::resource_error().into())?;
+        std::fs::canonicalize(init_path).source_err(UvsReason::resource_error().into(), "source error")?;
     let downloaded_canonical =
-        std::fs::canonicalize(downloaded_path).owe(UvsReason::resource_error().into())?;
+        std::fs::canonicalize(downloaded_path).source_err(UvsReason::resource_error().into(), "source error")?;
     if !downloaded_canonical.starts_with(&init_canonical) {
         return Err(RunReason::Exec(
             "copy to _gal failed: downloaded path escaped init dir".into(),
@@ -217,16 +224,18 @@ fn finalize_init_target(init_path: &Path, downloaded_path: &Path) -> RunResult<(
             .file_name()
             .ok_or_else(|| RunReason::Exec("copy to _gal failed: bad file name".into()).to_err())?;
         std::fs::rename(downloaded_path, init_path.join(name))
-            .owe(UvsReason::resource_error().into())?;
+            .source_err(UvsReason::resource_error().into(), "source error")?;
         return Ok(());
     }
 
-    for entry in std::fs::read_dir(downloaded_path).owe(UvsReason::resource_error().into())? {
-        let entry = entry.owe(UvsReason::resource_error().into())?;
+    for entry in
+        std::fs::read_dir(downloaded_path).source_err(UvsReason::resource_error().into(), "source error")?
+    {
+        let entry = entry.source_err(UvsReason::resource_error().into(), "source error")?;
         std::fs::rename(entry.path(), init_path.join(entry.file_name()))
-            .owe(UvsReason::resource_error().into())?;
+            .source_err(UvsReason::resource_error().into(), "source error")?;
     }
-    std::fs::remove_dir_all(downloaded_path).owe(UvsReason::resource_error().into())?;
+    std::fs::remove_dir_all(downloaded_path).source_err(UvsReason::resource_error().into(), "source error")?;
     Ok(())
 }
 
@@ -245,7 +254,7 @@ mod tests {
         cmd::GxlCmd, execution::VarSpace, infra::once_init_log, types::AnyResult,
         util::path::WorkDirWithLock,
     };
-    use orion_error::testcase::TestAssert;
+    use orion_error::dev::testing::TestAssert;
 
     use super::GxLoader;
     use std::path::PathBuf;

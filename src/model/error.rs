@@ -1,6 +1,7 @@
 use derive_more::From;
 use orion_conf::error::SerdeReason;
-use orion_error::{DomainReason, ErrorCode, StructError, UvsReason};
+use orion_error::reason::{DomainReason, ErrorCode, UnifiedReason as UvsReason};
+use orion_error::{OrionError, StructError};
 use orion_sec::{OrionSecReason, SecReason};
 use serde::Serialize;
 use thiserror::Error;
@@ -21,46 +22,40 @@ impl ErrorCode for AssembleReason {
     }
 }
 
+impl AssembleReason {
+    pub fn from_logic() -> Self {
+        Self::Uvs(UvsReason::logic_error())
+    }
+}
+
 pub type AssembleError = StructError<AssembleReason>;
 pub type AResult<T> = Result<T, AssembleError>;
 
-#[derive(Debug, PartialEq, Serialize, Error)]
+#[derive(Debug, PartialEq, Serialize, OrionError)]
 pub enum ExecReason {
-    #[error("cmd err : {1},{2}")]
+    #[orion_error(identity = "sys.cmd_error")]
     OsCmd(String, i32, String),
-    #[error("io err : {0}")]
+    #[orion_error(identity = "sys.io_error")]
     Io(String),
-    #[error("gxl : {0}")]
+    #[orion_error(identity = "biz.gxl_error")]
     Gxl(String),
-    #[error("serv: {0}")]
+    #[orion_error(identity = "sys.serv_error")]
     Serv(String),
-    #[error("assert fail! : {0}")]
+    #[orion_error(identity = "logic.assert_fail")]
     Assert(String),
-    #[error("args err : {0}")]
+    #[orion_error(identity = "biz.args_error")]
     Args(String),
-    #[error("miss : {0}")]
+    #[orion_error(identity = "biz.miss")]
     Miss(String),
-    #[error("serde err : {0}")]
+    #[orion_error(identity = "sys.serde_error")]
     Serde(String),
-    #[error("{0}")]
+    #[orion_error(transparent)]
     Uvs(UvsReason),
-    #[error("{0}")]
+    #[orion_error(transparent)]
     Sec(SecReason),
 
-    #[error("{0}")]
+    #[orion_error(identity = "sys.network_error")]
     NetWork(String),
-}
-
-impl DomainReason for ExecReason {}
-impl From<UvsReason> for ExecReason {
-    fn from(value: UvsReason) -> Self {
-        Self::Uvs(value)
-    }
-}
-impl ErrorCode for ExecReason {
-    fn error_code(&self) -> i32 {
-        510
-    }
 }
 
 impl From<reqwest::Error> for ExecReason {
@@ -72,6 +67,30 @@ impl From<reqwest::Error> for ExecReason {
 pub type ExecError = StructError<ExecReason>;
 pub type ExecResult<T> = Result<T, ExecError>;
 
+impl From<UvsReason> for ExecReason {
+    fn from(value: UvsReason) -> Self {
+        Self::Uvs(value)
+    }
+}
+
+impl ExecReason {
+    pub fn from_conf() -> Self {
+        Self::core_conf()
+    }
+
+    pub fn from_res() -> Self {
+        Self::resource_error()
+    }
+
+    pub fn from_logic() -> Self {
+        Self::logic_error()
+    }
+
+    pub fn from_data() -> Self {
+        Self::data_error()
+    }
+}
+
 impl From<SerdeReason> for ExecReason {
     fn from(value: SerdeReason) -> Self {
         ExecReason::Serde(format!("Serde error: {value}"))
@@ -82,7 +101,7 @@ impl From<OrionSecReason> for ExecReason {
     fn from(value: OrionSecReason) -> Self {
         match value {
             OrionSecReason::Sec(sec_reason) => Self::Sec(sec_reason),
-            OrionSecReason::Uvs(uvs_reason) => Self::Uvs(map_legacy_uvs_reason(&uvs_reason)),
+            OrionSecReason::General(uvs_reason) => Self::Uvs(map_legacy_uvs_reason(&uvs_reason)),
         }
     }
 }

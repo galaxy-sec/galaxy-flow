@@ -84,7 +84,7 @@ impl StdinDTO {
         let stdin = io::stdin(); // We get `Stdin` here.
         stdin
             .read_line(&mut buffer)
-            .owe(UvsReason::data_error().into())?;
+            .source_err(UvsReason::data_error().into(), "source error")?;
         let mut vars = GxlProps::new("stdio");
         vars.append(GxlVar::new(name, buffer.trim().to_string()));
         vars.export_props(ctx, vars_dict.global_mut(), "")?;

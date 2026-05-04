@@ -1,7 +1,7 @@
 use std::fs;
 use std::path::PathBuf;
 
-use orion_error::traits_ext::ToStructError;
+use orion_error::conversion::{ToStructError, SourceErr};
 
 use crate::ability::prelude::*;
 
@@ -421,7 +421,7 @@ impl AsyncRunnableTrait for GxPatchFile {
         }
 
         let src = fs::read_to_string(&file_path)
-            .owe(UvsReason::resource_error().into())
+            .source_err(UvsReason::resource_error().into(), "source error")
             .with_context(&file_path)?;
 
         let applied = apply_patch_text(
@@ -437,11 +437,11 @@ impl AsyncRunnableTrait for GxPatchFile {
             if *self.backup() {
                 let backup_path = PathBuf::from(format!("{}.bak", file_path.display()));
                 fs::write(&backup_path, src.as_str())
-                    .owe(UvsReason::resource_error().into())
+                    .source_err(UvsReason::resource_error().into(), "source error")
                     .with_context(&backup_path)?;
             }
             fs::write(&file_path, applied.output.as_str())
-                .owe(UvsReason::resource_error().into())
+                .source_err(UvsReason::resource_error().into(), "source error")
                 .with_context(&file_path)?;
         }
 
@@ -542,7 +542,10 @@ mod tests {
         let src = "version = 1.0\n";
         let err = apply_patch_text(PatchAction::Set, src, "version", Some("v2.0"), true, "#")
             .expect_err("strict mode should reject missing marker");
-        assert!(err.to_string().contains("strict mode"));
+        assert!(matches!(
+            err.reason(),
+            ExecReason::Args(msg) if msg.contains("strict mode")
+        ));
     }
 
     #[test]
@@ -622,7 +625,11 @@ mod tests {
         let src = "http://old   # @gxl:set(url)\n";
         let err = apply_patch_text(PatchAction::Set, src, "url", Some("http://new"), true, "#")
             .expect_err("set should reject non-assignment colon");
-        assert!(err.to_string().contains("line has no assignment delimiter"));
+        assert!(err
+            .detail()
+            .as_deref()
+            .unwrap_or_default()
+            .contains("line has no assignment delimiter"));
     }
 
     #[test]
@@ -637,7 +644,10 @@ mod tests {
             "#",
         )
         .expect_err("strict mode should reject unmatched block end marker");
-        assert!(err.to_string().contains("unmatched block end marker"));
+        assert!(matches!(
+            err.reason(),
+            ExecReason::Args(msg) if msg.contains("unmatched block end marker")
+        ));
     }
 
     #[test]
@@ -652,7 +662,10 @@ mod tests {
             "#",
         )
         .expect_err("strict mode should reject nested block marker");
-        assert!(err.to_string().contains("invalid block marker nesting"));
+        assert!(matches!(
+            err.reason(),
+            ExecReason::Args(msg) if msg.contains("invalid block marker nesting")
+        ));
     }
 
     #[test]
@@ -660,6 +673,9 @@ mod tests {
         let src = "feature = true   # @gxl:line(flag)\n";
         let err = apply_patch_text(PatchAction::CommentLine, src, "flag", None, true, "")
             .expect_err("line actions should reject empty comment prefix");
-        assert!(err.to_string().contains("comment_prefix cannot be empty"));
+        assert_eq!(
+            err.detail().as_deref(),
+            Some("comment_prefix cannot be empty")
+        );
     }
 }

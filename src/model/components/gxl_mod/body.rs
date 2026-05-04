@@ -16,8 +16,7 @@ use crate::meta::*;
 use contracts::requires;
 use derive_getters::Getters;
 use indexmap::IndexMap;
-use orion_error::UvsFrom;
-use orion_error::traits_ext::ToStructError;
+use orion_error::conversion::ToStructError;
 use orion_infra::auto_exit_log;
 
 use std::io::Write;
@@ -344,7 +343,7 @@ mod test {
 
     use super::*;
     use crate::friendly::{MultiNew2, New2};
-    use orion_error::testcase::{TestAssert, TestAssertWithMsg};
+    use orion_error::dev::testing::{TestAssert, TestAssertWithMsg};
     use orion_sec::sec::{SecFrom, SecValueType};
     use orion_variate::vars::UpperKey;
 

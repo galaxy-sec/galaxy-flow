@@ -3,10 +3,9 @@ use std::io::{self, Write};
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 
-use orion_error::ErrorWith;
-use orion_error::UvsReason;
-use orion_error::compat_traits::ErrorOweBase;
-use orion_error::traits_ext::ToStructError;
+use orion_error::conversion::{ErrorWith, SourceErr, SourceRawErr};
+use orion_error::reason::UnifiedReason as UvsReason;
+use orion_error::conversion::ToStructError;
 
 use crate::err::{RunReason, RunResult};
 
@@ -62,7 +61,7 @@ impl SelfUpdateStorage {
     pub fn ensure_layout(&self) -> RunResult<()> {
         let backups = self.backups_dir();
         fs::create_dir_all(&backups)
-            .owe(UvsReason::resource_error().into())
+            .source_err(UvsReason::resource_error().into(), "source error")
             .doing("create self update layout")
             .with_context(("path", backups.as_path()))?;
         Ok(())
@@ -74,11 +73,11 @@ impl SelfUpdateStorage {
             return Ok(SelfUpdateState::default());
         }
         let content = fs::read_to_string(&path)
-            .owe(UvsReason::resource_error().into())
+            .source_err(UvsReason::resource_error().into(), "source error")
             .doing("read self update state")
             .with_context(("path", path.as_path()))?;
         serde_json::from_str::<SelfUpdateState>(&content)
-            .owe(UvsReason::data_error().into())
+            .source_raw_err(RunReason::data_error(), "parse self update state")
             .doing("parse self update state")
             .with_context(("path", path.as_path()))
     }
@@ -86,11 +85,11 @@ impl SelfUpdateStorage {
     pub fn save_state(&self, state: &SelfUpdateState) -> RunResult<()> {
         let path = self.state_path();
         let content = serde_json::to_string_pretty(state)
-            .owe(UvsReason::data_error().into())
+            .source_raw_err(RunReason::data_error(), "serialize self update state")
             .doing("serialize self update state")
             .with_context(("path", path.as_path()))?;
         fs::write(&path, content)
-            .owe(UvsReason::resource_error().into())
+            .source_err(UvsReason::resource_error().into(), "source error")
             .doing("write self update state")
             .with_context(("path", path.as_path()))?;
         Ok(())
@@ -115,7 +114,7 @@ impl SelfUpdateStorage {
                     }
                     let _ = fs::remove_file(&path);
                     create_lock_file(&path)
-                        .owe(UvsReason::resource_error().into())
+                        .source_err(UvsReason::resource_error().into(), "source error")
                         .doing("create self update lock file")
                         .with_context(("path", path.as_path()))
                 } else {
@@ -128,7 +127,7 @@ impl SelfUpdateStorage {
                 }
             }
             Err(err) => Err::<FileLock, _>(err)
-                .owe(UvsReason::resource_error().into())
+                .source_err(UvsReason::resource_error().into(), "source error")
                 .doing("create self update lock file")
                 .with_context(("path", path.as_path())),
         }
@@ -138,17 +137,16 @@ impl SelfUpdateStorage {
         let mut list = Vec::new();
         let backups = self.backups_dir();
         for item in fs::read_dir(&backups)
-            .owe(UvsReason::resource_error().into())
-            .doing("read self update backups dir")
+            .source_err(RunReason::resource_error(), "read self update backups dir")
             .with_context(("path", backups.as_path()))?
         {
             let item = item
-                .owe(UvsReason::resource_error().into())
+                .source_err(UvsReason::resource_error().into(), "source error")
                 .doing("read self update backup entry")
                 .with_context(("path", backups.as_path()))?;
             if item
                 .file_type()
-                .owe(UvsReason::resource_error().into())
+                .source_err(UvsReason::resource_error().into(), "source error")
                 .doing("read backup entry file type")
                 .with_context(("path", item.path().as_path()))?
                 .is_dir()

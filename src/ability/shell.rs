@@ -5,8 +5,7 @@ use std::path::PathBuf;
 
 use crate::{ability::prelude::*, expect::LogicScope, traits::Setter, var::VarDict};
 use getset::{Getters, MutGetters, Setters, WithSetters};
-use orion_error::UvsFrom;
-use orion_error::traits_ext::ToStructError;
+use orion_error::conversion::ToStructError;
 use orion_variate::vars::ValueDict;
 #[derive(Clone, Debug, Default, PartialEq, Getters, Setters, WithSetters, MutGetters)]
 #[getset(get = "pub", set = "pub", get_mut, set_with)]
@@ -125,7 +124,7 @@ impl GxShell {
 
 #[cfg(test)]
 mod tests {
-    use orion_error::testcase::TestAssertWithMsg;
+    use orion_error::dev::testing::TestAssertWithMsg;
 
     use super::*;
     use crate::{

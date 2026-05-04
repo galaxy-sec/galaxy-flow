@@ -1,6 +1,6 @@
 use crate::err::{RunReason, RunResult};
 use colored::Colorize;
-use orion_error::traits_ext::ToStructError;
+use orion_error::conversion::ToStructError;
 
 struct HelpTopic {
     key: &'static str,

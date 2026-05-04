@@ -4,7 +4,7 @@ use async_trait::async_trait;
 
 use orion_ai::types::ExecutionStatus;
 use orion_ai::{AiConfig, AiExecUnit, AiExecUnitBuilder};
-use orion_error::ErrorConv;
+use orion_error::conversion::ConvErr;
 use orion_sec::sec::SecFrom;
 use orion_sec::sec::SecValueType;
 
@@ -113,7 +113,7 @@ impl AsyncRunnableTrait for AiTaskExecutor {
 #[cfg(test)]
 mod tests {
     use orion_ai::{AiResult, GlobalFunctionRegistry, types::ExecutionStatus};
-    use orion_error::testcase::TestAssert;
+    use orion_error::dev::testing::TestAssert;
     use orion_sec::load_sec_dict;
 
     use crate::infra::once_init_log;

@@ -3,8 +3,7 @@ use std::path::Path;
 
 use clap::Parser;
 use orion_accessor::addr::GitRepository;
-use orion_error::traits_ext::ToStructError;
-use orion_error::{ErrorConv, UvsFrom};
+use orion_error::conversion::{ConvErr, ToStructError};
 
 use crate::GxLoader;
 use crate::cmd::gx_cmd::{AdmCmd, DocArgs, GxCmd, InitCmd, ModCmd, RunCmd, SelfCmd};
@@ -85,7 +84,7 @@ pub async fn dispatch(cmd: GxCmd) -> RunResult<()> {
 async fn do_run_cmd(mut cmd: GFlowCmd) -> RunResult<()> {
     use std::process;
 
-    let mut var_space = VarSpace::sys_init().err_conv()?;
+    let mut var_space = VarSpace::sys_init().conv_err()?;
 
     configure_cli_runtime(cmd.log.clone(), cmd.debug);
 
@@ -94,7 +93,7 @@ async fn do_run_cmd(mut cmd: GFlowCmd) -> RunResult<()> {
         cmd.ai,
     )
     .await
-    .err_conv()?;
+    .conv_err()?;
 
     if cmd.conf.is_none() {
         cmd.conf = Some(DEFAULT_WORK_CONF.to_string());
@@ -133,7 +132,7 @@ async fn do_adm_cmd(mut cmd: GFlowCmd) -> RunResult<()> {
     use std::process;
 
     configure_cli_runtime(cmd.log.clone(), cmd.debug);
-    let mut var_space = VarSpace::sys_init().err_conv()?;
+    let mut var_space = VarSpace::sys_init().conv_err()?;
     var_space.global_mut().set(CMD_ARG, cmd.cmd_args.join(" "));
 
     if cmd.conf.is_none() {
@@ -231,7 +230,7 @@ async fn do_mod_cmd(load: &mut GxLoader, mod_cmd: ModCmd) -> RunResult<()> {
         ModCmd::Update(args) => {
             configure_cli_runtime(args.log.clone(), args.debug);
 
-            let vars = VarSpace::sys_init().err_conv()?;
+            let vars = VarSpace::sys_init().conv_err()?;
             let confs = collect_mod_update_inputs()?;
             let mut updated_mods = Vec::new();
 
@@ -549,11 +548,40 @@ mod tests {
         collect_mod_update_inputs, format_self_check_report, normalized_argv, output_mode,
     };
     use crate::cmd::gx_cmd::{AdmCmd, GxCmd, RunCmd, SelfCheckArgs, SelfCmd};
+    use crate::err::RunReason;
     use crate::self_update::{CheckResult, ReleaseChannel};
 
     fn mod_update_config_lock() -> &'static Mutex<()> {
         static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
         LOCK.get_or_init(|| Mutex::new(()))
+    }
+
+    struct ConfigBackup {
+        original: &'static str,
+        backup: Option<std::path::PathBuf>,
+    }
+
+    impl ConfigBackup {
+        fn hide_if_exists(original: &'static str) -> Self {
+            let path = Path::new(original);
+            let backup = path.exists().then(|| path.with_extension("gxl.bak-codex"));
+            if let Some(backup_path) = &backup {
+                std::fs::rename(path, backup_path).expect("config backup should succeed");
+            }
+            Self { original, backup }
+        }
+
+        fn restore(&mut self) {
+            if let Some(backup_path) = self.backup.take() {
+                std::fs::rename(backup_path, self.original).expect("config restore should succeed");
+            }
+        }
+    }
+
+    impl Drop for ConfigBackup {
+        fn drop(&mut self) {
+            self.restore();
+        }
     }
 
     #[test]
@@ -573,23 +601,14 @@ mod tests {
         let _guard = mod_update_config_lock()
             .lock()
             .expect("mod update config lock should not be poisoned");
-        let work = Path::new(DEFAULT_WORK_CONF);
-        let adm = Path::new(DEFAULT_ADM_CONF);
-        let work_backup = work.exists().then(|| work.with_extension("gxl.bak-codex"));
-        let adm_backup = adm.exists().then(|| adm.with_extension("gxl.bak-codex"));
-
-        if let Some(path) = &work_backup {
-            std::fs::rename(work, path).expect("work config backup should succeed");
-        }
-        if let Some(path) = &adm_backup {
-            std::fs::rename(adm, path).expect("adm config backup should succeed");
-        }
+        let mut work_backup = ConfigBackup::hide_if_exists(DEFAULT_WORK_CONF);
+        let mut adm_backup = ConfigBackup::hide_if_exists(DEFAULT_ADM_CONF);
 
         let err = collect_mod_update_inputs().expect_err("missing configs should fail");
-        assert_eq!(
-            err.reason().to_string(),
-            "args error project config not found"
-        );
+        assert!(matches!(
+            err.reason(),
+            RunReason::Args(msg) if msg == "project config not found"
+        ));
         assert!(
             err.detail()
                 .as_deref()
@@ -597,12 +616,8 @@ mod tests {
                 .contains("expected at least one config file")
         );
 
-        if let Some(path) = work_backup {
-            std::fs::rename(path, work).expect("work config restore should succeed");
-        }
-        if let Some(path) = adm_backup {
-            std::fs::rename(path, adm).expect("adm config restore should succeed");
-        }
+        work_backup.restore();
+        adm_backup.restore();
     }
 
     #[test]

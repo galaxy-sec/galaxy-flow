@@ -6,8 +6,8 @@ use crate::calculate::traits::Evaluation;
 use crate::components::gxl_cond::TGxlCond;
 use crate::context::ExecContext;
 use crate::execution::runnable::ExecOut;
-use orion_error::UvsReason;
-use orion_error::compat_traits::ErrorOweBase;
+use crate::ExecReason;
+use orion_error::conversion::ToStructError;
 use std::sync::Arc;
 #[async_trait]
 pub trait CondExec {
@@ -32,7 +32,7 @@ where
         let x = self
             .express
             .decide(ctx.clone(), &def)
-            .owe(UvsReason::logic_error().into())?;
+            .map_err(|err| ExecReason::logic_error().to_err().with_detail(err.to_string()))?;
         if x {
             self.true_block.cond_exec(ctx, def).await
         } else {

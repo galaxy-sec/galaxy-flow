@@ -1,7 +1,6 @@
 use std::sync::Arc;
 
-use orion_error::UvsFrom;
-use orion_error::traits_ext::ToStructError;
+use orion_error::conversion::ToStructError;
 use orion_sec::sec::{SecFrom, SecValueObj, SecValueType};
 use orion_variate::vars::UpperKey;
 

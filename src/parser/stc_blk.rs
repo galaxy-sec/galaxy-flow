@@ -145,7 +145,7 @@ pub fn gal_loop(input: &mut &str) -> Result<GxlLoop> {
 #[cfg(test)]
 mod tests {
 
-    use orion_error::testcase::TestAssert;
+    use orion_error::dev::testing::TestAssert;
 
     use crate::components::gxl_block::BlockAction;
     use crate::parser::{

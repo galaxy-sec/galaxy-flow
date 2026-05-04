@@ -491,7 +491,7 @@ impl AppendAble<BlockNode> for GxlFlow {
 #[cfg(test)]
 mod tests {
 
-    use orion_error::testcase::TestAssert;
+    use orion_error::dev::testing::TestAssert;
 
     use crate::{components::GxlMod, infra::once_init_log, meta::MetaInfo};
 

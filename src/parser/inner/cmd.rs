@@ -85,7 +85,7 @@ fn format_shell_script(input: &str) -> String {
 #[cfg(test)]
 mod tests {
 
-    use orion_error::testcase::TestAssert;
+    use orion_error::dev::testing::TestAssert;
 
     use crate::parser::{inner::common::run_gxl, stc_blk::gal_block};
 

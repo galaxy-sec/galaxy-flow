@@ -13,7 +13,7 @@ use crate::{
 use colored::Colorize;
 use contracts::requires;
 use indexmap::IndexMap;
-use orion_error::ErrorConv;
+use orion_error::conversion::ConvErr;
 use std::{fmt::Display, sync::mpsc::Sender};
 
 use super::GxlMod;
@@ -238,14 +238,14 @@ impl GxlSpace {
 
         let flow_ctx = main_ctx.clone();
         self.load_flow(flow_ctx, &mut exec_sequ, &flow_name)
-            .err_conv()?;
+            .conv_err()?;
 
         let exec_ctx = main_ctx.clone().with_subcontext("exec");
 
         match exec_sequ
             .execute(exec_ctx, var_space.clone(), self, sender)
             .await
-            .err_conv()
+            .conv_err()
         {
             Ok(task) => {
                 task_local_report(task.rec().clone());
@@ -387,7 +387,7 @@ mod tests {
         execution::exec_init_env,
         types::AnyResult,
     };
-    use orion_error::testcase::TestAssert;
+    use orion_error::dev::testing::TestAssert;
 
     #[tokio::test]
     async fn execute_forward() -> AnyResult<()> {

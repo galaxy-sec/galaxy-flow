@@ -218,7 +218,7 @@ mod tests {
 
     use super::*;
     use crate::friendly::New2;
-    use orion_error::testcase::TestAssert;
+    use orion_error::dev::testing::TestAssert;
 
     use crate::{
         components::{GxlEnv, gxl_spc::GxlSpace, gxl_var::GxlVar},

@@ -36,7 +36,7 @@ pub fn gal_shell(input: &mut &str) -> Result<GxShell> {
 #[cfg(test)]
 mod tests {
 
-    use orion_error::testcase::TestAssert;
+    use orion_error::dev::testing::TestAssert;
 
     use super::*;
 

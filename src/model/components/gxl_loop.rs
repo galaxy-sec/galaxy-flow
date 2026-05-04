@@ -1,7 +1,6 @@
 use std::sync::mpsc::Sender;
 
-use orion_error::UvsFrom;
-use orion_error::traits_ext::ToStructError;
+use orion_error::conversion::ToStructError;
 use orion_sec::sec::SecValueType;
 
 use super::prelude::*;
@@ -88,7 +87,7 @@ mod tests {
         ability::GxEcho, components::gxl_block::BlockAction,
         model::components::gxl_block::BlockNode, traits::Getter,
     };
-    use orion_error::testcase::TestAssertWithMsg;
+    use orion_error::dev::testing::TestAssertWithMsg;
     use orion_sec::sec::{SecFrom, SecValueObj};
     use orion_variate::vars::UpperKey;
     use rstest::*;
@@ -204,7 +203,10 @@ mod tests {
         // 验证错误情况
         assert!(result.is_err());
         let err = result.unwrap_err();
-        assert_eq!(err.to_string(), "miss : missing_dict"); // 根据实际错误消息调整
+        assert!(matches!(
+            err.reason(),
+            ExecReason::Miss(msg) if msg == "missing_dict"
+        ));
     }
 
     #[rstest]

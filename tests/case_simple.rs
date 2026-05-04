@@ -4,7 +4,7 @@ use galaxy_flow::cmd::GxlCmd;
 use galaxy_flow::execution::VarSpace;
 use galaxy_flow::infra::once_init_log;
 use galaxy_flow::{GxLoader, err::*};
-use orion_error::testcase::TestAssert;
+use orion_error::dev::testing::TestAssert;
 
 #[tokio::test]
 async fn conf_simple_test() -> RunResult<()> {

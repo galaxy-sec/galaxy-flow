@@ -8,7 +8,6 @@ use crate::{
     primitive::GxlAParams,
 };
 use async_trait::async_trait;
-use orion_error::traits_ext::ContextRecord;
 
 use crate::{
     components::{gxl_mod::meta::ModMeta, gxl_spc::GxlSpace},
@@ -126,7 +125,7 @@ impl DependTrait<&GxlSpace> for Activity {
 mod tests {
     use std::path::Path;
 
-    use orion_error::testcase::TestAssert;
+    use orion_error::dev::testing::TestAssert;
     use orion_sec::sec::{SecFrom, SecValueType};
 
     use crate::{

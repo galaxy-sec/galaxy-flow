@@ -1,6 +1,4 @@
-use orion_error::UvsFrom;
-use orion_error::compat_traits::ErrorOweBase;
-use orion_error::traits_ext::ToStructError;
+use orion_error::conversion::{ToStructError, SourceErr};
 
 use crate::ability::prelude::*;
 
@@ -121,7 +119,7 @@ impl AsyncRunnableTrait for GxlVersion {
         let file_path = exp.eval(&self.file)?;
         debug!(target: ctx.path(),"version file:{file_path}");
         let data = fs::read_to_string(file_path.as_str())
-            .owe(UvsReason::business_error().into())
+            .source_err(UvsReason::business_error().into(), "source error")
             .with_context(format!("version file ({file_path}) "))?;
         match take_version(&mut data.as_str()) {
             Ok((a, b, c, d)) => {
@@ -129,10 +127,10 @@ impl AsyncRunnableTrait for GxlVersion {
                 ver.auto(&self.verinc);
                 dict.global_mut()
                     .set(&self.export.to_uppercase(), format!("{}", &ver));
-                let mut file =
-                    File::create(file_path.as_str()).owe(UvsReason::resource_error().into())?;
+                let mut file = File::create(file_path.as_str())
+                    .source_err(UvsReason::resource_error().into(), "source error")?;
                 file.write_all(ver.to_string().as_bytes())
-                    .owe(UvsReason::resource_error().into())?;
+                    .source_err(UvsReason::resource_error().into(), "source error")?;
                 Ok(TaskValue::from((dict, ExecOut::Ignore)))
             }
             Err(_) => Err(ExecReason::from_conf()
@@ -144,8 +142,11 @@ impl AsyncRunnableTrait for GxlVersion {
 
 pub fn parse_version(data: &str) -> ExecResult<Version> {
     let mut xdata = data;
-    let (a, b, c, d) =
-        take_version(&mut xdata).owe(ExecReason::Args("version parse failed".to_string()))?;
+    let (a, b, c, d) = take_version(&mut xdata).map_err(|err| {
+        ExecReason::Args("version parse failed".to_string())
+            .to_err()
+            .with_detail(err.to_string())
+    })?;
     Ok(Version::new(a, b, c, d))
 }
 
@@ -169,7 +170,7 @@ mod tests {
     use fs::File;
 
     use crate::types::AnyResult;
-    use orion_error::testcase::TestAssert;
+    use orion_error::dev::testing::TestAssert;
 
     use super::*;
     use std::io::Write;

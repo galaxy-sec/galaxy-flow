@@ -288,7 +288,7 @@ impl AppendAble<BlockNode> for GxlFun {
 #[cfg(test)]
 mod tests {
 
-    use orion_error::testcase::TestAssert;
+    use orion_error::dev::testing::TestAssert;
 
     use crate::components::GxlMod;
 

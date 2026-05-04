@@ -6,7 +6,7 @@ use galaxy_flow::err::RunResult;
 use galaxy_flow::execution::VarSpace;
 use galaxy_flow::infra::once_init_log;
 use log::info;
-use orion_error::testcase::TestAssert;
+use orion_error::dev::testing::TestAssert;
 
 #[tokio::test]
 async fn gxl_normal_test() -> RunResult<()> {

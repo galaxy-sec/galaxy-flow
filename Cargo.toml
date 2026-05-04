@@ -19,21 +19,21 @@ license = "Apache-2.0"
 
 [workspace.dependencies]
 winnow = "0.7.11"
-orion-error = { version = "0.7", features = ["serde"] }
-orion_conf = { version = "0.6", features = ["yaml", "toml", "json", "ini"] }
+orion-error = { version = "0.8", features = ["serde","anyhow"] }
+orion_conf = { version = "0.7", features = ["yaml", "toml", "json", "ini"] }
 #orion-error = { path = "../orion-error" }
 #orion-error = { git = "https://github.com/galaxio-labs/orion-error.git", tag = "v0.4.0" }
 #orion_conf = { git = "https://github.com/galaxio-labs/orion-common.git", tag = "v0.3.0" }
-orion-sec=  "0.5"
+orion-sec=  "0.6"
 #orion-ai= { git = "https://github.com/galaxio-labs/orion-ai.git", tag = "v0.2.1" }
 #orion-ai= { path = "../orion-ai"  }
 #orion-ai= { git = "https://github.com/galaxio-labs/orion-ai.git", branch = "main" }
-orion-infra = "0.6"
-orion-variate =  "0.12"
-orion-accessor = "0.7"
+orion-infra = "0.7"
+orion-variate =  "0.13"
+orion-accessor = "0.8"
 orion_parse = { path = "crates/orion_parse" }
 orion_cond = { path = "crates/orion_cond" }
-tokio = { version = "1.47", features = ["full"] }
+tokio = { version = "1.51", features = ["full"] }
 derive_more = { version = "2.0", features = ["full"] }
 async-trait = "0.1"
 
@@ -58,7 +58,7 @@ thiserror = "2.0"
 handlebars = "6.3"
 lazy_static = "1.5"
 chrono = "0.4"
-log = "~0.4"
+log = "0.4"
 git2 = "0.20"
 unicase = "2.8"
 scopeguard = "1.2"
@@ -100,7 +100,7 @@ semver = "1.0"
 sha2 = "0.10"
 flate2 = "1.0"
 tar = "0.4"
-wp-self-update = "0.2"
+wp-self-update = "0.3"
 
 [features]
 res_depend_test = []

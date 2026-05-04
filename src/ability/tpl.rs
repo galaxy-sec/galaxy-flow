@@ -1,8 +1,8 @@
 use crate::ability::prelude::*;
 use crate::execution::action::Action;
 use handlebars::{Handlebars, to_json};
+use orion_error::conversion::{SourceErr, SourceRawErr};
 use orion_error::OperationContext;
-use orion_error::traits_ext::ContextRecord;
 use serde::Serialize;
 use std::fmt::Display;
 use std::fs::File;
@@ -98,15 +98,15 @@ impl GxTpl {
             let json_file = exp.eval(json_file.as_str())?;
             err_ctx.record("file", json_file.as_str());
             let content = std::fs::read_to_string(json_file.as_str())
-                .owe(UvsReason::data_error().into())
+                .source_err(UvsReason::data_error().into(), "source error")
                 .with_context(&err_ctx)?;
             err_ctx.record("need-fmt", "json");
             serde_json::from_str(content.as_str())
-                .owe(UvsReason::data_error().into())
+                .source_raw_err(ExecReason::data_error(), "parse json data file")
                 .with_context(&err_ctx)?
         } else if let Some(data_str) = &dto.data {
             serde_json::from_str(data_str.as_str())
-                .owe(UvsReason::data_error().into())
+                .source_raw_err(ExecReason::data_error(), "parse inline json data")
                 .with_context(&err_ctx)?
         } else {
             to_json(dict.global().export())
@@ -131,16 +131,20 @@ impl GxTpl {
     ) -> ExecResult<()> {
         debug!(target: ctx.path(), "tpl dir: {}", tpl_dir.display());
         for entry in walkdir::WalkDir::new(tpl_dir) {
-            let entry = entry.owe(UvsReason::data_error().into())?;
+            let entry = entry.map_err(|err| {
+                ExecReason::data_error()
+                    .to_err()
+                    .with_detail(err.to_string())
+            })?;
             let entry_path = entry.path();
             let relative_path = entry_path
                 .strip_prefix(tpl_dir)
-                .owe(UvsReason::data_error().into())?;
+                .map_err(|err| ExecReason::data_error().to_err().with_detail(err.to_string()))?;
             let dst_path = Path::new(dst).join(relative_path);
 
             if entry_path.is_dir() {
                 // 如果是目录，确保在目标位置创建对应的目录
-                std::fs::create_dir_all(&dst_path).owe(UvsReason::system_error().into())?;
+                std::fs::create_dir_all(&dst_path).source_err(UvsReason::system_error().into(), "source error")?;
                 debug!(target: ctx.path(), "created dir: {}", dst_path.display());
             } else if entry_path.is_file() {
                 // 如果是文件，则渲染模板
@@ -169,7 +173,7 @@ impl GxTpl {
         debug!(target: ctx.path(),  "dst:{}", dst.display());
 
         let mut err_ctx = OperationContext::doing("render tpl").with_auto_log();
-        err_ctx.record("tpl", tpl);
+        err_ctx.record("tpl", tpl.display());
         // 2. 验证模板文件
         let tpl_path = Path::new(&tpl);
         if !tpl_path.exists() {
@@ -184,14 +188,14 @@ impl GxTpl {
             ))
             .into());
         }
-        err_ctx.record("dst", dst);
+        err_ctx.record("dst", dst.display());
         // 3. 准备目标文件
         let dst_path = Path::new(&dst);
         if let Some(parent) = dst_path.parent() {
-            std::fs::create_dir_all(parent).owe(UvsReason::system_error().into())?;
+            std::fs::create_dir_all(parent).source_err(UvsReason::system_error().into(), "source error")?;
         }
         if dst_path.exists() {
-            std::fs::remove_file(dst).owe(UvsReason::system_error().into())?;
+            std::fs::remove_file(dst).source_err(UvsReason::system_error().into(), "source error")?;
         }
 
         // 4. 日志记录
@@ -199,7 +203,7 @@ impl GxTpl {
 
         // 5. 读取模板内容
         let template = std::fs::read_to_string(tpl)
-            .owe(UvsReason::data_error().into())
+            .source_err(UvsReason::data_error().into(), "source error")
             .with_context(&err_ctx)?;
 
         let mut dst_file = File::create(dst).map_err(|e| {
@@ -212,14 +216,14 @@ impl GxTpl {
 
         handlebars
             .render_template_to_write(&template, data, &mut dst_file)
-            .owe(UvsReason::business_error().into())
+            .source_raw_err(ExecReason::business_error(), "render handlebars template")
             .with_context(&err_ctx)?;
         #[cfg(unix)]
         {
             use std::os::unix::fs::PermissionsExt;
             let perms = std::fs::Permissions::from_mode(0o644); // rw-r--r--
             std::fs::set_permissions(dst, perms)
-                .owe(UvsReason::system_error().into())
+                .source_err(UvsReason::system_error().into(), "source error")
                 .with_context(&err_ctx)?;
         }
         if !ctx.quiet() {

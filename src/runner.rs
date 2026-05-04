@@ -6,8 +6,7 @@ use crate::{
     execution::VarSpace,
     util::redirect::ReadSignal,
 };
-use orion_error::traits_ext::ToStructError;
-use orion_error::{ErrorConv, ErrorWith, UvsFrom};
+use orion_error::conversion::{ConvErr, ErrorWith, ToStructError};
 use std::{path::Path, sync::mpsc::Sender};
 
 /// Galaxy Flow 运行器
@@ -53,10 +52,10 @@ impl GxlRunner {
                 .parse_file(conf.as_str(), false, &vars)
                 .await?
                 .assemble()
-                .err_conv()?;
+                .conv_err()?;
 
             if cmd.flows.is_empty() {
-                spc.show().err_conv()?;
+                spc.show().conv_err()?;
             } else {
                 // 解析环境列表 / Parse environment list
                 return spc.exec(cmd, vars, sender).await;
@@ -81,8 +80,8 @@ impl GxlRunner {
                 .parse_file(conf.as_str(), false, &vars)
                 .await?
                 .assemble()
-                .err_conv()?;
-            spc.show().err_conv()?;
+                .conv_err()?;
+            spc.show().conv_err()?;
             Ok(())
         } else {
             Err(RunReason::from_conf()

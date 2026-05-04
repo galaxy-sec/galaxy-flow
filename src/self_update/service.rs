@@ -2,10 +2,9 @@ use std::path::PathBuf;
 
 use chrono::Utc;
 
-use orion_error::ErrorWith;
-use orion_error::UvsReason;
-use orion_error::compat_traits::ErrorOweBase;
-use orion_error::traits_ext::ToStructError;
+use orion_error::conversion::{ErrorWith, SourceErr};
+use orion_error::reason::UnifiedReason as UvsReason;
+use orion_error::conversion::ToStructError;
 
 use crate::err::{RunReason, RunResult};
 
@@ -296,7 +295,7 @@ impl SelfUpdateService {
 
 fn resolve_install_dir() -> RunResult<PathBuf> {
     let exe = std::env::current_exe()
-        .owe(UvsReason::system_error().into())
+        .source_err(UvsReason::system_error().into(), "source error")
         .doing("resolve current executable path")?;
     exe.parent()
         .map(PathBuf::from)
@@ -380,7 +379,7 @@ fn read_installed_version(install_dir: &std::path::Path) -> RunResult<String> {
     let out = std::process::Command::new(&bin)
         .arg("--version")
         .output()
-        .owe(UvsReason::resource_error().into())
+        .source_err(UvsReason::resource_error().into(), "source error")
         .doing("run installed binary version command")
         .with_context(("bin", &bin))?;
     if !out.status.success() {
