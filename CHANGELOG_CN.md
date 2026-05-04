@@ -5,6 +5,12 @@ Galaxy Flow项目所有重要变更将记录在此文件中。
 本格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/) 标准，
 本项目遵循 [语义化版本2.0.0](https://semver.org/lang/zh-CN/spec/v2.0.0.html) 规范。
 
+## [v0.13.14] - 2026-05-04
+
+### 新增
+- **GXL 数字编号能力**：新增 `gx.sn`，用于读取和更新简单数字编号文件。默认动作只读取当前编号并导出为 `SN`，不写回文件；`action: "add"` 会递增并写回下一个编号；`action: "reset"` 会写回并导出 `1`。
+- **文档主题**：新增 `gx doc gx.sn`，并将 `gx.sn` 加入内置文档主题列表和 GXL 内置能力索引。
+
 ## [v0.13.13] - 2026-05-04
 
 ### 变更

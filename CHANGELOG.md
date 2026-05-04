@@ -5,6 +5,12 @@ All notable changes to the Galaxy Flow project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.13.14] - 2026-05-04
+
+### Added
+- **GXL serial number ability**: Added `gx.sn` for reading and updating simple numeric serial number files. The default action reads the current number and exports it as `SN` without writing the file; `action: "add"` increments and writes the next number; `action: "reset"` writes and exports `1`.
+- **Documentation topic**: Added `gx doc gx.sn` and included `gx.sn` in the built-in documentation topic list and GXL inner ability index.
+
 ## [v0.13.13] - 2026-05-04
 
 ### Changed

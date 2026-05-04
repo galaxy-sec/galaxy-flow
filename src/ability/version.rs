@@ -156,6 +156,94 @@ impl ComponentMeta for GxlVersion {
     }
 }
 
+#[derive(Debug, Builder, PartialEq, Clone)]
+pub struct GxlSn {
+    file: String,
+    export: String,
+    action: SnAction,
+}
+
+impl GxlSn {
+    pub fn new(file: String) -> GxlSn {
+        GxlSn {
+            file,
+            export: "SN".into(),
+            action: SnAction::Read,
+        }
+    }
+}
+
+#[async_trait]
+impl AsyncRunnableTrait for GxlSn {
+    async fn async_exec(&self, mut ctx: ExecContext, mut dict: VarSpace) -> TaskResult {
+        ctx.append("sn");
+        let exp = EnvExpress::from_env_mix(dict.global().clone());
+        let file_path = exp.eval(&self.file)?;
+        debug!(target: ctx.path(), "sn file:{file_path}");
+        let sn = match self.action {
+            SnAction::Read | SnAction::Add => {
+                let data = fs::read_to_string(file_path.as_str())
+                    .source_err(UvsReason::business_error().into(), "source error")
+                    .with_context(format!("sn file ({file_path}) "))?;
+                let current = parse_sn(data.as_str())?;
+                match self.action {
+                    SnAction::Read => current,
+                    SnAction::Add => current + 1,
+                    SnAction::Reset => unreachable!(),
+                }
+            }
+            SnAction::Reset => 1,
+        };
+        dict.global_mut()
+            .set(&self.export.to_uppercase(), sn.to_string());
+        if self.action != SnAction::Read {
+            let mut file = File::create(file_path.as_str())
+                .source_err(UvsReason::resource_error().into(), "source error")?;
+            file.write_all(sn.to_string().as_bytes())
+                .source_err(UvsReason::resource_error().into(), "source error")?;
+        }
+        Ok(TaskValue::from((dict, ExecOut::Ignore)))
+    }
+}
+
+impl ComponentMeta for GxlSn {
+    fn gxl_meta(&self) -> GxlMeta {
+        GxlMeta::from("gx.sn")
+    }
+}
+
+pub fn parse_sn(data: &str) -> ExecResult<i32> {
+    let value = data.trim().parse::<i32>().map_err(|err| {
+        ExecReason::Args
+            .to_err()
+            .with_detail(format!("sn parse failed: {err}"))
+    })?;
+    if value < 1 {
+        return Err(ExecReason::Args
+            .to_err()
+            .with_detail(format!("sn must be >= 1: {value}")));
+    }
+    Ok(value)
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SnAction {
+    Read,
+    Add,
+    Reset,
+}
+
+pub fn parse_sn_action(data: &str) -> ExecResult<SnAction> {
+    match data.to_lowercase().as_str() {
+        "read" | "get" | "null" => Ok(SnAction::Read),
+        "add" | "inc" => Ok(SnAction::Add),
+        "reset" => Ok(SnAction::Reset),
+        other => Err(ExecReason::Args
+            .to_err()
+            .with_detail(format!("unsupported sn action: {other}"))),
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum VerInc {
     Build,
@@ -169,6 +257,7 @@ pub enum VerInc {
 mod tests {
     use fs::File;
 
+    use crate::traits::Getter;
     use crate::types::AnyResult;
     use orion_error::dev::testing::TestAssert;
 
@@ -292,5 +381,74 @@ mod tests {
         let v2 = Version::new(1, 1, 1, Some(1));
         assert_eq!(v1.partial_cmp(&v2), Some(Ordering::Greater));
         assert_eq!(v2.partial_cmp(&v1), Some(Ordering::Less));
+    }
+
+    #[test]
+    fn sn_parse_test() {
+        assert_eq!(parse_sn("1").assert(), 1);
+        assert_eq!(parse_sn(" 42\n").assert(), 42);
+        assert!(parse_sn("0").is_err());
+        assert!(parse_sn("abc").is_err());
+    }
+
+    #[tokio::test]
+    async fn sn_read_add_and_reset_test() {
+        let dir = tempfile::tempdir().unwrap();
+        let file_path = dir.path().join("sn.txt");
+        let file = file_path.to_string_lossy().to_string();
+        fs::write(&file_path, "1").unwrap();
+
+        let sn = GxlSn::new(file.clone());
+        let ctx = ExecContext::default();
+        let def = VarSpace::default();
+        let TaskValue { vars, .. } = sn.async_exec(ctx.clone(), def).await.unwrap();
+        assert_eq!(fs::read_to_string(&file_path).unwrap(), "1");
+        assert_eq!(
+            vars.global().get_copy("SN").unwrap().to_string().as_str(),
+            "1"
+        );
+
+        let add = GxlSnBuilder::default()
+            .file(file.clone())
+            .export("SN".into())
+            .action(SnAction::Add)
+            .build()
+            .unwrap();
+        let def = VarSpace::default();
+        let TaskValue { vars, .. } = add.async_exec(ctx.clone(), def).await.unwrap();
+        assert_eq!(fs::read_to_string(&file_path).unwrap(), "2");
+        assert_eq!(
+            vars.global().get_copy("SN").unwrap().to_string().as_str(),
+            "2"
+        );
+
+        let reset = GxlSnBuilder::default()
+            .file(file)
+            .export("SN".into())
+            .action(SnAction::Reset)
+            .build()
+            .unwrap();
+        let def = VarSpace::default();
+        let TaskValue { vars, .. } = reset.async_exec(ctx, def).await.unwrap();
+        assert_eq!(fs::read_to_string(&file_path).unwrap(), "1");
+        assert_eq!(
+            vars.global().get_copy("SN").unwrap().to_string().as_str(),
+            "1"
+        );
+
+        fs::remove_file(&file_path).unwrap();
+        let reset = GxlSnBuilder::default()
+            .file(file_path.to_string_lossy().to_string())
+            .export("SN".into())
+            .action(SnAction::Reset)
+            .build()
+            .unwrap();
+        let def = VarSpace::default();
+        let TaskValue { vars, .. } = reset.async_exec(ExecContext::default(), def).await.unwrap();
+        assert_eq!(fs::read_to_string(&file_path).unwrap(), "1");
+        assert_eq!(
+            vars.global().get_copy("SN").unwrap().to_string().as_str(),
+            "1"
+        );
     }
 }
