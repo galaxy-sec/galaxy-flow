@@ -5,6 +5,16 @@ Galaxy Flow项目所有重要变更将记录在此文件中。
 本格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/) 标准，
 本项目遵循 [语义化版本2.0.0](https://semver.org/lang/zh-CN/spec/v2.0.0.html) 规范。
 
+## [v0.13.13] - 2026-05-04
+
+### 变更
+- **依赖升级**：orion-error 升级至 0.8，orion_conf 至 0.7，orion-sec 至 0.6，orion-infra 至 0.7，orion-variate 至 0.13，orion-accessor 至 0.8。
+- **结构化错误模型**：将 `RunReason`、`ExecReason`、`GxlReason` 的业务错误变体迁移为 unit enum，动态诊断文本统一放到 `StructError` 的 detail/source/context 中，不再放入 enum payload。
+- **orion-error v0.8 source 链处理**：在 IO、HTTP、模板目录遍历、JSON 序列化、UTF-8 解码等边界，用 `source_err` 或 `source_raw_err` 替换部分 `map_err`，保留底层 source 供错误报告使用。
+
+### 移除
+- **旧错误兼容路径**：继续清理 `.owe()` 时代的兼容写法，统一使用当前 orion-error 0.8 API。
+
 ## [v0.13.12] - 2026-04-29
 
 ### 变更

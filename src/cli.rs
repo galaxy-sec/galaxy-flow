@@ -3,7 +3,7 @@ use std::path::Path;
 
 use clap::Parser;
 use orion_accessor::addr::GitRepository;
-use orion_error::conversion::{ConvErr, ToStructError};
+use orion_error::conversion::{ConvErr, SourceErr, SourceRawErr, ToStructError};
 
 use crate::GxLoader;
 use crate::cmd::gx_cmd::{AdmCmd, DocArgs, GxCmd, InitCmd, ModCmd, RunCmd, SelfCmd};
@@ -329,7 +329,7 @@ fn collect_mod_update_inputs() -> RunResult<Vec<&'static str>> {
 
 fn collect_git_extern_mod_names(conf: &str) -> RunResult<Vec<String>> {
     let code = std::fs::read_to_string(conf)
-        .map_err(|e| RunReason::from_conf().to_err().with_detail(e.to_string()))?;
+        .source_err(RunReason::from_conf(), format!("read config file: {conf}"))?;
     collect_git_extern_mod_names_from_code(code.as_str())
 }
 
@@ -409,7 +409,7 @@ async fn do_self_cmd(cmd: SelfCmd) -> RunResult<()> {
                         "remote_version": out.remote_version,
                         "has_update": out.has_update
                     }))
-                    .map_err(|e| RunReason::Exec.to_err().with_detail(e.to_string()))?
+                    .source_raw_err(RunReason::Exec, "serialize self-check json")?
                 );
             } else {
                 print_self_check_report(&out)?;

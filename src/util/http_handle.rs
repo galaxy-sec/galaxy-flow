@@ -7,7 +7,7 @@ use crate::{
     },
 };
 use colored::Colorize;
-use orion_error::conversion::ToStructError;
+use orion_error::conversion::SourceRawErr;
 use serde::Serialize;
 use std::{fmt::Debug, time::Duration};
 
@@ -22,11 +22,7 @@ pub async fn send_http_request<T: Serialize + Debug>(payload: T, url: &String) {
         .timeout(Duration::from_secs(5))
         .send()
         .await
-        .map_err(|e| {
-            ExecReason::NetWork
-                .to_err()
-                .with_detail(format!("HTTP request failed: {e}"))
-        });
+        .source_raw_err(ExecReason::NetWork, "HTTP request failed");
 
     match response {
         Ok(resp) => {

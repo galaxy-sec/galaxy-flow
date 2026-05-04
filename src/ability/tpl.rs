@@ -129,17 +129,11 @@ impl GxTpl {
     ) -> ExecResult<()> {
         debug!(target: ctx.path(), "tpl dir: {}", tpl_dir.display());
         for entry in walkdir::WalkDir::new(tpl_dir) {
-            let entry = entry.map_err(|err| {
-                ExecReason::data_error()
-                    .to_err()
-                    .with_detail(err.to_string())
-            })?;
+            let entry = entry.source_raw_err(ExecReason::data_error(), "walk template dir")?;
             let entry_path = entry.path();
-            let relative_path = entry_path.strip_prefix(tpl_dir).map_err(|err| {
-                ExecReason::data_error()
-                    .to_err()
-                    .with_detail(err.to_string())
-            })?;
+            let relative_path = entry_path
+                .strip_prefix(tpl_dir)
+                .source_raw_err(ExecReason::data_error(), "strip template dir prefix")?;
             let dst_path = Path::new(dst).join(relative_path);
 
             if entry_path.is_dir() {
@@ -207,13 +201,8 @@ impl GxTpl {
             .source_err(UvsReason::data_error().into(), "source error")
             .with_context(&err_ctx)?;
 
-        let mut dst_file = File::create(dst).map_err(|e| {
-            ExecReason::Args.to_err().with_detail(format!(
-                "Failed to create output file {}: {}",
-                dst.display(),
-                e
-            ))
-        })?;
+        let mut dst_file = File::create(dst)
+            .source_err(ExecReason::Io, format!("create output file: {}", dst.display()))?;
 
         handlebars
             .render_template_to_write(&template, data, &mut dst_file)

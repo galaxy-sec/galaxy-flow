@@ -5,6 +5,16 @@ All notable changes to the Galaxy Flow project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.13.13] - 2026-05-04
+
+### Changed
+- **Dependency upgrades**: Bumped orion-error to 0.8, orion_conf to 0.7, orion-sec to 0.6, orion-infra to 0.7, orion-variate to 0.13, and orion-accessor to 0.8.
+- **Structured error model**: Migrated `RunReason`, `ExecReason`, and `GxlReason` business variants to unit enum variants, keeping dynamic diagnostic text on `StructError` detail/source/context instead of enum payloads.
+- **orion-error v0.8 source handling**: Replaced selected `map_err` conversions at IO, HTTP, template walking, JSON serialization, and UTF-8 decoding boundaries with `source_err` or `source_raw_err` so underlying sources are preserved for reports.
+
+### Removed
+- **Legacy error compatibility**: Continued removing `.owe()`-era compatibility paths in favor of the current orion-error 0.8 APIs.
+
 ## [v0.13.12] - 2026-04-29
 
 ### Changed

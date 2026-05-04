@@ -60,9 +60,9 @@ impl GxCmd {
         match res {
             Ok((exit_code, stdout, stderr)) => {
                 let out = String::from_utf8(stdout)
-                    .map_err(|e| ExecReason::Io.to_err().with_detail(e.to_string()))?;
+                    .source_raw_err(ExecReason::data_error(), "decode command stdout as utf-8")?;
                 let err = String::from_utf8(stderr)
-                    .map_err(|e| ExecReason::Io.to_err().with_detail(e.to_string()))?;
+                    .source_raw_err(ExecReason::data_error(), "decode command stderr as utf-8")?;
                 action.set_command_output(exit_code, out, err);
             }
             Err(error) => {

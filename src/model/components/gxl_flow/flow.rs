@@ -297,7 +297,11 @@ impl GxlFlow {
                         let start = {
                             let guard = start_pos_clone
                                 .lock()
-                                .map_err(|e| ExecReason::Io.to_err().with_detail(e.to_string()))?;
+                                .map_err(|e| {
+                                    ExecReason::system_error()
+                                        .to_err()
+                                        .with_detail(format!("lock task log start position: {e}"))
+                                })?;
                             *guard
                         };
                         let buf = read_log_content(&log_file, start, end).await?;
@@ -322,7 +326,11 @@ impl GxlFlow {
                     ReadSignal::End(cur_start) => {
                         let mut guard = start_pos_clone
                             .lock()
-                            .map_err(|e| ExecReason::Io.to_err().with_detail(e.to_string()))?;
+                            .map_err(|e| {
+                                ExecReason::system_error()
+                                    .to_err()
+                                    .with_detail(format!("lock task log start position: {e}"))
+                            })?;
                         *guard = cur_start;
                     }
                 }
@@ -397,7 +405,11 @@ impl GxlFlow {
         let end_pos = seek_log_file_end(&log_path)?;
         let start = *start_pos
             .lock()
-            .map_err(|e| ExecReason::Io.to_err().with_detail(e.to_string()))?;
+            .map_err(|e| {
+                ExecReason::system_error()
+                    .to_err()
+                    .with_detail(format!("lock task log start position: {e}"))
+            })?;
         let content = read_log_content(&log_path, start, end_pos).await?;
         task.stdout.push_str(&content);
 
