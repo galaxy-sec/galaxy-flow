@@ -163,11 +163,10 @@ fn resolve(topic: &str) -> RunResult<&'static HelpTopic> {
                     .any(|alias| normalize(alias) == normalized)
         })
         .ok_or_else(|| {
-            RunReason::Args(format!(
+            RunReason::Args.to_err().with_detail(format!(
                 "unknown doc topic `{topic}`. try one of: {}",
                 topic_keys().join(", ")
             ))
-            .to_err()
         })
 }
 

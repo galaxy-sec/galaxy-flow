@@ -45,14 +45,27 @@ impl GxShell {
         shell_opt.quiet = ctx.quiet();
         if let Some(arg_file) = &self.arg_file {
             let dict = match arg_file.extension() {
-                Some(ext) if ext == "json" => ValueDict::load_json(arg_file)
-                    .map_err(|e| ExecReason::Serde(format!("JSON解析失败: {e}")))?,
+                Some(ext) if ext == "json" => ValueDict::load_json(arg_file).map_err(|e| {
+                    ExecReason::Serde
+                        .to_err()
+                        .with_detail(format!("JSON解析失败: {e}"))
+                })?,
                 Some(ext) if ext == "yml" || ext == "yaml" => ValueDict::load_yaml(arg_file)
-                    .map_err(|e| ExecReason::Serde(format!("YAML解析失败: {e}")))?,
-                Some(ext) if ext == "toml" => ValueDict::load_toml(arg_file)
-                    .map_err(|e| ExecReason::Serde(format!("TOML解析失败: {e}")))?,
-                Some(ext) if ext == "ini" => ValueDict::load_ini(arg_file)
-                    .map_err(|e| ExecReason::Serde(format!("INI解析失败: {e}")))?,
+                    .map_err(|e| {
+                        ExecReason::Serde
+                            .to_err()
+                            .with_detail(format!("YAML解析失败: {e}"))
+                    })?,
+                Some(ext) if ext == "toml" => ValueDict::load_toml(arg_file).map_err(|e| {
+                    ExecReason::Serde
+                        .to_err()
+                        .with_detail(format!("TOML解析失败: {e}"))
+                })?,
+                Some(ext) if ext == "ini" => ValueDict::load_ini(arg_file).map_err(|e| {
+                    ExecReason::Serde
+                        .to_err()
+                        .with_detail(format!("INI解析失败: {e}"))
+                })?,
                 _ => {
                     return Err(ExecReason::from_logic()
                         .to_err()
@@ -69,11 +82,13 @@ impl GxShell {
             ));
 
             if out_data_path.exists() {
-                std::fs::remove_file(&out_data_path).map_err(|e| ExecReason::Io(e.to_string()))?;
+                std::fs::remove_file(&out_data_path)
+                    .map_err(|e| ExecReason::Io.to_err().with_detail(e.to_string()))?;
             }
             std::fs::create_dir_all(out_data_path.parent().unwrap())
-                .map_err(|e| ExecReason::Io(e.to_string()))?;
-            std::fs::File::create(&out_data_path).map_err(|e| ExecReason::Io(e.to_string()))?;
+                .map_err(|e| ExecReason::Io.to_err().with_detail(e.to_string()))?;
+            std::fs::File::create(&out_data_path)
+                .map_err(|e| ExecReason::Io.to_err().with_detail(e.to_string()))?;
             // 修改命令以将输出写入 FIFO
 
             vars_dict
@@ -89,11 +104,12 @@ impl GxShell {
                 vars_dict.global()
             );
             let file_out = std::fs::read_to_string(&out_data_path)
-                .map_err(|e| ExecReason::Io(e.to_string()))?;
+                .map_err(|e| ExecReason::Io.to_err().with_detail(e.to_string()))?;
             vars_dict
                 .global_mut()
                 .set(out_var.as_str(), file_out.trim());
-            std::fs::remove_file(out_data_path).map_err(|e| ExecReason::Io(e.to_string()))?;
+            std::fs::remove_file(out_data_path)
+                .map_err(|e| ExecReason::Io.to_err().with_detail(e.to_string()))?;
             res
         } else {
             gxl_sh!(
@@ -108,8 +124,10 @@ impl GxShell {
 
         match res {
             Ok((exit_code, stdout, stderr)) => {
-                let out = String::from_utf8(stdout).map_err(|e| ExecReason::Io(e.to_string()))?;
-                let err = String::from_utf8(stderr).map_err(|e| ExecReason::Io(e.to_string()))?;
+                let out = String::from_utf8(stdout)
+                    .map_err(|e| ExecReason::Io.to_err().with_detail(e.to_string()))?;
+                let err = String::from_utf8(stderr)
+                    .map_err(|e| ExecReason::Io.to_err().with_detail(e.to_string()))?;
                 action.set_command_output(exit_code, out, err);
             }
             Err(error) => {

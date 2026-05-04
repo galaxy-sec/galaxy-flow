@@ -196,9 +196,9 @@ async fn do_prj_cmd(load: &mut GxLoader, cmd: InitCmd) -> RunResult<()> {
                 && args.path.is_none()
             {
                 return Err(
-                    RunReason::Args("--branch/--tag require --repo or --path".into())
+                    RunReason::Args
                         .to_err()
-                        .with_detail("use: gx init project --path rust --branch main"),
+                        .with_detail("--branch/--tag require --repo or --path; use: gx init project --path rust --branch main"),
                 );
             }
 
@@ -275,14 +275,16 @@ impl StdoutToStderrGuard {
         {
             let saved_stdout_fd = unsafe { libc::dup(libc::STDOUT_FILENO) };
             if saved_stdout_fd < 0 {
-                return Err(RunReason::Exec("dup stdout failed".into()).to_err());
+                return Err(RunReason::Exec.to_err().with_detail("dup stdout failed"));
             }
 
             if unsafe { libc::dup2(libc::STDERR_FILENO, libc::STDOUT_FILENO) } < 0 {
                 unsafe {
                     libc::close(saved_stdout_fd);
                 }
-                return Err(RunReason::Exec("redirect stdout to stderr failed".into()).to_err());
+                return Err(RunReason::Exec
+                    .to_err()
+                    .with_detail("redirect stdout to stderr failed"));
             }
 
             Ok(Self { saved_stdout_fd })
@@ -316,12 +318,10 @@ fn collect_mod_update_inputs() -> RunResult<Vec<&'static str>> {
     }
 
     if inputs.is_empty() {
-        return Err(RunReason::Args("project config not found".into())
-            .to_err()
-            .with_detail(format!(
-                "expected at least one config file: {} or {}",
-                DEFAULT_WORK_CONF, DEFAULT_ADM_CONF
-            )));
+        return Err(RunReason::Args.to_err().with_detail(format!(
+            "expected at least one config file: {} or {}",
+            DEFAULT_WORK_CONF, DEFAULT_ADM_CONF
+        )));
     }
 
     Ok(inputs)
@@ -338,13 +338,18 @@ fn collect_git_extern_mod_names_from_code(code: &str) -> RunResult<Vec<String>> 
     let mut mods = Vec::new();
 
     loop {
-        let (chunk, status) = ExternParser::parse_code(&mut input)
-            .map_err(|e| RunReason::Gxl(format!("parse extern mod list failed: {e}")).to_err())?;
+        let (chunk, status) = ExternParser::parse_code(&mut input).map_err(|e| {
+            RunReason::Gxl
+                .to_err()
+                .with_detail(format!("parse extern mod list failed: {e}"))
+        })?;
         let _ = chunk;
         match status {
             DslStatus::Extern => {
                 let mod_ref = gal_extern_mod(&mut input).map_err(|e| {
-                    RunReason::Gxl(format!("parse extern mod ref failed: {e}")).to_err()
+                    RunReason::Gxl
+                        .to_err()
+                        .with_detail(format!("parse extern mod ref failed: {e}"))
                 })?;
                 if let crate::components::gxl_extend::ModAddr::Git(_) = mod_ref.addr() {
                     mods.extend(mod_ref.mods().iter().cloned());
@@ -404,7 +409,7 @@ async fn do_self_cmd(cmd: SelfCmd) -> RunResult<()> {
                         "remote_version": out.remote_version,
                         "has_update": out.has_update
                     }))
-                    .map_err(|e| RunReason::Exec(e.to_string()).to_err())?
+                    .map_err(|e| RunReason::Exec.to_err().with_detail(e.to_string()))?
                 );
             } else {
                 print_self_check_report(&out)?;
@@ -441,7 +446,7 @@ async fn do_self_cmd(cmd: SelfCmd) -> RunResult<()> {
 
 fn parse_channel(input: &str) -> RunResult<ReleaseChannel> {
     ReleaseChannel::parse(input).ok_or_else(|| {
-        RunReason::Args("bad channel".into())
+        RunReason::Args
             .to_err()
             .with_detail(format!("channel={input}, expected=stable|alpha|beta"))
     })
@@ -455,12 +460,10 @@ fn print_self_check_report(out: &CheckResult) -> RunResult<()> {
 fn format_self_check_report(out: &CheckResult, use_color: bool) -> RunResult<String> {
     let relation =
         compare_versions_str(&out.current_version, &out.remote_version).map_err(|e| {
-            RunReason::Exec("compare self-update versions failed".into())
-                .to_err()
-                .with_detail(format!(
-                    "current={}, remote={}, error={}",
-                    out.current_version, out.remote_version, e
-                ))
+            RunReason::Exec.to_err().with_detail(format!(
+                "compare self-update versions failed: current={}, remote={}, error={}",
+                out.current_version, out.remote_version, e
+            ))
         })?;
 
     let mut lines = vec![
@@ -605,10 +608,7 @@ mod tests {
         let mut adm_backup = ConfigBackup::hide_if_exists(DEFAULT_ADM_CONF);
 
         let err = collect_mod_update_inputs().expect_err("missing configs should fail");
-        assert!(matches!(
-            err.reason(),
-            RunReason::Args(msg) if msg == "project config not found"
-        ));
+        assert!(matches!(err.reason(), RunReason::Args));
         assert!(
             err.detail()
                 .as_deref()

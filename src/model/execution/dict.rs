@@ -1,7 +1,6 @@
 use derive_more::From;
 use orion_error::conversion::ToStructError;
 use orion_error::reason::UnifiedReason as UvsReason;
-use orion_sec::SecReason;
 use orion_sec::load_secfile;
 use orion_sec::sec::{SecFrom, SecString, SecValueType, ValueGetter};
 use orion_variate::vars::EnvDict;
@@ -34,10 +33,8 @@ impl VarSpace {
         let sec_dict = load_secfile().map_err(|e| {
             let detail = e.to_string();
             match e.reason() {
-                orion_sec::OrionSecReason::Sec(sec_reason) => {
-                    { ExecReason::Sec(clone_sec_reason(sec_reason)) }
-                        .to_err()
-                        .with_detail(detail)
+                orion_sec::OrionSecReason::Sec(_sec_reason) => {
+                    ExecReason::Sec.to_err().with_detail(detail)
                 }
                 orion_sec::OrionSecReason::General(uvs_reason) => {
                     ExecReason::from(map_legacy_uvs_reason(uvs_reason))
@@ -78,7 +75,7 @@ impl VarSpace {
         self.global()
             .maps()
             .value_get(path)
-            .ok_or(ExecReason::Miss(path.to_string()).to_err())
+            .ok_or_else(|| ExecReason::Miss.to_err().with_detail(path.to_string()))
     }
 
     pub fn merge_args_to(
@@ -100,7 +97,7 @@ impl VarSpace {
                     GxlObject::VarRef(name) => {
                         let value = cur_vars
                             .get(name.as_str())
-                            .ok_or(ExecReason::Miss(name.clone()).to_err())?;
+                            .ok_or_else(|| ExecReason::Miss.to_err().with_detail(name.clone()))?;
                         cur_vars.global_mut().set(param.name().clone(), value);
                     }
                     GxlObject::Value(value) => {
@@ -126,15 +123,6 @@ impl VarSpace {
             }
         }
         Ok(cur_vars)
-    }
-}
-
-fn clone_sec_reason(value: &SecReason) -> SecReason {
-    match value {
-        SecReason::SensitiveMsg(v) => SecReason::SensitiveMsg(v.clone()),
-        SecReason::NoPermission(v) => SecReason::NoPermission(v.clone()),
-        SecReason::Deception(v) => SecReason::Deception(v.clone()),
-        SecReason::UnAuthenticated(v) => SecReason::UnAuthenticated(v.clone()),
     }
 }
 

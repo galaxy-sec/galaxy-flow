@@ -76,7 +76,7 @@ impl AsyncRunnableWithSenderTrait for GxlLoop {
             }
             return Ok(TaskValue::from((cur_dict, ExecOut::Task(task))));
         }
-        ExecReason::Miss(self.var_name().into()).err_result()
+        Err(ExecReason::Miss.to_err().with_detail(self.var_name()))
     }
 }
 
@@ -203,10 +203,8 @@ mod tests {
         // 验证错误情况
         assert!(result.is_err());
         let err = result.unwrap_err();
-        assert!(matches!(
-            err.reason(),
-            ExecReason::Miss(msg) if msg == "missing_dict"
-        ));
+        assert!(matches!(err.reason(), ExecReason::Miss));
+        assert_eq!(err.detail().as_deref(), Some("missing_dict"));
     }
 
     #[rstest]

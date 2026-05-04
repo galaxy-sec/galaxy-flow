@@ -64,10 +64,10 @@ impl AsyncRunnableTrait for GxAssert {
                 if !ctx.quiet() {
                     eprintln!("{err_msg}");
                 }
-                Err(ExecError::from(ExecReason::Assert(format!(
+                Err(ExecReason::Assert.to_err().with_detail(format!(
                     "assert fail! [{}], expect: {},\n value {}",
                     self.result, expect, value
-                ))))
+                )))
             }
         }
     }

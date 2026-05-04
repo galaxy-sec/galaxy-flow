@@ -2,7 +2,7 @@ use derive_more::From;
 use orion_conf::error::SerdeReason;
 use orion_error::reason::{DomainReason, ErrorCode, UnifiedReason as UvsReason};
 use orion_error::{OrionError, StructError};
-use orion_sec::{OrionSecReason, SecReason};
+use orion_sec::OrionSecReason;
 use serde::Serialize;
 use thiserror::Error;
 
@@ -34,33 +34,33 @@ pub type AResult<T> = Result<T, AssembleError>;
 #[derive(Debug, PartialEq, Serialize, OrionError)]
 pub enum ExecReason {
     #[orion_error(identity = "sys.cmd_error")]
-    OsCmd(String, i32, String),
+    OsCmd,
     #[orion_error(identity = "sys.io_error")]
-    Io(String),
+    Io,
     #[orion_error(identity = "biz.gxl_error")]
-    Gxl(String),
+    Gxl,
     #[orion_error(identity = "sys.serv_error")]
-    Serv(String),
+    Serv,
     #[orion_error(identity = "logic.assert_fail")]
-    Assert(String),
+    Assert,
     #[orion_error(identity = "biz.args_error")]
-    Args(String),
+    Args,
     #[orion_error(identity = "biz.miss")]
-    Miss(String),
+    Miss,
     #[orion_error(identity = "sys.serde_error")]
-    Serde(String),
+    Serde,
     #[orion_error(transparent)]
     Uvs(UvsReason),
-    #[orion_error(transparent)]
-    Sec(SecReason),
+    #[orion_error(identity = "biz.sec_error")]
+    Sec,
 
     #[orion_error(identity = "sys.network_error")]
-    NetWork(String),
+    NetWork,
 }
 
 impl From<reqwest::Error> for ExecReason {
-    fn from(value: reqwest::Error) -> Self {
-        ExecReason::NetWork(value.to_string())
+    fn from(_value: reqwest::Error) -> Self {
+        ExecReason::NetWork
     }
 }
 
@@ -93,14 +93,15 @@ impl ExecReason {
 
 impl From<SerdeReason> for ExecReason {
     fn from(value: SerdeReason) -> Self {
-        ExecReason::Serde(format!("Serde error: {value}"))
+        let _ = value;
+        ExecReason::Serde
     }
 }
 
 impl From<OrionSecReason> for ExecReason {
     fn from(value: OrionSecReason) -> Self {
         match value {
-            OrionSecReason::Sec(sec_reason) => Self::Sec(sec_reason),
+            OrionSecReason::Sec(_sec_reason) => Self::Sec,
             OrionSecReason::General(uvs_reason) => Self::Uvs(map_legacy_uvs_reason(&uvs_reason)),
         }
     }

@@ -228,7 +228,7 @@ impl ExecLoadTrait for GxlMod {
             return Ok(());
         }
         // 如果没有找到指定的环境变量，返回错误
-        Err(ExecError::from(ExecReason::Miss(args.into())))
+        Err(ExecReason::Miss.to_err().with_detail(args))
     }
     fn load_flow(
         &self,

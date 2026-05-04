@@ -40,7 +40,9 @@ impl AiChatExecutor {
         if let Some(prompt_file) = &self.prompt_file {
             let prompt_file = PathBuf::from(exp.eval(prompt_file)?);
             if !prompt_file.exists() {
-                return ExecReason::Gxl(format!("{path} not exists", path = prompt_file.display()))
+                return ExecReason::Gxl
+                    .to_err()
+                    .with_detail(format!("{path} not exists", path = prompt_file.display()))
                     .err_result();
             }
             let data = std::fs::read_to_string(prompt_file.as_path())

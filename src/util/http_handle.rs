@@ -7,7 +7,7 @@ use crate::{
     },
 };
 use colored::Colorize;
-use orion_error::StructError;
+use orion_error::conversion::ToStructError;
 use serde::Serialize;
 use std::{fmt::Debug, time::Duration};
 
@@ -23,9 +23,9 @@ pub async fn send_http_request<T: Serialize + Debug>(payload: T, url: &String) {
         .send()
         .await
         .map_err(|e| {
-            // Convert reqwest::Error to your ExecReason type, then into StructError
-            let exec_reason = ExecReason::NetWork(format!("HTTP request failed: {e}"));
-            StructError::<ExecReason>::from(exec_reason)
+            ExecReason::NetWork
+                .to_err()
+                .with_detail(format!("HTTP request failed: {e}"))
         });
 
     match response {

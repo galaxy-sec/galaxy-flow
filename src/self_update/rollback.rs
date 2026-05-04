@@ -1,9 +1,9 @@
 use std::fs;
 use std::path::Path;
 
+use orion_error::conversion::ToStructError;
 use orion_error::conversion::{ErrorWith, SourceErr};
 use orion_error::reason::UnifiedReason as UvsReason;
-use orion_error::conversion::ToStructError;
 
 use crate::err::{RunReason, RunResult};
 
@@ -14,13 +14,11 @@ pub fn rollback(install_dir: &Path, backup_dir: &Path) -> RunResult<()> {
         let live_path = install_dir.join(bin_name(bin));
         let backup_path = backup_dir.join(bin_name(bin));
         if !backup_path.exists() {
-            return Err(RunReason::Args("backup is incomplete".into())
-                .to_err()
-                .with_detail(format!(
-                    "backup_dir={}, missing={}",
-                    backup_dir.display(),
-                    backup_path.display()
-                )));
+            return Err(RunReason::Args.to_err().with_detail(format!(
+                "backup is incomplete: backup_dir={}, missing={}",
+                backup_dir.display(),
+                backup_path.display()
+            )));
         }
         copy_file(&backup_path, &live_path)?;
     }
@@ -44,9 +42,10 @@ fn exec_version(bin: &Path) -> RunResult<()> {
     if status.success() {
         return Ok(());
     }
-    Err(RunReason::Exec("health check failed".into())
-        .to_err()
-        .with_detail(format!("{} --version exit={status}", bin.display())))
+    Err(RunReason::Exec.to_err().with_detail(format!(
+        "health check failed: {} --version exit={status}",
+        bin.display()
+    )))
 }
 
 fn copy_file(src: &Path, dst: &Path) -> RunResult<()> {

@@ -12,6 +12,7 @@ use crate::var::VarDict;
 use crate::{ExecReason, ExecResult};
 
 use colored::*;
+use orion_error::conversion::ToStructError;
 #[allow(clippy::result_large_err)]
 pub fn os_sh(
     scope: LogicScope,
@@ -54,14 +55,22 @@ pub fn os_sh(
     let fail_msg = opt.err.clone().unwrap_or(sec_cmd.clone());
     let fail_msg = exp.eval(fail_msg.as_str())?;
     match output {
-        Err(e) => Err(ExecReason::OsCmd(fail_msg, 254, e.to_string()).into()),
+        Err(e) => Err(ExecReason::OsCmd
+            .to_err()
+            .with_detail(format!("cmd={fail_msg}, code=254, stderr={e}"))),
         Ok(out) => {
             if let Some(code) = out.status.code() {
                 let err_desp = "err msg from utf8 failed";
-                let out_msg = String::from_utf8(out.stdout.clone())
-                    .map_err(|_| ExecReason::OsCmd(sec_cmd.clone(), 253, err_desp.to_string()))?;
-                let err_msg = String::from_utf8(out.stderr.clone())
-                    .map_err(|_| ExecReason::OsCmd(sec_cmd.clone(), code, err_desp.to_string()))?;
+                let out_msg = String::from_utf8(out.stdout.clone()).map_err(|_| {
+                    ExecReason::OsCmd
+                        .to_err()
+                        .with_detail(format!("cmd={sec_cmd}, code=253, stderr={err_desp}"))
+                })?;
+                let err_msg = String::from_utf8(out.stderr.clone()).map_err(|_| {
+                    ExecReason::OsCmd
+                        .to_err()
+                        .with_detail(format!("cmd={sec_cmd}, code={code}, stderr={err_desp}"))
+                })?;
                 let is_ok = opt.ok_codes.contains(&code);
                 if is_ok && let Some(ref suc_msg) = opt.suc {
                     println!("{suc_msg}");
@@ -86,10 +95,14 @@ pub fn os_sh(
                 return if is_ok {
                     Ok((code, out.stdout, out.stderr))
                 } else {
-                    Err(ExecReason::OsCmd(fail_msg, code, err_msg).into())
+                    Err(ExecReason::OsCmd
+                        .to_err()
+                        .with_detail(format!("cmd={fail_msg}, code={code}, stderr={err_msg}")))
                 };
             }
-            Err(ExecReason::OsCmd(fail_msg, 252, "no exit code".to_string()).into())
+            Err(ExecReason::OsCmd
+                .to_err()
+                .with_detail(format!("cmd={fail_msg}, code=252, stderr=no exit code")))
         }
     }
 }

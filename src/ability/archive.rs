@@ -47,9 +47,10 @@ impl AsyncRunnableTrait for GxTar {
             eprintln!("archive {}  -> {}", src.display(), dst.display());
         }
         if !src.exists() {
-            return ExecReason::Args("src not exists".into())
-                .err_result()
-                .with_context(&src);
+            return Err(ExecReason::Args
+                .to_err()
+                .with_detail("src not exists")
+                .with_context(&src));
         }
         if dst.exists() {
             std::fs::remove_file(&dst)
@@ -78,14 +79,16 @@ impl AsyncRunnableTrait for GxUnTar {
             eprintln!("untar {}  -> {}", src.display(), out.display());
         }
         if !src.exists() {
-            return Err(ExecReason::Args("src not exists".into())
+            return Err(ExecReason::Args
                 .to_err()
+                .with_detail("src not exists")
                 .with_context(&src));
         }
         if out.exists() {
             // 如果目标是一个非空目录，先尝试删除它
             if out.is_dir() {
-                std::fs::remove_dir_all(&out).or_else(|_| -> std::io::Result<()> {
+                std::fs::remove_dir_all(&out)
+                    .or_else(|_| -> std::io::Result<()> {
                         // 如果删除整个目录失败，尝试删除目录内容
                         for entry in std::fs::read_dir(&out)? {
                             let entry = entry?;

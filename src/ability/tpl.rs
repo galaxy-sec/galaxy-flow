@@ -1,8 +1,8 @@
 use crate::ability::prelude::*;
 use crate::execution::action::Action;
 use handlebars::{Handlebars, to_json};
-use orion_error::conversion::{SourceErr, SourceRawErr};
 use orion_error::OperationContext;
+use orion_error::conversion::{SourceErr, SourceRawErr};
 use serde::Serialize;
 use std::fmt::Display;
 use std::fs::File;
@@ -84,11 +84,9 @@ impl GxTpl {
         let mut err_ctx = OperationContext::doing("render tpl path").with_auto_log();
         // 处理目录模板
         if dto.engine != TPlEngineType::Handlebars {
-            return Err(ExecReason::Args(format!(
-                "Only support Handlebars Engine {:?}",
-                dto.engine
-            ))
-            .into());
+            return Err(ExecReason::Args
+                .to_err()
+                .with_detail(format!("Only support Handlebars Engine {:?}", dto.engine)));
         }
         let mut handlebars = Handlebars::new();
         handlebars.set_strict_mode(true);
@@ -137,14 +135,17 @@ impl GxTpl {
                     .with_detail(err.to_string())
             })?;
             let entry_path = entry.path();
-            let relative_path = entry_path
-                .strip_prefix(tpl_dir)
-                .map_err(|err| ExecReason::data_error().to_err().with_detail(err.to_string()))?;
+            let relative_path = entry_path.strip_prefix(tpl_dir).map_err(|err| {
+                ExecReason::data_error()
+                    .to_err()
+                    .with_detail(err.to_string())
+            })?;
             let dst_path = Path::new(dst).join(relative_path);
 
             if entry_path.is_dir() {
                 // 如果是目录，确保在目标位置创建对应的目录
-                std::fs::create_dir_all(&dst_path).source_err(UvsReason::system_error().into(), "source error")?;
+                std::fs::create_dir_all(&dst_path)
+                    .source_err(UvsReason::system_error().into(), "source error")?;
                 debug!(target: ctx.path(), "created dir: {}", dst_path.display());
             } else if entry_path.is_file() {
                 // 如果是文件，则渲染模板
@@ -177,25 +178,25 @@ impl GxTpl {
         // 2. 验证模板文件
         let tpl_path = Path::new(&tpl);
         if !tpl_path.exists() {
-            return Err(
-                ExecReason::Args(format!("Template file not found: {}", tpl.display())).into(),
-            );
+            return Err(ExecReason::Args
+                .to_err()
+                .with_detail(format!("Template file not found: {}", tpl.display())));
         }
         if !tpl_path.is_file() {
-            return Err(ExecReason::Args(format!(
-                "Template path is not a file: {}",
-                tpl.display()
-            ))
-            .into());
+            return Err(ExecReason::Args
+                .to_err()
+                .with_detail(format!("Template path is not a file: {}", tpl.display())));
         }
         err_ctx.record("dst", dst.display());
         // 3. 准备目标文件
         let dst_path = Path::new(&dst);
         if let Some(parent) = dst_path.parent() {
-            std::fs::create_dir_all(parent).source_err(UvsReason::system_error().into(), "source error")?;
+            std::fs::create_dir_all(parent)
+                .source_err(UvsReason::system_error().into(), "source error")?;
         }
         if dst_path.exists() {
-            std::fs::remove_file(dst).source_err(UvsReason::system_error().into(), "source error")?;
+            std::fs::remove_file(dst)
+                .source_err(UvsReason::system_error().into(), "source error")?;
         }
 
         // 4. 日志记录
@@ -207,7 +208,7 @@ impl GxTpl {
             .with_context(&err_ctx)?;
 
         let mut dst_file = File::create(dst).map_err(|e| {
-            ExecReason::Args(format!(
+            ExecReason::Args.to_err().with_detail(format!(
                 "Failed to create output file {}: {}",
                 dst.display(),
                 e

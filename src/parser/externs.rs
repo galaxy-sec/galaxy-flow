@@ -52,7 +52,7 @@ impl ExternLocal {
         let gxl_full_path = crate::evaluator::VarParser::eval(&ee, &gxl_full_path)?;
         ctx.record("gxl", gxl_full_path.as_str());
         let code = read_to_string(gxl_full_path.as_str())
-            .source_err(ExecReason::Gxl("read mod file fail!".to_string()), "read mod file")
+            .source_err(ExecReason::Gxl, "read mod file fail!")
             .with_context(&ctx)?;
         Ok(code)
     }
@@ -107,9 +107,9 @@ impl ExternParser {
             .context(wn_desc("<extern-mod>"))
             .parse_next(cur)
             .map_err(|err| {
-                ExecReason::Gxl("parse extern mod fail!".to_string())
+                ExecReason::Gxl
                     .to_err()
-                    .with_detail(err.to_string())
+                    .with_detail(format!("parse extern mod fail!: {err}"))
             })?;
         let exp = EnvExpress::from_env_mix(vars_space.global().clone());
         let local = match extern_mods.addr() {
@@ -117,9 +117,9 @@ impl ExternParser {
                 let git_url = exp.eval(git_addr.remote())?;
                 let cl_git_url = git_url.clone();
                 let (_host, repo_name) = gal_git_path(&mut git_url.as_str()).map_err(|err| {
-                    ExecReason::Gxl("parse git repo fail!".to_string())
+                    ExecReason::Gxl
                         .to_err()
-                        .with_detail(err.to_string())
+                        .with_detail(format!("parse git repo fail!: {err}"))
                 })?;
 
                 debug!("git url: {cl_git_url}");

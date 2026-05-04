@@ -1,7 +1,7 @@
 use std::fs;
 use std::path::PathBuf;
 
-use orion_error::conversion::{ToStructError, SourceErr};
+use orion_error::conversion::{SourceErr, ToStructError};
 
 use crate::ability::prelude::*;
 
@@ -60,9 +60,9 @@ fn apply_patch_text(
     let (marker_hits, changed_lines) = match action {
         PatchAction::Set => {
             let val = value.ok_or_else(|| {
-                ExecReason::Args("gx.patch_file missing value".into())
+                ExecReason::Args
                     .to_err()
-                    .with_detail("action=set requires value")
+                    .with_detail("gx.patch_file missing value: action=set requires value")
             })?;
             apply_set(&mut lines, marker, val, strict)?
         }
@@ -196,9 +196,9 @@ fn scan_block_ranges(
     for (idx, line) in lines.iter().enumerate() {
         if line.contains(start_token) {
             if strict && open_start.is_some() {
-                return Err(ExecReason::Args("invalid block marker nesting".into())
-                    .to_err()
-                    .with_detail(format!("nested @gxl:block({marker})")));
+                return Err(ExecReason::Args.to_err().with_detail(format!(
+                    "invalid block marker nesting: nested @gxl:block({marker})"
+                )));
             }
             if open_start.is_none() {
                 open_start = Some(idx);
@@ -208,17 +208,17 @@ fn scan_block_ranges(
         if line.contains(end_token) {
             if let Some(start) = open_start {
                 if start >= idx {
-                    return Err(ExecReason::Args("invalid block marker order".into())
-                        .to_err()
-                        .with_detail(format!("@gxl:end({marker}) before @gxl:block({marker})")));
+                    return Err(ExecReason::Args.to_err().with_detail(format!(
+                        "invalid block marker order: @gxl:end({marker}) before @gxl:block({marker})"
+                    )));
                 }
                 ranges.push((start, idx));
                 open_start = None;
             } else if strict {
-                return Err(ExecReason::Args("unmatched block end marker".into())
+                return Err(ExecReason::Args
                     .to_err()
                     .with_detail(format!(
-                        "line={} has @gxl:end({marker}) without open @gxl:block({marker})",
+                        "unmatched block end marker: line={} has @gxl:end({marker}) without open @gxl:block({marker})",
                         idx + 1
                     )));
             }
@@ -227,16 +227,15 @@ fn scan_block_ranges(
 
     if strict {
         if open_start.is_some() {
-            return Err(ExecReason::Args("unclosed block marker".into())
+            return Err(ExecReason::Args
                 .to_err()
-                .with_detail(format!("missing @gxl:end({marker})")));
+                .with_detail(format!("unclosed block marker: missing @gxl:end({marker})")));
         }
         if ranges.len() != 1 {
-            return Err(
-                ExecReason::Args("strict mode requires exactly one block".into())
-                    .to_err()
-                    .with_detail(format!("marker={marker}, blocks={}", ranges.len())),
-            );
+            return Err(ExecReason::Args.to_err().with_detail(format!(
+                "strict mode requires exactly one block: marker={marker}, blocks={}",
+                ranges.len()
+            )));
         }
     }
 
@@ -250,20 +249,18 @@ fn validate_marker_hits(scope: &str, marker: &str, marker_hits: usize) -> ExecRe
     if marker_hits == 1 {
         return Ok(());
     }
-    Err(ExecReason::Args("strict mode marker hit mismatch".into())
-        .to_err()
-        .with_detail(format!(
-            "scope={scope}, marker={marker}, hits={marker_hits}"
-        )))
+    Err(ExecReason::Args.to_err().with_detail(format!(
+        "strict mode marker hit mismatch: scope={scope}, marker={marker}, hits={marker_hits}"
+    )))
 }
 
 fn validate_comment_prefix(comment_prefix: &str) -> ExecResult<()> {
     if !comment_prefix.is_empty() {
         return Ok(());
     }
-    Err(ExecReason::Args("invalid comment_prefix".into())
+    Err(ExecReason::Args
         .to_err()
-        .with_detail("comment_prefix cannot be empty"))
+        .with_detail("invalid comment_prefix: comment_prefix cannot be empty"))
 }
 
 fn is_colon_assignment_delimiter(head: &str, idx: usize) -> bool {
@@ -321,9 +318,9 @@ fn find_assignment_split_pos(head: &str) -> Option<usize> {
 
 fn patch_set_line(line: &str, value: &str, marker_token: &str) -> ExecResult<String> {
     let marker_idx = line.find(marker_token).ok_or_else(|| {
-        ExecReason::Args("missing set marker".into())
-            .to_err()
-            .with_detail(format!("marker token {marker_token} not found"))
+        ExecReason::Args.to_err().with_detail(format!(
+            "missing set marker: marker token {marker_token} not found"
+        ))
     })?;
 
     let mut suffix_start = marker_idx;
@@ -348,9 +345,9 @@ fn patch_set_line(line: &str, value: &str, marker_token: &str) -> ExecResult<Str
     let suffix = &line[suffix_start..];
 
     let split_pos = find_assignment_split_pos(head).ok_or_else(|| {
-        ExecReason::Args("invalid set target line".into())
-            .to_err()
-            .with_detail(format!("line has no assignment delimiter: {line}"))
+        ExecReason::Args.to_err().with_detail(format!(
+            "invalid set target line: line has no assignment delimiter: {line}"
+        ))
     })?;
 
     let before = &head[..split_pos + 1];
@@ -415,9 +412,10 @@ impl AsyncRunnableTrait for GxPatchFile {
 
         let file_path = PathBuf::from(file);
         if !file_path.exists() {
-            return ExecReason::Miss("patch_file target not found".into())
-                .err_result()
-                .with_context(&file_path);
+            return Err(ExecReason::Miss
+                .to_err()
+                .with_detail("patch_file target not found")
+                .with_context(&file_path));
         }
 
         let src = fs::read_to_string(&file_path)
@@ -542,10 +540,13 @@ mod tests {
         let src = "version = 1.0\n";
         let err = apply_patch_text(PatchAction::Set, src, "version", Some("v2.0"), true, "#")
             .expect_err("strict mode should reject missing marker");
-        assert!(matches!(
-            err.reason(),
-            ExecReason::Args(msg) if msg.contains("strict mode")
-        ));
+        assert!(matches!(err.reason(), ExecReason::Args));
+        assert!(
+            err.detail()
+                .as_deref()
+                .unwrap_or_default()
+                .contains("strict mode")
+        );
     }
 
     #[test]
@@ -625,11 +626,12 @@ mod tests {
         let src = "http://old   # @gxl:set(url)\n";
         let err = apply_patch_text(PatchAction::Set, src, "url", Some("http://new"), true, "#")
             .expect_err("set should reject non-assignment colon");
-        assert!(err
-            .detail()
-            .as_deref()
-            .unwrap_or_default()
-            .contains("line has no assignment delimiter"));
+        assert!(
+            err.detail()
+                .as_deref()
+                .unwrap_or_default()
+                .contains("line has no assignment delimiter")
+        );
     }
 
     #[test]
@@ -644,10 +646,13 @@ mod tests {
             "#",
         )
         .expect_err("strict mode should reject unmatched block end marker");
-        assert!(matches!(
-            err.reason(),
-            ExecReason::Args(msg) if msg.contains("unmatched block end marker")
-        ));
+        assert!(matches!(err.reason(), ExecReason::Args));
+        assert!(
+            err.detail()
+                .as_deref()
+                .unwrap_or_default()
+                .contains("unmatched block end marker")
+        );
     }
 
     #[test]
@@ -662,10 +667,13 @@ mod tests {
             "#",
         )
         .expect_err("strict mode should reject nested block marker");
-        assert!(matches!(
-            err.reason(),
-            ExecReason::Args(msg) if msg.contains("invalid block marker nesting")
-        ));
+        assert!(matches!(err.reason(), ExecReason::Args));
+        assert!(
+            err.detail()
+                .as_deref()
+                .unwrap_or_default()
+                .contains("invalid block marker nesting")
+        );
     }
 
     #[test]
@@ -675,7 +683,7 @@ mod tests {
             .expect_err("line actions should reject empty comment prefix");
         assert_eq!(
             err.detail().as_deref(),
-            Some("comment_prefix cannot be empty")
+            Some("invalid comment_prefix: comment_prefix cannot be empty")
         );
     }
 }

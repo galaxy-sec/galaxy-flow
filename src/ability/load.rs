@@ -8,7 +8,7 @@ use orion_accessor::{
     types::{ResourceDownloader, ResourceUploader},
     update::{DownloadOptions, HttpMethod, UploadOptions},
 };
-use orion_error::conversion::{ToStructError, SourceErr, SourceRawErr};
+use orion_error::conversion::{SourceErr, SourceRawErr, ToStructError};
 
 use crate::{ability::prelude::*, util::accessor::build_accessor};
 
@@ -50,7 +50,7 @@ impl AsyncRunnableTrait for GxUpLoad {
         let local_file_path = PathBuf::from(&local_file);
         let method = ex.eval(self.method())?;
         let http_method = HttpMethod::from_str(method.as_str())
-            .source_raw_err(ExecReason::Args(format!("bad method:{method}")), "parse http method")?;
+            .source_raw_err(ExecReason::Args, format!("bad method:{method}"))?;
 
         if local_file_path.exists() {
             let accessor = build_accessor(&vars_dict.global().clone().into());
@@ -65,10 +65,11 @@ impl AsyncRunnableTrait for GxUpLoad {
             action.finish();
             Ok(TaskValue::from((vars_dict, ExecOut::Action(action))))
         } else {
-            return ExecReason::Miss("local_file".into())
-                .err_result()
+            return Err(ExecReason::Miss
+                .to_err()
+                .with_detail("local_file")
                 .doing("gx.upload")
-                .with_context(&local_file_path);
+                .with_context(&local_file_path));
         }
     }
 }
@@ -115,10 +116,11 @@ impl AsyncRunnableTrait for GxDownLoad {
                 Ok(TaskValue::from((vars_dict, ExecOut::Action(action))))
             }
             _ => {
-                return ExecReason::Miss("parent path not exists".into())
-                    .err_result()
+                return Err(ExecReason::Miss
+                    .to_err()
+                    .with_detail("parent path not exists")
                     .doing("gx.download")
-                    .with_context(&local_file_path);
+                    .with_context(&local_file_path));
             }
         }
     }

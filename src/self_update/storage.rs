@@ -3,9 +3,9 @@ use std::io::{self, Write};
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 
+use orion_error::conversion::ToStructError;
 use orion_error::conversion::{ErrorWith, SourceErr, SourceRawErr};
 use orion_error::reason::UnifiedReason as UvsReason;
-use orion_error::conversion::ToStructError;
 
 use crate::err::{RunReason, RunResult};
 
@@ -36,9 +36,9 @@ pub struct SelfUpdateStorage {
 impl SelfUpdateStorage {
     pub fn new() -> RunResult<Self> {
         let home = dirs::home_dir().ok_or_else(|| {
-            RunReason::Args("cannot resolve home directory".into())
+            RunReason::Args
                 .to_err()
-                .with_detail("self update needs home dir")
+                .with_detail("cannot resolve home directory: self update needs home dir")
         })?;
         let root = home.join(GALAXY_DIR).join(SELF_UPDATE_DIR);
         let this = Self { root };
@@ -104,13 +104,11 @@ impl SelfUpdateStorage {
                     if let Some(pid) = read_lock_pid(&path)
                         && process_is_running(pid)
                     {
-                        return Err(RunReason::Exec("self update is busy".into())
-                            .to_err()
-                            .with_detail(format!(
-                                "lock_file={}, pid={} still running",
-                                path.display(),
-                                pid
-                            )));
+                        return Err(RunReason::Exec.to_err().with_detail(format!(
+                            "self update is busy: lock_file={}, pid={} still running",
+                            path.display(),
+                            pid
+                        )));
                     }
                     let _ = fs::remove_file(&path);
                     create_lock_file(&path)
@@ -118,10 +116,10 @@ impl SelfUpdateStorage {
                         .doing("create self update lock file")
                         .with_context(("path", path.as_path()))
                 } else {
-                    Err(RunReason::Exec("self update is busy".into())
+                    Err(RunReason::Exec
                         .to_err()
                         .with_detail(format!(
-                            "lock_file={}, remove it manually if previous process crashed",
+                            "self update is busy: lock_file={}, remove it manually if previous process crashed",
                             path.display()
                         )))
                 }

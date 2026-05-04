@@ -1,4 +1,4 @@
-use orion_error::conversion::{ToStructError, SourceErr};
+use orion_error::conversion::{SourceErr, ToStructError};
 
 use crate::ability::prelude::*;
 
@@ -143,9 +143,9 @@ impl AsyncRunnableTrait for GxlVersion {
 pub fn parse_version(data: &str) -> ExecResult<Version> {
     let mut xdata = data;
     let (a, b, c, d) = take_version(&mut xdata).map_err(|err| {
-        ExecReason::Args("version parse failed".to_string())
+        ExecReason::Args
             .to_err()
-            .with_detail(err.to_string())
+            .with_detail(format!("version parse failed: {err}"))
     })?;
     Ok(Version::new(a, b, c, d))
 }
