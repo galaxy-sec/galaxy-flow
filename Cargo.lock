@@ -3756,9 +3756,9 @@ dependencies = [
 
 [[package]]
 name = "wp-self-update"
-version = "0.3.1"
+version = "0.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7a61b7059d60020bb3fac9e44973a0ba086cf25d38ae8baff6328a781a59ae61"
+checksum = "9f74726be4734ac03d9580f7166c4c844816569386a5ddd20d73f1fd34f1bc65"
 dependencies = [
  "derive_more",
  "flate2",
