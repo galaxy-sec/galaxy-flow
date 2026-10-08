@@ -6,6 +6,9 @@ bin
 report
 _gal/.report
 .*
+# `.github` 属仓库内容，必须入库（`.*` 会连带忽略它）
+!.github/
+!.github/**
 temp
 .DS_Store
 *.bak
