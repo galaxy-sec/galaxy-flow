@@ -20,16 +20,18 @@ jobs:
       id-token: write
     strategy:
       matrix:
+        # 固定平台矩阵：三份制品同版本齐备，供控制中心稳定解析。
+        # Linux 统一用 musl 静态链接（跨发行版/容器通用，不再出 glibc 制品）。
         target:
-          - x86_64-unknown-linux-gnu
           - x86_64-unknown-linux-musl
+          - aarch64-unknown-linux-musl
           - aarch64-apple-darwin
         rustup_toolchain: [stable]
         include:
           - os: ubuntu-22.04
-            target: x86_64-unknown-linux-gnu
-          - os: ubuntu-22.04
             target: x86_64-unknown-linux-musl
+          - os: ubuntu-22.04
+            target: aarch64-unknown-linux-musl
           - os: macos-14
             target: aarch64-apple-darwin
     steps:
@@ -42,17 +44,17 @@ jobs:
           toolchain: ${{ matrix.rustup_toolchain }}
 
       - name: Install cross-compilation tools
-        if: matrix.target == 'x86_64-unknown-linux-musl'
+        if: contains(matrix.target, 'musl')
         uses: taiki-e/setup-cross-toolchain-action@v1
         with:
           target: ${{ matrix.target }}
 
       - name: Install musl target
-        if: matrix.target == 'x86_64-unknown-linux-musl'
+        if: contains(matrix.target, 'musl')
         run: rustup target add ${{ matrix.target }}
 
       - name: Configure static linking environment
-        if: matrix.target == 'x86_64-unknown-linux-musl'
+        if: contains(matrix.target, 'musl')
         run: |
           echo "RUSTFLAGS=-C target-feature=+crt-static" >> $GITHUB_ENV
           echo "PKG_CONFIG_ALL_STATIC=1" >> $GITHUB_ENV
@@ -63,40 +65,45 @@ jobs:
         run: cargo build --release --target ${{ matrix.target }}
 
       - name: Show version
+        # aarch64-musl 在 x86_64 runner 上无法直接执行（无 qemu），此处跳过；
+        # 该制品的可用性由控制中心在各目标机上验证。
+        if: matrix.target != 'aarch64-unknown-linux-musl'
         run: ./target/${{ matrix.target }}/release/gx --version
 
-      - name: Verify musl static linking
-        if: matrix.target == 'x86_64-unknown-linux-musl'
+      - name: Verify static linking (musl)
+        if: contains(matrix.target, 'musl')
         run: |
-          echo "Verifying musl static linking..."
-          echo "Debug info: Testing binary with ldd..."
-          ldd_result=$(ldd ./target/${{ matrix.target }}/release/gx 2>&1)
-          echo "ldd output: $ldd_result"
-          if echo "$ldd_result" | grep -q "statically linked"; then
-            echo "✓ musl binary verified as statically linked"
+          # 用 `file` 而非 `ldd`：ldd 无法分析交叉架构（aarch64）二进制，
+          # 而 `file` 输出同时覆盖 "statically linked" 与 "static-pie linked"。
+          bin="target/${{ matrix.target }}/release/gx"
+          echo "file: $(file "$bin")"
+          if file "$bin" | grep -q "static"; then
+            echo "✓ ${{ matrix.target }} verified as statically linked"
           else
-            echo "✗ musl binary shows dynamic dependencies:"
-            echo "$ldd_result"
+            echo "✗ ${{ matrix.target }} is not statically linked"
             exit 1
           fi
 
       - name: Archive (UNIX)
+        # 包内顶层目录名 == 资产名（含 triple），使控制中心「按目录名取平台」不落空。
         run: |
-          mkdir -p artifacts
-          cp -av target/${{ matrix.target }}/release/gx artifacts/
-          tar -czf ${{ github.event.repository.name }}-${{ github.ref_name }}-${{ matrix.target }}.tar.gz  artifacts
+          pkg="${{ github.event.repository.name }}-${{ github.ref_name }}-${{ matrix.target }}"
+          rm -rf "$pkg"
+          mkdir -p "$pkg"
+          cp -av "target/${{ matrix.target }}/release/gx" "$pkg/"
+          tar -czf "$pkg.tar.gz" "$pkg"
         if: ${{ ! startsWith(matrix.os, 'windows') }}
 
       - name: Attest Build Provenance
         uses: actions/attest-build-provenance@v2
         continue-on-error: true
         with:
-          subject-path: ${{ github.event.repository.name }}-${{ github.ref_name }}-${{ matrix.target }}.*
+          subject-path: ${{ github.event.repository.name }}-${{ github.ref_name }}-${{ matrix.target }}.tar.gz
 
       - uses: actions/upload-artifact@v4
         with:
           name: ${{ github.event.repository.name }}-${{ github.ref_name }}-${{ matrix.target }}
-          path: ${{ github.event.repository.name }}-${{ github.ref_name }}-${{ matrix.target }}.*
+          path: ${{ github.event.repository.name }}-${{ github.ref_name }}-${{ matrix.target }}.tar.gz
           if-no-files-found: error
           retention-days: 7
 
@@ -209,17 +216,28 @@ jobs:
       - name: Build assets map
         run: |
           set -euo pipefail
+          # 生成平台资产映射。过渡期额外补 glibc 时代的 key 别名，指向 musl 资产，
+          # 使尚未升级（仍请求 *-unknown-linux-gnu）的旧客户端不要断链；
+          # 待客户端铺开后移除别名（见 wp-update/docs/wp-self-update-platform-target.zh-CN.md）。
           jq -c '
             [ .assets[]
-              | select(.name | test("^galaxy-flow-v[^/]+-(aarch64-apple-darwin|x86_64-unknown-linux-gnu|x86_64-unknown-linux-musl)\\.tar\\.gz$"))
+              | select(.name | test("^galaxy-flow-v[^/]+-(x86_64-unknown-linux-musl|aarch64-unknown-linux-musl|aarch64-apple-darwin)\\.tar\\.gz$"))
               | {
-                  key: (.name | capture("-(?<target>aarch64-apple-darwin|x86_64-unknown-linux-gnu|x86_64-unknown-linux-musl)\\.tar\\.gz$").target),
+                  key: (.name | capture("-(?<target>x86_64-unknown-linux-musl|aarch64-unknown-linux-musl|aarch64-apple-darwin)\\.tar\\.gz$").target),
                   value: {
                     url: .browser_download_url,
                     sha256: ((.digest // "") | sub("^sha256:"; "") | ascii_downcase)
                   }
                 }
             ] | from_entries
+              | . + (
+                  (if .["x86_64-unknown-linux-musl"] != null
+                   then {"x86_64-unknown-linux-gnu": .["x86_64-unknown-linux-musl"]}
+                   else {} end)
+                  + (if .["aarch64-unknown-linux-musl"] != null
+                     then {"aarch64-unknown-linux-gnu": .["aarch64-unknown-linux-musl"]}
+                     else {} end)
+                )
           ' /tmp/release.json > /tmp/assets.json
 
       - name: Checkout gx-get
