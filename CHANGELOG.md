@@ -5,6 +5,14 @@ All notable changes to the Galaxy Flow project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.16.2] - 2026-10-08
+
+### Changed
+- **Linux release artifacts are musl-only**: published targets are `x86_64-unknown-linux-musl` and the new `aarch64-unknown-linux-musl` (plus `aarch64-apple-darwin`); the `*-unknown-linux-gnu` artifact is dropped. The package top-level directory now matches the asset name (including the target triple).
+
+### Fixed
+- **Linux self-update resolves musl artifacts**: `wp-self-update` was upgraded to 0.3.3, so `gx self` picks the static musl build (`x86_64-unknown-linux-musl` / `aarch64-unknown-linux-musl`) and falls back to the glibc triple for older gnu-only releases. Not-yet-upgraded clients keep working via transitional manifest aliases.
+
 ## [v0.16.1] - 2026-09-30
 
 ### Documentation
