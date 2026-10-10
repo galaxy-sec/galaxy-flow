@@ -17,7 +17,7 @@ use crate::util::redirect::{ReadSignal, init_redirect_file, read_log_content, se
 use contracts::requires;
 use derive_getters::Getters;
 use orion_error::conversion::ToStructError;
-use orion_infra::auto_exit_log;
+use orion_error::runtime::OperationContext;
 use std::sync::{Arc, Mutex, mpsc};
 
 use super::meta::FunMeta;
@@ -51,17 +51,17 @@ impl DependTrait<&GxlSpace> for GxlFun {
         debug!(target : "assemble", "will assemble flow {}" , self.meta().name() );
         let mut target = GxlFun::from(self.meta().clone());
         let meta_name = target.meta().name().clone();
-        let mut flag = auto_exit_log!(
-            info!(target: "assemble", "assembled  success!:{meta_name}"),
-            error!(target: "assemble", "assembled failed!:{meta_name}" )
-        );
+        let mut ctx = OperationContext::doing("assemble flow")
+            .with_auto_log()
+            .with_mod_path("assemble");
+        ctx.record("flow", &meta_name);
 
         for block in self.blocks {
             let full_block = block.assemble(mod_name, src)?;
             target.append(full_block);
         }
         target.assembled = true;
-        flag.mark_suc();
+        ctx.mark_suc();
         Ok(target)
     }
 }

@@ -914,7 +914,7 @@ dependencies = [
 
 [[package]]
 name = "galaxy_flow"
-version = "0.16.2"
+version = "0.16.3"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1989,9 +1989,9 @@ checksum = "04744f49eae99ab78e0d5c0b603ab218f515ea8cfe5a456d7629ad883a3b6e7d"
 
 [[package]]
 name = "orion-accessor"
-version = "0.8.3"
+version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4a050a675651f4dbc26f0e9acf9c7c4715c72df119c07fb9071e27272b30fa8c"
+checksum = "65e7cf10736d4879771cb1b01f593898ea06d464a5289e7ded4c5eeb86b0c5fd"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2037,9 +2037,9 @@ dependencies = [
 
 [[package]]
 name = "orion-error"
-version = "0.8.3"
+version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8d40fe94cd4fe0d82201572062e9ca46968ff8fb19c6786d772e9deb8ba0b806"
+checksum = "575552089359a03595b39776384dac800d02938e8821eadf2b57ccef28477044"
 dependencies = [
  "anyhow",
  "log",
@@ -2051,9 +2051,9 @@ dependencies = [
 
 [[package]]
 name = "orion-error-derive"
-version = "0.8.3"
+version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d2419a84868c55bfe730bedaabf250fa9b6de3c9d2e254d9154b1c3212fdc354"
+checksum = "e9864158ef9ac77e9540459781704e6706080bc3f795e7be2fbb8947b6d5e3dc"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -2062,9 +2062,9 @@ dependencies = [
 
 [[package]]
 name = "orion-infra"
-version = "0.7.1"
+version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "45804b91855dbddee3d8b76494ee98fcd9047d17ca722494d5c31982d6762e21"
+checksum = "6997bae142900a7cc7c886c40538af8ea2126c4fdef8a3c9be98c152db630732"
 dependencies = [
  "anyhow",
  "derive_more",
@@ -2081,9 +2081,9 @@ dependencies = [
 
 [[package]]
 name = "orion-sec"
-version = "0.6.2"
+version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8e5c997a020fc68e9a1340718ffb03fdd58f38f72ed840d1114a8c697a52a0fa"
+checksum = "4518d23c9b1b4b80682a1b016b93802ceb6d66eb13ea35fbf17b544ca7517c44"
 dependencies = [
  "chrono",
  "contracts",
@@ -2106,9 +2106,9 @@ dependencies = [
 
 [[package]]
 name = "orion-variate"
-version = "0.13.1"
+version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6abb404ca1569f2d3eec1e17dabe01af627310a8a6f84efd5a5a2921ece86545"
+checksum = "91afd0f7c782f20d22140988003e0e38fba6b84c1c3657ad8f0a6741fbac23dc"
 dependencies = [
  "derive-getters",
  "derive_more",
@@ -2139,9 +2139,9 @@ dependencies = [
 
 [[package]]
 name = "orion_conf"
-version = "0.7.2"
+version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "29cc80c3f56530bca905f38da2aa5fcde85545dadafff973a2e916d081185a47"
+checksum = "aa74ae1654b2c943a36dc97fc27a75ffc285ed8add633da2b16e7b8be0a42f0a"
 dependencies = [
  "derive-getters",
  "derive_more",
@@ -3756,9 +3756,9 @@ dependencies = [
 
 [[package]]
 name = "wp-self-update"
-version = "0.3.3"
+version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9f74726be4734ac03d9580f7166c4c844816569386a5ddd20d73f1fd34f1bc65"
+checksum = "b2f17caa0ad042992c0b20924c02ffe41c79ab1b0cba154f2ef52ef62285fc9c"
 dependencies = [
  "derive_more",
  "flate2",

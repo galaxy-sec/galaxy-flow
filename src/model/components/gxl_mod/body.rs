@@ -17,7 +17,7 @@ use contracts::requires;
 use derive_getters::Getters;
 use indexmap::IndexMap;
 use orion_error::conversion::ToStructError;
-use orion_infra::auto_exit_log;
+use orion_error::runtime::OperationContext;
 
 use std::io::Write;
 use std::sync::Arc;
@@ -77,10 +77,10 @@ impl DependTrait<&GxlSpace> for GxlMod {
             return Ok(self);
         }
         let mod_name = &self.meta.name().clone();
-        let mut flag = auto_exit_log!(
-            info!(target: "assemble",  "assembled mod  success!:{mod_name}"),
-            error!(target: "assemble", "assembled mod  failed!:{mod_name}" )
-        );
+        let mut ctx = OperationContext::doing("assemble mod")
+            .with_auto_log()
+            .with_mod_path("assemble");
+        ctx.record("mod", mod_name);
         let mut ins = self.clone();
         for (k, env) in self.envs {
             let ass_env = env.assemble(mod_name, src)?;
@@ -121,7 +121,7 @@ impl DependTrait<&GxlSpace> for GxlMod {
             ins.funs.insert(k.clone(), ass_fun);
         }
         ins.assembled = true;
-        flag.mark_suc();
+        ctx.mark_suc();
         Ok(ins)
     }
 }

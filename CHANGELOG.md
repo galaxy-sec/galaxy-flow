@@ -5,6 +5,15 @@ All notable changes to the Galaxy Flow project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.16.3] - 2026-10-10
+
+### Changed
+- Upgraded `orion-error` to 0.9 across the workspace (`orion-error 0.8→0.9`, `orion_conf 0.7→0.8`, `orion-infra 0.7→0.8`, `orion-accessor 0.8→0.9`, `orion-variate 0.13→0.14`, `orion-sec 0.6→0.7`, `wp-self-update 0.3→0.4`).
+
+### Fixed
+- **Unified lifecycle logging**: replaced the `orion_infra::auto_exit_log!` + paired `info!`/`error!` sites in `assemble` with orion-error 0.9 `OperationContext` + `AutoLogGuard` (`doing(...).with_auto_log().with_mod_path(...)` + `mark_suc()`).
+- **CLI error output uses the 0.9 diagnostic renderer**: `report_gxl_error` now delegates to `StructError::render()` (reason / detail / position / context).
+
 ## [v0.16.2] - 2026-10-08
 
 ### Changed

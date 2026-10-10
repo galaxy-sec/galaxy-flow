@@ -1,4 +1,4 @@
-use crate::{ExecReason, ExecResult, const_val::gxl_const, error::AssembleReason};
+use crate::{ExecReason, ExecResult, error::AssembleReason};
 use orion_error::reason::UnifiedReason as UvsReason;
 use orion_error::{OrionError, StructError};
 
@@ -77,72 +77,9 @@ pub fn report_gxl_error(e: RunError) {
     if let Some(target) = e.target_path() {
         eprintln!("[TARGET]:\n{target}\n",);
     }
-    eprintln!("[REASON]:");
-    match e.reason() {
-        RunReason::Uvs(uvs_reason) => match uvs_reason {
-            UvsReason::LogicError => {
-                eprintln!("LOGIC ERROR\n",);
-            }
-            UvsReason::BusinessError => {
-                eprintln!("BIZ ERROR\n",);
-            }
-            UvsReason::DataError => {
-                eprintln!("DATA ERROR\n",);
-            }
-            UvsReason::SystemError => {
-                eprintln!("SYS ERROR\n",);
-            }
-            UvsReason::ResourceError => {
-                eprintln!("RES ERROR\n",);
-            }
-            UvsReason::NetworkError => {
-                eprintln!("NET ERROR\n",);
-            }
-            UvsReason::TimeoutError => {
-                eprintln!("TIMEOUT\n",);
-            }
-            UvsReason::ConfigError(e) => {
-                eprintln!("CONF ERROR: {e}\n",);
-            }
-            UvsReason::PermissionError => {
-                eprintln!("PERMISSION ERROR\n",);
-            }
-            UvsReason::ValidationError => {
-                eprintln!("VALIDATION ERROR\n",);
-            }
-            UvsReason::ExternalError => {
-                eprintln!("EXTERNAL ERROR\n",);
-            }
-            UvsReason::NotFoundError => {
-                eprintln!("NOT FOUND\n",);
-            }
-            other => {
-                eprintln!("ERROR: {other}\n",);
-            }
-        },
-        RunReason::Gxl => {
-            eprintln!("{}GXL ERROR\n", gxl_const::ERROR_PREFIX);
-        }
-        RunReason::Exec => {
-            eprintln!("EXEC ERROR\n",);
-        }
-        RunReason::Args => {
-            eprintln!("ARGS ERROR\n",);
-        }
-        RunReason::Sec => {
-            eprintln!("Sec ERROR\n",);
-        }
-    }
-    if let Some(pos) = e.position() {
-        eprintln!("\n[POSITION]:\n{pos}",);
-    }
-    if let Some(detail) = e.detail() {
-        eprintln!("\n[DETAIL]:\n{detail}",);
-    }
-    eprintln!("\n[CONTEXT]:\n");
-    for x in e.contexts().iter() {
-        eprintln!("{x}")
-    }
+    // 诊断渲染交给 orion-error 0.9（`DiagnosticReport::render`）：
+    // 输出 reason / detail / position / context，替代原先手写的 reason match。
+    eprintln!("{}", e.render());
 }
 
 impl From<ExecReason> for RunReason {

@@ -1,7 +1,7 @@
 
 [package]
 
-version = "0.16.2" # @gxl:set(version)
+version = "0.16.3" # @gxl:set(version)
 authors = ["wukong<sec-wukong@outlook.com>"]
 edition = "2024"
 name = "galaxy_flow"
@@ -19,18 +19,18 @@ license = "Apache-2.0"
 
 [workspace.dependencies]
 winnow = "1.0"
-orion-error = { version = "0.8", features = ["serde","anyhow"] }
-orion_conf = { version = "0.7", features = ["yaml", "toml", "json", "ini"] }
+orion-error = { version = "0.9", features = ["serde","anyhow"] }
+orion_conf = { version = "0.8", features = ["yaml", "toml", "json", "ini"] }
 #orion-error = { path = "../orion-error" }
 #orion-error = { git = "https://github.com/galaxio-labs/orion-error.git", tag = "v0.4.0" }
 #orion_conf = { git = "https://github.com/galaxio-labs/orion-common.git", tag = "v0.3.0" }
-orion-sec=  "0.6"
+orion-sec=  "0.7"
 #orion-ai= { git = "https://github.com/galaxio-labs/orion-ai.git", tag = "v0.2.1" }
 #orion-ai= { path = "../orion-ai"  }
 #orion-ai= { git = "https://github.com/galaxio-labs/orion-ai.git", branch = "main" }
-orion-infra = "0.7"
-orion-variate =  "0.13"
-orion-accessor = "0.8"
+orion-infra = "0.8"
+orion-variate =  "0.14"
+orion-accessor = "0.9"
 orion_parse = { path = "crates/orion_parse" }
 orion_cond = { path = "crates/orion_cond" }
 tokio = { version = "1.51", features = ["full"] }
@@ -100,7 +100,7 @@ semver = "1.0"
 sha2 = "0.11"
 flate2 = "1.0"
 tar = "0.4"
-wp-self-update = "0.3"
+wp-self-update = "0.4"
 
 [features]
 res_depend_test = []

@@ -1,7 +1,7 @@
 use derive_more::From;
 use getset::{Getters, WithSetters};
 use orion_error::conversion::ToStructError;
-use orion_infra::auto_exit_log;
+use orion_error::runtime::OperationContext;
 
 use crate::ability::prelude::*;
 
@@ -64,19 +64,19 @@ impl DependTrait<&GxlSpace> for ActCall {
         }
         let (find_mod, call_name) = mod_obj_name(mod_name, self.name.as_str());
         let mod_log_name = find_mod.clone();
-        let mut flag = auto_exit_log!(
-            info!(target: "assemble", "assembled  success!:{mod_log_name}.{call_name}"),
-            error!(target: "assemble", "assembled failed!:{mod_log_name}.{call_name}" )
-        );
+        let mut ctx = OperationContext::doing("assemble call")
+            .with_auto_log()
+            .with_mod_path("assemble");
+        ctx.record("call", format!("{mod_log_name}.{call_name}"));
         if let Some(found_mod) = src.get(&find_mod) {
             if let Some(act) = found_mod.acts().get(&call_name) {
                 let act = act.clone().assemble(mod_name, src)?;
-                flag.mark_suc();
+                ctx.mark_suc();
                 return Ok(ActCall::from((self.clone(), act, find_mod)).with_assembled(true));
             } else if let Some(fun) = found_mod.funs().get(&call_name) {
                 self.check_param(fun.meta().params(), find_mod.as_str(), call_name.as_str())?;
                 let fun = fun.clone().assemble(mod_name, src)?;
-                flag.mark_suc();
+                ctx.mark_suc();
                 return Ok(ActCall::from((self.clone(), fun, find_mod)).with_assembled(true));
             }
         }
