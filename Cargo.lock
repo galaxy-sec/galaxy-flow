@@ -914,7 +914,7 @@ dependencies = [
 
 [[package]]
 name = "galaxy_flow"
-version = "0.16.3"
+version = "0.17.0"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -3756,9 +3756,9 @@ dependencies = [
 
 [[package]]
 name = "wp-self-update"
-version = "0.4.0"
+version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b2f17caa0ad042992c0b20924c02ffe41c79ab1b0cba154f2ef52ef62285fc9c"
+checksum = "4849667e40ea6612e5e795f9b5d014b6284c1de6917843e4e258fa7882ae5f54"
 dependencies = [
  "derive_more",
  "flate2",

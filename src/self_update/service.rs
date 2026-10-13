@@ -19,6 +19,8 @@ const PRODUCT_NAME: &str = "gx";
 #[derive(Clone, Debug, Default)]
 pub struct CheckRequest {
     pub channel: ReleaseChannel,
+    /// 可选下载前缀（如 `https://githubproxy.cc/`）；`None` = 直连。
+    pub url_prefix: Option<String>,
 }
 
 #[derive(Clone, Debug, Default)]
@@ -28,6 +30,8 @@ pub struct UpdateRequest {
     pub yes: bool,
     pub dry_run: bool,
     pub force: bool,
+    /// 可选下载前缀（如 `https://githubproxy.cc/`）；`None` = 直连。
+    pub url_prefix: Option<String>,
 }
 
 #[derive(Clone, Debug)]
@@ -65,6 +69,7 @@ impl SelfUpdateService {
                 updates_base_url: MANIFEST_BASE_URL.to_string(),
                 updates_root: None,
             },
+            url_prefix: req.url_prefix.clone(),
         };
 
         let wp_req = wp_self_update::CheckRequest {
@@ -118,6 +123,7 @@ impl SelfUpdateService {
                 updates_base_url: MANIFEST_BASE_URL.to_string(),
                 updates_root: None,
             },
+            url_prefix: req.url_prefix.clone(),
         };
 
         // First check to get remote version

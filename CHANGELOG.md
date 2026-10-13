@@ -5,6 +5,14 @@ All notable changes to the Galaxy Flow project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.17.0] - 2026-10-14
+
+### Added
+- **`gx self check` / `gx self update` gain `--mirror <PRESET|URL>`**: route self-update downloads through a mirror prefix — a preset (`--mirror githubproxy` → `https://githubproxy.cc/`) or a custom prefix URL. Only the manifest/artifact download URLs are rewritten (http(s) only); sha256 verification is unchanged, and an unknown preset name fails with a clear error.
+
+### Dependencies
+- Bump `wp-self-update` to `0.5.0` (adds the required `SourceConfig::url_prefix` field — a breaking change); the dependency is switched back from a local path to crates.io.
+
 ## [v0.16.3] - 2026-10-10
 
 ### Changed

@@ -443,7 +443,14 @@ async fn do_self_cmd(cmd: SelfCmd) -> RunResult<()> {
         SelfCmd::Check(args) => {
             let svc = SelfUpdateService::new()?;
             let channel = parse_channel(args.channel.as_str())?;
-            let req = CheckRequest { channel };
+            let url_prefix = args
+                .mirror
+                .resolve_prefix()
+                .map_err(|e| RunReason::Args.to_err().with_detail(e))?;
+            let req = CheckRequest {
+                channel,
+                url_prefix,
+            };
             let out = svc.check(req).await?;
             if args.json {
                 println!(
@@ -463,12 +470,17 @@ async fn do_self_cmd(cmd: SelfCmd) -> RunResult<()> {
         SelfCmd::Update(args) => {
             let svc = SelfUpdateService::new()?;
             let channel = parse_channel(args.channel.as_str())?;
+            let url_prefix = args
+                .mirror
+                .resolve_prefix()
+                .map_err(|e| RunReason::Args.to_err().with_detail(e))?;
             let req = UpdateRequest {
                 channel,
                 to_version: args.to_version.clone(),
                 yes: args.yes,
                 dry_run: args.dry_run,
                 force: args.force,
+                url_prefix,
             };
             let out = svc.update(req).await?;
             println!("channel={}", out.channel.as_str());
@@ -660,7 +672,7 @@ mod tests {
         DEFAULT_ADM_CONF, DEFAULT_WORK_CONF, OutputMode, collect_git_extern_mod_names_from_code,
         collect_mod_update_inputs, format_self_check_report, normalized_argv, output_mode,
     };
-    use crate::cmd::gx_cmd::{GxCmd, SelfCheckArgs, SelfCmd};
+    use crate::cmd::gx_cmd::{GxCmd, MirrorArgs, SelfCheckArgs, SelfCmd};
     use crate::err::RunReason;
     use crate::self_update::{CheckResult, ReleaseChannel};
 
@@ -778,9 +790,55 @@ mod main {}
         let cmd = GxCmd::SelfUpdate(SelfCmd::Check(SelfCheckArgs {
             channel: "stable".to_string(),
             json: true,
+            mirror: MirrorArgs { mirror: None },
         }));
 
         assert_eq!(output_mode(&cmd), OutputMode::Machine);
+    }
+
+    #[test]
+    fn self_mirror_flag_parses_and_resolves() {
+        // 默认：直连
+        match GxCmd::parse_from(["gx", "self", "check", "--channel", "alpha"]) {
+            GxCmd::SelfUpdate(SelfCmd::Check(args)) => {
+                assert_eq!(args.mirror.resolve_prefix().unwrap(), None)
+            }
+            other => panic!("unexpected: {other:?}"),
+        }
+        // 内置预设：githubproxy
+        match GxCmd::parse_from(["gx", "self", "update", "--mirror", "githubproxy"]) {
+            GxCmd::SelfUpdate(SelfCmd::Update(args)) => assert_eq!(
+                args.mirror.resolve_prefix().unwrap().as_deref(),
+                Some("https://githubproxy.cc/")
+            ),
+            other => panic!("unexpected: {other:?}"),
+        }
+        // 自定义前缀 URL
+        match GxCmd::parse_from([
+            "gx",
+            "self",
+            "update",
+            "--mirror",
+            "https://mirror.example.com",
+        ]) {
+            GxCmd::SelfUpdate(SelfCmd::Update(args)) => assert_eq!(
+                args.mirror.resolve_prefix().unwrap().as_deref(),
+                Some("https://mirror.example.com")
+            ),
+            other => panic!("unexpected: {other:?}"),
+        }
+        // 未知预设名（非 URL）→ 明确报错，而不是把裸字当 URL 用
+        match GxCmd::parse_from(["gx", "self", "update", "--mirror", "nope"]) {
+            GxCmd::SelfUpdate(SelfCmd::Update(args)) => {
+                let err = args.mirror.resolve_prefix().unwrap_err();
+                assert!(err.contains("unknown mirror"), "unexpected error: {err}");
+                assert!(
+                    err.contains("githubproxy"),
+                    "available presets should be listed: {err}"
+                );
+            }
+            other => panic!("unexpected: {other:?}"),
+        }
     }
 
     #[test]

@@ -72,9 +72,13 @@ pub struct DocArgs {
 
 #[derive(Debug, Subcommand, Clone)]
 pub enum SelfCmd {
+    /// show current version, install dir, and last self-update state
     Status,
+    /// check if a newer version exists in the channel
     Check(SelfCheckArgs),
+    /// update gx to the latest release in the channel
     Update(SelfUpdateArgs),
+    /// roll back to the version before the last update
     Rollback(SelfRollbackArgs),
     /// install / list agent skills
     #[command(name = "skill", subcommand)]
@@ -129,6 +133,8 @@ pub struct SelfCheckArgs {
     pub channel: String,
     #[arg(long, action = ArgAction::SetTrue, default_value = "false")]
     pub json: bool,
+    #[clap(flatten)]
+    pub mirror: MirrorArgs,
 }
 
 #[derive(Debug, Args, Clone, Getters)]
@@ -143,6 +149,53 @@ pub struct SelfUpdateArgs {
     pub dry_run: bool,
     #[arg(long, action = ArgAction::SetTrue, default_value = "false")]
     pub force: bool,
+    #[clap(flatten)]
+    pub mirror: MirrorArgs,
+}
+
+/// 可选的下载镜像（GitHub 加速站）。
+///
+/// 只把 manifest 与制品 URL 套上前缀，不改变校验（sha256 照常）。值可以是内置预设名，
+/// 也可以是自定义前缀 URL。
+#[derive(Debug, Args, Clone, Getters)]
+pub struct MirrorArgs {
+    /// 下载镜像：预设名或自定义前缀 URL。如 `--mirror githubproxy` / `--mirror https://githubproxy.cc/`
+    #[arg(long = "mirror", value_name = "PRESET|URL")]
+    pub mirror: Option<String>,
+}
+
+/// 内置镜像预设：`名称 -> 前缀`（前缀以 `/` 结尾）。
+const MIRROR_PRESETS: &[(&str, &str)] = &[("githubproxy", "https://githubproxy.cc/")];
+
+impl MirrorArgs {
+    /// 解析出实际的下载前缀（未指定时 `Ok(None)` = 直连）。
+    ///
+    /// 值可以是预设名（见 `MIRROR_PRESETS`）或**带 scheme** 的前缀 URL；其它视为错误，
+    /// 免得把裸字当 URL 用、报出难懂的 fetch 错。
+    pub fn resolve_prefix(&self) -> Result<Option<String>, String> {
+        let Some(raw) = self
+            .mirror
+            .as_deref()
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+        else {
+            return Ok(None);
+        };
+        if let Some((_, url)) = MIRROR_PRESETS.iter().find(|(name, _)| *name == raw) {
+            return Ok(Some((*url).to_string()));
+        }
+        if raw.contains("://") {
+            return Ok(Some(raw.to_string()));
+        }
+        let presets = MIRROR_PRESETS
+            .iter()
+            .map(|(name, _)| *name)
+            .collect::<Vec<_>>()
+            .join(", ");
+        Err(format!(
+            "unknown mirror '{raw}': use a preset ({presets}) or a full URL with scheme"
+        ))
+    }
 }
 
 #[derive(Debug, Args, Clone, Getters)]
