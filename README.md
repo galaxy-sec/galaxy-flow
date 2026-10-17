@@ -186,8 +186,8 @@ gx check                     # 打印当前运行环境信息
 
 ```bash
 gx self status
-gx self check --channel <stable|alpha|beta>
-gx self update --channel <stable|alpha|beta> [--to <version>] [--dry-run] [--force] --yes
+gx self check -c <stable|alpha|beta>          # -c 是 --channel 短写
+gx self update -c <stable|alpha|beta> [--to <version>] [--dry-run] [--force] --yes
 gx self rollback [--id <backup_id>]
 
 # agent skills

@@ -129,7 +129,7 @@ pub struct SkillListArgs {
 
 #[derive(Debug, Args, Clone, Getters)]
 pub struct SelfCheckArgs {
-    #[arg(long, default_value = "stable")]
+    #[arg(short = 'c', long, default_value = "stable")]
     pub channel: String,
     #[arg(long, action = ArgAction::SetTrue, default_value = "false")]
     pub json: bool,
@@ -139,7 +139,7 @@ pub struct SelfCheckArgs {
 
 #[derive(Debug, Args, Clone, Getters)]
 pub struct SelfUpdateArgs {
-    #[arg(long, default_value = "stable")]
+    #[arg(short = 'c', long, default_value = "stable")]
     pub channel: String,
     #[arg(long = "to")]
     pub to_version: Option<String>,
@@ -470,6 +470,18 @@ mod tests {
                 assert!(!args.dry_run);
                 assert!(!args.force);
             }
+            other => panic!("unexpected command: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn parse_self_short_channel_flag() {
+        match GxCmd::try_parse_from(["gx", "self", "check", "-c", "alpha"]).unwrap() {
+            GxCmd::SelfUpdate(SelfCmd::Check(args)) => assert_eq!(args.channel, "alpha"),
+            other => panic!("unexpected command: {other:?}"),
+        }
+        match GxCmd::try_parse_from(["gx", "self", "update", "-c", "beta"]).unwrap() {
+            GxCmd::SelfUpdate(SelfCmd::Update(args)) => assert_eq!(args.channel, "beta"),
             other => panic!("unexpected command: {other:?}"),
         }
     }
