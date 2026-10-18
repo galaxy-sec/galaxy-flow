@@ -172,131 +172,14 @@ jobs:
           files: artifacts/*
 
   # 把制品推到腾讯云 COS（对象存储），供中心 / CDN / 客户端按稳定 URL 拉取。
-  # 未配置 Variables（COS_BUCKET 为空）时整段自动跳过，不会让发布失败；
-  # 一旦设置 COS_BUCKET 即视为启用，此时密钥缺失会直接报错（便于发现漏配）。
-  # 注意：`secrets` 上下文不能出现在 step 级 if 里，故启用判定放在 job 级（只看 vars）。
-  #   Variables：COS_BUCKET（含 -APPID）、COS_REGION（如 ap-hongkong）、可选 COS_PREFIX（默认仓库名）
-  #   Secrets：  COS_SECRET_ID、COS_SECRET_KEY（临时密钥再加 COS_SESSION_TOKEN）
-  # 对象键：
-  #   <COS_PREFIX>/<tag>/<文件名>              固定版本地址（可直接写进 ops-prj.yml 的 addr）
-  #   <COS_PREFIX>/<channel>/latest/<文件名>   通道最新（alpha / beta / stable）
-  #   <COS_PREFIX>/latest/<文件名>             仅 stable 更新，避免 alpha/beta 覆盖稳定版
-  # 每个对象带自定义元数据 x-cos-meta-artifact-sha256=<hex>（COS 只存 MD5 ETag）。
+  # 上传逻辑在 upload-cos.yml；该文件也支持 workflow_dispatch，可手动补传历史版本。
   upload-cos:
     name: Upload artifacts to Tencent COS
     needs: [Release]
-    runs-on: ubuntu-24.04
-    if: ${{ vars.COS_BUCKET != '' }}
-    concurrency:
-      group: cos-${{ github.repository }}-${{ github.ref_name }}
-      cancel-in-progress: false
-    steps:
-      - name: Resolve channel
-        id: meta
-        run: |
-          set -euo pipefail
-          TAG="${GITHUB_REF_NAME}"
-          VERSION="${TAG#v}"
-          CHANNEL="stable"
-          if [[ "$VERSION" == *"-alpha"* || "$VERSION" == *"alpha-"* ]]; then
-            CHANNEL="alpha"
-          elif [[ "$VERSION" == *"-beta"* || "$VERSION" == *"beta-"* || "$VERSION" == *"-pre"* || "$VERSION" == *"pre-"* ]]; then
-            CHANNEL="beta"
-          fi
-          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
-          echo "channel=$CHANNEL" >> "$GITHUB_OUTPUT"
-
-      - name: Download artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: pkg
-          merge-multiple: true
-
-      - name: Install coscli
-        run: |
-          set -eu
-          mkdir -p "$HOME/.local/bin"
-          curl -fsSL -o "$HOME/.local/bin/coscli" \
-            https://github.com/tencentyun/coscli/releases/download/v1.0.9/coscli-v1.0.9-linux-amd64
-          chmod +x "$HOME/.local/bin/coscli"
-          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-          "$HOME/.local/bin/coscli" --version
-
-      - name: Upload to COS
-        env:
-          COS_BUCKET: ${{ vars.COS_BUCKET }}
-          COS_REGION: ${{ vars.COS_REGION }}
-          COS_PREFIX: ${{ vars.COS_PREFIX }}
-          COS_SECRET_ID: ${{ secrets.COS_SECRET_ID }}
-          COS_SECRET_KEY: ${{ secrets.COS_SECRET_KEY }}
-          COS_SESSION_TOKEN: ${{ secrets.COS_SESSION_TOKEN }}
-          TAG: ${{ steps.meta.outputs.tag }}
-          CHANNEL: ${{ steps.meta.outputs.channel }}
-        run: |
-          set -eu
-          # 去掉密钥里的空白字符：粘贴常带入尾随换行/空格，会让签名报 SecretKey is invalid。
-          secret_id="$(printf '%s' "${COS_SECRET_ID}" | tr -d '[:space:]')"
-          secret_key="$(printf '%s' "${COS_SECRET_KEY}" | tr -d '[:space:]')"
-          session_token="$(printf '%s' "${COS_SESSION_TOKEN}" | tr -d '[:space:]')"
-          if [ -z "${secret_id}" ] || [ -z "${secret_key}" ]; then
-            echo "::error::已配置 COS_BUCKET，但 COS_SECRET_ID / COS_SECRET_KEY 为空"
-            exit 1
-          fi
-          # 明文写入 AK/SK，因此必须显式关掉 coscli 的密钥加密（disableencryption）。
-          cat > "$HOME/.cos.yaml" <<EOF
-          cos:
-            base:
-              protocol: https
-              disableencryption: "true"
-              secretid: "${secret_id}"
-              secretkey: "${secret_key}"
-              sessiontoken: "${session_token}"
-            buckets:
-              - name: "${COS_BUCKET}"
-                alias: "${COS_BUCKET}"
-                region: "${COS_REGION}"
-                endpoint: "cos.${COS_REGION}.myqcloud.com"
-          EOF
-          prefix="${COS_PREFIX:-${GITHUB_REPOSITORY##*/}}"
-          prefix="${prefix%/}"
-          cfg="$HOME/.cos.yaml"
-          out="$PWD/coscli_output"
-          rm -rf "${out}"
-          # coscli 只打印汇总，失败明细落在 coscli_output/<时间>/ 下；失败时打印并输出为 annotation。
-          dump_err() {
-            echo "::error::$1"
-            if [ -d "${out}" ]; then
-              find "${out}" -type f -exec sh -c 'echo "--- $1"; cat "$1"' _ {} \;
-              detail="$(find "${out}" -type f -exec cat {} \; | tr '\n' ' ' | sed -e 's/%/%25/g' | cut -c1-1500)"
-              echo "::error title=coscli 明细::$1 —— ${detail}"
-            fi
-            exit 1
-          }
-          # 依次写入的 key 前缀：固定版本 / 通道最新 / stable 的全局 latest。
-          if [ "${CHANNEL}" = "stable" ]; then
-            keys=("${prefix}/${TAG}" "${prefix}/${CHANNEL}/latest" "${prefix}/latest")
-          else
-            keys=("${prefix}/${TAG}" "${prefix}/${CHANNEL}/latest")
-          fi
-          shopt -s nullglob
-          files=(pkg/*.tar.gz)
-          [ ${#files[@]} -gt 0 ] || { echo "::error::pkg/ 下没有 .tar.gz 制品可上传"; exit 1; }
-          for f in "${files[@]}"; do
-            name="$(basename "${f}")"
-            # COS 对象只存 MD5（ETag），GitHub 侧资产 digest（sha256）过不来。把 sha256 作为
-            # 对象自定义元数据写进对象本身；`coscli stat`（HEAD）可读回。
-            sha="$(sha256sum "${f}" | cut -d' ' -f1)"
-            [ -n "${sha}" ] || { echo "::error::无法计算 ${name} 的 sha256" >&2; exit 1; }
-            meta="x-cos-meta-artifact-sha256:${sha}"
-            for key in "${keys[@]}"; do
-              coscli cp "${f}" "cos://${COS_BUCKET}/${key}/${name}" -c "${cfg}" --meta "${meta}" \
-                || dump_err "上传 ${name} 到 ${key} 失败"
-              echo "已上传 ${key}/${name}  sha256=${sha}"
-            done
-          done
-          echo "COS 上传完成。"
-          coscli ls "cos://${COS_BUCKET}/${prefix}/" -c "${cfg}" \
-            || echo "::warning::COS 列表失败（可能缺 cos:GetBucket 权限）；上传本身已成功。"
+    uses: ./.github/workflows/upload-cos.yml
+    with:
+      tag: ${{ github.ref_name }}
+    secrets: inherit
 
   update-gx-get-manifest:
     needs: [Release]
